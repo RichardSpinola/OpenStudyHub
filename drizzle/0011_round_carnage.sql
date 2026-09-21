@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `technologies_json` text DEFAULT '[]' NOT NULL;

@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "autoEnablePublicDefaults": false,
+  "missingOptionalPlaceholder": "blank",
+  "canonicalPlaceholders": [
+    "subject.name",
+    "subject.code",
+    "program.name",
+    "program.short_name",
+    "period.label",
+    "students.names",
+    "document.date",
+    "document.topic",
+    "document.title",
+    "document.sections",
+    "activity.title",
+    "activity.prompt",
+    "instructor.display_name"
+  ],
+  "examples": [
+    {
+      "file": "01_Atividade_Generica.docx",
+      "name": "Atividade",
+      "sections": [
+        {
+          "internalKey": "question",
+          "displayTitle": "Questão",
+          "type": "text",
+          "optional": false,
+          "initialSource": "activity.prompt"
+        },
+        {
+          "internalKey": "answer",
+          "displayTitle": "Resposta",
+          "type": "text",
+          "optional": false,
+          "initialSource": null
+        }
+      ]
+    },
+    {
+      "file": "02_Atividade_Programacao_Generica.docx",
+      "name": "Atividade de programação",
+      "sections": [
+        {
+          "internalKey": "question",
+          "displayTitle": "Questão",
+          "type": "text",
+          "optional": false,
+          "initialSource": "activity.prompt"
+        },
+        {
+          "internalKey": "answer",
+          "displayTitle": "Resposta",
+          "type": "text",
+          "optional": false,
+          "initialSource": null
+        },
+        {
+          "internalKey": "code",
+          "displayTitle": "Código",
+          "type": "code",
+          "optional": false,
+          "initialSource": null
+        },
+        {
+          "internalKey": "result",
+          "displayTitle": "Resultado",
+          "type": "text_or_image",
+          "optional": false,
+          "initialSource": null
+        }
+      ]
+    },
+    {
+      "file": "03_Anotacoes_de_Aula_Generica.docx",
+      "name": "Anotações de aula",
+      "sections": [
+        {
+          "internalKey": "notes",
+          "displayTitle": "Anotações",
+          "type": "text",
+          "optional": false,
+          "initialSource": null
+        },
+        {
+          "internalKey": "summary",
+          "displayTitle": "Resumo",
+          "type": "text",
+          "optional": true,
+          "initialSource": null
+        },
+        {
+          "internalKey": "questions",
+          "displayTitle": "Dúvidas",
+          "type": "text",
+          "optional": true,
+          "initialSource": null
+        }
+      ]
+    }
+  ]
+}

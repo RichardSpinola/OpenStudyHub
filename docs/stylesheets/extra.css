@@ -1,0 +1,121 @@
+:root {
+  --osh-bg: #0c0c0c;
+  --osh-panel: #151515;
+  --osh-line: #4a4a4a;
+  --osh-text: #f2f2f0;
+  --osh-muted: #9a9a96;
+}
+
+body {
+  background: var(--osh-bg);
+  color: var(--osh-text);
+}
+
+.navbar,
+.navbar-default {
+  background: #111;
+  border-color: var(--osh-line);
+}
+
+.container {
+  max-width: 1180px;
+}
+
+.well,
+pre,
+code {
+  border-radius: 0 !important;
+}
+
+.osh-hero {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 2rem;
+  align-items: center;
+  padding: 3rem 0 2rem;
+  border-bottom: 1px solid var(--osh-line);
+}
+
+.osh-hero-logo {
+  width: 10rem;
+  height: 10rem;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.osh-kicker {
+  margin: 0 0 0.7rem;
+  color: var(--osh-muted);
+  font-family: monospace;
+  letter-spacing: 0.12em;
+}
+
+.osh-hero h1 {
+  margin: 0;
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  letter-spacing: -0.04em;
+}
+
+.osh-lead {
+  max-width: 52rem;
+  margin: 1rem 0 1.5rem;
+  color: #d1d1cd;
+  font-size: 1.2rem;
+  line-height: 1.65;
+}
+
+.osh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.osh-actions a {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--osh-text);
+  font-family: monospace;
+  text-decoration: none;
+}
+
+.osh-primary {
+  color: #111 !important;
+  background: var(--osh-text);
+}
+
+.osh-secondary {
+  color: var(--osh-text) !important;
+  background: transparent;
+}
+
+.osh-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 2rem 0 3rem;
+  border: 1px solid var(--osh-line);
+  background: var(--osh-line);
+}
+
+.osh-grid section {
+  padding: 1.35rem;
+  background: var(--osh-panel);
+}
+
+.osh-grid h2 {
+  margin-top: 0;
+}
+
+@media (max-width: 720px) {
+  .osh-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .osh-hero-logo {
+    width: 6rem;
+    height: 6rem;
+  }
+
+  .osh-grid {
+    grid-template-columns: 1fr;
+  }
+}

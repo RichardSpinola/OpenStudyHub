@@ -1,0 +1,32 @@
+services:
+  openstudyhub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openstudyhub:local
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_PATH: /app/data/openstudyhub.db
+      PRIVATE_ASSET_PATH: /app/data/private-assets
+    volumes:
+      - openstudyhub-data:/app/data
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+volumes:
+  openstudyhub-data:

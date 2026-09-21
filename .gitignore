@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+
+# Build
+.next/
+dist/
+build/
+coverage/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Private application data
+data/*
+!data/.gitkeep
+
+# Databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/
+.cache/
+*.tsbuildinfo
+
+# AI/local tooling
+.codex/
+.claude/
+
+# Certificates / keys
+*.pem
+*.key
+*.crt
+credentials*.json
+token*.json
+dev-environment.txt

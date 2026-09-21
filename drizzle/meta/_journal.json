@@ -1,0 +1,111 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789582038614,
+      "tag": "0000_kind_cobalt_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789601023373,
+      "tag": "0001_academic_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789605051173,
+      "tag": "0002_access_admin_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1789833308708,
+      "tag": "0003_omniscient_colleen_wing",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1789849826107,
+      "tag": "0004_busy_blackheart",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1789854821325,
+      "tag": "0005_elite_darkstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1789857950576,
+      "tag": "0006_lush_union_jack",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1789868144682,
+      "tag": "0007_flat_abomination",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1789918373791,
+      "tag": "0008_medical_emma_frost",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1789932651825,
+      "tag": "0009_overrated_nekra",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1789938473978,
+      "tag": "0010_polite_spyke",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1789951478720,
+      "tag": "0011_round_carnage",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1789955875910,
+      "tag": "0012_lean_rictor",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1789990057922,
+      "tag": "0013_salty_christian_walker",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1789997094134,
+      "tag": "0014_left_butterfly",
+      "breakpoints": true
+    }
+  ]
+}

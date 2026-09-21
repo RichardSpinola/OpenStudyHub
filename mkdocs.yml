@@ -1,0 +1,27 @@
+site_name: OpenStudyHub
+site_description: Workspace acadêmico self-hosted
+nav:
+  - Início: index.md
+  - Instalação do zero: instalacao-do-zero.md
+  - Primeiros passos: getting-started.md
+  - Google: google.md
+  - Modelos personalizados: modelos-personalizados.md
+  - Administração: deployment/ADMIN_GUIDE.md
+  - Deploy: deployment.md
+  - ZimaOS: zimaos.md
+  - Backup e atualização: backup-update.md
+  - Troubleshooting: troubleshooting.md
+  - Release checklist: release-checklist.md
+  - IA no desenvolvimento: ai-usage.md
+  - Licença: LICENSING.md
+theme:
+  name: mkdocs
+  logo: assets/openstudyhub-icon.png
+  favicon: assets/openstudyhub-icon.png
+extra_css:
+  - stylesheets/extra.css
+markdown_extensions:
+  - tables
+  - fenced_code
+  - attr_list
+  - md_in_html
