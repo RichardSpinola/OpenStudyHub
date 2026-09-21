@@ -8,7 +8,7 @@ OpenStudyHub é um workspace acadêmico self-hosted para organizar disciplinas, 
 
 A aplicação foi pensada para continuar útil sem Google: as integrações são opcionais e o núcleo local usa SQLite.
 
-> Status: release candidate da primeira versão pública (`v1.0.0`). A auditoria final de segurança foi concluída; antes do primeiro push público ainda é necessário escolher a licença e criar o histórico público limpo.
+> Status: primeira versão pública (`v1.0.0`) preparada para release. O projeto possui histórico público limpo, licença AGPL-3.0-only e documentação de instalação e deploy.
 
 ## Recursos
 
