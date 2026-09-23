@@ -61,7 +61,7 @@ describe("V2 structural foundation", () => {
           n: number;
         }
       ).n,
-    ).toBe(7);
+    ).toBe(8);
     expect(db.pragma("foreign_key_check")).toEqual([]);
     expect(db.pragma("integrity_check")).toEqual([{ integrity_check: "ok" }]);
     expect(
@@ -254,20 +254,20 @@ describe("V2 structural foundation", () => {
       }),
     ).toBe(false);
   });
-  it("stores local objects with opaque keys and refuses traversal/symlinks", () => {
+  it("stores local objects with opaque keys and refuses traversal/symlinks", async () => {
     const db = fixture();
     const dir = mkdtempSync(join(tmpdir(), "osh-v2-storage-"));
     dirs.push(dir);
     const provider = new LocalStorageProvider(dir);
     const registry = new StorageRegistry();
     registry.register("fake-local", provider);
-    const id = storeObject(
+    const id = await storeObject(
       db,
       registry,
       "fake-local",
       Buffer.from("fake bytes"),
     );
-    expect(Buffer.from(readObject(db, registry, id)).toString()).toBe(
+    expect(Buffer.from(await readObject(db, registry, id)).toString()).toBe(
       "fake bytes",
     );
     expect(() => provider.get("../secret")).toThrow("Invalid storage key");

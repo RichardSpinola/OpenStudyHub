@@ -39,6 +39,24 @@ export function getGoogleIntegrationAvailability(
   environment: ServerEnvironment = getServerEnvironment(),
 ): GoogleIntegrationAvailability {
   const missing = new Set<string>();
+  let expectedRedirect: string | null = null;
+  try {
+    const appUrl = new URL(environment.APP_URL);
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(appUrl.hostname);
+    if (
+      appUrl.username ||
+      appUrl.password ||
+      appUrl.pathname !== "/" ||
+      appUrl.search ||
+      appUrl.hash ||
+      (appUrl.protocol !== "https:" && !local) ||
+      (environment.NODE_ENV === "production" && !process.env.APP_URL)
+    )
+      throw new Error();
+    expectedRedirect = appUrl.origin + "/api/google/callback";
+  } catch {
+    missing.add("APP_URL");
+  }
   if (!environment.GOOGLE_CLIENT_ID) missing.add("GOOGLE_CLIENT_ID");
   if (!environment.GOOGLE_CLIENT_SECRET) missing.add("GOOGLE_CLIENT_SECRET");
   let redirectUri: string | null = null;
@@ -51,6 +69,8 @@ export function getGoogleIntegrationAvailability(
         throw new Error();
       }
       redirectUri = candidate.toString();
+      if (expectedRedirect && redirectUri !== expectedRedirect)
+        throw new Error();
     } catch {
       missing.add("GOOGLE_REDIRECT_URI");
     }

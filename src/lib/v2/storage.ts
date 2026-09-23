@@ -19,10 +19,10 @@ export type StoredObject = {
 };
 export interface StorageProvider {
   readonly kind: "local" | "google-drive";
-  put(bytes: Uint8Array): StoredObject;
-  get(providerRef: string): Uint8Array;
-  delete(providerRef: string): void;
-  health(): "ready" | "degraded";
+  put(bytes: Uint8Array): StoredObject | Promise<StoredObject>;
+  get(providerRef: string): Uint8Array | Promise<Uint8Array>;
+  delete(providerRef: string): void | Promise<void>;
+  health(): "ready" | "degraded" | Promise<"ready" | "degraded">;
 }
 
 function safeKey(key: string): string {
@@ -97,12 +97,12 @@ export class StorageRegistry {
   }
 }
 
-export function storeObject(
+export async function storeObject(
   db: V2Database,
   registry: StorageRegistry,
   backendName: string,
   bytes: Uint8Array,
-): number {
+): Promise<number> {
   const backend = db
     .prepare(
       "SELECT id,kind FROM storage_backends WHERE name=? AND state='ready'",
@@ -112,7 +112,7 @@ export function storeObject(
   const provider = registry.get(backendName);
   if (provider.kind !== backend.kind)
     throw new Error("Storage provider mismatch");
-  const object = provider.put(bytes);
+  const object = await provider.put(bytes);
   try {
     const result = db
       .prepare(
@@ -127,16 +127,16 @@ export function storeObject(
       );
     return Number(result.lastInsertRowid);
   } catch (error) {
-    provider.delete(object.providerRef);
+    await provider.delete(object.providerRef);
     throw error;
   }
 }
 
-export function readObject(
+export async function readObject(
   db: V2Database,
   registry: StorageRegistry,
   id: number,
-): Uint8Array {
+): Promise<Uint8Array> {
   const row = db
     .prepare(
       `SELECT b.name,b.kind,o.provider_ref ref,o.sha256 hash FROM storage_objects o JOIN storage_backends b ON b.id=o.backend_id WHERE o.id=? AND o.archived_at IS NULL`,
@@ -146,7 +146,7 @@ export function readObject(
   if (!row) throw new Error("Stored object missing");
   const provider = registry.get(row.name);
   if (provider.kind !== row.kind) throw new Error("Storage provider mismatch");
-  const bytes = provider.get(row.ref);
+  const bytes = await provider.get(row.ref);
   if (createHash("sha256").update(bytes).digest("hex") !== row.hash)
     throw new Error("Stored object checksum mismatch");
   return bytes;

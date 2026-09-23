@@ -17,6 +17,7 @@ export async function completeSetupAction(
   _state: SetupActionState,
   formData: FormData,
 ): Promise<SetupActionState> {
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") redirect("/control/setup");
   if (!isSetupRequired()) redirect("/login");
 
   const password = field(formData, "password");

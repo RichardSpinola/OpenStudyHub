@@ -42,6 +42,23 @@ describe("Google OAuth", () => {
 
   afterEach(() => connection.close());
 
+  it("não reutiliza OAuth legado quando a identidade V2 está ativa", async () => {
+    const previous = process.env.OPENSTUDYHUB_V2_ENABLED;
+    process.env.OPENSTUDYHUB_V2_ENABLED = "1";
+    try {
+      const userId = createUser(connection, "legacy-google-user");
+      expect(() =>
+        createGoogleAuthorizationUrl(userId, connection, config),
+      ).toThrow("V2");
+      await expect(
+        getGoogleAccessToken(userId, { connection, config }),
+      ).rejects.toThrow("V2");
+    } finally {
+      if (previous === undefined) delete process.env.OPENSTUDYHUB_V2_ENABLED;
+      else process.env.OPENSTUDYHUB_V2_ENABLED = previous;
+    }
+  });
+
   it("usa state descartável, PKCE e armazena refresh token cifrado", async () => {
     const userId = createUser(connection, "oauth-user");
     const authorizationUrl = new URL(

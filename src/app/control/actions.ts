@@ -5,20 +5,24 @@ import { revalidatePath } from "next/cache";
 import {
   bootstrapV2,
   authenticateAdminV2,
-  authenticateUserV2,
   isSetupPending,
   revokeAdminSessionV2,
   revokeUserSessionV2,
   setPasswordV2,
   setAdminPasswordV2,
+  sessionUserV2,
 } from "@/lib/v2/auth";
 import {
   ADMIN_COOKIE,
-  USER_COOKIE,
   withV2DbAsync,
   currentAdminV2,
   currentUserV2,
+  readUserSessionTokenV2,
+  writeUserSessionV2,
+  clearUserSessionV2,
 } from "@/lib/v2/runtime";
+import { authenticateNormal } from "@/lib/v2/identity-bridge";
+import { clearSessionCookie } from "@/lib/session-cookie";
 import {
   createInstitution,
   createProgram,
@@ -136,25 +140,32 @@ export async function loginAction(f: FormData): Promise<void> {
   );
 }
 export async function userLoginAction(f: FormData): Promise<void> {
-  let ok = false;
+  let result: { token: string; mustChangePassword: boolean } | null = null;
   try {
-    const result = await withV2DbAsync((db) =>
-      authenticateUserV2(db, str(f, "login"), str(f, "password")),
-    );
-    if (result) {
-      (await cookies()).set(USER_COOKIE, result.token, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-        maxAge: 604800,
-      });
-      ok = true;
-    }
+    result = await withV2DbAsync(async (db) => {
+      const authenticated = await authenticateNormal(
+        db,
+        str(f, "login"),
+        str(f, "password"),
+      );
+      if (!authenticated) return null;
+      const user = sessionUserV2(db, authenticated.token);
+      return {
+        token: authenticated.token,
+        mustChangePassword:
+          user?.id === authenticated.id && user.mustChangePassword,
+      };
+    });
   } catch {}
+  if (result) {
+    await writeUserSessionV2(result.token);
+    await clearSessionCookie();
+  }
   redirect(
-    ok
-      ? "/gestao"
+    result
+      ? result.mustChangePassword
+        ? "/gestao/password"
+        : "/gestao"
       : messagePath(
           "/gestao/login",
           "error",
@@ -172,12 +183,12 @@ export async function logoutAdminAction(): Promise<void> {
   redirect("/control/login");
 }
 export async function logoutUserAction(): Promise<void> {
-  const jar = await cookies();
-  const token = jar.get(USER_COOKIE)?.value;
+  const token = await readUserSessionTokenV2();
   try {
     await withV2DbAsync(async (db) => revokeUserSessionV2(db, token));
   } catch {}
-  jar.delete(USER_COOKIE);
+  await clearUserSessionV2();
+  await clearSessionCookie();
   redirect("/gestao/login");
 }
 

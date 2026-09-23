@@ -6,9 +6,15 @@ import { assertAcademicAdministrator } from "@/lib/academic-authority";
 import { getSessionByToken, type SessionRecord } from "@/lib/session";
 import { readSessionCookie } from "@/lib/session-cookie";
 import { getUserProfile } from "@/lib/profile";
+import { projectLegacySession } from "@/lib/v2/identity-bridge";
+import { readUserSessionTokenV2, withV2Db } from "@/lib/v2/runtime";
 
 export async function getCurrentSession(): Promise<SessionRecord | null> {
   try {
+    if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+      const token = await readUserSessionTokenV2();
+      return token ? withV2Db((db) => projectLegacySession(db, token)) : null;
+    }
     const token = await readSessionCookie();
     return token ? getSessionByToken(token) : null;
   } catch {
@@ -18,7 +24,14 @@ export async function getCurrentSession(): Promise<SessionRecord | null> {
 
 export async function requireAuthenticatedUser() {
   const session = await getCurrentSession();
-  if (!session) redirect(isSetupRequired() ? "/setup" : "/login");
+  if (!session)
+    redirect(
+      process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+        ? "/login"
+        : isSetupRequired()
+          ? "/setup"
+          : "/login",
+    );
   if (getUserProfile(session.user.id).onboardingVersion < 1) {
     redirect("/onboarding");
   }

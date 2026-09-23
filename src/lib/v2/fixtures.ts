@@ -153,6 +153,9 @@ export function seedV2Fake(
     db.prepare(
       "INSERT INTO storage_backends(id,kind,name,state) VALUES(1,'local','fake-local','ready')",
     ).run();
+    db.prepare(
+      "INSERT INTO storage_backends(kind,name,state) VALUES('local','Local','ready')",
+    ).run();
     const fixed = Date.UTC(2030, 0, 1);
     for (const [table, column] of [
       ["users", "created_at"],

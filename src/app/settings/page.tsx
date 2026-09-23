@@ -329,8 +329,10 @@ export default async function SettingsPage({
   const data = loadSettingsData(user.id, user.role === "admin");
   const language = data.available ? data.profile.locale : data.language;
   const { settings } = getTranslations(language);
+  const v2Mode = process.env.OPENSTUDYHUB_V2_ENABLED === "1";
   const googleAvailability = getGoogleIntegrationAvailability();
-  const googleConnection = data.available ? getGoogleConnection(user.id) : null;
+  const googleConnection =
+    !v2Mode && data.available ? getGoogleConnection(user.id) : null;
   const canAdminister = canAccessAcademicAdministration(user.id);
   const storageLayout = user.role === "admin" ? getStorageLayout() : null;
   const storageOwnerCandidates =
@@ -602,56 +604,69 @@ export default async function SettingsPage({
                 <span className="panel-index">03</span>
                 <h2 id="google-title">{settings.googleIntegration}</h2>
               </div>
-              <div className="google-connection-summary">
-                <strong>
-                  {!googleAvailability.configured
-                    ? settings.googleUnavailable
-                    : googleConnection?.status === "connected"
-                      ? settings.googleConnected
-                      : googleConnection?.status === "revoked"
-                        ? settings.googleRevoked
-                        : settings.googleDisconnected}
-                </strong>
-                {googleConnection?.accountEmail ? (
-                  <span>{googleConnection.accountEmail}</span>
-                ) : null}
-                <small>{settings.googlePrivacy}</small>
-                {googleConnection?.status === "connected" ? (
-                  <>
-                    <small>{settings.googleCapabilities}</small>
-                    <div
-                      className="capability-list"
-                      aria-label="Recursos Google"
-                    >
-                      <span>✓ Drive disponível</span>
-                      <span>✓ Classroom disponível</span>
-                      <span>✓ Docs disponível</span>
-                    </div>
-                    <ClassroomSyncAll />
-                  </>
-                ) : null}
-                {!googleAvailability.configured && user.role === "admin" ? (
-                  <small>{googleAvailability.missing.join(" // ")}</small>
-                ) : null}
-              </div>
-              {parameters.google === "error" ? (
-                <p className="form-error" role="alert">
-                  {settings.googleDisconnected}
-                </p>
-              ) : null}
-              {googleConnection ? (
-                <form action={disconnectGoogleAccountAction}>
-                  <button type="submit">{settings.googleDisconnect}</button>
-                </form>
+              {v2Mode ? (
+                <div className="google-connection-summary">
+                  <strong>Sua integração Google é pessoal.</strong>
+                  <small>
+                    Conecte sua conta, confira os Classrooms e acompanhe a
+                    sincronização na página Google.
+                  </small>
+                  <Link href="/google">Abrir minha integração Google</Link>
+                </div>
               ) : (
-                <form action={connectGoogleAccountAction}>
-                  <button
-                    type="submit"
-                    disabled={!googleAvailability.configured}
-                  >
-                    {settings.googleConnect}
-                  </button>
-                </form>
+                <>
+                  <div className="google-connection-summary">
+                    <strong>
+                      {!googleAvailability.configured
+                        ? settings.googleUnavailable
+                        : googleConnection?.status === "connected"
+                          ? settings.googleConnected
+                          : googleConnection?.status === "revoked"
+                            ? settings.googleRevoked
+                            : settings.googleDisconnected}
+                    </strong>
+                    {googleConnection?.accountEmail ? (
+                      <span>{googleConnection.accountEmail}</span>
+                    ) : null}
+                    <small>{settings.googlePrivacy}</small>
+                    {googleConnection?.status === "connected" ? (
+                      <>
+                        <small>{settings.googleCapabilities}</small>
+                        <div
+                          className="capability-list"
+                          aria-label="Recursos Google"
+                        >
+                          <span>✓ Drive disponível</span>
+                          <span>✓ Classroom disponível</span>
+                          <span>✓ Docs disponível</span>
+                        </div>
+                        <ClassroomSyncAll />
+                      </>
+                    ) : null}
+                    {!googleAvailability.configured && user.role === "admin" ? (
+                      <small>{googleAvailability.missing.join(" // ")}</small>
+                    ) : null}
+                  </div>
+                  {parameters.google === "error" ? (
+                    <p className="form-error" role="alert">
+                      {settings.googleDisconnected}
+                    </p>
+                  ) : null}
+                  {googleConnection ? (
+                    <form action={disconnectGoogleAccountAction}>
+                      <button type="submit">{settings.googleDisconnect}</button>
+                    </form>
+                  ) : (
+                    <form action={connectGoogleAccountAction}>
+                      <button
+                        type="submit"
+                        disabled={!googleAvailability.configured}
+                      >
+                        {settings.googleConnect}
+                      </button>
+                    </form>
+                  )}
+                </>
               )}
             </section>
           ) : null}

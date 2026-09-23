@@ -9,6 +9,7 @@ import { defaultUiLanguage, getUiLanguage } from "@/lib/ui-language";
 export const dynamic = "force-dynamic";
 
 export default async function SetupPage() {
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") redirect("/control/setup");
   if (!isSetupRequired()) redirect("/login");
   if (await getCurrentSession()) redirect("/");
 

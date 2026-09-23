@@ -62,6 +62,8 @@ export function createGoogleAuthorizationUrl(
   config: GoogleIntegrationConfig = requireGoogleIntegrationConfig(),
   now = Date.now(),
 ): string {
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1")
+    throw new Error("Use a integração Google da V2.");
   const ownerId = idSchema.parse(userId);
   const state = randomBytes(32).toString("base64url");
   const verifier = randomBytes(64).toString("base64url");
@@ -197,6 +199,8 @@ export async function getGoogleAccessToken(
     fetchImpl?: GoogleFetch;
   } = {},
 ): Promise<string> {
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1")
+    throw new Error("Use a integração Google da V2.");
   const connection = options.connection ?? getDatabase();
   const config = options.config ?? requireGoogleIntegrationConfig();
   const refreshToken = getGoogleRefreshToken(

@@ -5,8 +5,26 @@ import { redirect } from "next/navigation";
 import { recordAuditEvent } from "@/lib/audit";
 import { getSessionByToken, revokeSessionToken } from "@/lib/session";
 import { clearSessionCookie, readSessionCookie } from "@/lib/session-cookie";
+import {
+  clearUserSessionV2,
+  readUserSessionTokenV2,
+  withV2DbAsync,
+} from "@/lib/v2/runtime";
+import { revokeUserSessionV2 } from "@/lib/v2/auth";
 
 export async function logoutAction() {
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+    try {
+      const token = await readUserSessionTokenV2();
+      await withV2DbAsync(async (db) => revokeUserSessionV2(db, token));
+    } catch {
+      // Cookie removal still ends the browser session if the database fails.
+    } finally {
+      await clearUserSessionV2();
+      await clearSessionCookie();
+    }
+    redirect("/login");
+  }
   try {
     const token = await readSessionCookie();
     if (token) {

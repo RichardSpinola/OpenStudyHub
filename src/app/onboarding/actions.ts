@@ -20,6 +20,7 @@ const text = (formData: FormData, key: string) => {
 export async function connectGoogleDuringOnboardingAction() {
   const session = await getCurrentSession();
   if (!session) redirect("/login");
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") redirect("/google");
   redirect(createGoogleAuthorizationUrl(session.user.id));
 }
 

@@ -14,6 +14,7 @@ const idSchema = z.coerce.number().int().positive();
 
 export async function syncClassroomActivitiesAction(formData: FormData) {
   const user = await requireAuthenticatedUser();
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") redirect("/google");
   const subjectId = idSchema.parse(formData.get("subjectId"));
   let ok = true;
   try {
@@ -32,6 +33,8 @@ export async function syncClassroomActivitiesAction(formData: FormData) {
 
 export async function autoSyncClassroomAction(offeringIdInput: number) {
   const user = await requireAuthenticatedUser();
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1")
+    return { status: "error" as const };
   const offeringId = idSchema.parse(offeringIdInput);
   if (
     isClassroomSyncFresh(

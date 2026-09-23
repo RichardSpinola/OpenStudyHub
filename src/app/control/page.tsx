@@ -60,6 +60,9 @@ export default async function Control({
         <div className="v2-note" role="status">
           {totals.users} usuários ativos · {totals.planned} períodos preparados
         </div>
+        <p>
+          <Link href="/control/google">Google e storage</Link>
+        </p>
         {institutions.map((i) => (
           <section key={i.id}>
             <h2>

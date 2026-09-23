@@ -15,11 +15,13 @@ import {
 
 export async function connectGoogleAccountAction() {
   const user = await requireAuthenticatedUser();
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") redirect("/google");
   redirect(createGoogleAuthorizationUrl(user.id));
 }
 
 export async function disconnectGoogleAccountAction() {
   const user = await requireAuthenticatedUser();
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") redirect("/google");
   await disconnectGoogleAccount(user.id);
   redirect("/settings?google=disconnected");
 }
@@ -34,6 +36,11 @@ export async function syncAllClassroomsAction(
 ): Promise<SyncAllClassroomsState> {
   void _previous;
   const user = await requireAuthenticatedUser();
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1")
+    return {
+      results: [],
+      message: "Use a página Google para sincronizar seus Classrooms.",
+    };
   try {
     const results = await syncAllAccessibleClassrooms(
       user.id,

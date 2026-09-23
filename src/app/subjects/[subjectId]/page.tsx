@@ -171,7 +171,9 @@ export default async function SubjectPage({
       offerings.map(({ offeringId }) => offeringId),
     ).map((integration) => [integration.offeringId, integration]),
   );
-  const googleConnected = getGoogleConnection(user.id)?.status === "connected";
+  const v2Mode = process.env.OPENSTUDYHUB_V2_ENABLED === "1";
+  const googleConnected =
+    !v2Mode && getGoogleConnection(user.id)?.status === "connected";
   const mappedOfferingIds = offerings
     .filter(({ offeringId }) => integrations.get(offeringId)?.classroomCourseId)
     .map(({ offeringId }) => offeringId);
@@ -336,7 +338,11 @@ export default async function SubjectPage({
                       Abrir Notebook ↗
                     </a>
                   ) : null}
-                  {integration.classroomCourseId ? (
+                  {v2Mode && integration.classroomCourseId ? (
+                    <Link className="action-button" href="/google">
+                      Gerenciar meu Classroom
+                    </Link>
+                  ) : integration.classroomCourseId ? (
                     <div className="classroom-sync-actions">
                       <form action={syncClassroomActivitiesAction}>
                         <input

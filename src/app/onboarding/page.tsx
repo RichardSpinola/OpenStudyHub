@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import {
   completeOnboardingAction,
@@ -17,15 +18,16 @@ import { getUserProfile } from "@/lib/profile";
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
+  const v2Mode = process.env.OPENSTUDYHUB_V2_ENABLED === "1";
   const session = await getCurrentSession();
   if (!session) redirect("/login");
   const profile = getUserProfile(session.user.id);
   if (profile.onboardingVersion >= 1) redirect("/");
 
-  const membership = getAcademicMembership(session.user.id);
-  const offerings = listUserSubjectOfferings(session.user.id);
-  const googleAvailability = getGoogleIntegrationAvailability();
-  const googleConnection = getGoogleConnection(session.user.id);
+  const membership = v2Mode ? null : getAcademicMembership(session.user.id);
+  const offerings = v2Mode ? [] : listUserSubjectOfferings(session.user.id);
+  const googleAvailability = v2Mode ? null : getGoogleIntegrationAvailability();
+  const googleConnection = v2Mode ? null : getGoogleConnection(session.user.id);
 
   return (
     <div className="access-shell onboarding-shell">
@@ -110,7 +112,12 @@ export default async function OnboardingPage() {
 
         <section className="onboarding-step" id="onboarding-academic">
           <strong>02 / CONTEXTO ACADÊMICO</strong>
-          {membership ? (
+          {v2Mode ? (
+            <p>
+              Sua turma e disciplinas são definidas na estrutura acadêmica da
+              V2. Você pode concluir seu perfil agora.
+            </p>
+          ) : membership ? (
             <div className="onboarding-summary">
               <span>{membership.programName}</span>
               <span>{membership.cohortName ?? "Sem turma específica"}</span>
@@ -130,7 +137,13 @@ export default async function OnboardingPage() {
 
         <section className="onboarding-step" id="onboarding-google">
           <strong>03 / GOOGLE</strong>
-          {googleConnection?.status === "connected" ? (
+          {v2Mode ? (
+            <p>
+              Google é opcional.{" "}
+              <Link href="/google">Configurar minha conta Google</Link> para
+              descobrir e associar seus Classrooms, ou continue sem conectar.
+            </p>
+          ) : googleConnection?.status === "connected" ? (
             <p>
               Conta conectada
               {googleConnection.accountEmail
@@ -138,7 +151,7 @@ export default async function OnboardingPage() {
                 : ""}
               .
             </p>
-          ) : googleAvailability.configured ? (
+          ) : googleAvailability?.configured ? (
             <form action={connectGoogleDuringOnboardingAction}>
               <p>
                 Opcional. Sua Conta Google pessoal é usada para Classroom e
