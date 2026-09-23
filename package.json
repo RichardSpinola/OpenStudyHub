@@ -21,7 +21,8 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
-    "db:reset:development": "tsx scripts/reset-development-instance.ts"
+    "db:reset:development": "tsx scripts/reset-development-instance.ts",
+    "db:v2:reset:fake": "tsx scripts/reset-v2-fake.ts --confirm-reset-fake-v2"
   },
   "dependencies": {
     "@next/env": "16.3.5",

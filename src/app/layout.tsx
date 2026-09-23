@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { logoutAction } from "@/app/auth-actions";
 import { PrimaryNavigation } from "@/components/primary-navigation";
 import { NotificationCenter } from "@/components/notification-center";
+import { V2ManagementLink } from "@/components/v2-management-link";
 import { ExternalLinksMenu } from "@/components/external-links-menu";
 import { UiLanguageProvider } from "@/components/ui-language-provider";
 import { getServerEnvironment } from "@/lib/env";
@@ -107,6 +108,7 @@ export default async function RootLayout({
               <PrimaryNavigation authenticated={session !== null} />
               <div className="session-status">
                 <ExternalLinksMenu links={externalLinks} />
+                <V2ManagementLink />
                 {session ? (
                   <>
                     <NotificationCenter />

@@ -1,0 +1,225 @@
+.v2-console {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  line-height: 1.55;
+  color: var(--white);
+}
+.v2-console h1 {
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  line-height: 1.2;
+  margin: 0.25rem 0 1rem;
+}
+.v2-console h2 {
+  font-size: 1.15rem;
+  margin: 2rem 0 0.7rem;
+}
+.v2-console h3 {
+  font-size: 1rem;
+  margin: 1.3rem 0 0.6rem;
+}
+.v2-console p {
+  max-width: 72ch;
+  color: var(--gray-1);
+}
+.v2-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-size: 0.72rem;
+}
+.v2-nav,
+.v2-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--gray-3);
+  padding: 0.6rem 0 1rem;
+  margin: 0 0 1.5rem;
+}
+.v2-nav a,
+.v2-tabs a,
+.v2-console button,
+.v2-console .v2-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--gray-2);
+  background: var(--panel);
+  color: var(--white);
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.v2-nav a[aria-current],
+.v2-tabs a[aria-current],
+.v2-console button:hover,
+.v2-console a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.v2-console form {
+  margin: 1rem 0;
+}
+.v2-console label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  font-size: 0.82rem;
+}
+.v2-console input,
+.v2-console select,
+.v2-console textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid var(--gray-2);
+  border-radius: 2px;
+  color: var(--white);
+  background: var(--panel-raised);
+}
+.v2-console textarea {
+  min-height: 8rem;
+}
+.v2-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 0.8rem;
+  align-items: end;
+}
+.v2-fields button {
+  align-self: end;
+}
+.v2-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+.v2-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  border-bottom: 1px solid var(--gray-4);
+  padding: 0.7rem 0;
+}
+.v2-row p {
+  margin: 0.15rem 0;
+}
+.v2-row a {
+  color: var(--accent);
+}
+.v2-row form {
+  margin: 0;
+}
+.v2-note,
+.v2-message {
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  margin: 1rem 0;
+}
+.v2-message[data-type="error"] {
+  border-color: var(--error);
+  color: var(--error);
+}
+.v2-message[data-type="ok"] {
+  border-color: var(--success);
+  color: var(--success);
+}
+.v2-context {
+  border-block: 1px solid var(--gray-3);
+  padding: 0.7rem 0;
+  margin: 1rem 0;
+  color: var(--gray-1);
+}
+.v2-context strong {
+  color: var(--white);
+}
+.v2-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.v2-steps span {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 2px solid var(--gray-3);
+}
+.v2-steps span[aria-current] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.v2-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+.v2-table-wrap {
+  overflow-x: auto;
+}
+.v2-console table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.v2-console td,
+.v2-console th {
+  text-align: left;
+  border-bottom: 1px solid var(--gray-3);
+  padding: 0.7rem 0.5rem;
+  vertical-align: top;
+}
+.v2-muted {
+  color: var(--gray-2);
+}
+.v2-danger {
+  border-color: var(--error) !important;
+}
+.v2-console details {
+  margin: 1rem 0;
+  padding: 0.6rem;
+  border: 1px solid var(--gray-3);
+}
+.v2-console summary {
+  cursor: pointer;
+}
+.v2-console fieldset {
+  border: 1px solid var(--gray-3);
+  margin: 1rem 0;
+  padding: 1rem;
+}
+.v2-console legend {
+  padding: 0 0.35rem;
+  color: var(--accent);
+}
+@media (max-width: 620px) {
+  .v2-console {
+    padding: 1rem;
+  }
+  .v2-nav,
+  .v2-tabs {
+    overflow-x: auto;
+    flex-wrap: wrap;
+  }
+  .v2-nav a,
+  .v2-tabs a {
+    white-space: normal;
+  }
+  .v2-row {
+    align-items: stretch;
+  }
+  .v2-row > * {
+    width: 100%;
+  }
+  .v2-fields {
+    grid-template-columns: 1fr;
+  }
+  .v2-console button {
+    min-height: 2.8rem;
+  }
+}
