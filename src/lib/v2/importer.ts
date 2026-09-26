@@ -32,8 +32,8 @@ export function loadV1ImportMatrix(
       throw new Error("Invalid import matrix");
     map.set(match[1], category);
   }
-  if (map.size !== 50)
-    throw new Error("Import matrix must classify all 50 V1 tables");
+  if (map.size !== 52)
+    throw new Error("Import matrix must classify all 52 V1 tables");
   return map;
 }
 

@@ -19,6 +19,7 @@ export const migrationFiles = [
   "0012_lean_rictor.sql",
   "0013_salty_christian_walker.sql",
   "0014_left_butterfly.sql",
+  "0015_person_shares.sql",
 ] as const;
 
 export function applyMigration(

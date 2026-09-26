@@ -8,9 +8,9 @@ import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
 import { getServerEnvironment } from "@/lib/env";
 
-export const homeBackgroundLimitBytes = 5 * 1024 * 1024;
+export const homeBackgroundLimitBytes = 10 * 1024 * 1024;
 
-type SupportedImage = {
+export type SupportedImage = {
   extension: "png" | "jpg" | "webp";
   mimeType: "image/png" | "image/jpeg" | "image/webp";
 };
@@ -22,7 +22,9 @@ export type HomeBackgroundRecord = {
   updatedAt: number;
 };
 
-async function detectImage(data: Buffer): Promise<SupportedImage | null> {
+export async function detectHomeImage(
+  data: Buffer,
+): Promise<SupportedImage | null> {
   try {
     const metadata = await sharp(data, {
       failOn: "warning",
@@ -44,7 +46,7 @@ async function detectImage(data: Buffer): Promise<SupportedImage | null> {
   }
 }
 
-function safeAssetPath(storageName: string, root: string): string {
+export function safeHomeAssetPath(storageName: string, root: string): string {
   if (!/^[a-f0-9-]+\.(?:png|jpg|webp)$/u.test(storageName)) {
     throw new Error("Invalid private asset reference.");
   }
@@ -84,13 +86,13 @@ export async function saveHomeBackground(
   if (data.length === 0 || data.length > homeBackgroundLimitBytes) {
     throw new Error("Home background size is invalid.");
   }
-  const image = await detectImage(data);
+  const image = await detectHomeImage(data);
   if (!image) throw new Error("Home background format is invalid.");
   const connection = options.connection ?? getDatabase();
   const root = configuredRoot(options.assetRoot);
   await mkdir(root, { recursive: true, mode: 0o700 });
   const storageName = `${randomUUID()}.${image.extension}`;
-  const finalPath = safeAssetPath(storageName, root);
+  const finalPath = safeHomeAssetPath(storageName, root);
   const temporaryPath = `${finalPath}.tmp`;
   await writeFile(temporaryPath, data, { flag: "wx", mode: 0o600 });
   await rename(temporaryPath, finalPath);
@@ -115,7 +117,7 @@ export async function saveHomeBackground(
     throw error;
   }
   if (previous) {
-    await unlink(safeAssetPath(previous.storageName, root)).catch(
+    await unlink(safeHomeAssetPath(previous.storageName, root)).catch(
       () => undefined,
     );
   }
@@ -132,7 +134,10 @@ export async function readHomeBackground(
   try {
     return {
       data: await readFile(
-        safeAssetPath(record.storageName, configuredRoot(options.assetRoot)),
+        safeHomeAssetPath(
+          record.storageName,
+          configuredRoot(options.assetRoot),
+        ),
       ),
       record,
     };
@@ -154,7 +159,7 @@ export async function removeHomeBackground(
     .run(userId);
   if (record) {
     await unlink(
-      safeAssetPath(record.storageName, configuredRoot(options.assetRoot)),
+      safeHomeAssetPath(record.storageName, configuredRoot(options.assetRoot)),
     ).catch(() => undefined);
   }
 }

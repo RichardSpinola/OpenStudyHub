@@ -1,52 +1,17 @@
 # Segurança
 
-OpenStudyHub é um projeto self-hosted em estágio inicial. A V1 deve passar por uma auditoria final antes da primeira publicação pública, mas isso não equivale a uma auditoria profissional independente.
+O OpenStudyHub é self-hosted e ainda passa pelo fechamento da V2. Este documento descreve cuidados de operação e revisão; não afirma uma auditoria independente.
 
-## Modelo de ameaça básico
+Mantenha o Admin / Control Plane em localhost ou numa rede administrativa protegida. Exponha apenas o App por HTTPS através do proxy configurado, com `/realtime` encaminhado para WebSocket. Bancos SQLite, assets privados, backups, Docker socket e `.env` não devem ser publicados. Não versione dados institucionais reais, IDs privados, chaves, tokens ou sessões.
 
-Assumimos que computadores de faculdade podem ser compartilhados, a rede local/campus não é uma fronteira confiável, uploads são entrada não confiável e tokens OAuth são sensíveis.
+## Sessões e acesso
 
-## Regras
+O token bruto de sessão fica no cookie `HttpOnly`, com `SameSite=Lax` e `Secure` em produção; o banco guarda apenas o hash. As rotas e ações conferem a sessão e a permissão no servidor. Compartilhamento, salas, projetos, documentos, Admin e Extras exigem autorização própria. Trate uploads, caminhos, ZIPs e URLs externas como entrada não confiável.
 
-1. Nunca armazene senha institucional.
-2. Nunca versione `.env`, banco SQLite, tokens, chaves, IDs privados ou conteúdo acadêmico real.
-3. Nunca exponha Docker socket para a aplicação.
-4. Não exponha SQLite como serviço de rede.
-5. Valide uploads, caminhos e URLs.
-6. Use autorização server-side e default-deny para ações administrativas.
-7. Mantenha scopes Google mínimos.
-8. Não registre segredos em logs.
+## Google
 
-## Sessões
+Google é opcional. O OAuth usa authorization code, state de uso único, PKCE S256 e URI de retorno exata. Refresh tokens são criptografados com AES-256-GCM; access tokens são usados nas operações do servidor. Cada usuário autoriza os Classrooms que verá; o Admin não herda esse acesso. Classroom pede escopos de leitura. Drive pede `drive.file` separadamente para arquivos criados ou escolhidos no aplicativo. Guarde `GOOGLE_TOKEN_ENCRYPTION_KEY` fora do Git e não registre códigos, tokens ou segredos em logs. O responsável pelo Drive central não ganha autoridade acadêmica por isso.
 
-O token bruto de sessão fica apenas no cookie `HttpOnly`, `SameSite=Lax` e `Secure` em produção. SQLite guarda somente o hash do token.
+## Antes de publicar
 
-## Google OAuth
-
-Google é opcional. A integração usa authorization-code flow, state one-time, PKCE S256, redirect URI exata, refresh token criptografado com AES-256-GCM e access token apenas durante a operação server-side.
-
-Scopes da V1 são limitados a identidade, `drive.file` e Classroom read-only necessários às funções implementadas.
-
-## Drive central
-
-O storage owner central é uma credencial de armazenamento, não uma autoridade acadêmica. Ações continuam exigindo autorização do ator dentro do Hub. O sistema não deve criar links `anyone` ou permissões de domínio para contornar falta de acesso.
-
-## Sharing e Chat
-
-- Private Notes permanecem owner-only.
-- Subject Notes/Documents só são compartilhados explicitamente.
-- Group membership é verificada no servidor.
-- Audience Chat deriva acesso do contexto acadêmico atual.
-- anexos são privados e exigem acesso à sala.
-
-## Uploads e fetch remoto
-
-Validações relevantes incluem imagens decodificadas de fato, limite de tamanho, arquivos privados, DOCX como OOXML, ZIPs de Projects protegidos contra traversal/symlinks/bombas e favicon discovery com proteção SSRF também em redirects.
-
-## Produção
-
-Use HTTPS e um reverse proxy em frente ao servidor Next.js. Não publique diretamente banco ou diretórios privados. `DATABASE_PATH` e `PRIVATE_ASSET_PATH` precisam de armazenamento persistente.
-
-## Antes do primeiro release público
-
-A auditoria final deve verificar histórico Git, segredos/dados privados, OAuth/tokens, cookies/sessões, autorização de Groups/Chat/sharing, uploads/SSRF, headers, migrations clean + upgrade, build de produção, imagem Docker e backup/restore.
+O gate final precisa verificar histórico e árvore Git, segredos e dados privados, autorização, OAuth, sessões, uploads e SSRF, migrations, instalação e atualização limpas, backup e restauração, imagem Docker, build e fluxos reais. Consulte [o checklist de release](docs/release-checklist.md). Reporte falhas sem publicar credenciais ou dados pessoais em issues.

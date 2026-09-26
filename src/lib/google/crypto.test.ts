@@ -15,7 +15,7 @@ describe("Google secret encryption", () => {
       "Secret decryption failed.",
     );
     const parts = encrypted.split(".");
-    parts[2] = `${parts[2].slice(0, -1)}A`;
+    parts[2] = `${parts[2][0] === "A" ? "B" : "A"}${parts[2].slice(1)}`;
     expect(() => decryptSecret(parts.join("."), key)).toThrow(
       "Secret decryption failed.",
     );

@@ -1,12 +1,20 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
+import { SubjectCard } from "@/components/subject-card";
+import { toggleSubjectHistoryAction } from "@/app/subjects/actions";
+import { getAcademicPreferences } from "@/lib/academic-preferences";
+import { partitionOfferingsByPeriod } from "@/lib/subject-periods";
+import { withV2Db } from "@/lib/v2/runtime";
+import { legacyOfferingIdsWithCover } from "@/lib/v2/offering-covers";
 
 import {
+  getCurrentAcademicPeriod,
   listUserSubjectOfferings,
   listUserSubjects,
   type SubjectOfferingSummary,
 } from "@/lib/academic";
 import { requireAuthenticatedUser } from "@/lib/authorization";
-import { getTranslations } from "@/lib/translations";
+import { getTranslations, uiText } from "@/lib/translations";
 import {
   defaultUiLanguage,
   getUiLanguage,
@@ -21,6 +29,7 @@ type SubjectsData =
       language: UiLanguage;
       subjects: ReturnType<typeof listUserSubjects>;
       offerings: SubjectOfferingSummary[];
+      currentPeriod: ReturnType<typeof getCurrentAcademicPeriod>;
     }
   | { available: false; language: UiLanguage };
 
@@ -34,6 +43,7 @@ function loadSubjectsData(userId: number): SubjectsData {
       language,
       subjects: listUserSubjects(userId),
       offerings: listUserSubjectOfferings(userId),
+      currentPeriod: getCurrentAcademicPeriod(),
     };
   } catch {
     return { available: false, language };
@@ -44,6 +54,37 @@ export default async function SubjectsPage() {
   const user = await requireAuthenticatedUser();
   const data = loadSubjectsData(user.id);
   const { academic } = getTranslations(data.language);
+  const periods = data.available
+    ? partitionOfferingsByPeriod(
+        data.offerings,
+        data.currentPeriod?.label ?? null,
+      )
+    : null;
+  const showHistory = getAcademicPreferences(user.id).showSubjectHistory;
+  const coveredOfferings =
+    data.available && process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+      ? withV2Db((db) =>
+          legacyOfferingIdsWithCover(
+            db,
+            data.offerings.map((offering) => offering.offeringId),
+          ),
+        )
+      : new Set<number>();
+
+  function cards(offerings: SubjectOfferingSummary[]) {
+    return (
+      <ol className="subject-list phase4-subject-list">
+        {offerings.map((offering) => (
+          <SubjectCard
+            key={offering.offeringId}
+            offering={offering}
+            hasCover={coveredOfferings.has(offering.offeringId)}
+            language={data.language}
+          />
+        ))}
+      </ol>
+    );
+  }
 
   return (
     <div className="academic-shell">
@@ -52,7 +93,10 @@ export default async function SubjectsPage() {
           <p className="system-label">{academic.subjectsSystem}</p>
           <h1>{academic.subjectsTitle}</h1>
           <p className="page-description">
-            Matérias, contexto atual e acesso rápido ao que vem a seguir.
+            <UiCopy
+              pt="Matérias, contexto atual e acesso rápido ao que vem a seguir."
+              en="Subjects, current context and quick access to what comes next."
+            />
           </p>
         </div>
         {data.available ? (
@@ -71,66 +115,86 @@ export default async function SubjectsPage() {
         <div className="useful-empty">
           <strong>{academic.noSubjects}</strong>
           <p>{academic.noSubjectsHint}</p>
-          <Link href="/settings">Revisar perfil e preferências</Link>
+          <Link href="/settings">
+            <UiCopy
+              pt="Revisar perfil e preferências"
+              en="Review profile and preferences"
+            />
+          </Link>
         </div>
       ) : (
-        <ol className="subject-list">
-          {data.subjects.map((subject, index) => {
-            const offerings = data.offerings.filter(
-              ({ subjectId }) => subjectId === subject.id,
-            );
-
-            return (
-              <li className="subject-panel" key={subject.id}>
-                <div className="subject-titlebar">
-                  <span className="panel-index">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <span>{subject.code ?? "—"}</span>
-                    <h2>{subject.name}</h2>
-                  </div>
-                  <span className="count-label">
-                    {String(offerings.length).padStart(2, "0")}{" "}
-                    {academic.offeringCount}
-                  </span>
-                  <Link href={`/subjects/${subject.id}`}>Abrir matéria →</Link>
-                </div>
-
-                {offerings.length === 0 ? (
-                  <div className="subject-no-offering">
-                    {academic.noOfferings}
-                  </div>
-                ) : (
-                  <div className="offering-list">
-                    {offerings.map((offering) => (
-                      <dl className="offering-row" key={offering.offeringId}>
-                        <div>
-                          <dt>{academic.program}</dt>
-                          <dd>
-                            {offering.programShortName ?? offering.programName}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>{academic.period}</dt>
-                          <dd>{offering.periodLabel}</dd>
-                        </div>
-                        <div>
-                          <dt>{academic.instructor}</dt>
-                          <dd>{offering.instructorName ?? "—"}</dd>
-                        </div>
-                        <div>
-                          <dt>{academic.classGroup}</dt>
-                          <dd>{offering.classGroup ?? "—"}</dd>
-                        </div>
-                      </dl>
-                    ))}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ol>
+        <>
+          <section className="subject-period-section">
+            <div className="section-heading">
+              <h2>
+                <UiCopy pt="Semestre atual" en="Current semester" />
+              </h2>
+              <span>
+                {data.currentPeriod?.label ??
+                  uiText(
+                    data.language,
+                    "Aguardando período atual",
+                    "Waiting for current period",
+                  )}
+              </span>
+            </div>
+            {periods?.current.length ? (
+              cards(periods.current)
+            ) : (
+              <div className="useful-empty compact">
+                <strong>
+                  <UiCopy
+                    pt="Nenhuma disciplina neste período"
+                    en="No subjects in this period"
+                  />
+                </strong>
+              </div>
+            )}
+          </section>
+          <section className="subject-period-section">
+            <div className="section-heading">
+              <h2>
+                <UiCopy pt="Semestres anteriores" en="Previous semesters" />
+              </h2>
+              <form action={toggleSubjectHistoryAction}>
+                <button type="submit" aria-pressed={showHistory}>
+                  {showHistory
+                    ? uiText(
+                        data.language,
+                        "Recolher histórico",
+                        "Hide history",
+                      )
+                    : uiText(
+                        data.language,
+                        "Mostrar histórico",
+                        "Show history",
+                      )}
+                </button>
+              </form>
+            </div>
+            {periods?.history.size && showHistory ? (
+              [...periods.history].map(([period, group]) => (
+                <details className="subject-history" key={period}>
+                  <summary>
+                    {period}
+                    <span>
+                      {group.length}
+                      <UiCopy pt="disciplina(s)" en="subject(s)" />
+                    </span>
+                  </summary>
+                  {cards(group)}
+                </details>
+              ))
+            ) : !periods?.history.size ? (
+              <p className="panel-help">
+                <UiCopy
+                  pt="Nenhum semestre anterior disponível."
+                  en="No previous semesters available."
+                />
+              </p>
+            ) : null}
+          </section>
+        </>
       )}
     </div>
   );

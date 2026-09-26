@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { withV2DbAsync, currentAdminV2 } from "@/lib/v2/runtime";
 import { isSetupPending } from "@/lib/v2/auth";
 import { loginAction } from "../actions";
-import { ConsoleShell } from "../ui";
+import { getUiLanguage } from "@/lib/ui-language";
 export default async function Login({
   searchParams,
 }: {
@@ -16,24 +15,34 @@ export default async function Login({
   if (state.pending) redirect("/control/setup");
   if (state.user) redirect("/control");
   const q = await searchParams;
+  const english = getUiLanguage() === "en";
   return (
-    <ConsoleShell
-      title="Entrar na administração"
-      kicker="OpenStudyHub · acesso V2"
-      message={q.ok}
-      error={q.error}
-    >
-      <p>
-        Use sua identidade administrativa. Gestores entram com sua conta normal
-        na área Gestão.
-      </p>
-      <form action={loginAction} className="v2-fields">
+    <div className="admin-access">
+      <div className="admin-access-heading">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/icon-180.png" width="48" height="48" alt="" />
+        <span>OpenStudyHub Admin</span>
+        <h1>
+          {english ? "Instance administration" : "Administração da instância"}
+        </h1>
+      </div>
+      {q.ok ? (
+        <p role="status" className="v2-message" data-type="ok">
+          {q.ok}
+        </p>
+      ) : null}
+      {q.error ? (
+        <p role="alert" className="v2-message" data-type="error">
+          {q.error}
+        </p>
+      ) : null}
+      <form action={loginAction} className="admin-access-form">
         <label>
           Login
           <input name="login" autoComplete="username" required />
         </label>
         <label>
-          Senha
+          {english ? "Password" : "Senha"}
           <input
             name="password"
             type="password"
@@ -41,14 +50,8 @@ export default async function Login({
             required
           />
         </label>
-        <button type="submit">Entrar</button>
+        <button type="submit">{english ? "Sign in" : "Entrar"}</button>
       </form>
-      <p className="v2-muted">
-        A conexão Google não é necessária para administrar a estrutura
-        acadêmica.
-      </p>
-      <Link href="/">Voltar ao início</Link>
-      <Link href="/gestao/login">Entrar na Gestão</Link>
-    </ConsoleShell>
+    </div>
   );
 }

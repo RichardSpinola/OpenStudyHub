@@ -7,7 +7,7 @@ import { z } from "zod";
 import { recordAuditEvent } from "@/lib/audit";
 import { requireAuthenticatedUser } from "@/lib/authorization";
 import { createNote, deleteNote, updateNote } from "@/lib/notes";
-import { setNoteGroupShare } from "@/lib/collaboration";
+import { setNoteGroupShare, setNotePersonShare } from "@/lib/collaboration";
 
 const idSchema = z.coerce.number().int().positive();
 const optionalIdSchema = z.preprocess(
@@ -137,4 +137,21 @@ export async function setNoteGroupShareAction(formData: FormData) {
     redirect(`/notes/${noteId}?status=error`);
   }
   redirect(`/notes/${noteId}?status=ok`);
+}
+
+export async function setNotePersonShareAction(formData: FormData) {
+  const user = await requireAuthenticatedUser();
+  const noteId = idSchema.parse(formData.get("noteId"));
+  try {
+    setNotePersonShare(
+      user.id,
+      noteId,
+      idSchema.parse(formData.get("recipientUserId")),
+      formData.get("shared") === "true",
+    );
+    refresh(noteId);
+  } catch {
+    redirect(`/notes/${noteId}?status=error#note-sharing`);
+  }
+  redirect(`/notes/${noteId}?status=ok#note-sharing`);
 }

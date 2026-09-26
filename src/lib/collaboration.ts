@@ -50,26 +50,11 @@ export function listVisibleUsers(
        left join user_academic_memberships target_m on target_m.user_id = u.id
        left join programs p on p.id = target_m.program_id
        left join cohorts c on c.id = target_m.cohort_id
-       where u.active = 1 and u.id != ? and (
-         exists (
-           select 1 from user_academic_memberships mine
-           where mine.user_id = ? and target_m.program_id = mine.program_id
-         )
-         or exists (
-           select 1 from enrollments mine_e
-           join enrollments target_e on target_e.offering_id = mine_e.offering_id
-           where mine_e.user_id = ? and target_e.user_id = u.id
-         )
-         or exists (
-           select 1 from study_group_members mine_g
-           join study_group_members target_g on target_g.group_id = mine_g.group_id
-           where mine_g.user_id = ? and target_g.user_id = u.id
-         )
-       )
+       where u.active = 1 and u.role = 'member' and u.id != ?
        order by u.display_name collate nocase, u.id
        limit 200`,
     )
-    .all(actorId, actorId, actorId, actorId) as VisibleUser[];
+    .all(actorId) as VisibleUser[];
 }
 
 export function canViewUser(
@@ -80,6 +65,10 @@ export function canViewUser(
   const actorId = idSchema.parse(actorUserId);
   const targetId = idSchema.parse(targetUserId);
   if (actorId === targetId) return true;
+  const publicUser = connection.sqlite
+    .prepare("select 1 from users where id=? and active=1 and role='member'")
+    .get(targetId);
+  if (publicUser) return true;
   const authority = getAcademicAuthority(actorId, connection);
   if (authority.role === "admin") return true;
   const membership = connection.sqlite
@@ -394,6 +383,55 @@ export function removeStudyGroupMember(
     .run(group.id, targetId);
 }
 
+export function leaveStudyGroup(
+  actorUserId: number,
+  groupId: number,
+  connection: DatabaseConnection = getDatabase(),
+): void {
+  const membership = connection.sqlite
+    .prepare(
+      "SELECT member_role role FROM study_group_members WHERE group_id=? AND user_id=?",
+    )
+    .get(idSchema.parse(groupId), idSchema.parse(actorUserId)) as
+    { role: string } | undefined;
+  if (!membership) throw new Error("Você não participa do grupo.");
+  if (membership.role === "owner")
+    throw new Error(
+      "O responsável deve encerrar o grupo ou transferir a responsabilidade.",
+    );
+  connection.sqlite
+    .prepare("DELETE FROM study_group_members WHERE group_id=? AND user_id=?")
+    .run(groupId, actorUserId);
+}
+
+export function closeStudyGroup(
+  actorUserId: number,
+  groupId: number,
+  connection: DatabaseConnection = getDatabase(),
+): void {
+  const group = connection.sqlite
+    .prepare(
+      "SELECT created_by_user_id ownerId,archived_at archivedAt FROM study_groups WHERE id=?",
+    )
+    .get(idSchema.parse(groupId)) as
+    { ownerId: number; archivedAt: number | null } | undefined;
+  if (
+    !group ||
+    group.ownerId !== idSchema.parse(actorUserId) ||
+    group.archivedAt
+  )
+    throw new Error("Somente o responsável pode encerrar o grupo.");
+  connection.sqlite.transaction(() => {
+    const now = Date.now();
+    connection.sqlite
+      .prepare("UPDATE study_groups SET archived_at=?,updated_at=? WHERE id=?")
+      .run(now, now, groupId);
+    connection.sqlite
+      .prepare("UPDATE chat_rooms SET archived_at=? WHERE group_id=?")
+      .run(now, groupId);
+  })();
+}
+
 export type ProfileTag = {
   id: number;
   label: string;
@@ -651,13 +689,16 @@ export function canReadNote(
     connection.sqlite
       .prepare(
         `select 1 from notes n where n.id = ? and (
-          n.owner_user_id = ? or (n.offering_id is not null and exists (
+          n.owner_user_id = ? or exists (
+            select 1 from note_person_shares nps
+            where nps.note_id = n.id and nps.recipient_user_id = ?
+          ) or (n.offering_id is not null and exists (
             select 1 from note_group_shares ngs
             join study_group_members gm on gm.group_id = ngs.group_id
             where ngs.note_id = n.id and gm.user_id = ?
           )))`,
       )
-      .get(noteId, userId, userId),
+      .get(noteId, userId, userId, userId),
   );
 }
 
@@ -724,11 +765,233 @@ export function canReadDocument(
       .prepare(
         `select 1 from generated_documents d where d.id = ? and (
           d.owner_user_id = ? or exists (
+            select 1 from document_person_shares dps
+            where dps.document_id = d.id and dps.recipient_user_id = ?
+          ) or exists (
             select 1 from document_group_shares dgs
             join study_group_members gm on gm.group_id = dgs.group_id
             where dgs.document_id = d.id and gm.user_id = ?
           ))`,
       )
-      .get(documentId, userId, userId),
+      .get(documentId, userId, userId, userId),
   );
+}
+
+export function listUserSharedNoteIds(
+  ownerUserId: number,
+  connection: DatabaseConnection = getDatabase(),
+): number[] {
+  return (
+    connection.sqlite
+      .prepare(
+        `select distinct n.id from notes n where n.owner_user_id=? and (
+           exists(select 1 from note_group_shares s where s.note_id=n.id)
+           or exists(select 1 from note_person_shares s where s.note_id=n.id)
+         ) order by n.id`,
+      )
+      .all(idSchema.parse(ownerUserId)) as Array<{ id: number }>
+  ).map(({ id }) => id);
+}
+
+export function listNoteGroupShares(
+  ownerUserId: number,
+  noteId: number,
+  connection: DatabaseConnection = getDatabase(),
+): Array<{ groupId: number; groupName: string }> {
+  return connection.sqlite
+    .prepare(
+      `select g.id groupId,g.name groupName from note_group_shares s
+       join notes n on n.id=s.note_id and n.owner_user_id=?
+       join study_groups g on g.id=s.group_id where s.note_id=?
+       order by g.name collate nocase`,
+    )
+    .all(idSchema.parse(ownerUserId), idSchema.parse(noteId)) as Array<{
+    groupId: number;
+    groupName: string;
+  }>;
+}
+
+function assertShareRecipient(
+  ownerId: number,
+  recipientId: number,
+  connection: DatabaseConnection,
+) {
+  if (
+    ownerId === recipientId ||
+    !connection.sqlite
+      .prepare("SELECT 1 FROM users WHERE id=? AND active=1 AND role='member'")
+      .get(recipientId)
+  )
+    throw new Error("Destinatário indisponível.");
+}
+
+export function setNotePersonShare(
+  ownerUserId: number,
+  noteId: number,
+  recipientUserId: number,
+  shared: boolean,
+  connection: DatabaseConnection = getDatabase(),
+): void {
+  const ownerId = idSchema.parse(ownerUserId);
+  const recipientId = idSchema.parse(recipientUserId);
+  const note = connection.sqlite
+    .prepare("SELECT title FROM notes WHERE id=? AND owner_user_id=?")
+    .get(idSchema.parse(noteId), ownerId) as { title: string } | undefined;
+  if (!note) throw new Error("Nota indisponível.");
+  if (shared) {
+    assertShareRecipient(ownerId, recipientId, connection);
+    const inserted = connection.sqlite
+      .prepare(
+        "INSERT INTO note_person_shares(note_id,recipient_user_id,shared_by_user_id) VALUES(?,?,?) ON CONFLICT DO NOTHING",
+      )
+      .run(noteId, recipientId, ownerId);
+    if (inserted.changes)
+      createNotification(
+        recipientId,
+        {
+          type: "note_shared",
+          actorUserId: ownerId,
+          entityType: "note",
+          entityId: noteId,
+          title: `Nota compartilhada: ${note.title}`,
+        },
+        connection,
+      );
+  } else {
+    connection.sqlite
+      .prepare(
+        "DELETE FROM note_person_shares WHERE note_id=? AND recipient_user_id=?",
+      )
+      .run(noteId, recipientId);
+  }
+  recordAuditEvent(
+    {
+      actorUserId: ownerId,
+      action: shared ? "note.share" : "note.unshare",
+      targetType: "note",
+      targetId: String(noteId),
+      summary: "direct note access changed",
+    },
+    connection,
+  );
+}
+
+export function listNotePersonShares(
+  ownerUserId: number,
+  noteId: number,
+  connection: DatabaseConnection = getDatabase(),
+): Array<{ userId: number; displayName: string }> {
+  return connection.sqlite
+    .prepare(
+      `SELECT u.id userId,u.display_name displayName FROM note_person_shares s
+     JOIN notes n ON n.id=s.note_id AND n.owner_user_id=?
+     JOIN users u ON u.id=s.recipient_user_id WHERE s.note_id=?
+     ORDER BY u.display_name COLLATE NOCASE`,
+    )
+    .all(idSchema.parse(ownerUserId), idSchema.parse(noteId)) as Array<{
+    userId: number;
+    displayName: string;
+  }>;
+}
+
+export function setDocumentPersonShare(
+  ownerUserId: number,
+  documentId: number,
+  recipientUserId: number,
+  shared: boolean,
+  connection: DatabaseConnection = getDatabase(),
+): void {
+  const ownerId = idSchema.parse(ownerUserId);
+  const recipientId = idSchema.parse(recipientUserId);
+  const document = connection.sqlite
+    .prepare(
+      "SELECT name FROM generated_documents WHERE id=? AND owner_user_id=?",
+    )
+    .get(idSchema.parse(documentId), ownerId) as { name: string } | undefined;
+  if (!document) throw new Error("Documento indisponível.");
+  if (shared) {
+    assertShareRecipient(ownerId, recipientId, connection);
+    const inserted = connection.sqlite
+      .prepare(
+        "INSERT INTO document_person_shares(document_id,recipient_user_id,shared_by_user_id,google_permission_status) VALUES(?,?,?,'needs_authorization') ON CONFLICT DO NOTHING",
+      )
+      .run(documentId, recipientId, ownerId);
+    if (inserted.changes)
+      createNotification(
+        recipientId,
+        {
+          type: "document_shared",
+          actorUserId: ownerId,
+          entityType: "document",
+          entityId: documentId,
+          title: `Documento compartilhado: ${document.name}`,
+          bodyPreview:
+            "O acesso no Google Drive pode exigir autorização separada.",
+        },
+        connection,
+      );
+  } else {
+    connection.sqlite
+      .prepare(
+        "DELETE FROM document_person_shares WHERE document_id=? AND recipient_user_id=?",
+      )
+      .run(documentId, recipientId);
+  }
+  recordAuditEvent(
+    {
+      actorUserId: ownerId,
+      action: shared ? "document.share" : "document.unshare",
+      targetType: "generated_document",
+      targetId: String(documentId),
+      summary: "direct document access changed",
+    },
+    connection,
+  );
+}
+
+export function listDocumentPersonShares(
+  ownerUserId: number,
+  documentId: number,
+  connection: DatabaseConnection = getDatabase(),
+): Array<{
+  userId: number;
+  displayName: string;
+  googlePermissionStatus: string;
+}> {
+  return connection.sqlite
+    .prepare(
+      `SELECT u.id userId,u.display_name displayName,s.google_permission_status googlePermissionStatus
+     FROM document_person_shares s JOIN generated_documents d ON d.id=s.document_id AND d.owner_user_id=?
+     JOIN users u ON u.id=s.recipient_user_id WHERE s.document_id=?
+     ORDER BY u.display_name COLLATE NOCASE`,
+    )
+    .all(idSchema.parse(ownerUserId), idSchema.parse(documentId)) as Array<{
+    userId: number;
+    displayName: string;
+    googlePermissionStatus: string;
+  }>;
+}
+
+export function listDocumentGroupShares(
+  ownerUserId: number,
+  documentId: number,
+  connection: DatabaseConnection = getDatabase(),
+): Array<{
+  groupId: number;
+  groupName: string;
+  googlePermissionStatus: string;
+}> {
+  return connection.sqlite
+    .prepare(
+      `SELECT g.id groupId,g.name groupName,s.google_permission_status googlePermissionStatus
+     FROM document_group_shares s
+     JOIN generated_documents d ON d.id=s.document_id AND d.owner_user_id=?
+     JOIN study_groups g ON g.id=s.group_id WHERE s.document_id=?
+     ORDER BY g.name COLLATE NOCASE`,
+    )
+    .all(idSchema.parse(ownerUserId), idSchema.parse(documentId)) as Array<{
+    groupId: number;
+    groupName: string;
+    googlePermissionStatus: string;
+  }>;
 }

@@ -106,13 +106,18 @@ const ignoredDirectoryNames = new Set([
 export function normalizeProjectPath(input: string): string {
   if (input.includes("\0")) throw new Error("Path contains NUL.");
   const normalized = input.replaceAll("\\", "/").replace(/^\.\//, "");
+  if (normalized.split("/").includes("..")) {
+    throw new Error(`Caminho bloqueado: ${input}`);
+  }
   if (
     !normalized ||
     normalized.startsWith("/") ||
     /^[a-zA-Z]:\//.test(normalized) ||
     normalized.length > projectUploadLimits.maxPathLength
   ) {
-    throw new Error("Invalid project path.");
+    throw new Error(
+      `Caminho inválido ou acima de ${projectUploadLimits.maxPathLength} caracteres: ${input}`,
+    );
   }
   const clean = posix.normalize(normalized);
   if (clean === ".." || clean.startsWith("../") || clean.includes("/../")) {
@@ -182,7 +187,7 @@ export function buildProjectManifest(
   let total = 0;
   for (const source of sources) {
     const path = normalizeProjectPath(source.path);
-    if (paths.has(path)) throw new Error("Project contains duplicate paths.");
+    if (paths.has(path)) throw new Error(`Caminho duplicado: ${path}`);
     paths.add(path);
     const reason = projectIgnoreReason(path, preset);
     if (reason) {
@@ -190,11 +195,15 @@ export function buildProjectManifest(
       continue;
     }
     if (source.data.length > projectUploadLimits.maxFileBytes) {
-      throw new Error("Project contains a file above the size limit.");
+      throw new Error(
+        `Arquivo acima de ${projectUploadLimits.maxFileBytes / 1048576} MiB: ${path}`,
+      );
     }
     total += source.data.length;
     if (total > projectUploadLimits.maxTotalBytes) {
-      throw new Error("Project exceeds the total size limit.");
+      throw new Error(
+        `Projeto acima do limite total de ${projectUploadLimits.maxTotalBytes / 1048576} MiB.`,
+      );
     }
     accepted.push({ ...source, path });
   }
@@ -237,4 +246,65 @@ export function diffProjectManifests(
     if (!after.has(file.path)) removed.push(file.path);
   }
   return { added, modified, removed, unchanged };
+}
+
+export function suggestProjectLanguage(
+  files: ProjectManifestFile[],
+): ProjectLanguage {
+  const paths = files.map(({ path }) => path.toLowerCase());
+  const markers: Array<[RegExp, ProjectLanguage]> = [
+    [/(^|\/)(pom\.xml|build\.gradle|build\.gradle\.kts)$/u, "java"],
+    [/(^|\/)(package\.json|tsconfig\.json)$/u, "javascript-typescript"],
+    [/(^|\/)(pyproject\.toml|requirements\.txt)$/u, "python"],
+    [/(^|\/)cargo\.toml$/u, "rust"],
+    [/(^|\/)go\.mod$/u, "go"],
+    [/\.csproj$/u, "csharp"],
+    [/(^|\/)composer\.json$/u, "php"],
+  ];
+  for (const [marker, language] of markers) {
+    if (paths.some((path) => marker.test(path))) return language;
+  }
+  const extensions: Array<[RegExp, ProjectLanguage]> = [
+    [/\.(tsx?|jsx?)$/u, "javascript-typescript"],
+    [/\.java$/u, "java"],
+    [/\.py$/u, "python"],
+    [/\.(c|cpp|cc|h|hpp)$/u, "c-cpp"],
+    [/\.cs$/u, "csharp"],
+    [/\.php$/u, "php"],
+    [/\.go$/u, "go"],
+    [/\.rs$/u, "rust"],
+  ];
+  const counts = extensions
+    .map(([pattern, language]) => ({
+      language,
+      count: paths.filter((path) => pattern.test(path)).length,
+    }))
+    .sort((a, b) => b.count - a.count);
+  return counts[0]?.count ? counts[0].language : "other";
+}
+
+export function suggestProjectTechnologies(
+  files: ProjectManifestFile[],
+): ProjectTechnology[] {
+  const paths = files.map(({ path }) => path.toLowerCase());
+  const has = (pattern: RegExp) => paths.some((path) => pattern.test(path));
+  const found: ProjectTechnology[] = [];
+  const add = (technology: ProjectTechnology, pattern: RegExp) => {
+    if (has(pattern)) found.push(technology);
+  };
+  add("html", /\.html?$/u);
+  add("css", /\.css$/u);
+  add("typescript", /\.(ts|tsx)$/u);
+  add("javascript", /\.(js|jsx|mjs|cjs)$/u);
+  add("react", /\.(tsx|jsx)$/u);
+  add("node", /(^|\/)(package\.json|pnpm-lock\.yaml|yarn\.lock)$/u);
+  add("java", /\.java$/u);
+  add("python", /\.py$/u);
+  add("c", /\.c$/u);
+  add("cpp", /\.(cpp|cc|cxx)$/u);
+  add("csharp", /\.cs$/u);
+  add("php", /\.php$/u);
+  add("go", /\.go$/u);
+  add("rust", /\.rs$/u);
+  return found;
 }

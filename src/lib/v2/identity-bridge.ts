@@ -4,6 +4,7 @@ import { verifyPassword } from "@/lib/password";
 import { sessionUserV2, authenticateUserV2, revokeUserSessionV2 } from "./auth";
 import type { V2Database } from "./database";
 import { hashSessionToken, type SessionRecord } from "@/lib/session";
+import { getUiLanguage } from "@/lib/ui-language";
 
 type LegacyRow = {
   id: number;
@@ -78,9 +79,14 @@ export async function ensureLegacyLink(
     const id = Number(
       connection.sqlite
         .prepare(
-          "INSERT INTO users(display_name,login,password_hash,role,active,onboarding_version) VALUES(?,?,?,'member',1,0)",
+          "INSERT INTO users(display_name,login,password_hash,role,active,onboarding_version,locale) VALUES(?,?,?,'member',1,0,?)",
         )
-        .run(row.display_name, row.login, row.password_hash).lastInsertRowid,
+        .run(
+          row.display_name,
+          row.login,
+          row.password_hash,
+          getUiLanguage(connection),
+        ).lastInsertRowid,
     );
     legacy = legacyByLogin(connection, row.login);
     if (!legacy || legacy.id !== id)

@@ -2,6 +2,11 @@ export type SettingsSection =
   | "profile"
   | "personalization"
   | "google"
+  | "notifications"
+  | "privacy"
+  | "accessibility"
+  | "help"
+  | "about"
   | "instance"
   | "administration"
   | "storage";
@@ -10,7 +15,14 @@ export function resolveSettingsSection(
   requested: string | undefined,
   access: { instance: boolean; administration: boolean; storage: boolean },
 ): SettingsSection {
-  const allowed: SettingsSection[] = ["profile", "personalization", "google"];
+  const allowed: SettingsSection[] = [
+    "profile",
+    "personalization",
+    "google",
+    "notifications",
+    "help",
+    "about",
+  ];
   if (access.instance) allowed.push("instance");
   if (access.administration) allowed.push("administration");
   if (access.storage) allowed.push("storage");

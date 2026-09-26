@@ -1,6 +1,6 @@
 # Contribuindo com o OpenStudyHub
 
-Obrigado pelo interesse em contribuir.
+Contribuições são bem-vindas. Antes de mudar um fluxo, confirme se ele pertence ao App, ao Admin ou ao serviço realtime: as três partes compartilham uma instalação, mas têm responsabilidades e permissões diferentes.
 
 ## Antes de abrir um PR
 
@@ -16,6 +16,7 @@ Obrigado pelo interesse em contribuir.
 cp .env.example .env
 pnpm install
 pnpm db:migrate
+node --env-file=.env scripts/migrate-v2-production.mjs
 pnpm dev
 ```
 
@@ -37,7 +38,7 @@ Se alterar `src/lib/db/schema.ts`, gere e revise uma migration:
 pnpm db:generate
 ```
 
-Nunca reescreva migrations já publicadas.
+Se alterar o esquema V2, acrescente e revise uma migration em `v2-migrations/`. Nunca reescreva migrations já publicadas.
 
 ## Commits e escopo
 
@@ -53,4 +54,4 @@ Não abra uma issue pública contendo segredo, token ou dado pessoal. Consulte `
 
 ## Licença
 
-A licença do projeto deve estar definida antes da primeira release pública. Ao contribuir depois disso, a contribuição será aceita sob a licença indicada no repositório.
+O projeto está sob [AGPL-3.0-only](LICENSE). Preserve os notices e as licenças dos componentes de terceiros.

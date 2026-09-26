@@ -1,78 +1,43 @@
-# Deploy
+# Instalação V2 com Docker
 
-A V1 pode rodar como servidor Node.js ou em Docker.
+Se você vai hospedar o OpenStudyHub, comece decidindo quem pode acessar cada entrada. A comunidade usa o App; a configuração da instituição fica no Admin / Control Plane. O [Compose de exemplo](https://github.com/RichardSpinola/OpenStudyHub/blob/main/docker-compose.example.yml) instala essas duas superfícies junto com colaboração em tempo real, proxy local e migrations. O App pode receber tráfego público por HTTPS. O Admin deve ficar na rede local ou em acesso administrativo privado.
 
-## Princípio de exposição
+## Portas e persistência
 
-Em produção use HTTPS e um reverse proxy em frente ao Next.js. Não exponha SQLite, private-assets nem Docker socket.
+| Serviço                 | Porta no host por padrão | Uso                                          |
+| ----------------------- | ------------------------ | -------------------------------------------- |
+| `openstudyhub-web`      | `127.0.0.1:3000`         | App e WebSocket `/realtime` pelo Caddy       |
+| `openstudyhub-admin`    | `127.0.0.1:3001`         | Admin `/control`, sem publicação pública     |
+| `openstudyhub-app`      | interna `3000`           | Next.js do App                               |
+| `openstudyhub-realtime` | interna `3045`           | colaboração e presença                       |
+| `openstudyhub-migrate`  | sem porta                | aplica migrations V1 e V2 antes do App/Admin |
 
-A documentação oficial do Next.js recomenda um reverse proxy para self-hosting:
+O volume `openstudyhub-data` guarda os dois bancos SQLite, anexos privados, assets locais e backups em `/app/data`. Nunca exponha esse volume nem o Docker socket ao público. O `.env` privado guarda os segredos e deve ser incluído no plano de backup seguro, fora do Git.
 
-https://nextjs.org/docs/app/guides/self-hosting
+## Primeiro deploy
 
-## Docker Compose
+1. Copie `.env.example` para `.env`. Configure `NODE_ENV=production`, `APP_URL` com a origem HTTPS pública, `OPENSTUDYHUB_V2_ENABLED=1`, `GOOGLE_REDIRECT_URI` se for usar Google e `OPENSTUDYHUB_REALTIME_PUBLIC_URL=wss://SEU-DOMINIO/realtime`. O Compose define os caminhos dos bancos dentro do volume.
+2. Defina `OPENSTUDYHUB_APP_BIND=127.0.0.1`. Para acessar o Admin de outra máquina na LAN, use o IP LAN do host em `OPENSTUDYHUB_ADMIN_BIND`; mantenha firewall/restrição de rede. Nunca aponte o túnel público para `3001`.
+3. Execute:
 
-```bash
-cp .env.example .env
-```
+   ```sh
+   docker compose -f docker-compose.example.yml up -d --build
+   ```
 
-Edite pelo menos:
+4. Confira `http://127.0.0.1:3000/api/health` no host e a tela de login do Admin em `http://127.0.0.1:3001/control/login`. Em banco vazio, conclua o setup do primeiro administrador antes de abrir a instância ao público.
 
-```env
-NODE_ENV=production
-APP_URL=https://hub.exemplo.com
-DATABASE_PATH=/app/data/openstudyhub.db
-PRIVATE_ASSET_PATH=/app/data/private-assets
-```
+O serviço `openstudyhub-migrate` roda `migrate-production.mjs` e `migrate-v2-production.mjs` em sequência; App/Admin/realtime só iniciam depois de migrations concluídas. Não aponte os dois caminhos de banco para o mesmo arquivo.
 
-Depois:
+## Domínio e Cloudflare
 
-```bash
-docker compose -f docker-compose.example.yml up -d --build
-```
+Termine HTTPS num reverse proxy ou Cloudflare Tunnel e encaminhe a origem pública apenas para `openstudyhub-web:3000` (ou `127.0.0.1:3000` quando o túnel roda no host). Preserve o caminho `/realtime` com upgrade WebSocket. Configure `APP_URL=https://seu-dominio` e `OPENSTUDYHUB_REALTIME_PUBLIC_URL=wss://seu-dominio/realtime`. O callback Google cadastrado no Cloud deve ser `https://seu-dominio/api/v2/google/callback`, sem slash extra. Veja [Google](google.md).
 
-O exemplo publica `127.0.0.1:3000`, adequado quando o reverse proxy está no mesmo host. Se o proxy estiver em outra rede Docker, adapte a rede/porta em vez de publicar indiscriminadamente a aplicação na internet.
+Se usar domínio LAN sem HTTPS, não espere que OAuth de produção aceite esse callback. Use HTTPS público para a integração real, ou o fluxo local `localhost`/`127.0.0.1` apenas para teste. Não exponha porta de SQLite, assets privados, Admin ou realtime diretamente na internet.
 
-O container aplica migrations versionadas antes de iniciar o Next.js.
+## Plataformas domésticas
 
-## Health check
+O mesmo Compose é a base para [ZimaOS](zimaos.md), [CasaOS](casaos.md) e [UmbrelOS](umbrelos.md). Esses guias explicam o caminho manual e os limites de integração com as respectivas lojas. Não existe pacote de loja publicado nesta fase.
 
-```text
-GET /api/health
-```
+## Atualização e recuperação
 
-Resposta saudável: HTTP 200 com aplicação e banco `operational`.
-
-## Volumes
-
-Persistir `/app/data` preserva:
-
-- SQLite;
-- avatares/banners;
-- anexos privados de chat;
-- favicons cacheados;
-- outros private-assets gerenciados.
-
-## Reverse proxy
-
-O proxy deve:
-
-- terminar HTTPS;
-- encaminhar para a porta interna do Hub;
-- preservar `Host` e headers de proxy adequados;
-- aplicar limites razoáveis de request/body/timeout;
-- não expor arquivos privados diretamente.
-
-`APP_URL` e `GOOGLE_REDIRECT_URI` precisam refletir o endereço público real.
-
-## ZimaOS
-
-ZimaOS pode executar o container/Compose, mas não faz parte dos requisitos do projeto público. Use o Compose como base e adapte volumes/porta/reverse proxy à instalação local.
-
-## Indicadores de ambiente na interface
-
-Em desenvolvimento o cabeçalho mostra `SYS:DEVELOPMENT` para deixar claro que a
-instância não é de produção. Em `NODE_ENV=production` esse indicador é ocultado.
-
-O rodapé usa `SELF-HOSTED` como descrição da instalação; ele não representa o
-status de conectividade da internet.
+Siga [Backup e atualização](backup-update.md) antes de substituir a imagem. O endpoint de saúde do App é `/api/health`; o Admin tem healthcheck próprio de login. A restauração de banco **não** acontece pelo navegador e exige App, Admin e realtime parados, conforme [guia operacional](operations/manual-backup-restore.md).

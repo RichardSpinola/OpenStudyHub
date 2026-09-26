@@ -23,9 +23,11 @@ import {
 } from "@/lib/v2/runtime";
 import { authenticateNormal } from "@/lib/v2/identity-bridge";
 import { clearSessionCookie } from "@/lib/session-cookie";
+import { uiLanguageSchema, updateUiLanguage } from "@/lib/ui-language";
 import {
   createInstitution,
   createProgram,
+  updateProgramDetails,
   createShift,
   createCurriculum,
   createCurriculumSemester,
@@ -57,12 +59,19 @@ import {
 import {
   createV2User,
   editV2User,
+  deleteV2User,
   enrollV2,
   withdrawEnrollment,
   enrollCohort,
   previewUsersCsv,
   applyUsersCsv,
 } from "@/lib/v2/users";
+import {
+  linkLegacyOffering,
+  offeringCoverLimitBytes,
+  saveOfferingCover,
+  removeOfferingCover,
+} from "@/lib/v2/offering-covers";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const num = (f: FormData, k: string) => Number(str(f, k));
@@ -79,6 +88,7 @@ function messagePath(base: string, type: "ok" | "error", message: string) {
 export async function setupAction(f: FormData): Promise<void> {
   let error = "";
   try {
+    const language = uiLanguageSchema.parse(str(f, "language"));
     await withV2DbAsync(async (db) => {
       if (!isSetupPending(db)) throw new Error("Setup já concluído.");
       await bootstrapV2(db, {
@@ -99,6 +109,7 @@ export async function setupAction(f: FormData): Promise<void> {
         location: str(f, "location"),
       });
     });
+    updateUiLanguage(language);
   } catch (e) {
     error = e instanceof Error ? e.message : "Erro no setup.";
   }
@@ -108,7 +119,9 @@ export async function setupAction(f: FormData): Promise<void> {
       : messagePath(
           "/control/login",
           "ok",
-          "Setup concluído. Entre com sua conta administrativa.",
+          str(f, "language") === "en"
+            ? "Setup complete. Sign in with your admin account."
+            : "Setup concluído. Entre com sua conta administrativa.",
         ),
   );
 }
@@ -218,6 +231,16 @@ export async function controlAction(f: FormData): Promise<void> {
             num(f, "institutionId"),
             str(f, "code"),
             str(f, "name"),
+            str(f, "shortName"),
+          );
+          break;
+        case "programDetails":
+          updateProgramDetails(
+            db,
+            actor,
+            id,
+            str(f, "name"),
+            str(f, "shortName"),
           );
           break;
         case "shift":
@@ -317,6 +340,32 @@ export async function controlAction(f: FormData): Promise<void> {
             num(f, "cohortId"),
           );
           break;
+        case "legacyOfferingLink":
+          linkLegacyOffering(
+            db,
+            actor,
+            num(f, "offeringId"),
+            num(f, "legacyOfferingId"),
+          );
+          ok = "Ligação com a turma V1 confirmada.";
+          break;
+        case "offeringCover": {
+          const file = f.get("cover");
+          if (!(file instanceof File) || file.size > offeringCoverLimitBytes)
+            throw new Error("Envie uma imagem de até 5 MiB.");
+          await saveOfferingCover(
+            db,
+            actor,
+            num(f, "offeringId"),
+            Buffer.from(await file.arrayBuffer()),
+          );
+          ok = "Capa da disciplina salva.";
+          break;
+        }
+        case "offeringCoverRemove":
+          await removeOfferingCover(db, actor, num(f, "offeringId"));
+          ok = "Capa removida. O visual padrão foi restaurado.";
+          break;
         case "rename":
           renameAcademic(
             db,
@@ -405,6 +454,10 @@ export async function controlAction(f: FormData): Promise<void> {
           break;
         case "editUser":
           editV2User(db, actor, id, str(f, "name"), str(f, "active") === "1");
+          break;
+        case "deleteUser":
+          deleteV2User(db, actor, id, str(f, "confirmation"));
+          ok = "Conta sem vínculos excluída.";
           break;
         case "password":
           if (actor.kind !== "admin") throw new Error("Admin required");

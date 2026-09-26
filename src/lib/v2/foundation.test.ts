@@ -2,9 +2,7 @@ import { adminActor, userActor } from "./actor";
 import { describe, it, expect, afterEach } from "vitest";
 import {
   mkdtempSync,
-  mkdirSync,
   rmSync,
-  writeFileSync,
   symlinkSync,
   copyFileSync,
   appendFileSync,
@@ -21,6 +19,7 @@ import {
   archiveAcademic,
   deleteUnusedAcademic,
   renameAcademic,
+  updateProgramDetails,
 } from "./academics";
 import {
   previewV1Import,
@@ -33,7 +32,6 @@ import {
   storeObject,
   readObject,
 } from "./storage";
-import { validateFakeReset } from "../../../scripts/reset-v2-fake";
 import { deactivateUser } from "./lifecycle";
 
 const dbs: ReturnType<typeof openV2Database>[] = [];
@@ -61,7 +59,7 @@ describe("V2 structural foundation", () => {
           n: number;
         }
       ).n,
-    ).toBe(8);
+    ).toBe(22);
     expect(db.pragma("foreign_key_check")).toEqual([]);
     expect(db.pragma("integrity_check")).toEqual([{ integrity_check: "ok" }]);
     expect(
@@ -80,6 +78,27 @@ describe("V2 structural foundation", () => {
     migrateV2(db, dir);
     appendFileSync(target, "\n-- changed\n");
     expect(() => migrateV2(db, dir)).toThrow("migration changed");
+  });
+  it("edita o nome curto do curso com permissão administrativa", () => {
+    const db = fixture();
+    updateProgramDetails(
+      db,
+      adminActor(1),
+      1,
+      "Análise e Desenvolvimento de Sistemas",
+      "ADS",
+    );
+    expect(
+      db
+        .prepare("SELECT name,short_name shortName FROM programs WHERE id=1")
+        .get(),
+    ).toEqual({
+      name: "Análise e Desenvolvimento de Sistemas",
+      shortName: "ADS",
+    });
+    expect(() =>
+      updateProgramDetails(db, userActor(5), 1, "Outro", "X"),
+    ).toThrow("Forbidden");
   });
   it("keeps curriculum ordinal distinct from real period and protects cross-program links", () => {
     const db = fixture();
@@ -277,42 +296,9 @@ describe("V2 structural foundation", () => {
       "Symlinked storage root refused",
     );
   });
-  it("allows reset only for marked sibling fake runtime and dedicated DB path", () => {
-    const base = mkdtempSync(join(tmpdir(), "osh-v2-reset-"));
-    dirs.push(base);
-    const repo = join(base, "OpenStudyHub-v2-dev"),
-      runtime = join(base, "OpenStudyHub-v2-runtime");
-    mkdirSync(repo);
-    mkdirSync(join(runtime, "data"), { recursive: true });
-    writeFileSync(
-      join(runtime, ".fake-runtime-marker"),
-      "OPENSTUDYHUB_V2_FAKE_RUNTIME_ONLY\n",
-    );
-    const input = {
-      repo,
-      runtime,
-      dbPath: join(runtime, "data", "v2-fake.db"),
-      nodeEnv: "test",
-      consent: "RESET_FAKE_V2_ONLY",
-      args: ["--confirm-reset-fake-v2"],
-    };
-    expect(validateFakeReset(input)).toBe(input.dbPath);
-    expect(() =>
-      validateFakeReset({ ...input, dbPath: join(runtime, "data", "real.db") }),
-    ).toThrow();
-    expect(() =>
-      validateFakeReset({ ...input, nodeEnv: "production" }),
-    ).toThrow();
-    expect(() => validateFakeReset({ ...input, consent: "" })).toThrow();
-    const other = mkdtempSync(join(tmpdir(), "osh-v2-outside-"));
-    dirs.push(other);
-    rmSync(join(runtime, "data"), { recursive: true });
-    symlinkSync(other, join(runtime, "data"));
-    expect(() => validateFakeReset(input)).toThrow();
-  });
   it("classifies all V1 tables, blocks ambiguous curriculum and global Classroom mapping", () => {
     const matrix = loadV1ImportMatrix();
-    expect(matrix.size).toBe(50);
+    expect(matrix.size).toBe(52);
     expect(matrix.get("instructors")).toBe("MIGRATE");
     expect(matrix.get("subject_offerings")).toBe("TRANSFORM");
     expect(matrix.get("google_connections")).toBe("REVIEW");
@@ -347,7 +333,7 @@ describe("V2 structural foundation", () => {
         .run();
       const target = fixture();
       const preview = previewV1Import(v1.sqlite, target, matrix);
-      expect(preview.rows).toHaveLength(50);
+      expect(preview.rows).toHaveLength(52);
       const reasons = (
         target
           .prepare("SELECT reason_code FROM import_review_items WHERE run_id=?")

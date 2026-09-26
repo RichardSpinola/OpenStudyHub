@@ -1,3 +1,4 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import type { Actor } from "@/lib/v2/actor";
 import Link from "next/link";
 import type { V2Database } from "@/lib/v2/database";
@@ -5,6 +6,8 @@ import { visiblePrograms, previewTransition } from "@/lib/v2/control";
 import { canManage } from "@/lib/v2/access";
 import { controlAction } from "../actions";
 import { ConsoleShell, HiddenContext, Help } from "../ui";
+import { getUiLanguage } from "@/lib/ui-language";
+import { uiText } from "@/lib/translations";
 export function TransitionView({
   db,
   actor,
@@ -15,6 +18,7 @@ export function TransitionView({
   base,
   message,
   error,
+  contextual = false,
 }: {
   db: V2Database;
   actor: Actor;
@@ -25,7 +29,10 @@ export function TransitionView({
   base: string;
   message?: string;
   error?: string;
+  contextual?: boolean;
 }) {
+  const language = getUiLanguage();
+  const tr = (pt: string, en: string) => uiText(language, pt, en);
   const programs = visiblePrograms(db, actor);
   const program = programs.find((p) => p.id === programId) ?? programs[0];
   const pid = program?.id ?? 0;
@@ -52,50 +59,73 @@ export function TransitionView({
     try {
       preview = previewTransition(db, actor, targetId);
     } catch (e) {
-      previewError = e instanceof Error ? e.message : "Prévia indisponível.";
+      previewError =
+        e instanceof Error
+          ? e.message
+          : tr("Prévia indisponível.", "Preview unavailable.");
     }
   }
-  const returnTo = `${base}?program=${pid}&target=${targetId || ""}`;
+  const returnTo = contextual
+    ? `${base}?target=${targetId || ""}`
+    : `${base}?program=${pid}&target=${targetId || ""}`;
+  const targetPath = (id: number) =>
+    contextual ? `${base}?target=${id}` : `${base}?program=${pid}&target=${id}`;
   return (
     <ConsoleShell
-      title="Transição de período"
-      kicker={admin ? "Admin · ciclo acadêmico" : "Gestão · ciclo acadêmico"}
+      title={tr("Período e semestre", "Period and semester")}
+      kicker={
+        admin
+          ? tr("Admin · ciclo acadêmico", "Admin · academic cycle")
+          : tr("Gestão · ciclo acadêmico", "Management · academic cycle")
+      }
       name={name}
       admin={admin}
+      active={admin ? "institutions" : undefined}
       message={message}
       error={error || previewError}
     >
       <p>
-        Prepare as turmas da disciplina no período seguinte, confira o impacto e
-        confirme a ativação. O histórico anterior permanece consultável.
+        <UiCopy
+          pt="Prepare as turmas da disciplina no período seguinte, confira o impacto e confirme a ativação. O histórico anterior permanece consultável."
+          en="Prepare subject offerings for the next period, review the impact and confirm activation. Previous history remains available."
+        />
       </p>
       <Help>
-        Semestre curricular é a posição no currículo. Período letivo é a janela
-        de aulas. Uma turma da disciplina nova é criada para cada período; a
-        oferta anterior não é reutilizada.
+        <UiCopy
+          pt="Semestre curricular é a posição no currículo. Período letivo é a janela de aulas. Uma turma da disciplina nova é criada para cada período; a oferta anterior não é reutilizada."
+          en="A curriculum semester is a position in the curriculum. An academic period is the class window. A new subject offering is created for each period; the previous offering is not reused."
+        />
       </Help>
-      <nav className="v2-tabs" aria-label="Cursos">
-        {programs.map((p) => (
-          <Link key={p.id} href={`${base}?program=${p.id}`}>
-            {p.name}
-          </Link>
-        ))}
-      </nav>
+      {!contextual ? (
+        <nav className="v2-tabs" aria-label={tr("Cursos", "Courses")}>
+          {programs.map((p) => (
+            <Link key={p.id} href={`${base}?program=${p.id}`}>
+              {p.name}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
       {pid ? (
         <>
           <div className="v2-context">
-            <strong>Curso:</strong> {program.name}
+            <strong>
+              <UiCopy pt="Curso:" en="Course:" />
+            </strong>{" "}
+            {program.name}
           </div>
-          <h2>Períodos das turmas</h2>
+          <h2>
+            <UiCopy pt="Períodos das turmas" en="Cohort periods" />
+          </h2>
           <div className="v2-list">
             {targets.map((t) => (
               <div className="v2-row" key={t.id}>
                 <span>
-                  {t.cohort} · {t.period} · {t.semester}º semestre · {t.state}
+                  {t.cohort} · {t.period} · {t.semester}
+                  <UiCopy pt="º semestre" en=" semester" /> · {t.state}
                 </span>
                 {t.state === "planned" ? (
-                  <Link href={`${base}?program=${pid}&target=${t.id}`}>
-                    Revisar transição →
+                  <Link href={targetPath(t.id)}>
+                    <UiCopy pt="Revisar transição →" en="Review transition →" />
                   </Link>
                 ) : null}
               </div>
@@ -105,59 +135,110 @@ export function TransitionView({
             <Link
               href={
                 admin
-                  ? `/control/academics?program=${pid}&section=curriculum`
+                  ? contextual
+                    ? base.replace(/\/transition$/, "?section=curriculum")
+                    : `/control/academics?program=${pid}&section=curriculum`
                   : `/gestao?program=${pid}&section=curriculum`
               }
             >
-              Preparar outro período e suas turmas da disciplina →
+              <UiCopy
+                pt="Preparar outro período e suas turmas da disciplina →"
+                en="Prepare another period and its subject offerings →"
+              />
             </Link>
           </p>
           {preview ? (
             <section>
-              <h2>Prévia antes da ativação</h2>
+              <h2>
+                <UiCopy
+                  pt="Prévia antes da ativação"
+                  en="Preview before activation"
+                />
+              </h2>
               <div className="v2-context">
-                <strong>Encerrando:</strong>{" "}
+                <strong>
+                  <UiCopy pt="Encerrando:" en="Closing:" />
+                </strong>{" "}
                 {preview.previous
-                  ? `${preview.previous.period} · ${preview.previous.semester}º semestre`
-                  : "Nenhum período ativo"}
+                  ? tr(
+                      `${preview.previous.period} · ${preview.previous.semester}º semestre`,
+                      `${preview.previous.period} · semester ${preview.previous.semester}`,
+                    )
+                  : tr("Nenhum período ativo", "No active period")}
                 <br />
-                <strong>Ativando:</strong> {preview.target.period} ·{" "}
-                {preview.target.semester}º semestre · {preview.target.cohort}
+                <strong>
+                  <UiCopy pt="Ativando:" en="Activating:" />
+                </strong>{" "}
+                {preview.target.period} · {preview.target.semester}
+                <UiCopy pt="º semestre" en=" semester" /> ·{" "}
+                {preview.target.cohort}
               </div>
               <p>
-                {preview.offerings.length} novas turmas da disciplina;{" "}
-                {preview.students} estudantes no contexto atual;{" "}
-                {preview.newEnrollments} novas matrículas previstas;{" "}
-                {preview.scheduledBlocks} blocos de horário no novo período.
+                {preview.offerings.length}{" "}
+                <UiCopy
+                  pt="novas turmas da disciplina;"
+                  en="new subject offerings;"
+                />{" "}
+                {preview.students}{" "}
+                <UiCopy
+                  pt="estudantes no contexto atual;"
+                  en="students in the current context;"
+                />{" "}
+                {preview.newEnrollments}{" "}
+                <UiCopy
+                  pt="novas matrículas previstas;"
+                  en="new enrollments expected;"
+                />{" "}
+                {preview.scheduledBlocks}{" "}
+                <UiCopy
+                  pt="blocos de horário no novo período."
+                  en="schedule blocks in the new period."
+                />
               </p>
-              <h3>Histórico que será preservado</h3>
+              <h3>
+                <UiCopy
+                  pt="Histórico que será preservado"
+                  en="History to preserve"
+                />
+              </h3>
               <div className="v2-list">
                 {preview.historicalOfferings.map((o) => (
                   <div key={o.id} className="v2-row">
-                    {o.subject} · {o.slots} blocos de horário anteriores
+                    {o.subject} · {o.slots}{" "}
+                    <UiCopy
+                      pt="blocos de horário anteriores"
+                      en="previous schedule blocks"
+                    />
                   </div>
                 ))}
               </div>
-              <h3>Turmas da disciplina novas</h3>
+              <h3>
+                <UiCopy
+                  pt="Turmas da disciplina novas"
+                  en="New subject offerings"
+                />
+              </h3>
               <div className="v2-list">
                 {preview.offerings.map((o) => (
                   <div className="v2-row" key={o.id}>
-                    {o.subject} · {o.slots} blocos{" "}
+                    {o.subject} · {o.slots} <UiCopy pt="blocos" en="blocks" />{" "}
                     {o.instructorId
-                      ? "· professor definido"
-                      : "· professor pendente"}
+                      ? tr("· professor definido", "· instructor assigned")
+                      : tr("· professor pendente", "· instructor pending")}
                   </div>
                 ))}
               </div>
               <p>
-                As turmas da disciplina e os horários anteriores ficam
-                históricos. Matrículas dos estudantes no contexto atual serão
-                criadas nas ofertas vinculadas à turma; exceções individuais não
-                são copiadas. Mapeamentos Classroom antigos não são copiados.
+                <UiCopy
+                  pt="As turmas da disciplina e os horários anteriores ficam históricos. Matrículas dos estudantes no contexto atual serão criadas nas ofertas vinculadas à turma; exceções individuais não são copiadas. Mapeamentos Classroom antigos não são copiados."
+                  en="Previous subject offerings and schedules become history. Student enrollments in the current context will be created in offerings linked to the cohort; individual exceptions are not copied. Old Classroom mappings are not copied."
+                />
               </p>
               {preview.warnings.length ? (
                 <div className="v2-message" data-type="error">
-                  <strong>Itens para revisão:</strong>
+                  <strong>
+                    <UiCopy pt="Itens para revisão:" en="Items to review:" />
+                  </strong>
                   <ul>
                     {preview.warnings.map((w) => (
                       <li key={w}>{w}</li>
@@ -172,13 +253,19 @@ export function TransitionView({
                   targetId={targetId}
                 />
                 <label>
-                  Confirmação explícita: digite{" "}
+                  <UiCopy
+                    pt="Confirmação explícita: digite"
+                    en="Explicit confirmation: type"
+                  />{" "}
                   <strong>ATIVAR {preview.target.period}</strong>
                   <input name="confirmation" autoComplete="off" required />
                 </label>
                 <div className="v2-actions">
                   <button type="submit" disabled={!preview.offerings.length}>
-                    Ativar período e preservar histórico
+                    <UiCopy
+                      pt="Ativar período e preservar histórico"
+                      en="Activate period and preserve history"
+                    />
                   </button>
                 </div>
               </form>
@@ -186,7 +273,12 @@ export function TransitionView({
           ) : null}
         </>
       ) : (
-        <p>Nenhum curso dentro do seu escopo.</p>
+        <p>
+          <UiCopy
+            pt="Nenhum curso dentro do seu escopo."
+            en="No courses within your scope."
+          />
+        </p>
       )}
     </ConsoleShell>
   );

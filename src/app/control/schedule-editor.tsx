@@ -1,16 +1,18 @@
 "use client";
+import { UiCopy } from "@/components/ui-language-provider";
+
 import { useState } from "react";
 import { controlAction } from "./actions";
 import { HiddenContext } from "./ui";
 const days = [
-  "Segunda",
-  "Terça",
-  "Quarta",
-  "Quinta",
-  "Sexta",
-  "Sábado",
-  "Domingo",
-];
+  ["Segunda", "Monday"],
+  ["Terça", "Tuesday"],
+  ["Quarta", "Wednesday"],
+  ["Quinta", "Thursday"],
+  ["Sexta", "Friday"],
+  ["Sábado", "Saturday"],
+  ["Domingo", "Sunday"],
+] as const;
 type Slot = {
   weekday: number;
   start: number;
@@ -65,7 +67,7 @@ export function ScheduleEditor({
   return (
     <>
       <label>
-        Turma da disciplina
+        <UiCopy pt="Turma da disciplina" en="Subject offering" />
         <select
           value={offering}
           onChange={(e) => setOffering(Number(e.target.value))}
@@ -80,25 +82,27 @@ export function ScheduleEditor({
       <div className="v2-list">
         {current.map((s, i) => (
           <fieldset key={i}>
-            <legend>Bloco {i + 1}</legend>
+            <legend>
+              <UiCopy pt="Bloco" en="Block" /> {i + 1}
+            </legend>
             <div className="v2-fields">
               <label>
-                Dia
+                <UiCopy pt="Dia" en="Day" />
                 <select
                   value={s.weekday}
                   onChange={(e) =>
                     update(i, { weekday: Number(e.target.value) })
                   }
                 >
-                  {days.map((d, j) => (
-                    <option key={d} value={j + 1}>
-                      {d}
+                  {days.map(([pt, en], j) => (
+                    <option key={pt} value={j + 1}>
+                      <UiCopy pt={pt} en={en} />
                     </option>
                   ))}
                 </select>
               </label>
               <label>
-                Início
+                <UiCopy pt="Início" en="Start" />
                 <input
                   type="time"
                   value={time(s.start)}
@@ -108,7 +112,7 @@ export function ScheduleEditor({
                 />
               </label>
               <label>
-                Fim
+                <UiCopy pt="Fim" en="End" />
                 <input
                   type="time"
                   value={time(s.end)}
@@ -116,7 +120,7 @@ export function ScheduleEditor({
                 />
               </label>
               <label>
-                Sala
+                <UiCopy pt="Sala" en="Room" />
                 <select
                   value={s.locationId ?? ""}
                   onChange={(e) =>
@@ -127,7 +131,9 @@ export function ScheduleEditor({
                     })
                   }
                 >
-                  <option value="">Sem sala</option>
+                  <option value="">
+                    <UiCopy pt="Sem sala" en="No room" />
+                  </option>
                   {locations.map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.name}
@@ -144,7 +150,7 @@ export function ScheduleEditor({
                   })
                 }
               >
-                Remover bloco
+                <UiCopy pt="Remover bloco" en="Remove slot" />
               </button>
             </div>
           </fieldset>
@@ -162,7 +168,7 @@ export function ScheduleEditor({
           })
         }
       >
-        Adicionar bloco
+        <UiCopy pt="Adicionar bloco" en="Add slot" />
       </button>
       <form action={controlAction}>
         <HiddenContext
@@ -171,7 +177,9 @@ export function ScheduleEditor({
           offeringId={offering}
         />
         <input type="hidden" name="slots" value={JSON.stringify(current)} />
-        <button type="submit">Salvar conjunto de horários</button>
+        <button type="submit">
+          <UiCopy pt="Salvar conjunto de horários" en="Save schedule" />
+        </button>
       </form>
     </>
   );

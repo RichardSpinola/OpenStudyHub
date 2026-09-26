@@ -1,7 +1,18 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import { redirect } from "next/navigation";
 import { withV2DbAsync, currentAdminV2 } from "@/lib/v2/runtime";
 import { controlAction } from "../actions";
 import { ConsoleShell, HiddenContext, Help } from "../ui";
+import { AdminActionPanel } from "../admin-action-panel";
+import { getUiLanguage } from "@/lib/ui-language";
+import { uiText } from "@/lib/translations";
+const capabilityLabel: Record<string, [string, string]> = {
+  manage_academics: ["Gestor acadêmico", "Academic manager"],
+  manage_cohort: ["Gerenciar turmas e períodos", "Manage cohorts and periods"],
+  manage_schedule: ["Gerenciar horários", "Manage schedules"],
+  manage_enrollments: ["Gerenciar matrículas", "Manage enrollments"],
+  moderate_chat: ["Moderar conversa", "Moderate chat"],
+};
 export default async function Grants({
   searchParams,
 }: {
@@ -9,6 +20,8 @@ export default async function Grants({
 }) {
   const q = await searchParams;
   return withV2DbAsync(async (db) => {
+    const language = getUiLanguage();
+    const tr = (pt: string, en: string) => uiText(language, pt, en);
     const actor = await currentAdminV2(db);
     if (!actor) redirect("/control/login");
     if (actor.mustChangePassword) redirect("/control/password");
@@ -49,68 +62,81 @@ export default async function Grants({
     }>;
     return (
       <ConsoleShell
-        title="Permissões de Gestão"
-        kicker="Admin · delegação"
+        title="Gestores e permissões"
+        kicker="ADMINISTRAÇÃO / RESPONSABILIDADES"
         name={actor.name}
         admin
+        active="grants"
         message={q.ok}
         error={q.error}
       >
         <p>
-          Conceda uma capacidade para um curso específico. O servidor verifica
-          cada ação no escopo; acesso a infraestrutura ou conteúdo privado não é
-          delegado.
+          <UiCopy
+            pt="Defina a pessoa, sua responsabilidade e onde ela pode atuar."
+            en="Choose a person, their responsibility and where they may act."
+          />
         </p>
         <Help>
-          Gestor é uma pessoa com uma ou mais capacidades reais, como editar
-          horários ou matrículas. Não há promoção automática a partir de roles
-          antigos. Revogar um grant tem efeito imediato.
+          <UiCopy
+            pt="Gestor é uma pessoa com uma ou mais capacidades reais, como editar horários ou matrículas. Não há promoção automática a partir de roles antigos. Revogar um grant tem efeito imediato."
+            en="A manager has one or more specific capabilities, such as editing schedules or enrollments. Old roles do not grant automatic promotion. Revoking a grant takes effect immediately."
+          />
         </Help>
         {[
           {
             kind: "institution",
-            label: "Instituição",
+            label: tr("Instituição", "Institution"),
             items: institutions,
             caps: [
-              ["manage_academics", "Estrutura acadêmica"],
-              ["manage_cohort", "Turmas e períodos"],
-              ["manage_schedule", "Horários"],
-              ["manage_enrollments", "Matrículas"],
+              [
+                "manage_academics",
+                tr("Estrutura acadêmica", "Academic structure"),
+              ],
+              ["manage_cohort", tr("Turmas e períodos", "Cohorts and periods")],
+              ["manage_schedule", tr("Horários", "Schedules")],
+              ["manage_enrollments", tr("Matrículas", "Enrollments")],
             ],
           },
           {
             kind: "program",
-            label: "Curso",
+            label: tr("Curso", "Program"),
             items: programs,
             caps: [
-              ["manage_academics", "Estrutura acadêmica"],
-              ["manage_cohort", "Turmas e períodos"],
-              ["manage_schedule", "Horários"],
-              ["manage_enrollments", "Matrículas"],
+              [
+                "manage_academics",
+                tr("Estrutura acadêmica", "Academic structure"),
+              ],
+              ["manage_cohort", tr("Turmas e períodos", "Cohorts and periods")],
+              ["manage_schedule", tr("Horários", "Schedules")],
+              ["manage_enrollments", tr("Matrículas", "Enrollments")],
             ],
           },
           {
             kind: "cohort",
-            label: "Turma",
+            label: tr("Turma", "Cohort"),
             items: cohorts,
             caps: [
-              ["manage_cohort", "Turmas e períodos"],
-              ["manage_enrollments", "Matrículas"],
+              ["manage_cohort", tr("Turmas e períodos", "Cohorts and periods")],
+              ["manage_enrollments", tr("Matrículas", "Enrollments")],
             ],
           },
           {
             kind: "offering",
-            label: "Turma da disciplina",
+            label: tr("Turma da disciplina", "Subject offering"),
             items: offerings,
             caps: [
-              ["manage_academics", "Editar oferta"],
-              ["manage_schedule", "Horários"],
-              ["manage_enrollments", "Matrículas"],
+              ["manage_academics", tr("Editar oferta", "Edit offering")],
+              ["manage_schedule", tr("Horários", "Schedules")],
+              ["manage_enrollments", tr("Matrículas", "Enrollments")],
             ],
           },
         ].map((group) => (
-          <details key={group.kind}>
-            <summary>Conceder em {group.label.toLowerCase()}</summary>
+          <AdminActionPanel
+            key={group.kind}
+            title={
+              tr("Conceder em", "Grant for") + ` ${group.label.toLowerCase()}`
+            }
+          >
             <form action={controlAction} className="v2-fields">
               <HiddenContext
                 returnTo="/control/grants"
@@ -118,9 +144,11 @@ export default async function Grants({
                 scopeKind={group.kind}
               />
               <label>
-                Usuário
+                <UiCopy pt="Pessoa" en="Person" />
                 <select name="userId" required>
-                  <option value="">Selecione</option>
+                  <option value="">
+                    <UiCopy pt="Selecione" en="Select" />
+                  </option>
                   {users.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name}
@@ -129,7 +157,7 @@ export default async function Grants({
                 </select>
               </label>
               <label>
-                Capacidade
+                <UiCopy pt="Responsabilidade" en="Responsibility" />
                 <select name="capability">
                   {group.caps.map(([value, label]) => (
                     <option key={value} value={value}>
@@ -141,7 +169,9 @@ export default async function Grants({
               <label>
                 {group.label}
                 <select name="scopeId" required>
-                  <option value="">Selecione</option>
+                  <option value="">
+                    <UiCopy pt="Selecione" en="Select" />
+                  </option>
                   {group.items.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -149,16 +179,27 @@ export default async function Grants({
                   ))}
                 </select>
               </label>
-              <button>Conceder</button>
+              <button>
+                <UiCopy
+                  pt="Conceder responsabilidade"
+                  en="Grant responsibility"
+                />
+              </button>
             </form>
-          </details>
+          </AdminActionPanel>
         ))}
-        <h2>Grants ativos</h2>
+        <h2>
+          <UiCopy pt="Responsabilidades ativas" en="Active responsibilities" />
+        </h2>
         <div className="v2-list">
           {grants.map((g) => (
             <div key={g.id} className="v2-row">
               <div>
-                {g.user} · {g.capability} · {g.scope ?? "outro escopo"}
+                <strong>{g.user}</strong> ·{" "}
+                {capabilityLabel[g.capability]
+                  ? tr(...capabilityLabel[g.capability])
+                  : tr("Responsabilidade", "Responsibility")}{" "}
+                · {g.scope ?? tr("Escopo específico", "Specific scope")}
               </div>
               <form action={controlAction}>
                 <HiddenContext
@@ -166,7 +207,9 @@ export default async function Grants({
                   intent="revoke"
                   id={g.id}
                 />
-                <button>Revogar</button>
+                <button>
+                  <UiCopy pt="Revogar" en="Revoke" />
+                </button>
               </form>
             </div>
           ))}

@@ -1,4 +1,5 @@
 "use client";
+import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useState } from "react";
 
@@ -46,15 +47,16 @@ export function GoogleDocPicker({
   configured: boolean;
   inputId: string;
 }) {
+  const tr = useUiText();
   const [status, setStatus] = useState("");
 
   async function openPicker() {
-    setStatus("Abrindo Drive…");
+    setStatus(tr("Abrindo Drive…", "Opening Drive…"));
     const response = await fetch("/api/google/picker-token", {
       cache: "no-store",
     });
     if (!response.ok) {
-      setStatus("Picker indisponível.");
+      setStatus(tr("Picker indisponível.", "Picker unavailable."));
       return;
     }
     const config = (await response.json()) as {
@@ -65,7 +67,7 @@ export function GoogleDocPicker({
     const show = () => {
       const picker = window.google?.picker;
       if (!picker) {
-        setStatus("Picker indisponível.");
+        setStatus(tr("Picker indisponível.", "Picker unavailable."));
         return;
       }
       const view = new picker.DocsView(picker.ViewId.DOCS)
@@ -89,7 +91,7 @@ export function GoogleDocPicker({
           if (input instanceof HTMLInputElement) {
             input.value = fileId;
             input.dispatchEvent(new Event("input", { bubbles: true }));
-            setStatus("Google Doc selecionado.");
+            setStatus(tr("Google Doc selecionado.", "Google Doc selected."));
           }
         })
         .build()
@@ -102,14 +104,14 @@ export function GoogleDocPicker({
       script.onload = () =>
         window.gapi?.load("picker", {
           callback: show,
-          onerror: () => setStatus("Picker indisponível."),
+          onerror: () => setStatus(tr("Picker indisponível.", "Picker unavailable.")),
         });
-      script.onerror = () => setStatus("Picker indisponível.");
+      script.onerror = () => setStatus(tr("Picker indisponível.", "Picker unavailable."));
       document.head.append(script);
     } else {
       window.gapi.load("picker", {
         callback: show,
-        onerror: () => setStatus("Picker indisponível."),
+        onerror: () => setStatus(tr("Picker indisponível.", "Picker unavailable.")),
       });
     }
   }
@@ -117,14 +119,16 @@ export function GoogleDocPicker({
   return configured ? (
     <div>
       <button type="button" onClick={() => void openPicker()}>
-        Escolher no Drive
+        <UiCopy pt="Escolher no Drive" en="Choose in Drive" />
       </button>
       {status ? <span role="status">{status}</span> : null}
     </div>
   ) : (
     <p className="panel-help">
-      Google Picker não configurado. Importe DOCX ou use um Google Doc já
-      autorizado.
+      <UiCopy
+        pt="Google Picker não configurado. Importe DOCX ou use um Google Doc já autorizado."
+        en="Google Picker is not configured. Import DOCX or use a Google Doc already authorized."
+      />
     </p>
   );
 }

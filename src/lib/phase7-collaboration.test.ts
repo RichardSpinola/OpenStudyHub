@@ -13,6 +13,8 @@ import {
   setNoteGroupShare,
   setOwnProfileTag,
   canReadDocument,
+  setNotePersonShare,
+  setDocumentPersonShare,
 } from "./collaboration";
 import {
   canAccessChatRoom,
@@ -159,7 +161,7 @@ describe("Phase 7 collaboration authorization", () => {
       connection,
     );
     setOwnProfileTag(outsideId, tag.id, true, connection);
-    expect(canViewUser(ownerId, outsideId, connection)).toBe(false);
+    expect(canViewUser(ownerId, outsideId, connection)).toBe(true);
 
     updateFunctionalAuthority(
       adminId,
@@ -288,5 +290,43 @@ describe("Phase 7 collaboration authorization", () => {
         )
         .get(documentId, group.id),
     ).toEqual({ status: "needs_authorization" });
+  });
+
+  it("grants and revokes direct read access only by the owner", () => {
+    const { ownerId, memberId, outsideId, offeringId } = seed(connection);
+    const note = createNote(
+      ownerId,
+      { title: "Private", content: "secret", offeringId: null },
+      connection,
+    );
+    expect(canReadNote(memberId, note.id, connection)).toBe(false);
+    expect(() =>
+      setNotePersonShare(outsideId, note.id, memberId, true, connection),
+    ).toThrow();
+    setNotePersonShare(ownerId, note.id, memberId, true, connection);
+    expect(canReadNote(memberId, note.id, connection)).toBe(true);
+    expect(canReadNote(outsideId, note.id, connection)).toBe(false);
+    expect(listSharedNotes(memberId, connection).map(({ id }) => id)).toContain(
+      note.id,
+    );
+    setNotePersonShare(ownerId, note.id, memberId, false, connection);
+    expect(canReadNote(memberId, note.id, connection)).toBe(false);
+
+    const documentId = Number(
+      connection.sqlite
+        .prepare(
+          `INSERT INTO generated_documents(owner_user_id,offering_id,drive_file_id,web_view_link,name)
+       VALUES(?,?,'fake-id','https://docs.google.com/document/d/fake-id/edit','Fake')`,
+        )
+        .run(ownerId, offeringId).lastInsertRowid,
+    );
+    expect(() =>
+      setDocumentPersonShare(outsideId, documentId, memberId, true, connection),
+    ).toThrow();
+    setDocumentPersonShare(ownerId, documentId, memberId, true, connection);
+    expect(canReadDocument(memberId, documentId, connection)).toBe(true);
+    expect(canReadDocument(outsideId, documentId, connection)).toBe(false);
+    setDocumentPersonShare(ownerId, documentId, memberId, false, connection);
+    expect(canReadDocument(memberId, documentId, connection)).toBe(false);
   });
 });

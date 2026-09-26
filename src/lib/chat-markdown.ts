@@ -48,11 +48,24 @@ export function renderChatMarkdown(source: string): string {
   const lines = withoutCodeBlocks.split("\n");
   const rendered: string[] = [];
   let listKind: "ul" | "ol" | null = null;
+  let quoting = false;
+  const closeQuote = () => {
+    if (quoting) rendered.push("</blockquote>");
+    quoting = false;
+  };
   const closeList = () => {
     if (listKind) rendered.push(`</${listKind}>`);
     listKind = null;
   };
   for (const line of lines) {
+    if (line.startsWith("> ")) {
+      closeList();
+      if (!quoting) rendered.push("<blockquote>");
+      quoting = true;
+      rendered.push(`<p>${inline(line.slice(2))}</p>`);
+      continue;
+    }
+    closeQuote();
     const unordered = /^[-*] (.+)$/u.exec(line);
     const ordered = /^\d+[.] (.+)$/u.exec(line);
     if (unordered || ordered) {
@@ -67,12 +80,9 @@ export function renderChatMarkdown(source: string): string {
     }
     closeList();
     if (!line.trim()) continue;
-    if (line.startsWith("> ")) {
-      rendered.push(`<blockquote>${inline(line.slice(2))}</blockquote>`);
-    } else {
-      rendered.push(`<p>${inline(line)}</p>`);
-    }
+    rendered.push(`<p>${inline(line)}</p>`);
   }
+  closeQuote();
   closeList();
   return rendered
     .join("")

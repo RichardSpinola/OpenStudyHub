@@ -1,0 +1,217 @@
+/* Final interaction polish: short state changes, no decorative motion. */
+.project-technology-picker {
+  display: grid;
+  gap: 0.6rem;
+}
+.project-technology-picker label {
+  display: grid;
+  gap: 0.35rem;
+}
+.project-technology-chips,
+.project-technology-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.project-technology-chips > span,
+.project-technology-options button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--gray-2);
+  border-radius: var(--ds-radius, 0);
+  background: var(--panel-raised);
+  color: var(--white);
+  font: inherit;
+  font-size: 0.72rem;
+}
+.project-technology-chips button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.project-technology-options {
+  max-height: 8rem;
+  overflow: auto;
+}
+.project-technology-options button {
+  cursor: pointer;
+}
+.project-technology-edit {
+  margin: 0.8rem 0;
+  border: 1px solid var(--gray-3);
+  padding: 0.7rem;
+}
+.project-technology-edit > summary {
+  cursor: pointer;
+}
+.project-technology-edit form {
+  margin-top: 0.75rem;
+}
+
+.project-browser-layout {
+  display: grid;
+  gap: 0.85rem;
+}
+.project-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+}
+.project-breadcrumb button {
+  padding: 0.2rem 0.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+.project-breadcrumb strong {
+  overflow-wrap: anywhere;
+}
+.project-browser-columns {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 1.5fr);
+  gap: 0.8rem;
+}
+.project-browser-tree,
+.project-browser-preview {
+  min-width: 0;
+  max-height: 32rem;
+  overflow: auto;
+  border: 1px solid var(--gray-3);
+  padding: 0.8rem;
+}
+.project-browser-tree ul {
+  list-style: none;
+  padding-left: 0.75rem;
+  margin: 0;
+}
+.project-browser-tree > ul {
+  padding-left: 0;
+}
+.project-browser-tree li + li {
+  margin-top: 0.3rem;
+}
+.project-tree-folder > summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.project-folder-enter {
+  margin: 0.3rem 0 0.4rem 0.7rem;
+  font-size: 0.7rem;
+}
+.project-file-choice {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--white);
+  cursor: pointer;
+  font: inherit;
+  overflow-wrap: anywhere;
+}
+.project-file-choice[aria-current="true"] {
+  background: var(--gray-4);
+}
+.project-browser-preview h3 {
+  overflow-wrap: anywhere;
+}
+.project-browser-preview p {
+  font-size: 0.75rem;
+  color: var(--gray-1);
+}
+.project-text-preview {
+  overflow: auto;
+  max-height: 25rem;
+  padding: 0.8rem;
+  border: 1px solid var(--gray-3);
+  background: var(--black);
+  color: var(--white);
+  font-size: 0.75rem;
+  white-space: pre;
+  tab-size: 2;
+}
+@media (max-width: 45rem) {
+  .project-browser-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+  html[data-design="material"]
+    :is(
+      .notification-popover,
+      .external-links-popover,
+      .account-menu-panel,
+      .chat-members-popover,
+      .feedback-banner,
+      dialog[open],
+      .project-browser-preview
+    ) {
+    animation: osh-state-enter 150ms ease-out both;
+  }
+  html[data-design="legacy"]
+    :is(
+      .notification-popover,
+      .external-links-popover,
+      .account-menu-panel,
+      .chat-members-popover,
+      .feedback-banner,
+      dialog[open],
+      .project-browser-preview
+    ) {
+    animation: osh-state-enter-legacy 80ms steps(2, end) both;
+  }
+  html[data-design]
+    :is(
+      .project-tree-folder[open] > ul,
+      .project-technology-edit[open] > form
+    ) {
+    animation: osh-state-enter 120ms ease-out both;
+  }
+  @keyframes osh-state-enter {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes osh-state-enter-legacy {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  html[data-design]
+    :is(
+      .notification-popover,
+      .external-links-popover,
+      .account-menu-panel,
+      .chat-members-popover,
+      .feedback-banner,
+      dialog[open],
+      .project-browser-preview,
+      .project-tree-folder[open] > ul,
+      .project-technology-edit[open] > form
+    ) {
+    animation: none;
+  }
+}

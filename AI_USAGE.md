@@ -22,4 +22,4 @@ Código gerado ou modificado com IA não é considerado correto por padrão. Mud
 
 O projeto não tenta apresentar código assistido por IA como se tivesse sido integralmente escrito manualmente.
 
-A presença de IA no processo de desenvolvimento não cria uma dependência de IA em runtime. O OpenStudyHub V1 não possui RAG, embeddings, vector database, Ollama ou um assistente acadêmico próprio.
+A assistência de IA no desenvolvimento do OpenStudyHub V2 incluiu o OpenAI Codex com os modelos GPT-5.6 Luna, GPT-5.6 Sol, GPT-6 Luna e GPT-6 Sol.

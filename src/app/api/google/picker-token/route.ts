@@ -9,11 +9,6 @@ import {
   googleAccessTokenV2,
   googleConnectionStatus,
 } from "@/lib/v2/google-oauth";
-import {
-  fakeGoogleConfig,
-  fakeGoogleEnabled,
-  fakeGoogleFetch,
-} from "@/lib/v2/fake-google";
 
 export const dynamic = "force-dynamic";
 
@@ -35,17 +30,7 @@ export async function GET() {
           !connection.scopes.split(" ").includes(DRIVE_SCOPE)
         )
           return null;
-        const fake = fakeGoogleEnabled();
-        return googleAccessTokenV2(
-          db,
-          user.id,
-          fake
-            ? {
-                config: fakeGoogleConfig(),
-                fetchImpl: fakeGoogleFetch(db, user.id),
-              }
-            : {},
-        );
+        return googleAccessTokenV2(db, user.id);
       });
       if (!accessToken)
         return NextResponse.json(

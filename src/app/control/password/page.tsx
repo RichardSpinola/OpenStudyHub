@@ -1,3 +1,4 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import { redirect } from "next/navigation";
 import { withV2DbAsync, currentAdminV2 } from "@/lib/v2/runtime";
 import { controlAction } from "../actions";
@@ -14,13 +15,15 @@ export default async function Password() {
         admin
       >
         <p>
-          Defina uma senha própria antes de continuar. A sessão atual será
-          encerrada após a troca.
+          <UiCopy
+            pt="Defina uma senha própria antes de continuar. A sessão atual será encerrada após a troca."
+            en="Set your own password before continuing. The current session will end after the change."
+          />
         </p>
         <form action={controlAction} className="v2-fields">
           <HiddenContext returnTo="/control/login" intent="changeOwnPassword" />
           <label>
-            Nova senha
+            <UiCopy pt="Nova senha" en="New password" />
             <input
               type="password"
               name="password"
@@ -29,7 +32,9 @@ export default async function Password() {
               required
             />
           </label>
-          <button>Salvar nova senha</button>
+          <button>
+            <UiCopy pt="Salvar nova senha" en="Save new password" />
+          </button>
         </form>
       </ConsoleShell>
     );

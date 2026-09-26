@@ -4,6 +4,8 @@ import { getCurrentSession } from "@/lib/authorization";
 import { readProjectZip } from "@/lib/project-archive";
 import {
   projectUploadLimits,
+  suggestProjectLanguage,
+  suggestProjectTechnologies,
   type ProjectSourceFile,
 } from "@/lib/project-manifest";
 import { prepareProjectUpload, ProjectConflictError } from "@/lib/projects";
@@ -39,9 +41,7 @@ export async function POST(
     const zip = formData.get("zipFile");
     const folderFiles = formData
       .getAll("folderFiles")
-      .filter(
-        (entry): entry is File => entry instanceof File && entry.size > 0,
-      );
+      .filter((entry): entry is File => entry instanceof File);
     const folderPaths = formData
       .getAll("folderPaths")
       .filter((entry): entry is string => typeof entry === "string");
@@ -85,10 +85,20 @@ export async function POST(
       ignored: preview.ignored,
       diff: preview.diff,
       files: preview.manifest.files.length,
+      suggestedLanguage: suggestProjectLanguage(preview.manifest.files),
+      suggestedTechnologies: suggestProjectTechnologies(preview.manifest.files),
     });
   } catch (error) {
     if (error instanceof ProjectConflictError) {
       return NextResponse.json({ error: "version-conflict" }, { status: 409 });
+    }
+    if (
+      error instanceof Error &&
+      /^(Caminho |Arquivo acima |Projeto acima |ZIP |Project exceeds|Project has no accepted files)/u.test(
+        error.message,
+      )
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json({ error: "invalid-upload" }, { status: 400 });
   }

@@ -1,51 +1,32 @@
-# Backup e atualização
+# Backup, atualização e recuperação na V2
 
-A V1 usa atualização manual. O updater automático fica para uma versão futura.
+Antes de atualizar, guarde uma cópia que você consiga restaurar. O backup do OpenStudyHub reúne os dados locais da instalação; arquivos que estão somente no Google Drive precisam do plano de proteção do próprio Drive. A restauração exige uma janela com os serviços parados.
 
-## O que precisa de backup
+## Backup manual
 
-Sempre preserve:
+No Admin local, abra **Sistema → Backup manual → Criar backup** e baixe o ZIP gerado. Ele contém snapshots consistentes dos dois bancos SQLite e assets privados locais. O arquivo contém dados pessoais e hashes de senha: guarde-o em armazenamento protegido, fora do repositório e do volume principal. Preserve também o `.env`/segredos em cofre separado, especialmente `GOOGLE_TOKEN_ENCRYPTION_KEY`.
 
-1. arquivo indicado por `DATABASE_PATH`;
-2. diretório indicado por `PRIVATE_ASSET_PATH`;
-3. `.env` ou o segredo equivalente fora do Git;
-4. especialmente `GOOGLE_TOKEN_ENCRYPTION_KEY`.
+Os snapshots dos dois bancos são feitos em sequência. Para uma migração crítica, pause escritas numa janela de manutenção. O ZIP não copia conteúdo remoto do Google Drive e remove sessões, OAuth state, inscrições push e refresh tokens das **cópias**; depois de restaurar, usuários fazem login e reconectam Google. Os bancos em uso não têm tokens apagados ao criar o backup. Veja [detalhes operacionais](operations/manual-backup-restore.md).
 
-Arquivos canônicos do Google Drive não são copiados para SQLite.
+## Atualização segura com Docker Compose
 
-## SQLite
+1. Leia as notas da nova versão. Crie e **baixe** o backup. Guarde também uma cópia externa do volume atual e do `.env`, além da referência da imagem/código anterior.
+2. Obtenha a versão desejada e construa a nova imagem (`docker compose -f docker-compose.example.yml build --pull`). Não remova o volume `openstudyhub-data`.
+3. Execute `docker compose -f docker-compose.example.yml up -d`. O serviço de migrations aplica V1 e V2 antes dos serviços. Se a migration falhar, pare e investigue; não force App/Admin a iniciar com schema incompleto.
+4. Verifique `/api/health`, login do Admin, login do App e ao menos uma função acadêmica usada pela instância. Confira WebSocket e integrações quando utilizadas.
 
-Evite copiar um banco SQLite em escrita ativa de forma ingênua. Prefira parar a aplicação durante o backup simples ou usar uma ferramenta SQLite consciente de WAL/backup.
+Não há updater automático. Se a imagem nova falhar, **não** faça apenas rollback do código sobre schema já migrado. Pare os serviços, restaure o backup feito antes da atualização e a imagem/código correspondente; então confira o health. Nunca edite migrations já aplicadas para simular rollback.
 
-Fluxo simples para uma instalação pequena:
+## Restauração
 
-```bash
-docker compose -f docker-compose.example.yml stop openstudyhub
-# copie o volume/diretório persistente para um local seguro
-docker compose -f docker-compose.example.yml start openstudyhub
-```
+A restauração de banco exige App, Admin e realtime **parados**. Não existe restauração online pelo navegador. No host do Compose:
 
-## Atualizar código/container
-
-1. Leia o changelog.
-2. Faça backup.
-3. Obtenha a release desejada.
-4. Rebuild/recrie o container ou reinstale dependências no deploy Node.
-5. Aplique migrations versionadas.
-6. Verifique `/api/health`.
-7. Faça um smoke test de login, Home, Disciplinas e integrações usadas.
-
-Com Docker Compose:
-
-```bash
-docker compose -f docker-compose.example.yml build --pull
+```sh
+docker compose -f docker-compose.example.yml stop openstudyhub-web openstudyhub-app openstudyhub-admin openstudyhub-realtime
+docker compose -f docker-compose.example.yml run --rm --no-deps openstudyhub-migrate \
+  node scripts/restore-manual-backup.mjs /app/data/backups/ARQUIVO.zip \
+  --confirm-restore --services-stopped
 docker compose -f docker-compose.example.yml up -d
 ```
 
-O entrypoint do exemplo roda migrations antes de iniciar a aplicação.
-
-## Rollback
-
-Rollback de código não implica rollback seguro de schema. Se uma atualização de migration causar problema, restaure o backup correspondente do banco e private-assets junto da versão anterior do código.
-
-Nunca tente apagar migrations já aplicadas numa instância real para “voltar”.
+Substitua `ARQUIVO.zip` por um backup validado dentro do volume ou copie o ZIP para lá de modo seguro antes da operação. Faça primeiro uma cópia externa dos dados atuais. A ferramenta valida formato, checksums, caminhos e integridade, e guarda arquivos anteriores com sufixo `pre-restore`. Execute as migrations da versão de código que ficará instalada antes de reabrir a instância. Se falhar, preserve os arquivos anteriores e consulte [o procedimento detalhado](operations/manual-backup-restore.md).

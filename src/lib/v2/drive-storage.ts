@@ -112,6 +112,10 @@ export function setStorageOwner(
       "storage_backend",
       backendId ?? 0,
     );
+    if (current?.ownerId !== ownerId)
+      db.prepare(
+        "UPDATE google_automation_v2 SET drive_status='pending',last_drive_check_at=NULL WHERE id=1",
+      ).run();
   })();
 }
 
@@ -161,11 +165,15 @@ export class GoogleDriveStorageProvider implements StorageProvider {
       signal: AbortSignal.timeout(20_000),
     });
   }
-  private async root(access: string, current: string | null): Promise<string> {
+  private async root(
+    access: string,
+    current: string | null,
+    desiredName?: string,
+  ): Promise<string> {
     if (current) {
       const response = await this.request(
         access,
-        `${API}/${encodeURIComponent(current)}?fields=id,mimeType,trashed`,
+        `${API}/${encodeURIComponent(current)}?fields=id,name,mimeType,trashed`,
       );
       if (response.status === 403)
         throw new Error("Permissão negada ao diretório Drive.");
@@ -175,6 +183,7 @@ export class GoogleDriveStorageProvider implements StorageProvider {
         );
       if (!response.ok) throw new Error("Drive temporariamente indisponível.");
       const meta = (await response.json()) as {
+        name?: string;
         mimeType?: string;
         trashed?: boolean;
       };
@@ -183,13 +192,26 @@ export class GoogleDriveStorageProvider implements StorageProvider {
         meta.mimeType !== "application/vnd.google-apps.folder"
       )
         throw new Error("Diretório Drive precisa de reparo.");
+      if (desiredName && meta.name !== desiredName) {
+        const renamed = await this.request(
+          access,
+          `${API}/${encodeURIComponent(current)}?fields=id`,
+          {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ name: desiredName }),
+          },
+        );
+        if (!renamed.ok)
+          throw new Error("Não foi possível renomear diretório Drive.");
+      }
       return current;
     }
     const response = await this.request(access, API + "?fields=id", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        name: "OpenStudyHub",
+        name: desiredName ?? "OpenStudyHub",
         mimeType: "application/vnd.google-apps.folder",
         appProperties: { openStudyHub: "central-v2" },
       }),
@@ -207,6 +229,12 @@ export class GoogleDriveStorageProvider implements StorageProvider {
       .prepare("SELECT root_ref ref FROM storage_backends WHERE id=?")
       .get(this.backendId) as { ref: string };
     return saved.ref;
+  }
+  async ensureRootFolder(name: string): Promise<string> {
+    const desiredName = name.trim();
+    if (!desiredName) throw new Error("Nome do diretório Drive inválido.");
+    const context = await this.context();
+    return this.root(context.access, context.rootRef, desiredName);
   }
   async put(bytes: Uint8Array): Promise<StoredObject> {
     const context = await this.context();
@@ -284,9 +312,11 @@ export class GoogleDriveStorageProvider implements StorageProvider {
   }
   // Explicit repair follows an operator decision after a 404, which can also
   // mean permission loss at Google. The old reference is never silently erased.
-  async repairRoot(actor: Actor): Promise<string> {
+  async repairRoot(actor: Actor, desiredName: string): Promise<string> {
     if (!isAdmin(this.db, actor))
       throw new Error("Somente Admin pode reparar Drive.");
+    const safeName = desiredName.trim();
+    if (!safeName) throw new Error("Nome da instituição não configurado.");
     const context = await this.context();
     const old = context.rootRef;
     if (old) {
@@ -294,7 +324,17 @@ export class GoogleDriveStorageProvider implements StorageProvider {
         context.access,
         `${API}/${encodeURIComponent(old)}?fields=id,mimeType,trashed`,
       );
-      if (check.ok) throw new Error("Diretório Drive ainda está acessível.");
+      if (check.ok) {
+        const ref = await this.root(context.access, old, safeName);
+        recordAdminAction(
+          this.db,
+          actor,
+          "storage.root_repair",
+          "storage_backend",
+          this.backendId,
+        );
+        return ref;
+      }
       if (check.status === 403)
         throw new Error("Permissão negada ao diretório Drive.");
       if (check.status !== 404)
@@ -304,7 +344,7 @@ export class GoogleDriveStorageProvider implements StorageProvider {
       .prepare("UPDATE storage_backends SET root_ref=NULL WHERE id=?")
       .run(this.backendId);
     try {
-      const ref = await this.root(context.access, null);
+      const ref = await this.root(context.access, null, safeName);
       recordAdminAction(
         this.db,
         actor,

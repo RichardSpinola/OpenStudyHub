@@ -234,12 +234,13 @@ a {
   width: 100%;
   max-width: 100%;
   margin: 0 0 clamp(1.25rem, 3vh, 2.25rem);
-  overflow: visible;
+  overflow: hidden;
   color: var(--white);
+  font-family: monospace;
   font-size: clamp(0.32rem, 0.92vw, 0.88rem);
   font-weight: 700;
   font-style: normal;
-  letter-spacing: 0;
+  letter-spacing: normal;
   line-height: 1.08;
   text-align: center;
   text-shadow: none;
@@ -248,6 +249,7 @@ a {
 }
 
 .search-form {
+  position: relative;
   width: min(58rem, 100%);
 }
 
@@ -635,6 +637,90 @@ button:disabled {
 .google-connection-summary + form,
 .google-connection-summary ~ form {
   padding: 0.85rem;
+}
+
+.settings-google-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(15rem, 0.8fr);
+  gap: clamp(1rem, 2.5vw, 2rem);
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+}
+.settings-google-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+.settings-google-intro h3 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.6vw, 2.25rem);
+  line-height: 1.15;
+}
+.settings-google-intro p,
+.settings-google-status p {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--gray-2);
+}
+.settings-google-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  margin-top: auto;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--ds-radius, 0.45rem);
+  background: var(--accent);
+  color: var(--accent-ink, var(--black));
+  font-weight: 700;
+  text-decoration: none;
+}
+.settings-google-action:hover,
+.settings-google-action:focus-visible {
+  filter: brightness(1.12);
+  outline-offset: 2px;
+}
+.settings-google-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 1.15rem;
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius, 0.45rem);
+  background: var(--panel-raised);
+}
+.settings-google-status > span,
+.settings-google-status small {
+  color: var(--gray-2);
+  font-size: 0.73rem;
+}
+.settings-google-status > span {
+  letter-spacing: 0.08em;
+}
+.settings-google-status strong {
+  font-size: 1.2rem;
+}
+.settings-google-status strong[data-state="connected"] {
+  color: #84c89d;
+}
+.settings-google-status strong[data-state="needs_reconnect"] {
+  color: #efa79d;
+}
+.settings-google-status strong[data-state="temporary_error"] {
+  color: #e5bd83;
+}
+.settings-google-status small {
+  margin-top: auto;
+}
+html[data-design="legacy"]
+  :is(.settings-google-action, .settings-google-status) {
+  border-radius: 0;
+}
+@media (max-width: 750px) {
+  .settings-google-overview {
+    grid-template-columns: 1fr;
+  }
 }
 
 .panel-index {
@@ -2459,6 +2545,57 @@ body {
   color: var(--gray-1);
   font-size: 0.62rem;
   cursor: pointer;
+}
+
+.project-sync-submit {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.project-sync-progress {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 28rem;
+  padding: 0.65rem;
+  border: 1px solid var(--gray-2);
+  background: var(--panel);
+  color: var(--gray-1);
+  font-size: 0.65rem;
+}
+
+.project-sync-progress-track {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  gap: 2px;
+  min-height: 1.2rem;
+  padding: 3px;
+  border: 1px inset var(--gray-2);
+  background: var(--black);
+}
+
+.project-sync-progress-track span {
+  background: var(--accent);
+  opacity: 0.12;
+  animation: project-sync-bar 1.5s steps(2, end) infinite;
+}
+
+@keyframes project-sync-bar {
+  0%,
+  70%,
+  100% {
+    opacity: 0.12;
+  }
+  25%,
+  45% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-sync-progress-track span {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 .diff-summary {
@@ -5049,6 +5186,23 @@ button[aria-busy="true"]::before {
   min-width: 1.7rem;
 }
 
+.chat-paste-preview {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 100%;
+  color: var(--gray-2);
+  font-size: 0.7rem;
+}
+
+.chat-paste-preview img {
+  width: 4.25rem;
+  height: 3rem;
+  object-fit: contain;
+  border: 1px solid var(--gray-2);
+}
+
 .chat-composer-main {
   position: relative;
   display: grid;
@@ -5286,11 +5440,7 @@ button[aria-busy="true"]::before {
 }
 
 .chat-message-body blockquote::before {
-  content: ">";
-  position: absolute;
-  top: 0.45rem;
-  left: 0.35rem;
-  color: var(--gray-2);
+  content: none;
 }
 
 /* Instance identity is part of the brand, but stays secondary. */
@@ -5419,5 +5569,177 @@ button[aria-busy="true"]::before {
 
   .session-status .status {
     display: none;
+  }
+}
+
+.google-connection-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem 1rem;
+  padding: 0.7rem clamp(1rem, 3vw, 2rem);
+  border-bottom: 1px solid #b37d68;
+  background: #47352f;
+  color: #fff3e9;
+}
+.google-connection-notice a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.google-connection-notice button {
+  margin-left: auto;
+  color: inherit;
+  border: 1px solid currentColor;
+  background: transparent;
+  padding: 0.35rem 0.6rem;
+}
+.google-connection-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-block: 1rem 1.3rem;
+}
+.google-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--gray-2), transparent 45%);
+  border-radius: 0.8rem;
+}
+.google-hero h1 {
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  margin: 0.25rem 0;
+}
+.google-hero p {
+  margin: 0;
+  color: var(--gray-2);
+}
+.google-hero > strong {
+  white-space: nowrap;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--gray-2);
+  border-radius: 99px;
+  font-size: 0.85rem;
+}
+.google-hero > strong[data-state="connected"] {
+  border-color: #72bd98;
+  color: #94d8b2;
+}
+.google-hero > strong[data-state="attention"] {
+  border-color: #df9888;
+  color: #efaea1;
+}
+.google-hero > strong[data-state="temporary"] {
+  border-color: #d6bf82;
+  color: #e5d3a3;
+}
+.google-service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.2rem 0;
+}
+.google-service-card {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+  padding: 1.3rem;
+  background: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--gray-2), transparent 35%);
+  border-radius: 0.7rem;
+}
+.google-service-card h2 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+.google-service-card p {
+  margin: 0;
+  color: var(--gray-2);
+}
+.google-service-card .google-summary-actions {
+  margin-top: 0.5rem;
+}
+.google-disconnect {
+  grid-column: 1/-1;
+  justify-self: end;
+}
+.google-connection-overview {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid color-mix(in srgb, var(--gray-2), transparent 45%);
+  border-radius: 0.7rem;
+  overflow: hidden;
+}
+.google-connection-overview > div {
+  border: 0;
+  border-right: 1px solid color-mix(in srgb, var(--gray-2), transparent 65%);
+  padding: 0.85rem 1rem;
+}
+.google-connection-overview > div:last-of-type {
+  border-right: 0;
+}
+.google-connection-overview form {
+  grid-column: 1/-1;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--gray-2);
+}
+html[data-design="legacy"]
+  :is(
+    .google-hero,
+    .google-hero > strong,
+    .google-service-card,
+    .google-connection-overview
+  ) {
+  border-radius: 0;
+}
+@media (max-width: 700px) {
+  .google-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .google-service-grid {
+    grid-template-columns: 1fr;
+  }
+  .google-connection-overview {
+    grid-template-columns: 1fr;
+  }
+  .google-connection-overview > div {
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--gray-2), transparent 65%);
+  }
+}
+.google-connection-overview > div {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: 0;
+  border-right: 1px solid color-mix(in srgb, var(--gray-2), transparent 65%);
+  background: var(--panel);
+}
+.google-connection-overview span {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--gray-2);
+}
+.google-connection-overview strong {
+  font-size: 1rem;
+}
+.google-connection-overview small {
+  grid-column: 1 / -1;
+  color: var(--gray-2);
+}
+html[data-design="legacy"] .google-connection-overview > div {
+  border-radius: 0;
+}
+@media (max-width: 650px) {
+  .google-connection-overview {
+    grid-template-columns: 1fr;
+  }
+  .google-connection-notice button {
+    margin-left: 0;
   }
 }

@@ -27,12 +27,18 @@ import {
   validateDocumentTemplateSource,
 } from "@/lib/document-workflows";
 import { createGoogleTemplateDocument } from "@/lib/google/docs";
-import { importStarterDocumentTemplate } from "@/lib/starter-document-templates";
+import {
+  createGoogleDocumentFromStarter,
+  importStarterDocumentTemplate,
+} from "@/lib/starter-document-templates";
 import {
   docxTemplateLimitBytes,
   importDocxTemplate,
 } from "@/lib/docx-template-import";
-import { setDocumentGroupShare } from "@/lib/collaboration";
+import {
+  setDocumentGroupShare,
+  setDocumentPersonShare,
+} from "@/lib/collaboration";
 import { resolveDriveStorageUser } from "@/lib/google/storage-owner";
 
 const idSchema = z.coerce.number().int().positive();
@@ -358,6 +364,38 @@ export async function importStarterDocumentTemplateAction(formData: FormData) {
   redirect(`/documents/templates/${templateId}`);
 }
 
+export async function useBundledStarterAction(formData: FormData) {
+  const user = await requireAuthenticatedUser();
+  const starterKey = text(formData, "starterKey");
+  const offeringId = idSchema.safeParse(formData.get("offeringId"));
+  if (!offeringId.success)
+    redirect("/documents?view=generate&status=starter-error");
+  let documentId: number;
+  try {
+    documentId = await createGoogleDocumentFromStarter(user.id, {
+      key: starterKey,
+      title: text(formData, "title"),
+      offeringId: offeringId.data,
+    });
+    refresh();
+  } catch (error) {
+    const status =
+      error instanceof DocumentGenerationError &&
+      error.code === "drive-folder-missing"
+        ? "generation-drive-folder-missing"
+        : error instanceof DocumentGenerationError &&
+            error.code === "drive-access-pending"
+          ? "generation-drive-access-pending"
+          : "starter-error";
+    redirect(
+      `/documents?view=generate&starterKey=${encodeURIComponent(starterKey)}&offeringId=${offeringId.data}&status=${status}`,
+    );
+  }
+  redirect(
+    `/documents?view=library&status=starter-synced&documentId=${documentId}`,
+  );
+}
+
 export async function importDocxTemplateAction(formData: FormData) {
   const user = await requireAuthenticatedUser();
   try {
@@ -402,6 +440,23 @@ export async function setDocumentGroupShareAction(formData: FormData) {
       user.id,
       documentId,
       idSchema.parse(formData.get("groupId")),
+      formData.get("shared") === "true",
+    );
+    refresh();
+  } catch {
+    redirect("/documents?view=library&status=share-error");
+  }
+  redirect("/documents?view=library&status=share-ok");
+}
+
+export async function setDocumentPersonShareAction(formData: FormData) {
+  const user = await requireAuthenticatedUser();
+  const documentId = idSchema.parse(formData.get("documentId"));
+  try {
+    setDocumentPersonShare(
+      user.id,
+      documentId,
+      idSchema.parse(formData.get("recipientUserId")),
       formData.get("shared") === "true",
     );
     refresh();

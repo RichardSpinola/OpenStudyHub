@@ -1,7 +1,6 @@
 # Instalação do zero
 
-Este roteiro é o caminho recomendado para validar uma instalação nova como se
-você fosse um usuário chegando ao projeto pelo GitHub.
+Este guia acompanha a primeira instalação, do endereço da instância até o primeiro acesso. Você vai preparar o App para a comunidade e manter o Admin em acesso privado; as integrações Google podem esperar até o espaço acadêmico estar pronto.
 
 ## 1. Escolha o endereço público
 
@@ -42,7 +41,10 @@ NODE_ENV=production
 APP_NAME=OpenStudyHub
 APP_URL=https://hub.exemplo.com
 DATABASE_PATH=/app/data/openstudyhub.db
+OPENSTUDYHUB_V2_ENABLED=1
+OPENSTUDYHUB_V2_DATABASE_PATH=/app/data/v2.db
 PRIVATE_ASSET_PATH=/app/data/private-assets
+OPENSTUDYHUB_REALTIME_PUBLIC_URL=wss://hub.exemplo.com/realtime
 ```
 
 Google pode ficar vazio até o Core estar funcionando.
@@ -53,7 +55,7 @@ Google pode ficar vazio até o Core estar funcionando.
 docker compose -f docker-compose.example.yml up -d --build
 ```
 
-Confira:
+Confira o App em `http://127.0.0.1:3000` e o Admin local em `http://127.0.0.1:3001/control/login`. Publique somente o App por HTTPS. Confira:
 
 ```text
 GET /api/health
@@ -63,18 +65,18 @@ A resposta saudável deve ser HTTP 200.
 
 ## 5. Faça o primeiro setup
 
-Abra a instância no navegador. Em um banco vazio você será levado a `/setup`.
+Abra `/control/setup` na superfície Admin local/LAN. Em um banco V2 vazio, o setup começa pela escolha do idioma da instância, com English selecionado inicialmente.
 
 Crie:
 
-1. primeiro ADMIN;
-2. nome da instituição;
-3. primeiro Program;
-4. turma opcional;
-5. período atual;
-6. primeira disciplina.
+1. escolha do idioma;
+2. primeiro Admin;
+3. nome da instituição;
+4. primeiro curso;
+5. período e turma iniciais;
+6. detalhes opcionais, revisão e conclusão.
 
-Depois você pode ampliar o modelo acadêmico em Administração.
+Depois você pode ampliar o modelo acadêmico em Administração. Veja as [capturas fictícias do fluxo inicial](getting-started.md#como-aparecem-as-etapas-iniciais).
 
 ## 6. Configure Google do zero
 
@@ -87,7 +89,7 @@ conectadas.
 
 ## 7. Defina a conta de armazenamento
 
-Em Configurações, escolha a Conta Google que será dona do armazenamento central.
+No Admin → Integrações, escolha uma conta Google já conectada que será dona do armazenamento central.
 
 A pasta raiz é nomeada a partir da instituição:
 

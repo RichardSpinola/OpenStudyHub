@@ -1,12 +1,12 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 
 import {
   createDocumentTemplateAction,
-  deleteGeneratedDocumentAction,
   generateDocumentAction,
   importDocxTemplateAction,
   importStarterDocumentTemplateAction,
-  setDocumentGroupShareAction,
+  useBundledStarterAction,
 } from "@/app/documents/actions";
 import { listUserSubjectOfferings } from "@/lib/academic";
 import { listUserActivities } from "@/lib/activities";
@@ -17,16 +17,23 @@ import {
   listSharedGeneratedDocuments,
   listUserGeneratedDocuments,
 } from "@/lib/document-workflows";
-import { listUserStudyGroups } from "@/lib/collaboration";
+import { listUserStudyGroups, listVisibleUsers } from "@/lib/collaboration";
 import { getGoogleConnection } from "@/lib/google/connections";
 import { getGooglePickerConfig } from "@/lib/google/config";
 import { GoogleDocPicker } from "@/components/google-doc-picker";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
+import { DocumentLibraryCard } from "@/components/document-library-card";
+import { LocalDocumentCard } from "@/components/local-document-card";
+import { importLocalDocumentAction } from "@/app/documents/local-actions";
 import {
-  getConfiguredStarterDocumentTemplateKeys,
-  starterDocumentTemplates,
-} from "@/lib/starter-document-templates";
-import { isConfiguredDriveStorageAvailable } from "@/lib/google/storage-owner";
+  listLocalDocuments,
+  listSharedLocalDocuments,
+} from "@/lib/v2/local-documents";
+import { listBundledStarterTemplates } from "@/lib/starter-document-templates";
+import { isDriveStorageAvailableForUser } from "@/lib/google/storage-owner";
+import { listOfferingGoogleIntegrations } from "@/lib/google/offering-integrations";
+import { getUserProfile } from "@/lib/profile";
+import { uiText } from "@/lib/translations";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +47,9 @@ type DocumentsPageProps = {
     templateId?: string;
     documentId?: string;
     status?: string;
+    layout?: string;
+    action?: string;
+    starterKey?: string;
   }>;
 };
 
@@ -48,9 +58,9 @@ function queryId(value: string | undefined): number | null {
 }
 
 function currentView(value: string | undefined): View {
-  return value === "library" || value === "shared" || value === "templates"
+  return value === "generate" || value === "shared" || value === "templates"
     ? value
-    : "generate";
+    : "library";
 }
 
 const documentCategoryLabels = {
@@ -59,18 +69,29 @@ const documentCategoryLabels = {
   documents: "Documento",
   custom: "Outro",
 } as const;
+const documentCategoryLabelsEn: Record<
+  keyof typeof documentCategoryLabels,
+  string
+> = {
+  activity: "Activity",
+  notes: "Notes",
+  documents: "Document",
+  custom: "Other",
+};
 
 const generationErrors: Record<string, string> = {
   "generation-google-not-connected":
     "Conecte novamente sua Conta Google antes de gerar o documento.",
   "generation-docs-unavailable":
-    "A API do Google Docs está indisponível ou não foi habilitada nesta instância.",
+    "O Google Docs não está disponível agora. Tente novamente mais tarde.",
   "generation-template-invalid":
     "O documento-base não é um Google Doc válido ou foi movido para a lixeira.",
   "generation-template-access":
     "Sua Conta Google não tem acesso ao documento-base. Abra-o com esta conexão ou use outro modelo.",
   "generation-drive-folder-missing":
     "A pasta Drive desta matéria ainda não foi configurada.",
+  "generation-drive-access-pending":
+    "O Admin ainda não autorizou sua conta a usar o Drive central.",
   "generation-copy-failed":
     "O Google Drive não conseguiu copiar o documento-base.",
   "generation-merge-failed":
@@ -86,6 +107,32 @@ const generationErrors: Record<string, string> = {
   "template-error": "Não foi possível salvar o modelo informado.",
   "document-delete-error": "Não foi possível excluir este documento.",
 };
+const generationErrorsEn: Record<string, string> = {
+  "generation-google-not-connected":
+    "Reconnect your Google Account before generating the document.",
+  "generation-docs-unavailable":
+    "Google Docs is unavailable right now. Try again later.",
+  "generation-template-invalid":
+    "The source document is not a valid Google Doc or was moved to trash.",
+  "generation-template-access":
+    "Your Google Account cannot access the source document. Open it with this connection or choose another template.",
+  "generation-drive-folder-missing":
+    "The Drive folder for this subject has not been configured yet.",
+  "generation-drive-access-pending":
+    "Admin has not authorized your account to use central Drive yet.",
+  "generation-copy-failed": "Google Drive could not copy the source document.",
+  "generation-merge-failed":
+    "The copy was created, but its sections could not be filled in.",
+  "generation-error":
+    "The document could not be generated with the information provided.",
+  "template-google-not-connected":
+    "Reconnect your Google Account before adding the source document.",
+  "template-template-invalid": "The source document is not a valid Google Doc.",
+  "template-template-access":
+    "Your Google Account did not grant OpenStudyHub access to this source document.",
+  "template-error": "The template could not be saved.",
+  "document-delete-error": "This document could not be deleted.",
+};
 
 const documentStatusMessages: Record<string, string> = {
   "document-removed-hub":
@@ -93,25 +140,57 @@ const documentStatusMessages: Record<string, string> = {
   "document-deleted-drive":
     "Documento removido do OpenStudyHub e enviado para a lixeira do Google Drive.",
 };
+const documentStatusMessagesEn: Record<string, string> = {
+  "document-removed-hub":
+    "Document removed from OpenStudyHub. The file remains in Google Drive.",
+  "document-deleted-drive":
+    "Document removed from OpenStudyHub and sent to Google Drive trash.",
+};
 
 export default async function DocumentsPage({
   searchParams,
 }: DocumentsPageProps) {
   const user = await requireAuthenticatedUser();
-  const configuredStarters = getConfiguredStarterDocumentTemplateKeys();
+  const language = getUserProfile(user.id).locale;
+  const tr = (pt: string, en: string) => uiText(language, pt, en);
+  const bundledStarters = listBundledStarterTemplates().filter(
+    ({ enabled }) => enabled,
+  );
   const parameters = await searchParams;
+  const selectedStarter = bundledStarters.find(
+    ({ key }) => key === parameters.starterKey,
+  );
   const view = currentView(parameters.view);
+  const layout = parameters.layout === "list" ? "list" : "grid";
   const offerings = listUserSubjectOfferings(user.id);
+  const readyDriveOfferings = new Set(
+    listOfferingGoogleIntegrations(
+      offerings.map(({ offeringId }) => offeringId),
+    )
+      .filter(({ driveFolderId }) => Boolean(driveFolderId))
+      .map(({ offeringId }) => offeringId),
+  );
   const activities = listUserActivities(user.id);
   const templates = listUserDocumentTemplates(user.id);
   const activeTemplates = templates.filter(({ active }) => active);
   const documents = listUserGeneratedDocuments(user.id);
+  const localDocuments =
+    process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+      ? listLocalDocuments(user.id)
+      : [];
+  const sharedLocalDocuments =
+    process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+      ? listSharedLocalDocuments(user.id)
+      : [];
   const sharedDocuments = listSharedGeneratedDocuments(user.id);
   const groups = listUserStudyGroups(user.id);
+  const people = listVisibleUsers(user.id);
   const googleConnection = getGoogleConnection(user.id);
-  const centralDriveAvailable = isConfiguredDriveStorageAvailable();
+  const centralDriveAvailable = isDriveStorageAvailableForUser(user.id);
   const driveWriteAvailable =
-    centralDriveAvailable || googleConnection?.status === "connected";
+    process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+      ? centralDriveAvailable
+      : centralDriveAvailable || googleConnection?.status === "connected";
   const pickerConfigured = getGooglePickerConfig() !== null;
   const offeringId = queryId(parameters.offeringId);
   const activityId = queryId(parameters.activityId);
@@ -141,61 +220,135 @@ export default async function DocumentsPage({
   );
 
   return (
-    <div className="workflow-shell documents-shell">
-      <header className="section-header">
+    <div className="workflow-shell documents-shell resource-workspace">
+      <header className="section-header resource-page-header">
         <div>
-          <p className="eyebrow">GOOGLE DOCS / DRIVE</p>
-          <h1>DOCUMENTOS</h1>
+          <p className="eyebrow">
+            <UiCopy pt="BIBLIOTECA E CRIAÇÃO" en="LIBRARY AND CREATION" />
+          </p>
+          <h1>
+            <UiCopy pt="Documentos" en="Documents" />
+          </h1>
           <p className="page-description">
-            Crie arquivos no Drive da matéria e continue escrevendo no Google
-            Docs.
+            <UiCopy
+              pt="Seus documentos, modelos e arquivos compartilhados em um lugar."
+              en="Your documents, templates and shared files in one place."
+            />
           </p>
         </div>
-        <Link className="text-link" href="/notes">
-          Ir para notas
-        </Link>
+        <div className="document-header-actions">
+          <Link className="primary-link" href="/documents?view=generate">
+            <UiCopy pt="+ Novo documento" en="+ New document" />
+          </Link>
+          <Link href="/documents?view=library#import-local">
+            <UiCopy pt="Importar arquivo" en="Import file" />
+          </Link>
+          <Link href="/documents?view=templates&action=drive#modelo-drive">
+            <UiCopy
+              pt="Escolher do Google Drive"
+              en="Choose from Google Drive"
+            />
+          </Link>
+        </div>
       </header>
+      <p className="document-library-note">
+        <UiCopy
+          pt="Arquivos locais ficam na sua biblioteca. Modelos e Google Drive são opções separadas."
+          en="Local files stay in your library. Templates and Google Drive are separate options."
+        />
+      </p>
 
-      <nav className="section-tabs" aria-label="Seções de documentos">
-        <Link
-          href="/documents?view=generate"
-          aria-current={view === "generate" ? "page" : undefined}
-        >
-          Gerar documento
-        </Link>
+      <nav
+        className="section-tabs"
+        aria-label={tr("Seções de documentos", "Document sections")}
+      >
         <Link
           href="/documents?view=library"
           aria-current={view === "library" ? "page" : undefined}
         >
-          Meus documentos <span>{documents.length}</span>
+          <UiCopy pt="Meus documentos" en="My documents" />{" "}
+          <span>{documents.length + localDocuments.length}</span>
         </Link>
         <Link
-          href="/documents?view=shared"
-          aria-current={view === "shared" ? "page" : undefined}
+          href="/documents?view=generate"
+          aria-current={view === "generate" ? "page" : undefined}
         >
-          Compartilhados comigo <span>{sharedDocuments.length}</span>
+          <UiCopy pt="Criar documento" en="Create document" />
         </Link>
         <Link
           href="/documents?view=templates"
           aria-current={view === "templates" ? "page" : undefined}
         >
-          Gerenciar modelos <span>{templates.length}</span>
+          <UiCopy pt="Modelos" en="Templates" />{" "}
+          <span>{templates.length + bundledStarters.length}</span>
+        </Link>
+        <Link
+          href="/documents?view=shared"
+          aria-current={view === "shared" ? "page" : undefined}
+        >
+          <UiCopy pt="Compartilhados comigo" en="Shared with me" />{" "}
+          <span>{sharedDocuments.length + sharedLocalDocuments.length}</span>
         </Link>
       </nav>
 
       {parameters.status && generationErrors[parameters.status] ? (
         <p className="feedback-banner is-error" role="alert">
-          {generationErrors[parameters.status]}
+          <UiCopy
+            pt={generationErrors[parameters.status]}
+            en={generationErrorsEn[parameters.status]}
+          />
         </p>
       ) : null}
 
       {parameters.status && documentStatusMessages[parameters.status] ? (
         <p className="feedback-banner" role="status">
-          {documentStatusMessages[parameters.status]}
+          <UiCopy
+            pt={documentStatusMessages[parameters.status]}
+            en={documentStatusMessagesEn[parameters.status]}
+          />
+        </p>
+      ) : null}
+      {parameters.status?.startsWith("local-") ? (
+        <p
+          className={`feedback-banner ${parameters.status.endsWith("error") ? "is-error" : "is-success"}`}
+          role="status"
+        >
+          {parameters.status === "local-imported" ? (
+            <UiCopy
+              pt="Arquivo importado para sua biblioteca."
+              en="File imported into your library."
+            />
+          ) : parameters.status === "local-removed" ? (
+            <UiCopy pt="Arquivo local excluído." en="Local file deleted." />
+          ) : parameters.status === "local-share-saved" ? (
+            <UiCopy
+              pt="Acesso ao arquivo atualizado."
+              en="File access updated."
+            />
+          ) : parameters.status === "local-share-error" ? (
+            <UiCopy
+              pt="Não foi possível atualizar o acesso. Confira a pessoa ou o grupo."
+              en="Could not update access. Check the person or group."
+            />
+          ) : (
+            <UiCopy
+              pt="Não foi possível importar. Use PDF, DOCX ou TXT de até 10 MiB."
+              en="Could not import. Use PDF, DOCX or TXT up to 10 MiB."
+            />
+          )}
+        </p>
+      ) : null}
+      {parameters.status === "starter-error" ? (
+        <p className="feedback-banner is-error" role="alert">
+          <UiCopy
+            pt="Não foi possível usar este modelo agora."
+            en="This template could not be used right now."
+          />
         </p>
       ) : null}
 
       {(parameters.status === "generated" ||
+        parameters.status === "starter-synced" ||
         parameters.status === "generated-share-warning") &&
       generatedDocument ? (
         <section className="generation-success" role="status">
@@ -203,7 +356,9 @@ export default async function DocumentsPage({
             ✓
           </span>
           <div>
-            <strong>Documento criado</strong>
+            <strong>
+              <UiCopy pt="Documento criado" en="Document created" />
+            </strong>
             <p>
               {generatedDocument.name} · {generatedDocument.subjectName}
             </p>
@@ -214,40 +369,153 @@ export default async function DocumentsPage({
             target="_blank"
             rel="noreferrer"
           >
-            Abrir no Google Docs
+            <UiCopy pt="Abrir no Google Docs" en="Open in Google Docs" />
           </a>
           {parameters.status === "generated-share-warning" ? (
             <small>
-              O documento foi criado, mas o compartilhamento escolhido no Hub
-              não pôde ser aplicado. Você pode tentar compartilhar novamente em
-              Meus documentos.
+              <UiCopy
+                pt="O documento foi criado, mas o compartilhamento escolhido no Hub não pôde ser aplicado. Você pode tentar compartilhar novamente em Meus documentos."
+                en="The document was created, but the chosen sharing in the Hub could not be applied. You can try sharing it again in My documents."
+              />
             </small>
           ) : null}
           {generatedDocument.googlePermissionStatus ===
           "needs_authorization" ? (
             <small>
-              O arquivo foi salvo no Drive central; o acesso Google individual
-              ainda precisa ser autorizado.
+              <UiCopy
+                pt="O arquivo foi salvo no Drive central; o acesso Google individual ainda precisa ser autorizado."
+                en="The file was saved in central Drive; individual Google access still needs authorization."
+              />
             </small>
           ) : null}
-          <Link href="/documents?view=library">Ver meus documentos</Link>
+          <Link href="/documents?view=library">
+            <UiCopy pt="Ver meus documentos" en="View my documents" />
+          </Link>
         </section>
       ) : null}
 
       {view === "generate" ? (
         <section className="utility-panel document-generate-flow">
           <div className="panel-title">
-            <span>GERAR DOCUMENTO</span>
-            <span>1–3 minutos</span>
+            <span>
+              <UiCopy pt="GERAR DOCUMENTO" en="CREATE DOCUMENT" />
+            </span>
+            <span>
+              <UiCopy pt="1–3 minutos" en="1–3 minutes" />
+            </span>
           </div>
-          {activeTemplates.length === 0 ? (
+          {offerings.some(
+            ({ offeringId }) => !readyDriveOfferings.has(offeringId),
+          ) ? (
+            <p className="feedback-banner" role="status">
+              <UiCopy
+                pt="Há disciplinas sem pasta Drive. O Admin pode criá-las em"
+                en="Some subjects have no Drive folder. Admin can create them under"
+              />{" "}
+              <Link href="/control/google">
+                <UiCopy
+                  pt="Administração → Integrações"
+                  en="Administration → Integrations"
+                />
+              </Link>
+              .
+            </p>
+          ) : null}
+          {selectedStarter ? (
+            <form className="document-brief" action={useBundledStarterAction}>
+              <input
+                type="hidden"
+                name="starterKey"
+                value={selectedStarter.key}
+              />
+              <header>
+                <span>
+                  <UiCopy pt="MODELO INICIAL" en="STARTER TEMPLATE" />
+                </span>
+                <strong>{selectedStarter.name}</strong>
+                <p>{selectedStarter.description}</p>
+              </header>
+              <label>
+                <UiCopy pt="Título do documento" en="Document title" />
+                <input
+                  name="title"
+                  maxLength={160}
+                  required
+                  placeholder={tr("Digite o título", "Enter a title")}
+                />
+              </label>
+              <label>
+                <UiCopy pt="Disciplina" en="Subject" />
+                <select
+                  name="offeringId"
+                  defaultValue={offeringId ?? ""}
+                  required
+                >
+                  <option value="">
+                    <UiCopy pt="Escolha uma disciplina" en="Choose a subject" />
+                  </option>
+                  {offerings.map((offering) => (
+                    <option
+                      key={offering.offeringId}
+                      value={offering.offeringId}
+                    >
+                      {offering.subjectName} · {offering.periodLabel}
+                      {readyDriveOfferings.has(offering.offeringId)
+                        ? ""
+                        : " · pasta Drive pendente"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="wide-field">
+                <strong>
+                  <UiCopy pt="Estrutura inicial" en="Starter structure" />
+                </strong>
+                <ul>
+                  {selectedStarter.sections.map((section) => (
+                    <li key={section.internalKey}>{section.displayTitle}</li>
+                  ))}
+                </ul>
+                <p>
+                  <UiCopy
+                    pt="O modelo será importado para seus templates no Drive. Ao criar, os campos da disciplina e do aluno serão preenchidos."
+                    en="The template will be imported to your Drive templates. When you create a document, subject and student fields will be filled in."
+                  />
+                </p>
+              </div>
+              <PendingSubmitButton
+                disabled={!driveWriteAvailable || !offerings.length}
+                pendingLabel={tr(
+                  "Enviando ao Google Docs…",
+                  "Sending to Google Docs…",
+                )}
+              >
+                <UiCopy pt="Criar no Google Docs" en="Create in Google Docs" />
+              </PendingSubmitButton>
+              <Link href="/documents?view=templates">
+                <UiCopy
+                  pt="Escolher outro modelo"
+                  en="Choose another template"
+                />
+              </Link>
+            </form>
+          ) : activeTemplates.length === 0 ? (
             <div className="useful-empty">
-              <strong>Você ainda não tem modelos ativos</strong>
+              <strong>
+                <UiCopy
+                  pt="Você ainda não tem modelos ativos"
+                  en="You have no active templates yet"
+                />
+              </strong>
               <p>
-                Importe um dos modelos iniciais ou crie um modelo pessoal antes
-                de gerar.
+                <UiCopy
+                  pt="Escolha um modelo inicial ou crie um modelo pessoal antes de gerar."
+                  en="Choose a starter template or create a personal template before generating."
+                />
               </p>
-              <Link href="/documents?view=templates">Gerenciar modelos</Link>
+              <Link href="/documents?view=templates">
+                <UiCopy pt="Ver modelos" en="View templates" />
+              </Link>
             </div>
           ) : (
             <>
@@ -258,13 +526,15 @@ export default async function DocumentsPage({
               >
                 <input type="hidden" name="view" value="generate" />
                 <label>
-                  Matéria
+                  <UiCopy pt="Matéria" en="Subject" />
                   <select
                     name="offeringId"
                     defaultValue={offeringId ?? ""}
                     required
                   >
-                    <option value="">Escolha uma matéria</option>
+                    <option value="">
+                      <UiCopy pt="Escolha uma matéria" en="Choose a subject" />
+                    </option>
                     {offerings.map((offering) => (
                       <option
                         key={offering.offeringId}
@@ -276,7 +546,7 @@ export default async function DocumentsPage({
                   </select>
                 </label>
                 <label>
-                  Modelo
+                  <UiCopy pt="Modelo" en="Template" />
                   <select
                     name="templateId"
                     defaultValue={selectedTemplate?.id ?? ""}
@@ -291,7 +561,9 @@ export default async function DocumentsPage({
                 {activityId ? (
                   <input type="hidden" name="activityId" value={activityId} />
                 ) : null}
-                <button type="submit">Usar este contexto</button>
+                <button type="submit">
+                  <UiCopy pt="Usar este contexto" en="Use this context" />
+                </button>
               </form>
 
               {offeringId && selectedTemplate ? (
@@ -306,23 +578,25 @@ export default async function DocumentsPage({
                     value={selectedTemplate.id}
                   />
                   <header>
-                    <span>MODELO</span>
+                    <span>
+                      <UiCopy pt="MODELO" en="TEMPLATE" />
+                    </span>
                     <strong>{selectedTemplate.name}</strong>
                     {selectedTemplate.description ? (
                       <p>{selectedTemplate.description}</p>
                     ) : null}
                   </header>
                   <label>
-                    Título do documento
+                    <UiCopy pt="Título do documento" en="Document title" />
                     <input
                       name="title"
                       maxLength={180}
-                      placeholder="Ex.: Atividade 03"
+                      placeholder={tr("Ex.: Atividade 03", "E.g. Activity 03")}
                       required
                     />
                   </label>
                   <label>
-                    Data
+                    <UiCopy pt="Data" en="Date" />
                     <input
                       name="date"
                       type="date"
@@ -331,17 +605,31 @@ export default async function DocumentsPage({
                     />
                   </label>
                   <label className="wide-field">
-                    Tema <small>opcional</small>
+                    <UiCopy pt="Tema" en="Topic" />{" "}
+                    <small>
+                      <UiCopy pt="opcional" en="optional" />
+                    </small>
                     <input
                       name="topic"
                       maxLength={300}
-                      placeholder="Uma frase curta para contextualizar"
+                      placeholder={tr(
+                        "Uma frase curta para contextualizar",
+                        "A short phrase for context",
+                      )}
                     />
                   </label>
                   <label className="wide-field">
-                    Atividade <small>opcional</small>
+                    <UiCopy pt="Atividade" en="Activity" />{" "}
+                    <small>
+                      <UiCopy pt="opcional" en="optional" />
+                    </small>
                     <select name="activityId" defaultValue={activityId ?? ""}>
-                      <option value="">Sem atividade associada</option>
+                      <option value="">
+                        <UiCopy
+                          pt="Sem atividade associada"
+                          en="No linked activity"
+                        />
+                      </option>
                       {contextActivities.map((activity) => (
                         <option key={activity.id} value={activity.id}>
                           {activity.title}
@@ -350,7 +638,7 @@ export default async function DocumentsPage({
                     </select>
                   </label>
                   <label>
-                    Categoria no Drive
+                    <UiCopy pt="Categoria no Drive" en="Drive category" />
                     <select
                       name="categoryKind"
                       defaultValue={selectedTemplate.categoryKind}
@@ -358,7 +646,14 @@ export default async function DocumentsPage({
                       {Object.entries(documentCategoryLabels).map(
                         ([value, label]) => (
                           <option key={value} value={value}>
-                            {label}
+                            <UiCopy
+                              pt={label}
+                              en={
+                                documentCategoryLabelsEn[
+                                  value as keyof typeof documentCategoryLabels
+                                ]
+                              }
+                            />
                           </option>
                         ),
                       )}
@@ -366,9 +661,17 @@ export default async function DocumentsPage({
                   </label>
                   {contextGroups.length ? (
                     <label>
-                      Compartilhar ao gerar <small>opcional</small>
+                      <UiCopy
+                        pt="Compartilhar ao gerar"
+                        en="Share when generating"
+                      />{" "}
+                      <small>
+                        <UiCopy pt="opcional" en="optional" />
+                      </small>
                       <select name="shareGroupId" defaultValue="">
-                        <option value="">Somente eu</option>
+                        <option value="">
+                          <UiCopy pt="Somente eu" en="Only me" />
+                        </option>
                         {contextGroups.map((group) => (
                           <option key={group.id} value={group.id}>
                             {group.name}
@@ -378,7 +681,9 @@ export default async function DocumentsPage({
                     </label>
                   ) : null}
                   <fieldset className="wide-field option-grid">
-                    <legend>Aluno(s)</legend>
+                    <legend>
+                      <UiCopy pt="Aluno(s)" en="Student(s)" />
+                    </legend>
                     {participants.map((participant) => (
                       <label key={participant.id}>
                         <input
@@ -395,7 +700,9 @@ export default async function DocumentsPage({
                     ({ optional }) => optional,
                   ) ? (
                     <fieldset className="wide-field option-grid">
-                      <legend>Seções opcionais</legend>
+                      <legend>
+                        <UiCopy pt="Seções opcionais" en="Optional sections" />
+                      </legend>
                       {selectedTemplate.sections
                         .filter(({ optional }) => optional)
                         .map((section) => (
@@ -413,229 +720,356 @@ export default async function DocumentsPage({
                   ) : null}
                   <div className="wide-field generate-action">
                     <p>
-                      O arquivo será salvo na categoria escolhida dentro da
-                      estrutura Drive desta matéria.
+                      <UiCopy
+                        pt="O arquivo será salvo na categoria escolhida dentro da estrutura Drive desta matéria."
+                        en="The file will be saved in the chosen category within this subject's Drive structure."
+                      />
                     </p>
                     <PendingSubmitButton
-                      disabled={!driveWriteAvailable}
-                      pendingLabel="Gerando documento…"
+                      disabled={
+                        !driveWriteAvailable ||
+                        !readyDriveOfferings.has(offeringId)
+                      }
+                      pendingLabel={tr(
+                        "Gerando documento…",
+                        "Generating document…",
+                      )}
                     >
-                      Gerar no Google Docs
+                      <UiCopy
+                        pt="Gerar no Google Docs"
+                        en="Generate in Google Docs"
+                      />
                     </PendingSubmitButton>
                   </div>
                 </form>
               ) : (
                 <div className="useful-empty compact">
-                  <strong>Escolha a matéria e o modelo</strong>
-                  <p>O contexto da Activity será mantido quando disponível.</p>
+                  <strong>
+                    <UiCopy
+                      pt="Escolha a matéria e o modelo"
+                      en="Choose a subject and template"
+                    />
+                  </strong>
+                  <p>
+                    <UiCopy
+                      pt="O contexto da atividade será mantido quando disponível."
+                      en="Activity context will be kept when available."
+                    />
+                  </p>
                 </div>
               )}
             </>
           )}
           {!driveWriteAvailable ? (
             <p className="panel-help">
-              Conecte uma Conta Google ou peça ao administrador para configurar
-              o Drive central.
+              <UiCopy
+                pt="Conecte uma Conta Google ou peça ao administrador para configurar o Drive central."
+                en="Connect a Google account or ask the administrator to set up central Drive."
+              />
             </p>
           ) : null}
         </section>
       ) : null}
 
       {view === "library" ? (
-        <section className="utility-panel document-library">
-          <div className="panel-title">
-            <span>MEUS DOCUMENTOS</span>
-            <span>{documents.length.toString().padStart(2, "0")}</span>
+        <section
+          className="resource-collection document-library"
+          aria-labelledby="document-list-title"
+        >
+          <div className="resource-collection-header">
+            <div>
+              <span className="page-kicker">
+                <UiCopy pt="BIBLIOTECA" en="LIBRARY" />
+              </span>
+              <h2 id="document-list-title">
+                <UiCopy pt="Meus documentos" en="My documents" />{" "}
+                <small>{documents.length + localDocuments.length}</small>
+              </h2>
+            </div>
+            <nav
+              className="resource-view-toggle"
+              aria-label={tr("Visualização dos documentos", "Document view")}
+            >
+              <Link
+                href="/documents?view=library&layout=grid"
+                aria-current={layout === "grid" ? "page" : undefined}
+              >
+                <UiCopy pt="Grade" en="Grid" />
+              </Link>
+              <Link
+                href="/documents?view=library&layout=list"
+                aria-current={layout === "list" ? "page" : undefined}
+              >
+                <UiCopy pt="Lista" en="List" />
+              </Link>
+            </nav>
           </div>
-          {documents.length === 0 ? (
-            <div className="useful-empty">
-              <strong>Nenhum documento gerado</strong>
-              <p>Escolha um modelo e uma matéria para criar o primeiro.</p>
-              <Link href="/documents?view=generate">Gerar documento</Link>
+          {process.env.OPENSTUDYHUB_V2_ENABLED === "1" ? (
+            <form
+              id="import-local"
+              className="local-document-import"
+              action={importLocalDocumentAction}
+            >
+              <div>
+                <strong>
+                  <UiCopy pt="Importar arquivo local" en="Import local file" />
+                </strong>
+                <p>
+                  <UiCopy
+                    pt="PDF, DOCX ou TXT de até 10 MiB. O arquivo fica privado nesta instalação e pode ser baixado depois."
+                    en="PDF, DOCX or TXT up to 10 MiB. The file stays private in this installation and can be downloaded later."
+                  />
+                </p>
+              </div>
+              <label>
+                <UiCopy pt="Arquivo" en="File" />{" "}
+                <input
+                  name="file"
+                  type="file"
+                  accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                  required
+                />
+              </label>
+              <label>
+                <UiCopy pt="Disciplina" en="Subject" />{" "}
+                <select name="offeringId" defaultValue="">
+                  <option value="">
+                    <UiCopy pt="Sem disciplina" en="No subject" />
+                  </option>
+                  {offerings.map((offering) => (
+                    <option
+                      key={offering.offeringId}
+                      value={offering.offeringId}
+                    >
+                      {offering.subjectName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <PendingSubmitButton
+                pendingLabel={tr("Importando arquivo…", "Importing file…")}
+              >
+                <UiCopy pt="Importar" en="Import" />
+              </PendingSubmitButton>
+            </form>
+          ) : null}
+          {documents.length + localDocuments.length === 0 ? (
+            <div className="useful-empty resource-empty">
+              <strong>
+                <UiCopy
+                  pt="Sua biblioteca de documentos começa aqui"
+                  en="Your document library starts here"
+                />
+              </strong>
+              <p>
+                <UiCopy
+                  pt="Importe um arquivo local ou escolha um modelo para criar o primeiro documento."
+                  en="Import a local file or choose a template to create your first document."
+                />
+              </p>
+              <Link href="#import-local">
+                <UiCopy pt="Importar arquivo" en="Import file" />
+              </Link>
             </div>
           ) : (
-            <ol className="generated-document-list document-cards">
+            <ul className={`document-library-grid is-${layout}`}>
               {documents.map((document) => (
-                <li key={document.id}>
-                  <a
-                    className="generated-document-link"
-                    href={document.webViewLink}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div>
-                      <strong>{document.name}</strong>
-                      <span>
-                        {document.subjectName}
-                        {document.activityTitle
-                          ? ` · ${document.activityTitle}`
-                          : ""}
-                      </span>
-                    </div>
-                    <span>{document.templateName ?? "Modelo removido"}</span>
-                    <time dateTime={new Date(document.createdAt).toISOString()}>
-                      {new Intl.DateTimeFormat("pt-BR", {
-                        dateStyle: "medium",
-                      }).format(document.createdAt)}
-                    </time>
-                    <b>Abrir ↗</b>
-                  </a>
-                  <details className="document-delete-menu">
-                    <summary>Excluir</summary>
-                    <p className="panel-help">
-                      Remover do Hub mantém o arquivo no Google Drive. Excluir
-                      do Drive move o arquivo para a lixeira e também remove
-                      esta visualização.
-                    </p>
-                    <div className="document-delete-actions">
-                      <form action={deleteGeneratedDocumentAction}>
-                        <input
-                          type="hidden"
-                          name="documentId"
-                          value={document.id}
-                        />
-                        <input type="hidden" name="mode" value="hub" />
-                        <button type="submit">Remover só do Hub</button>
-                      </form>
-                      <form action={deleteGeneratedDocumentAction}>
-                        <input
-                          type="hidden"
-                          name="documentId"
-                          value={document.id}
-                        />
-                        <input type="hidden" name="mode" value="drive" />
-                        <button className="danger-button" type="submit">
-                          Excluir também do Drive
-                        </button>
-                      </form>
-                    </div>
-                  </details>
-                </li>
+                <DocumentLibraryCard
+                  key={document.id}
+                  document={document}
+                  groups={groups}
+                  people={people}
+                  language={language}
+                />
               ))}
-            </ol>
+              {localDocuments.map((document) => (
+                <LocalDocumentCard
+                  key={`local-${document.id}`}
+                  document={document}
+                  ownerUserId={user.id}
+                  people={people}
+                  groups={groups}
+                  language={language}
+                />
+              ))}
+            </ul>
           )}
-          {documents.length ? (
-            <details className="document-share-panel">
-              <summary>Compartilhar documento</summary>
-              <form action={setDocumentGroupShareAction}>
-                <input type="hidden" name="shared" value="true" />
-                <select name="documentId" required>
-                  {documents.map((document) => (
-                    <option key={document.id} value={document.id}>
-                      {document.name}
-                    </option>
-                  ))}
-                </select>
-                <select name="groupId" required>
-                  {groups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-                <button type="submit" disabled={!groups.length}>
-                  Compartilhar
-                </button>
-              </form>
-              <p className="panel-help">
-                O acesso no Hub é imediato. O Google Drive pode exigir
-                autorização adicional do proprietário.
-              </p>
-            </details>
-          ) : null}
         </section>
       ) : null}
 
       {view === "shared" ? (
-        <section className="utility-panel document-library">
-          <div className="panel-title">
-            <span>COMPARTILHADOS COM VOCÊ</span>
-            <span>{sharedDocuments.length.toString().padStart(2, "0")}</span>
+        <section className="resource-collection document-library">
+          <div className="resource-collection-header">
+            <div>
+              <span className="page-kicker">
+                <UiCopy pt="EM GRUPO" en="SHARED" />
+              </span>
+              <h2>
+                <UiCopy pt="Compartilhados com você" en="Shared with you" />{" "}
+                <small>
+                  {sharedDocuments.length + sharedLocalDocuments.length}
+                </small>
+              </h2>
+            </div>
           </div>
-          {sharedDocuments.length === 0 ? (
-            <div className="useful-empty">
-              <strong>Nenhum documento compartilhado</strong>
+          {sharedDocuments.length + sharedLocalDocuments.length === 0 ? (
+            <div className="useful-empty resource-empty">
+              <strong>
+                <UiCopy
+                  pt="Nenhum documento compartilhado"
+                  en="No shared documents"
+                />
+              </strong>
               <p>
-                Documentos compartilhados pelos seus grupos aparecerão aqui.
+                <UiCopy
+                  pt="Documentos compartilhados pelos seus grupos aparecerão aqui."
+                  en="Documents shared by your groups will appear here."
+                />
               </p>
             </div>
           ) : (
-            <ol className="generated-document-list document-cards">
+            <ul className={`document-library-grid is-${layout}`}>
               {sharedDocuments.map((document) => (
-                <li key={document.id}>
-                  <a
-                    href={document.webViewLink}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div>
-                      <strong>{document.name}</strong>
-                      <span>{document.subjectName}</span>
-                    </div>
-                    <small>
-                      {document.googlePermissionStatus === "granted"
-                        ? "Drive autorizado"
-                        : "Acesso Google pode exigir autorização"}
-                    </small>
-                    <b>Abrir ↗</b>
-                  </a>
-                </li>
+                <DocumentLibraryCard
+                  key={document.id}
+                  document={document}
+                  shared
+                  language={language}
+                />
               ))}
-            </ol>
+              {sharedLocalDocuments.map((document) => (
+                <LocalDocumentCard
+                  key={`local-shared-${document.id}`}
+                  document={document}
+                  language={language}
+                />
+              ))}
+            </ul>
           )}
         </section>
       ) : null}
 
       {view === "templates" ? (
-        <div className="template-manager-layout">
-          <section className="utility-panel">
-            <div className="panel-title">MODELOS INICIAIS</div>
-            <div className="starter-template-list starter-cards">
-              {starterDocumentTemplates.map((starter) => (
-                <form
-                  key={starter.key}
-                  action={importStarterDocumentTemplateAction}
-                >
-                  <input type="hidden" name="starterKey" value={starter.key} />
-                  <span>
+        <div className="template-manager-layout template-workspace">
+          <div className="template-workspace-intro">
+            <span className="page-kicker">
+              <UiCopy pt="PONTO DE PARTIDA" en="STARTING POINT" />
+            </span>
+            <h2>
+              <UiCopy
+                pt="Modelos para cada tipo de trabalho"
+                en="Templates for every kind of assignment"
+              />
+            </h2>
+            <p>
+              <UiCopy
+                pt="Escolha um modelo inicial ou use um documento seu. Depois, personalize as seções antes de criar o arquivo final."
+                en="Choose a starter template or one of your documents. Then customize its sections before creating the final file."
+              />
+            </p>
+          </div>
+          <section className="resource-collection template-catalog">
+            <div className="resource-collection-header">
+              <div>
+                <span className="page-kicker">
+                  <UiCopy pt="DISPONÍVEIS" en="AVAILABLE" />
+                </span>
+                <h2>
+                  <UiCopy pt="Modelos iniciais" en="Starter templates" />
+                  <small>{bundledStarters.length}</small>
+                </h2>
+              </div>
+            </div>
+            <div className="starter-template-list template-gallery">
+              {bundledStarters.map((starter) => (
+                <div key={starter.key} className="template-gallery-card">
+                  <div className="template-sheet-preview" aria-hidden="true">
+                    <span>
+                      <UiCopy pt="MODELO" en="TEMPLATE" /> ·{" "}
+                      <UiCopy
+                        pt={documentCategoryLabels[starter.categoryKind]}
+                        en={documentCategoryLabelsEn[starter.categoryKind]}
+                      />
+                    </span>
                     <strong>{starter.name}</strong>
-                    <small>{starter.description}</small>
-                  </span>
-                  <button
-                    type="submit"
-                    disabled={
-                      !driveWriteAvailable ||
-                      !configuredStarters.has(starter.key)
-                    }
+                    {starter.sections.slice(0, 3).map((section) => (
+                      <i key={section.internalKey}>{section.displayTitle}</i>
+                    ))}
+                  </div>
+                  <div className="template-gallery-info">
+                    <small>
+                      <UiCopy
+                        pt={documentCategoryLabels[starter.categoryKind]}
+                        en={documentCategoryLabelsEn[starter.categoryKind]}
+                      />
+                    </small>
+                    <strong>{starter.name}</strong>
+                    <p>{starter.description}</p>
+                  </div>
+                  <Link
+                    href={`/documents?view=generate&starterKey=${starter.key}`}
+                    className="primary-link"
                   >
-                    {configuredStarters.has(starter.key)
-                      ? "Importar"
-                      : "Configuração necessária"}
-                  </button>
-                </form>
+                    <UiCopy pt="Usar modelo →" en="Use template →" />
+                  </Link>
+                  {driveWriteAvailable ? (
+                    <form action={importStarterDocumentTemplateAction}>
+                      <input
+                        type="hidden"
+                        name="starterKey"
+                        value={starter.key}
+                      />
+                      <button type="submit">
+                        <UiCopy
+                          pt="Personalizar seções"
+                          en="Customize sections"
+                        />
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
               ))}
             </div>
-            <details className="create-template-disclosure">
-              <summary>Importar DOCX</summary>
+            <details
+              className="create-template-disclosure template-import-panel"
+              id="importar-modelo"
+              open={parameters.action === "import"}
+            >
+              <summary>
+                <UiCopy pt="Importar modelo DOCX" en="Import DOCX template" />
+              </summary>
+              <p>
+                <UiCopy
+                  pt="O DOCX será convertido em um modelo para novos documentos."
+                  en="The DOCX will become a template for new documents."
+                />
+              </p>
               <form className="workflow-form" action={importDocxTemplateAction}>
                 <label>
-                  Nome
+                  <UiCopy pt="Nome" en="Name" />
                   <input name="name" maxLength={120} required />
                 </label>
                 <label>
-                  Tipo do documento
+                  <UiCopy pt="Tipo do documento" en="Document type" />
                   <select name="categoryKind" defaultValue="documents">
                     {Object.entries(documentCategoryLabels).map(
                       ([value, label]) => (
                         <option key={value} value={value}>
-                          {label}
+                          <UiCopy
+                            pt={label}
+                            en={
+                              documentCategoryLabelsEn[
+                                value as keyof typeof documentCategoryLabels
+                              ]
+                            }
+                          />
                         </option>
                       ),
                     )}
                   </select>
                 </label>
                 <label>
-                  Arquivo DOCX
+                  <UiCopy pt="Arquivo DOCX" en="DOCX file" />
                   <input
                     name="docx"
                     type="file"
@@ -644,7 +1078,10 @@ export default async function DocumentsPage({
                   />
                 </label>
                 <label className="wide-field">
-                  Descrição <small>opcional</small>
+                  <UiCopy pt="Descrição" en="Description" />
+                  <small>
+                    <UiCopy pt="opcional" en="optional" />
+                  </small>
                   <input name="description" maxLength={500} />
                 </label>
                 <input
@@ -654,43 +1091,69 @@ export default async function DocumentsPage({
                 />
                 <PendingSubmitButton
                   disabled={!driveWriteAvailable}
-                  pendingLabel="Importando DOCX…"
+                  pendingLabel={tr("Importando DOCX…", "Importing DOCX…")}
                 >
-                  Importar como Google Docs
+                  <UiCopy
+                    pt="Importar como Google Docs"
+                    en="Import as Google Docs"
+                  />
                 </PendingSubmitButton>
               </form>
             </details>
           </section>
 
-          <section className="utility-panel">
-            <div className="panel-title">
-              <span>SEUS MODELOS</span>
-              <span>{templates.length.toString().padStart(2, "0")}</span>
+          <section className="resource-collection template-catalog">
+            <div className="resource-collection-header">
+              <div>
+                <span className="page-kicker">
+                  <UiCopy pt="PERSONALIZADOS" en="CUSTOM" />
+                </span>
+                <h2>
+                  <UiCopy pt="Seus modelos" en="Your templates" />{" "}
+                  <small>{templates.length}</small>
+                </h2>
+              </div>
             </div>
-            <details className="create-template-disclosure">
-              <summary>+ Criar modelo</summary>
+            <details
+              className="create-template-disclosure template-import-panel"
+              id="modelo-drive"
+              open={parameters.action === "drive"}
+            >
+              <summary>
+                <UiCopy
+                  pt="+ Criar modelo ou escolher do Google Drive"
+                  en="+ Create a template or choose from Google Drive"
+                />
+              </summary>
               <form
                 className="workflow-form"
                 action={createDocumentTemplateAction}
               >
                 <label>
-                  Nome
+                  <UiCopy pt="Nome" en="Name" />
                   <input name="name" maxLength={160} required />
                 </label>
                 <label>
-                  Tipo do documento
+                  <UiCopy pt="Tipo do documento" en="Document type" />
                   <select name="categoryKind" defaultValue="documents">
                     {Object.entries(documentCategoryLabels).map(
                       ([value, label]) => (
                         <option key={value} value={value}>
-                          {label}
+                          <UiCopy
+                            pt={label}
+                            en={
+                              documentCategoryLabelsEn[
+                                value as keyof typeof documentCategoryLabels
+                              ]
+                            }
+                          />
                         </option>
                       ),
                     )}
                   </select>
                 </label>
                 <label>
-                  Nome do arquivo
+                  <UiCopy pt="Nome do arquivo" en="File name" />
                   <input
                     name="namingPattern"
                     defaultValue="{{subject.name}} - {{document.title}} - {{document.date}}"
@@ -699,55 +1162,119 @@ export default async function DocumentsPage({
                   />
                 </label>
                 <label className="wide-field">
-                  Descrição <small>opcional</small>
+                  <UiCopy pt="Descrição" en="Description" />
+                  <small>
+                    <UiCopy pt="opcional" en="optional" />
+                  </small>
                   <input name="description" maxLength={1000} />
                 </label>
-                <details className="wide-field advanced-settings">
-                  <summary>Usar um Google Doc existente</summary>
+                <div className="wide-field template-drive-source">
                   <label>
-                    Link do documento base
+                    <UiCopy
+                      pt="Documento base do Google Drive"
+                      en="Source document from Google Drive"
+                    />{" "}
+                    <small>
+                      <UiCopy pt="opcional" en="optional" />
+                    </small>
                     <input
                       id="google-template-source"
                       name="sourceFile"
                       maxLength={2048}
-                      placeholder="https://docs.google.com/document/d/…"
+                      placeholder={tr(
+                        "Cole o link do Google Docs ou escolha abaixo",
+                        "Paste a Google Docs link or choose below",
+                      )}
                     />
                   </label>
                   <GoogleDocPicker
                     configured={pickerConfigured}
                     inputId="google-template-source"
                   />
-                </details>
+                </div>
                 <input type="hidden" name="active" value="on" />
                 <PendingSubmitButton
                   disabled={!driveWriteAvailable}
-                  pendingLabel="Criando modelo…"
+                  pendingLabel={tr("Criando modelo…", "Creating template…")}
                 >
-                  Criar modelo
+                  <UiCopy pt="Criar modelo" en="Create template" />
                 </PendingSubmitButton>
               </form>
             </details>
             {templates.length === 0 ? (
-              <div className="useful-empty compact">
-                <strong>Nenhum modelo pessoal</strong>
-                <p>Importe uma base inicial ou crie uma em branco.</p>
+              <div className="useful-empty resource-empty compact">
+                <strong>
+                  <UiCopy
+                    pt="Nenhum modelo pessoal"
+                    en="No personal templates"
+                  />
+                </strong>
+                <p>
+                  <UiCopy
+                    pt="Importe uma base inicial ou crie uma em branco."
+                    en="Import a starter file or create a blank template."
+                  />
+                </p>
               </div>
             ) : (
-              <ol className="template-list template-cards">
+              <ol className="template-list template-gallery">
                 {templates.map((template) => (
                   <li key={template.id}>
                     <Link href={`/documents/templates/${template.id}`}>
-                      <div>
+                      <div
+                        className="template-sheet-preview"
+                        aria-hidden="true"
+                      >
+                        <span>
+                          <UiCopy pt="MODELO" en="TEMPLATE" /> ·{" "}
+                          <UiCopy
+                            pt={documentCategoryLabels[template.categoryKind]}
+                            en={documentCategoryLabelsEn[template.categoryKind]}
+                          />
+                        </span>
                         <strong>{template.name}</strong>
-                        <span>{template.description ?? "Modelo pessoal"}</span>
+                        {template.sections.slice(0, 3).map((section) => (
+                          <i key={section.id}>{section.displayTitle}</i>
+                        ))}
                       </div>
-                      <span>
-                        {documentCategoryLabels[template.categoryKind]} ·{" "}
-                        {template.sections.length} seção(ões) ·{" "}
-                        {template.active ? "Ativo" : "Desativado"}
-                      </span>
-                      <b>Personalizar →</b>
+                      <div className="template-gallery-info">
+                        <small>
+                          <UiCopy
+                            pt={documentCategoryLabels[template.categoryKind]}
+                            en={documentCategoryLabelsEn[template.categoryKind]}
+                          />{" "}
+                          ·{" "}
+                          {template.active ? (
+                            <UiCopy pt="Disponível" en="Available" />
+                          ) : (
+                            <UiCopy pt="Desativado" en="Disabled" />
+                          )}
+                        </small>
+                        <strong>{template.name}</strong>
+                        <p>
+                          {template.description ?? (
+                            <UiCopy
+                              pt={`${template.sections.length} seções para personalizar`}
+                              en={`${template.sections.length} sections to customize`}
+                            />
+                          )}
+                        </p>
+                      </div>
+                      <b>
+                        <UiCopy
+                          pt="Ver e personalizar →"
+                          en="View and customize →"
+                        />
+                      </b>
                     </Link>
+                    {template.active ? (
+                      <Link
+                        className="primary-link"
+                        href={`/documents?view=generate&templateId=${template.id}`}
+                      >
+                        <UiCopy pt="Usar modelo →" en="Use template →" />
+                      </Link>
+                    ) : null}
                   </li>
                 ))}
               </ol>

@@ -1522,6 +1522,51 @@ export const documentGroupShares = sqliteTable(
   (table) => [primaryKey({ columns: [table.documentId, table.groupId] })],
 );
 
+export const notePersonShares = sqliteTable(
+  "note_person_shares",
+  {
+    noteId: integer("note_id")
+      .notNull()
+      .references(() => notes.id, { onDelete: "cascade" }),
+    recipientUserId: integer("recipient_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sharedByUserId: integer("shared_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+  },
+  (table) => [primaryKey({ columns: [table.noteId, table.recipientUserId] })],
+);
+
+export const documentPersonShares = sqliteTable(
+  "document_person_shares",
+  {
+    documentId: integer("document_id")
+      .notNull()
+      .references(() => generatedDocuments.id, { onDelete: "cascade" }),
+    recipientUserId: integer("recipient_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    sharedByUserId: integer("shared_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    googlePermissionStatus: text("google_permission_status", {
+      enum: ["needs_authorization", "granted"],
+    })
+      .notNull()
+      .default("needs_authorization"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .default(timestampNow),
+  },
+  (table) => [
+    primaryKey({ columns: [table.documentId, table.recipientUserId] }),
+  ],
+);
+
 export const chatRooms = sqliteTable(
   "chat_rooms",
   {

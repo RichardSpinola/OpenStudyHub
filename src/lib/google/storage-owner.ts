@@ -3,6 +3,8 @@ import { z } from "zod";
 import { recordAuditEvent } from "@/lib/audit";
 import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
+import { storageOwnerStatus } from "@/lib/v2/drive-storage";
+import { withV2Db } from "@/lib/v2/runtime-database";
 
 const STORAGE_OWNER_KEY = "google.storage_owner_user_id";
 const idSchema = z.number().int().positive();
@@ -46,6 +48,9 @@ export function listDriveStorageOwnerCandidates(
 export function isConfiguredDriveStorageAvailable(
   connection: DatabaseConnection = getDatabase(),
 ): boolean {
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+    return withV2Db((db) => storageOwnerStatus(db)?.connected === true);
+  }
   const ownerId = getConfiguredDriveStorageOwnerId(connection);
   if (ownerId === null) return false;
   return Boolean(
@@ -59,6 +64,24 @@ export function isConfiguredDriveStorageAvailable(
       )
       .get(ownerId),
   );
+}
+
+export function isDriveStorageAvailableForUser(
+  legacyUserId: number,
+  connection: DatabaseConnection = getDatabase(),
+): boolean {
+  if (process.env.OPENSTUDYHUB_V2_ENABLED !== "1")
+    return isConfiguredDriveStorageAvailable(connection);
+  return withV2Db((db) => {
+    const owner = storageOwnerStatus(db);
+    if (!owner?.connected || !owner.rootReady || !owner.ownerId) return false;
+    const link = db
+      .prepare(
+        "SELECT legacy_user_id id FROM legacy_user_links WHERE user_id=?",
+      )
+      .get(owner.ownerId) as { id: number } | undefined;
+    return link?.id === legacyUserId;
+  });
 }
 
 export function setDriveStorageOwner(

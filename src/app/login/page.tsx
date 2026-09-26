@@ -8,10 +8,15 @@ import { defaultUiLanguage, getUiLanguage } from "@/lib/ui-language";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const next = (await searchParams).next === "/gestao" ? "/gestao" : null;
   if (process.env.OPENSTUDYHUB_V2_ENABLED !== "1" && isSetupRequired())
     redirect("/setup");
-  if (await getCurrentSession()) redirect("/");
+  if (await getCurrentSession()) redirect(next ?? "/");
 
   let language = defaultUiLanguage;
   try {
@@ -23,14 +28,24 @@ export default async function LoginPage() {
 
   return (
     <div className="access-screen login-screen">
-      <header className="access-titlebar">
-        <span>{access.loginSystem}</span>
-        <div>
-          <h1>{access.loginTitle}</h1>
-          <p>Acesse seu espaço acadêmico.</p>
-        </div>
+      <header className="login-intro">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/icon-180.png" width="56" height="56" alt="" />
+        <span>OpenStudyHub</span>
+        <h1>
+          {language === "en" ? "Sign in to your account" : "Entre na sua conta"}
+        </h1>
       </header>
-      <LoginForm labels={access} />
+      <LoginForm
+        labels={{
+          ...access,
+          login: language === "en" ? "Username" : "Usuário",
+          password: language === "en" ? "Password" : "Senha",
+          loginAction: language === "en" ? "Sign in" : "Entrar",
+          sharedComputer: "",
+        }}
+        next={next}
+      />
     </div>
   );
 }

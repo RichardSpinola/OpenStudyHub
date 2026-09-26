@@ -24,10 +24,17 @@ function LoginSubmit({ label }: { label: string }) {
   );
 }
 
-export function LoginForm({ labels }: { labels: LoginLabels }) {
+export function LoginForm({
+  labels,
+  next,
+}: {
+  labels: LoginLabels;
+  next: string | null;
+}) {
   const [state, action] = useActionState(loginAction, initialState);
   return (
     <form action={action} className="access-form login-form">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <label>
         {labels.login}
         <input
@@ -37,7 +44,6 @@ export function LoginForm({ labels }: { labels: LoginLabels }) {
           autoComplete="username"
           spellCheck={false}
           required
-          autoFocus
         />
       </label>
       <label>
@@ -56,7 +62,7 @@ export function LoginForm({ labels }: { labels: LoginLabels }) {
         </p>
       ) : null}
       <LoginSubmit label={labels.loginAction} />
-      <small>{labels.sharedComputer}</small>
+      {labels.sharedComputer ? <small>{labels.sharedComputer}</small> : null}
     </form>
   );
 }

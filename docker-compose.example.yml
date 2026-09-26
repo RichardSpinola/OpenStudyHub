@@ -1,32 +1,80 @@
+# One installation, separate App and local Admin surfaces. Point the public tunnel only at 3000.
+x-openstudyhub-env: &openstudyhub-env
+  NODE_ENV: production
+  OPENSTUDYHUB_V2_ENABLED: "1"
+  DATABASE_PATH: /app/data/openstudyhub.db
+  OPENSTUDYHUB_V2_DATABASE_PATH: /app/data/v2.db
+  PRIVATE_ASSET_PATH: /app/data/private-assets
+  REALTIME_PUBLIC_URL: ${OPENSTUDYHUB_REALTIME_PUBLIC_URL:-ws://127.0.0.1:3000/realtime}
+
+x-openstudyhub-service: &openstudyhub-service
+  image: openstudyhub:local
+  env_file: .env
+  volumes:
+    - openstudyhub-data:/app/data
+  restart: unless-stopped
+
 services:
-  openstudyhub:
+  openstudyhub-migrate:
     build:
       context: .
       dockerfile: Dockerfile
     image: openstudyhub:local
-    restart: unless-stopped
-    env_file:
-      - .env
+    env_file: .env
     environment:
-      NODE_ENV: production
-      DATABASE_PATH: /app/data/openstudyhub.db
-      PRIVATE_ASSET_PATH: /app/data/private-assets
+      <<: *openstudyhub-env
     volumes:
       - openstudyhub-data:/app/data
+    restart: "no"
+    command:
+      [
+        "sh",
+        "-c",
+        "node scripts/migrate-production.mjs && node scripts/migrate-v2-production.mjs",
+      ]
+
+  openstudyhub-app:
+    <<: *openstudyhub-service
+    environment:
+      <<: *openstudyhub-env
+      OPENSTUDYHUB_SURFACE: app
+    depends_on:
+      openstudyhub-migrate:
+        condition: service_completed_successfully
+
+  openstudyhub-admin:
+    <<: *openstudyhub-service
+    environment:
+      <<: *openstudyhub-env
+      OPENSTUDYHUB_SURFACE: admin
     ports:
-      - "127.0.0.1:3000:3000"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
-        ]
-      interval: 30s
-      timeout: 5s
-      start_period: 20s
-      retries: 3
+      - "${OPENSTUDYHUB_ADMIN_BIND:-127.0.0.1}:3001:3000"
+    depends_on:
+      openstudyhub-migrate:
+        condition: service_completed_successfully
+
+  openstudyhub-realtime:
+    <<: *openstudyhub-service
+    environment:
+      <<: *openstudyhub-env
+      OPENSTUDYHUB_SURFACE: app
+      REALTIME_HOST: 0.0.0.0
+      REALTIME_PORT: "3045"
+    command: ["node", "dist/realtime-server.mjs"]
+    depends_on:
+      openstudyhub-migrate:
+        condition: service_completed_successfully
+
+  openstudyhub-web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "${OPENSTUDYHUB_APP_BIND:-127.0.0.1}:3000:3000"
+    depends_on:
+      - openstudyhub-app
+      - openstudyhub-realtime
 
 volumes:
   openstudyhub-data:

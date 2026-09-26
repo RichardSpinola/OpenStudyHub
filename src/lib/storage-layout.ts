@@ -180,6 +180,18 @@ export function buildStoragePath(
   ];
 }
 
+export function buildProjectStoragePath(
+  context: StorageLayoutContext,
+): string[] {
+  return [
+    cleanSegment(
+      `Projetos - ${context.program.shortName?.trim() || context.program.name}`,
+    ),
+    cleanSegment(context.period.label),
+    cleanSegment(context.subject.name),
+  ];
+}
+
 export function getOfferingStorageContext(
   userId: number,
   offeringId: number,

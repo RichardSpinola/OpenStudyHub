@@ -3,7 +3,6 @@ import type { V2Database } from "./database";
 import { GoogleDriveStorageProvider } from "./drive-storage";
 import { v2RuntimePath } from "./runtime";
 import { LocalStorageProvider, StorageRegistry } from "./storage";
-import { fakeDriveProvider, fakeGoogleEnabled } from "./fake-google";
 
 export function configuredStorageRegistry(
   db: V2Database,
@@ -19,15 +18,7 @@ export function configuredStorageRegistry(
     if (row.kind === "local")
       registry.register(row.name, new LocalStorageProvider(localRoot));
     if (row.kind === "google-drive") {
-      const owner = db
-        .prepare("SELECT owner_user_id id FROM storage_backends WHERE id=?")
-        .get(row.id) as { id: number | null };
-      registry.register(
-        row.name,
-        fakeGoogleEnabled() && owner.id
-          ? fakeDriveProvider(db, row.id, owner.id)
-          : new GoogleDriveStorageProvider(db, row.id),
-      );
+      registry.register(row.name, new GoogleDriveStorageProvider(db, row.id));
     }
   }
   return registry;

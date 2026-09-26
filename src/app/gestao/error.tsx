@@ -1,4 +1,6 @@
 "use client";
+import { UiCopy } from "@/components/ui-language-provider";
+
 export default function ErrorPage({
   reset,
 }: {
@@ -7,9 +9,18 @@ export default function ErrorPage({
 }) {
   return (
     <div className="v2-console" role="alert">
-      <h1>Gestão indisponível</h1>
-      <p>Tente novamente ou retorne ao curso.</p>
-      <button onClick={reset}>Tentar novamente</button>
+      <h1>
+        <UiCopy pt="Gestão indisponível" en="Management unavailable" />
+      </h1>
+      <p>
+        <UiCopy
+          pt="Tente novamente ou retorne ao curso."
+          en="Try again or return to the course."
+        />
+      </p>
+      <button onClick={reset}>
+        <UiCopy pt="Tentar novamente" en="Try again" />
+      </button>
     </div>
   );
 }

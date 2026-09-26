@@ -1,12 +1,19 @@
 "use client";
+import { UiCopy } from "@/components/ui-language-provider";
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import type { WallpaperCatalog } from "@/lib/home-wallpapers";
+import { HomeWallpaperPicker } from "@/components/home-wallpaper-picker";
 
 export function HomeBackgroundSettings({
   configured,
+  catalog,
+  wallpaperLimitMiB,
 }: {
   configured: boolean;
+  catalog?: WallpaperCatalog;
+  wallpaperLimitMiB?: 5 | 10;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -36,6 +43,14 @@ export function HomeBackgroundSettings({
     if (response.ok) router.refresh();
   }
 
+  if (catalog)
+    return (
+      <HomeWallpaperPicker
+        catalog={catalog}
+        limitMiB={wallpaperLimitMiB ?? 10}
+      />
+    );
+
   return (
     <div className="home-background-settings">
       <input
@@ -55,19 +70,27 @@ export function HomeBackgroundSettings({
             className="secondary-button"
             onClick={() => void remove()}
           >
-            Remover imagem
+            <UiCopy pt="Remover imagem" en="Remove image" />
           </button>
         ) : null}
       </div>
       <small>
-        PNG, JPEG ou WebP · máximo 5 MiB · somente no canvas da Home.
+        <UiCopy
+          pt="PNG, JPEG ou WebP · máximo 10 MiB · somente no canvas da Home."
+          en="PNG, JPEG or WebP · maximum 10 MiB · only on the Home canvas."
+        />
       </small>
       {state === "loading" ? (
-        <span role="status">Processando imagem…</span>
+        <span role="status">
+          <UiCopy pt="Processando imagem…" en="Processing image…" />
+        </span>
       ) : null}
       {state === "error" ? (
         <span className="form-error" role="alert">
-          Imagem inválida ou acima do limite.
+          <UiCopy
+            pt="Imagem inválida ou acima do limite."
+            en="Invalid image or size limit exceeded."
+          />
         </span>
       ) : null}
     </div>

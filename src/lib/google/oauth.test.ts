@@ -1,10 +1,18 @@
 import { randomBytes } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DatabaseConnection } from "@/lib/db/client";
 import { createMigratedTestDatabase } from "@/lib/test-database";
+import { openV2Database, migrateV2 } from "@/lib/v2/database";
+import { DRIVE_SCOPE } from "@/lib/v2/google-config";
 
 import type { GoogleIntegrationConfig } from "./config";
+import { encryptSecret } from "./crypto";
+import { ensureDriveRootFolder } from "./drive";
+import { isConfiguredDriveStorageAvailable } from "./storage-owner";
 import {
   completeGoogleAuthorization,
   createGoogleAuthorizationUrl,
@@ -56,6 +64,85 @@ describe("Google OAuth", () => {
     } finally {
       if (previous === undefined) delete process.env.OPENSTUDYHUB_V2_ENABLED;
       else process.env.OPENSTUDYHUB_V2_ENABLED = previous;
+    }
+  });
+
+  it("usa a conexão Drive V2 para o fluxo legado de projetos", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "osh-v2-drive-bridge-"));
+    const databasePath = join(directory, "v2.db");
+    const previousEnabled = process.env.OPENSTUDYHUB_V2_ENABLED;
+    const previousPath = process.env.OPENSTUDYHUB_V2_DATABASE_PATH;
+    const previousLegacyPath = process.env.DATABASE_PATH;
+    const userId = createUser(connection, "drive-bridge-user");
+    const key = randomBytes(32);
+    const db = openV2Database(databasePath);
+    try {
+      migrateV2(db);
+      db.prepare(
+        "INSERT INTO users(id,login,display_name,password_hash) VALUES(1,'drive-bridge-user','Bridge','hash')",
+      ).run();
+      db.prepare(
+        "INSERT INTO legacy_user_links(user_id,legacy_user_id) VALUES(1,?)",
+      ).run(userId);
+      db.prepare(
+        `INSERT INTO google_connections_v2
+         (user_id,google_subject,encrypted_refresh_token,scopes,status,updated_at)
+         VALUES(1,'fake-sub',?,?,'connected',?)`,
+      ).run(encryptSecret("fake-refresh", key), DRIVE_SCOPE, Date.now());
+      db.prepare(
+        "INSERT INTO storage_backends(kind,name,owner_user_id,state) VALUES('google-drive','Central Drive',1,'ready')",
+      ).run();
+      db.close();
+      process.env.OPENSTUDYHUB_V2_ENABLED = "1";
+      process.env.OPENSTUDYHUB_V2_DATABASE_PATH = databasePath;
+      process.env.DATABASE_PATH = join(directory, "legacy.db");
+      expect(isConfiguredDriveStorageAvailable(connection)).toBe(true);
+      const fetchImpl = vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(Response.json({ access_token: "fake-access" }));
+      await expect(
+        getGoogleAccessToken(userId, {
+          connection,
+          config: { ...config, encryptionKey: key },
+          fetchImpl,
+        }),
+      ).resolves.toBe("fake-access");
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+      const rootFetch = vi.fn<typeof fetch>(async (input) =>
+        String(input).includes("oauth2.googleapis.com")
+          ? Response.json({ access_token: "fake-access" })
+          : Response.json({ id: "fake-root" }),
+      );
+      await expect(
+        ensureDriveRootFolder(userId, {
+          connection,
+          fetchImpl: rootFetch,
+          v2Config: { ...config, encryptionKey: key },
+        }),
+      ).resolves.toMatchObject({ id: "fake-root" });
+      const verify = openV2Database(databasePath);
+      try {
+        expect(
+          (
+            verify
+              .prepare("SELECT root_ref ref FROM storage_backends")
+              .get() as { ref: string }
+          ).ref,
+        ).toBe("fake-root");
+      } finally {
+        verify.close();
+      }
+    } finally {
+      if (db.open) db.close();
+      if (previousEnabled === undefined)
+        delete process.env.OPENSTUDYHUB_V2_ENABLED;
+      else process.env.OPENSTUDYHUB_V2_ENABLED = previousEnabled;
+      if (previousPath === undefined)
+        delete process.env.OPENSTUDYHUB_V2_DATABASE_PATH;
+      else process.env.OPENSTUDYHUB_V2_DATABASE_PATH = previousPath;
+      if (previousLegacyPath === undefined) delete process.env.DATABASE_PATH;
+      else process.env.DATABASE_PATH = previousLegacyPath;
+      rmSync(directory, { recursive: true, force: true });
     }
   });
 

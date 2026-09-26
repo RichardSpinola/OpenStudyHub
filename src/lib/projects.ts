@@ -9,11 +9,12 @@ import { recordAuditEvent } from "@/lib/audit";
 import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
 import {
+  driveFolderExistsForUser,
   ensureDriveFolderForUser,
   ensureDriveRootFolder,
+  moveDriveFolderForUser,
   setDriveFileTrashed,
   trashDriveFile,
-  updateDriveFileContent,
   uploadDriveFile,
 } from "@/lib/google/drive";
 import type { GoogleFetch } from "@/lib/google/oauth";
@@ -27,12 +28,13 @@ import {
   type ProjectTechnology,
   type ProjectManifest,
   type ProjectSourceFile,
+  suggestProjectLanguage,
 } from "@/lib/project-manifest";
 import {
-  buildStoragePath,
+  buildProjectStoragePath,
   getOfferingStorageContext,
-  getStorageLayout,
 } from "@/lib/storage-layout";
+import { withV2Db } from "@/lib/v2/runtime-database";
 
 const idSchema = z.number().int().positive();
 const projectInputSchema = z.object({
@@ -169,6 +171,33 @@ export function createProject(
   return getUserProject(ownerId, Number(result.lastInsertRowid), connection);
 }
 
+export function updateProjectTechnology(
+  userId: number,
+  projectId: number,
+  input: { language: ProjectLanguage; technologies: ProjectTechnology[] },
+  connection: DatabaseConnection = getDatabase(),
+): ProjectRecord {
+  const project = getUserProject(userId, projectId, connection);
+  const language = projectLanguageSchema.parse(input.language);
+  const technologies = [
+    ...new Set(
+      z.array(projectTechnologySchema).max(30).parse(input.technologies),
+    ),
+  ];
+  connection.sqlite
+    .prepare(
+      "UPDATE projects SET language=?,technologies_json=?,updated_at=? WHERE id=? AND owner_user_id=? AND archived_at IS NULL",
+    )
+    .run(
+      language,
+      JSON.stringify(technologies),
+      Date.now(),
+      project.id,
+      project.ownerUserId,
+    );
+  return getUserProject(userId, projectId, connection);
+}
+
 export function listUserProjects(
   userId: number,
   offeringId?: number,
@@ -248,6 +277,31 @@ export function listProjectVersions(
        order by version_number desc`,
     )
     .all(projectId) as ProjectVersionRecord[];
+}
+
+export function listProjectFiles(
+  userId: number,
+  projectId: number,
+  connection: DatabaseConnection = getDatabase(),
+): Array<{
+  path: string;
+  sizeBytes: number;
+  mimeType: string | null;
+  driveFileId: string;
+}> {
+  getUserProject(userId, projectId, connection);
+  return connection.sqlite
+    .prepare(
+      `SELECT relative_path AS path, size_bytes AS sizeBytes,
+            mime_type AS mimeType, drive_file_id AS driveFileId
+     FROM project_files WHERE project_id = ? ORDER BY relative_path`,
+    )
+    .all(projectId) as Array<{
+    path: string;
+    sizeBytes: number;
+    mimeType: string | null;
+    driveFileId: string;
+  }>;
 }
 
 export function getProjectVersion(
@@ -415,44 +469,99 @@ export function getProjectUploadPreview(
   return preview;
 }
 
+export function getProjectRetryPreview(
+  userId: number,
+  projectId: number,
+  connection: DatabaseConnection = getDatabase(),
+): PreviewRecord | null {
+  getUserProject(userId, projectId, connection);
+  const setting = connection.sqlite
+    .prepare("SELECT value FROM app_settings WHERE key = ?")
+    .get(`project.retry.${userId}.${projectId}`) as
+    { value: string } | undefined;
+  if (!setting) return null;
+  try {
+    const preview = getProjectUploadPreview(userId, setting.value, connection);
+    return preview.projectId === projectId ? preview : null;
+  } catch {
+    return null;
+  }
+}
+
 async function ensureProjectDriveStructure(
   project: ProjectRecord,
   connection: DatabaseConnection,
   fetchImpl: GoogleFetch,
 ) {
-  const root = await ensureDriveRootFolder(project.ownerUserId, {
-    connection,
-    fetchImpl,
-  });
-  const layout = getStorageLayout(connection);
+  let projectFolder: { id: string; name: string } | undefined;
+  if (project.driveProjectFolderId) {
+    const available = await driveFolderExistsForUser(
+      project.ownerUserId,
+      project.driveProjectFolderId,
+      { connection, fetchImpl },
+    );
+    if (!available) {
+      throw new Error(
+        "A pasta já vinculada a este projeto está ausente no Drive. Verifique ou restaure essa pasta antes de sincronizar; nenhuma pasta duplicada foi criada.",
+      );
+    }
+    projectFolder = { id: project.driveProjectFolderId, name: project.name };
+  }
   const context = getOfferingStorageContext(
     project.ownerUserId,
     project.offeringId,
     connection,
   );
-  const segments = buildStoragePath(layout, context, "projects");
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+    const shortName = withV2Db(
+      (db) =>
+        db
+          .prepare(
+            `SELECT p.short_name shortName FROM legacy_offering_links l
+         JOIN offerings o ON o.id=l.offering_id
+         JOIN programs p ON p.id=o.program_id
+         WHERE l.legacy_offering_id=?`,
+          )
+          .get(project.offeringId) as { shortName: string | null } | undefined,
+    )?.shortName;
+    if (shortName?.trim()) context.program.shortName = shortName.trim();
+  }
+  const root = await ensureDriveRootFolder(project.ownerUserId, {
+    connection,
+    fetchImpl,
+  });
   let parentId = root.id;
-  for (const [index, name] of segments.entries()) {
+  for (const name of buildProjectStoragePath(context)) {
+    const identity = createHash("sha256")
+      .update(`${parentId}\0${name}`)
+      .digest("hex")
+      .slice(0, 40);
     const folder = await ensureDriveFolderForUser(
       project.ownerUserId,
-      {
-        name,
-        parentId,
-        identityKey: `layout:${project.ownerUserId}:${project.offeringId}:projects:${index}`,
-      },
+      { name, parentId, identityKey: `project-path:${identity}` },
       { connection, fetchImpl },
     );
     parentId = folder.id;
   }
-  const projectFolder = await ensureDriveFolderForUser(
-    project.ownerUserId,
-    {
-      name: project.name,
+  if (project.driveProjectFolderId) {
+    await moveDriveFolderForUser(
+      project.ownerUserId,
+      project.driveProjectFolderId,
       parentId,
-      identityKey: `project:${project.id}`,
-    },
-    { connection, fetchImpl },
-  );
+      { connection, fetchImpl },
+    );
+  } else {
+    projectFolder = await ensureDriveFolderForUser(
+      project.ownerUserId,
+      {
+        name: project.name,
+        parentId,
+        identityKey: `project:${project.id}`,
+      },
+      { connection, fetchImpl },
+    );
+  }
+  if (!projectFolder) throw new Error("A pasta do projeto não foi localizada.");
   const currentFolder = await ensureDriveFolderForUser(
     project.ownerUserId,
     {
@@ -528,6 +637,8 @@ export async function confirmProjectUpload(
   options: {
     connection?: DatabaseConnection;
     fetchImpl?: GoogleFetch;
+    language?: ProjectLanguage;
+    technologies?: ProjectTechnology[];
   } = {},
 ) {
   const connection = options.connection ?? getDatabase();
@@ -569,6 +680,11 @@ export async function confirmProjectUpload(
     throw new Error("Upload preview integrity check failed.");
   }
   const previous = currentManifest(project.id, connection);
+  const chosenLanguage =
+    options.language ??
+    (project.language === "other"
+      ? suggestProjectLanguage(prepared.manifest.files)
+      : project.language);
   const diff = diffProjectManifests(previous, prepared.manifest);
   if (
     diff.added.length !== preview.addedCount ||
@@ -587,6 +703,7 @@ export async function confirmProjectUpload(
   const createdRemoteIds: string[] = [];
   const trashedRemoteIds: string[] = [];
   let archiveDriveFileId: string | null = null;
+  let stage = "criação das pastas no Drive";
   try {
     const folders = await ensureProjectDriveStructure(
       project,
@@ -594,6 +711,7 @@ export async function confirmProjectUpload(
       fetchImpl,
     );
     const versionNumber = project.currentVersionNumber + 1;
+    stage = "envio do ZIP da versão ao Drive";
     const archiveFile = await uploadDriveFile(
       userId,
       {
@@ -623,24 +741,13 @@ export async function confirmProjectUpload(
     );
     const syncedFiles = new Map<string, string>();
     for (const source of prepared.accepted) {
+      stage = `envio do arquivo ${source.path}`;
       const oldFileId = existingFiles.get(source.path);
       if (oldFileId && !diff.modified.includes(source.path)) {
         syncedFiles.set(source.path, oldFileId);
         continue;
       }
-      if (oldFileId) {
-        await updateDriveFileContent(
-          userId,
-          {
-            fileId: oldFileId,
-            name: basename(source.path),
-            data: source.data,
-            mimeType: source.mimeType,
-          },
-          { connection, fetchImpl },
-        );
-        syncedFiles.set(source.path, oldFileId);
-      } else {
+      {
         const parentId = await ensureProjectDirectory(
           project,
           dirname(source.path),
@@ -665,13 +772,15 @@ export async function confirmProjectUpload(
         syncedFiles.set(source.path, uploaded.id);
       }
     }
-    for (const path of diff.removed) {
+    stage = "substituição dos arquivos antigos no Drive";
+    for (const path of [...diff.removed, ...diff.modified]) {
       const fileId = existingFiles.get(path);
       if (!fileId) continue;
       await trashDriveFile(userId, fileId, { connection, fetchImpl });
       trashedRemoteIds.push(fileId);
     }
 
+    stage = "gravação dos metadados e da versão local";
     const now = Date.now();
     connection.sqlite.transaction(() => {
       connection.sqlite
@@ -720,7 +829,8 @@ export async function confirmProjectUpload(
           `update projects set
              drive_project_folder_id = ?, drive_current_folder_id = ?,
              drive_versions_folder_id = ?, current_version_number = ?,
-             sync_status = 'complete', updated_at = ?
+             language = ?, sync_status = 'complete', updated_at = ?,
+             technologies_json = ?
            where id = ? and owner_user_id = ?`,
         )
         .run(
@@ -728,13 +838,21 @@ export async function confirmProjectUpload(
           folders.currentFolder.id,
           folders.versionsFolder.id,
           versionNumber,
+          chosenLanguage,
           now,
+          JSON.stringify(options.technologies ?? project.technologies),
           project.id,
           userId,
         );
       connection.sqlite
         .prepare("delete from project_upload_previews where token = ?")
         .run(preview.token);
+      connection.sqlite
+        .prepare("DELETE FROM app_settings WHERE key = ?")
+        .run(`project.sync_error.${project.id}`);
+      connection.sqlite
+        .prepare("DELETE FROM app_settings WHERE key = ?")
+        .run(`project.retry.${userId}.${project.id}`);
       recordAuditEvent(
         {
           actorUserId: userId,
@@ -746,7 +864,9 @@ export async function confirmProjectUpload(
         connection,
       );
     })();
-    await unlink(assertTempArchivePath(preview.tempArchivePath));
+    await unlink(assertTempArchivePath(preview.tempArchivePath)).catch(
+      () => undefined,
+    );
     return { versionNumber, diff };
   } catch (error) {
     for (const fileId of createdRemoteIds.reverse()) {
@@ -766,13 +886,42 @@ export async function confirmProjectUpload(
         // Retry can reconcile the remaining partial remote state.
       }
     }
+    if (
+      error instanceof Error &&
+      error.message.startsWith("A pasta já vinculada a este projeto")
+    ) {
+      stage = error.message;
+    }
     connection.sqlite
       .prepare(
         "update projects set sync_status = 'failed', updated_at = ? where id = ? and owner_user_id = ?",
       )
       .run(Date.now(), project.id, userId);
+    connection.sqlite
+      .prepare(
+        `INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?)
+       ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`,
+      )
+      .run(`project.sync_error.${project.id}`, stage, Date.now());
+    connection.sqlite
+      .prepare(
+        `INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?)
+         ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`,
+      )
+      .run(`project.retry.${userId}.${project.id}`, preview.token, Date.now());
     throw error;
   }
+}
+
+export function getProjectSyncFailureStage(
+  projectId: number,
+  connection: DatabaseConnection = getDatabase(),
+): string | null {
+  const result = connection.sqlite
+    .prepare("SELECT value FROM app_settings WHERE key = ?")
+    .get(`project.sync_error.${idSchema.parse(projectId)}`) as
+    { value: string } | undefined;
+  return result?.value ?? null;
 }
 
 export async function cancelProjectUploadPreview(

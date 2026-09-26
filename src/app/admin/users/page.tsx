@@ -1,3 +1,4 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -89,7 +90,10 @@ export default async function AdminUsersPage({
           <span>{admin.system}</span>
           <h1>{admin.usersTitle}</h1>
           <p className="page-description">
-            Contas, matrículas e permissões dentro do contexto selecionado.
+            <UiCopy
+              pt="Contas, matrículas e permissões dentro do contexto selecionado."
+              en="Accounts, enrollments and permissions within the selected context."
+            />
           </p>
         </div>
         <Link href="/admin">← {admin.back}</Link>
@@ -183,32 +187,47 @@ export default async function AdminUsersPage({
           <h2>Visual Tags</h2>
         </div>
         <p className="panel-help">
-          Tags são rótulos de perfil. Elas não concedem acesso a grupos, notas,
-          documentos ou chats.
+          <UiCopy
+            pt="Tags são rótulos de perfil. Elas não concedem acesso a grupos, notas, documentos ou chats."
+            en="Tags are profile labels. They do not grant access to groups, notes, documents or chats."
+          />
         </p>
         <details className="admin-record-editor">
-          <summary>[ Criar Visual Tag ]</summary>
+          <summary>
+            <UiCopy pt="[ Criar Visual Tag ]" en="[ Create Visual Tag ]" />
+          </summary>
           <form action={createProfileTagAction} className="admin-edit-form">
             <label>
-              Rótulo
+              <UiCopy pt="Rótulo" en="Label" />
               <input name="label" maxLength={40} required />
             </label>
             <label>
               Escopo
               <select name="scopeType">
                 {context.authority.role === "admin" ? (
-                  <option value="instance">Instância</option>
+                  <option value="instance">
+                    <UiCopy pt="Instância" en="Instance" />
+                  </option>
                 ) : null}
                 {context.authority.role !== "curator" ? (
-                  <option value="program">Programa</option>
+                  <option value="program">
+                    <UiCopy pt="Programa" en="Program" />
+                  </option>
                 ) : null}
-                <option value="cohort">Turma</option>
+                <option value="cohort">
+                  <UiCopy pt="Turma" en="Cohort" />
+                </option>
               </select>
             </label>
             <label>
-              Programa
+              <UiCopy pt="Programa" en="Program" />
               <select name="programId" defaultValue="">
-                <option value="">Selecione quando aplicável</option>
+                <option value="">
+                  <UiCopy
+                    pt="Selecione quando aplicável"
+                    en="Select when applicable"
+                  />
+                </option>
                 {programs.map((program) => (
                   <option key={program.id} value={program.id}>
                     {program.name}
@@ -217,9 +236,14 @@ export default async function AdminUsersPage({
               </select>
             </label>
             <label>
-              Turma
+              <UiCopy pt="Turma" en="Cohort" />
               <select name="cohortId" defaultValue="">
-                <option value="">Selecione quando aplicável</option>
+                <option value="">
+                  <UiCopy
+                    pt="Selecione quando aplicável"
+                    en="Select when applicable"
+                  />
+                </option>
                 {cohorts.map((cohort) => (
                   <option key={cohort.id} value={cohort.id}>
                     {cohort.programName} / {cohort.name}
@@ -229,9 +253,14 @@ export default async function AdminUsersPage({
             </label>
             <label className="checkbox-label">
               <input type="checkbox" name="selfAssignable" value="true" />
-              Usuários elegíveis podem adicionar ao próprio perfil
+              <UiCopy
+                pt="Usuários elegíveis podem adicionar ao próprio perfil"
+                en="Eligible users can add them to their own profile"
+              />
             </label>
-            <button type="submit">Criar tag</button>
+            <button type="submit">
+              <UiCopy pt="Criar tag" en="Create tag" />
+            </button>
           </form>
         </details>
       </section>

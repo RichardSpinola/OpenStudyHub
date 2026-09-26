@@ -9,8 +9,17 @@ import {
   syncClassroomSubject,
 } from "@/lib/google/classroom";
 import { getServerEnvironment } from "@/lib/env";
+import { updateAcademicPreferences } from "@/lib/academic-preferences";
 
 const idSchema = z.coerce.number().int().positive();
+
+export async function updateOverviewFocusAction(formData: FormData) {
+  const user = await requireAuthenticatedUser();
+  const subjectId = idSchema.parse(formData.get("subjectId"));
+  const focus = z.enum(["wall", "timeline"]).parse(formData.get("focus"));
+  updateAcademicPreferences(user.id, { overviewFocus: focus });
+  redirect(`/subjects/${subjectId}?view=overview`);
+}
 
 export async function syncClassroomActivitiesAction(formData: FormData) {
   const user = await requireAuthenticatedUser();

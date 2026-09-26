@@ -126,12 +126,16 @@ export function listSharedNotes(
        left join subject_offerings so on so.id = n.offering_id
        left join subjects s on s.id = so.subject_id
        left join activities a on a.id = n.activity_id
-       join note_group_shares ngs on ngs.note_id = n.id
-       join study_group_members gm on gm.group_id = ngs.group_id
-       where gm.user_id = ? and n.owner_user_id != ? and n.offering_id is not null
+       where n.owner_user_id != ? and (
+         exists(select 1 from note_person_shares nps where nps.note_id=n.id and nps.recipient_user_id=?)
+         or (n.offering_id is not null and exists(
+           select 1 from note_group_shares ngs join study_group_members gm on gm.group_id=ngs.group_id
+           where ngs.note_id=n.id and gm.user_id=?
+         ))
+       )
        order by n.updated_at desc, n.id desc`,
     )
-    .all(actorId, actorId) as SharedNoteRecord[];
+    .all(actorId, actorId, actorId) as SharedNoteRecord[];
 }
 
 export function getUserNote(
@@ -166,14 +170,17 @@ export function getReadableNote(
        left join subjects s on s.id = so.subject_id
        left join activities a on a.id = n.activity_id
        where n.id = ? and (
-         n.owner_user_id = ? or (n.offering_id is not null and exists (
+         n.owner_user_id = ? or exists (
+           select 1 from note_person_shares nps
+           where nps.note_id = n.id and nps.recipient_user_id = ?
+         ) or (n.offering_id is not null and exists (
            select 1 from note_group_shares ngs
            join study_group_members gm on gm.group_id = ngs.group_id
            where ngs.note_id = n.id and gm.user_id = ?
          ))
        )`,
     )
-    .get(actorId, idSchema.parse(noteId), actorId, actorId) as
+    .get(actorId, idSchema.parse(noteId), actorId, actorId, actorId) as
     (NoteRecord & { editable: number }) | undefined;
   if (!row) throw new Error("Note not found.");
   return { ...row, editable: Boolean(row.editable) };

@@ -36,7 +36,10 @@ export function createProgram(
   institutionId: number,
   code: string,
   name: string,
+  shortName = code,
 ): number {
+  if (!code.trim() || !name.trim() || !shortName.trim())
+    throw new Error("Preencha nome, código e nome curto do curso.");
   return writeAcademic(
     db,
     actor,
@@ -46,12 +49,47 @@ export function createProgram(
       Number(
         db
           .prepare(
-            "INSERT INTO programs(institution_id,code,name) VALUES(?,?,?)",
+            "INSERT INTO programs(institution_id,code,name,short_name) VALUES(?,?,?,?)",
           )
-          .run(institutionId, code, name).lastInsertRowid,
+          .run(institutionId, code.trim(), name.trim(), shortName.trim())
+          .lastInsertRowid,
       ),
     "program",
   );
+}
+
+export function updateProgramDetails(
+  db: V2Database,
+  actor: Actor,
+  programId: number,
+  name: string,
+  shortName: string,
+): void {
+  if (!name.trim() || !shortName.trim())
+    throw new Error("Preencha nome e nome curto do curso.");
+  if (
+    !canManage(db, actor, "manage_academics", {
+      kind: "program",
+      id: programId,
+    })
+  )
+    throw new Error("Forbidden");
+  db.transaction(() => {
+    const result = db
+      .prepare(
+        "UPDATE programs SET name=?,short_name=? WHERE id=? AND archived_at IS NULL",
+      )
+      .run(name.trim(), shortName.trim(), programId);
+    if (result.changes !== 1)
+      throw new Error("Curso não encontrado ou arquivado.");
+    recordAdminAction(
+      db,
+      actor,
+      "academic.program.update",
+      "program",
+      programId,
+    );
+  })();
 }
 
 export function createCohort(

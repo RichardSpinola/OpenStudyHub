@@ -1,117 +1,49 @@
-<p align="center">
-  <img src="public/brand/openstudyhub-icon.png" alt="OpenStudyHub" width="128" />
-</p>
+<p align="center"><img src="public/brand/openstudyhub-icon.png" alt="OpenStudyHub" width="112" /></p>
 
 # OpenStudyHub
 
-OpenStudyHub é um workspace acadêmico self-hosted para organizar disciplinas, agenda, Google Classroom, Drive, notas, documentos e colaboração em pequenos grupos.
+[Português](#o-que-a-v2-oferece) · [English guide](docs/en.md) · [Public site](docs/index.md)
 
-A aplicação foi pensada para continuar útil sem Google: as integrações são opcionais e o núcleo local usa SQLite.
+OpenStudyHub reúne aulas, atividades, arquivos e conversas em um espaço que a instituição pode hospedar. A comunidade usa o App no dia a dia; quem administra a instalação usa um Control Plane separado. Você pode começar sem Google e conectar Classroom ou Drive quando fizer sentido. [Read in English](docs/en.md).
 
-> Status: primeira versão pública (`v1.0.0`) preparada para release. O projeto possui histórico público limpo, licença AGPL-3.0-only e documentação de instalação e deploy.
+O projeto é para quem prefere manter o contexto acadêmico sob seu controle, com disciplinas e turmas organizadas antes de associar serviços externos. Cada pessoa conecta a própria conta para Classroom. O administrador decide se haverá uma conta para armazenamento central no Drive.
 
-## Recursos
+## O que a V2 oferece
 
-- Home personalizável com busca, atalhos e tema claro/escuro.
-- Hoje, grade semanal, atividades e disciplinas.
-- Programas, turmas, períodos, Subject Offerings e matrículas.
-- Google Classroom somente leitura, usando a conta Google de cada usuário.
-- Drive acadêmico central opcional, com organização por programa/período/disciplina/categoria.
-- Google Docs a partir de modelos, importação DOCX e Google Picker opcional.
-- Notas privadas e notas de disciplina compartilháveis explicitamente com Groups.
-- Documents privados por padrão, com compartilhamento explícito.
-- Chat direto, de Group e por audiência acadêmica.
-- Perfis, Visual Tags, notificações internas e notificações do navegador enquanto o Hub está aberto.
-- Projects com versionamento de ZIPs, podendo ser ocultado pelo administrador.
-- Roles/scopes de ADMIN, MODERATOR e CURATOR.
-- Interface TUI-inspired, keyboard-friendly e responsiva.
+- **App:** Home personalizável, Hoje, disciplinas e turmas, mural e atividades do Classroom, notas, documentos, projetos com versões, Chat e perfis.
+- **Admin / Control Plane:** instalação inicial, instituição, cursos, períodos, disciplinas, matrículas, permissões, integração Google, Extras, manutenção e backup manual.
+- **Google:** OAuth individual, descoberta e associação manual de Classrooms, sincronização, Drive/Docs opcional e acompanhamento da saúde da conexão.
+- **Extras opcionais:** Quadro Global colaborativo baseado em Excalidraw e cinco jogos locais/privados, controlados pelo Admin.
+- **Extensão Chromium e Firefox:** abre a instância escolhida pelo usuário na Nova Aba, sem acesso ao histórico ou ao conteúdo de outros sites.
 
-## Requisitos
+Uma instalação usa dois bancos SQLite versionados e serviços para App, Admin e colaboração em tempo real. O App pode ser exposto por HTTPS; o Admin fica local/LAN por padrão. Dados persistentes, uploads e segredos ficam fora do repositório.
 
-- Node.js 24.x
-- pnpm 10.x
-- Linux/macOS para o caminho de desenvolvimento principal
-- Docker opcional para produção
+## Instalação
 
-## Desenvolvimento local
+Requisitos para desenvolvimento: Node.js 24 e pnpm 10. Para instalação com Docker, configure `.env` a partir de [.env.example](.env.example) e siga [Instalação do zero](docs/instalacao-do-zero.md) e [Deploy V2](docs/deployment.md). O exemplo Compose separa App, Admin, realtime e migration; publica o Admin apenas em `127.0.0.1:3001` por padrão. A porta `3000` entrega o App e o realtime pelo proxy local.
 
-```bash
+O primeiro acesso a uma instalação vazia inicia o setup do administrador. Google pode ser configurado depois. Para o callback V2 e os scopes exatos, veja [Google](docs/google.md).
+
+## Guias
+
+- [Primeiros passos](docs/getting-started.md) e [guia do administrador](docs/deployment/ADMIN_GUIDE.md)
+- [Google Classroom, Drive, Docs e OAuth](docs/google.md)
+- [Deploy Docker, domínios e superfícies](docs/deployment.md)
+- [ZimaOS](docs/zimaos.md), [CasaOS](docs/casaos.md) e [UmbrelOS](docs/umbrelos.md)
+- [Backup, atualização e recuperação](docs/backup-update.md)
+- [Extensão Nova Aba](docs/extension.md)
+- [Licença do projeto e créditos de terceiros](docs/LICENSING.md)
+
+## Desenvolvimento e validação
+
+```sh
 cp .env.example .env
 pnpm install
 pnpm db:migrate
+node --env-file=.env scripts/migrate-v2-production.mjs
 pnpm dev
 ```
 
-Abra `http://localhost:3000`. Em uma base vazia, o primeiro acesso redireciona para `/setup`.
+Antes de iniciar no Node local, ajuste `OPENSTUDYHUB_V2_DATABASE_PATH` no `.env` para um caminho **absoluto** gravável e diferente de `DATABASE_PATH`. Para uma instalação V2 de produção, use migrations V1 e V2 na ordem indicada no Compose. A suíte completa, builds e instalação limpa fazem parte do gate de release; não são substituídos pela execução local de desenvolvimento.
 
-Nunca reutilize senha institucional no OpenStudyHub.
-
-## Google opcional
-
-O Core inicia sem configuração Google. Para Drive/Classroom/Docs, uma instância usa um único OAuth app e cada usuário conecta a própria Conta Google.
-
-A configuração usa `drive.file` e scopes Classroom read-only; o projeto não pede acesso geral ao Drive. Consulte [docs/google.md](docs/google.md).
-
-## Docker
-
-Há um exemplo de produção em `docker-compose.example.yml`.
-
-```bash
-cp .env.example .env
-docker compose -f docker-compose.example.yml up -d --build
-```
-
-O container aplica migrations versionadas antes de iniciar a aplicação. Dados persistentes ficam no volume `/app/data`.
-
-Veja [docs/deployment.md](docs/deployment.md) antes de expor a aplicação na internet.
-
-## Qualidade
-
-```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-```
-
-Mudanças de schema devem gerar migration versionada:
-
-```bash
-pnpm db:generate
-pnpm db:migrate
-```
-
-## Backup e atualização
-
-Faça backup de `DATABASE_PATH` e `PRIVATE_ASSET_PATH` antes de atualizar. O fluxo manual da V1 está documentado em [docs/backup-update.md](docs/backup-update.md).
-
-O atualizador automático está planejado para uma versão futura.
-
-## Documentação
-
-O conteúdo de `docs/` também pode ser publicado como um site MkDocs/GitHub Pages; a página inicial funciona como landing page do projeto e o restante como documentação navegável.
-
-- [Instalação do zero](docs/instalacao-do-zero.md)
-- [Primeiros passos](docs/getting-started.md)
-- [Google](docs/google.md)
-- [Modelos personalizados](docs/modelos-personalizados.md)
-- [Deploy](docs/deployment.md)
-- [ZimaOS](docs/zimaos.md)
-- [Backup e atualização](docs/backup-update.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Segurança](SECURITY.md)
-- [Arquitetura](ARCHITECTURE.md)
-- [Contribuição](CONTRIBUTING.md)
-
-## IA no desenvolvimento
-
-Este projeto foi desenvolvido com uso extensivo de ferramentas de IA para implementação, testes, depuração, documentação e revisão. Direção de produto, requisitos, decisões arquiteturais e validação são conduzidos pelo mantenedor.
-
-Veja [AI_USAGE.md](AI_USAGE.md).
-
-## Licença
-
-OpenStudyHub é distribuído sob a **GNU Affero General Public License v3.0 (`AGPL-3.0-only`)**.
-
-Consulte o arquivo [LICENSE](LICENSE) para os termos completos. Modificações disponibilizadas a usuários por meio de uma rede devem oferecer o código-fonte correspondente conforme os termos da AGPL.
+OpenStudyHub é distribuído sob **AGPL-3.0-only**. A extensão e componentes de terceiros preservam seus créditos e licenças. O desenvolvimento contou com ferramentas de IA sob direção do mantenedor; veja [AI_USAGE.md](AI_USAGE.md).

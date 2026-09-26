@@ -7,6 +7,9 @@ import { parseServerEnvironment } from "@/lib/env";
 
 import {
   importStarterDocumentTemplate,
+  listBundledStarterTemplates,
+  readBundledStarter,
+  setBundledStarterEnabled,
   starterDocumentTemplates,
 } from "./starter-document-templates";
 import {
@@ -79,6 +82,29 @@ describe("starter document templates", () => {
     expect(JSON.stringify(starterDocumentTemplates)).not.toMatch(
       /UCSAL|@(?:gmail|hotmail|outlook)|871688|819906/iu,
     );
+  });
+
+  it("distribui três DOCX locais e respeita a chave de ativação do Admin", () => {
+    expect(
+      listBundledStarterTemplates(connection).filter((item) => item.enabled),
+    ).toHaveLength(3);
+    for (const starter of starterDocumentTemplates) {
+      const data = readBundledStarter(starter.key, connection).content;
+      expect(data.subarray(0, 4)).toEqual(
+        Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+      );
+      expect(data.includes(Buffer.from("word/document.xml"))).toBe(true);
+    }
+    setBundledStarterEnabled("class_notes", false, connection);
+    expect(
+      listBundledStarterTemplates(connection).find(
+        (item) => item.key === "class_notes",
+      )?.enabled,
+    ).toBe(false);
+    expect(() => readBundledStarter("class_notes", connection)).toThrow();
+    expect(() =>
+      setBundledStarterEnabled("../private", true, connection),
+    ).toThrow();
   });
 
   it("recusa uma chave fora da allowlist antes de chamar o Google", async () => {

@@ -6,6 +6,7 @@ import { recordAuditEvent } from "@/lib/audit";
 import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
 import { getInstitutionName } from "@/lib/institution";
+import type { GoogleV2Config } from "@/lib/v2/google-config";
 
 import { getGoogleConnection, setGoogleDriveRootFolder } from "./connections";
 import { getGoogleAccessToken, type GoogleFetch } from "./oauth";
@@ -52,7 +53,7 @@ async function driveRequest(
   });
 }
 
-function desiredRootFolderName(connection: DatabaseConnection): string {
+export function desiredRootFolderName(connection: DatabaseConnection): string {
   const institution = getInstitutionName(connection).trim();
   return institution ? `${institution} - OSH` : "OpenStudyHub";
 }
@@ -340,6 +341,7 @@ export async function downloadDriveFile(
   options: {
     connection?: DatabaseConnection;
     fetchImpl?: GoogleFetch;
+    maxBytes?: number;
   } = {},
 ): Promise<Buffer> {
   const ownerId = idSchema.parse(userId);
@@ -357,6 +359,34 @@ export async function downloadDriveFile(
     fetchImpl,
   );
   if (!response.ok) throw new Error("Drive file download failed.");
+  if (options.maxBytes !== undefined) {
+    const limit = z.number().int().positive().parse(options.maxBytes);
+    const contentLength = Number(response.headers.get("content-length"));
+    if (Number.isFinite(contentLength) && contentLength > limit) {
+      await response.body?.cancel();
+      throw new Error("Drive file exceeds preview limit.");
+    }
+    if (response.body) {
+      const reader = response.body.getReader();
+      const chunks: Buffer[] = [];
+      let total = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.length;
+        if (total > limit) {
+          await reader.cancel();
+          throw new Error("Drive file exceeds preview limit.");
+        }
+        chunks.push(Buffer.from(value));
+      }
+      return Buffer.concat(chunks, total);
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (bytes.length > limit)
+      throw new Error("Drive file exceeds preview limit.");
+    return bytes;
+  }
   return Buffer.from(await response.arrayBuffer());
 }
 
@@ -365,17 +395,52 @@ export async function ensureDriveRootFolder(
   options: {
     connection?: DatabaseConnection;
     fetchImpl?: GoogleFetch;
+    v2Config?: GoogleV2Config;
   } = {},
-) {
+): Promise<z.infer<typeof driveFileSchema>> {
   const ownerId = idSchema.parse(userId);
   const connection = options.connection ?? getDatabase();
   const fetchImpl = options.fetchImpl ?? fetch;
+  const rootName = desiredRootFolderName(connection);
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+    const [
+      { withV2DbAsync },
+      { canonicalIdForLegacy },
+      { GoogleDriveStorageProvider, storageOwnerStatus },
+      { googleAccessTokenV2 },
+    ] = await Promise.all([
+      import("@/lib/v2/runtime-database"),
+      import("@/lib/v2/identity-bridge"),
+      import("@/lib/v2/drive-storage"),
+      import("@/lib/v2/google-oauth"),
+    ]);
+    return withV2DbAsync(async (db) => {
+      const canonicalId = canonicalIdForLegacy(db, ownerId);
+      if (!canonicalId) throw new Error("Conta local não vinculada à V2.");
+      const storage = storageOwnerStatus(db);
+      if (!storage?.connected || storage.ownerId !== canonicalId)
+        throw new Error(
+          "Este usuário precisa ser o proprietário do Drive central.",
+        );
+      const provider = new GoogleDriveStorageProvider(
+        db,
+        storage.backendId,
+        fetchImpl,
+        (database, userId) =>
+          googleAccessTokenV2(database, userId, {
+            config: options.v2Config,
+            fetchImpl,
+          }),
+      );
+      const id = await provider.ensureRootFolder(rootName);
+      return { id, name: rootName };
+    });
+  }
   const accessToken = await getGoogleAccessToken(ownerId, {
     connection,
     fetchImpl,
   });
   const current = getGoogleConnection(ownerId, connection);
-  const rootName = desiredRootFolderName(connection);
   if (current?.driveRootFolderId) {
     const response = await driveRequest(
       accessToken,
@@ -554,6 +619,98 @@ export async function getDriveFileMetadata(
   );
   if (!response.ok) throw new Error("Drive file lookup failed.");
   return driveFileSchema.parse(await response.json());
+}
+
+export async function driveFolderExistsForUser(
+  userId: number,
+  fileId: string,
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+): Promise<boolean> {
+  const ownerId = idSchema.parse(userId);
+  const safeFileId = z.string().trim().min(1).max(255).parse(fileId);
+  const connection = options.connection ?? getDatabase();
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const accessToken = await getGoogleAccessToken(ownerId, {
+    connection,
+    fetchImpl,
+  });
+  const response = await driveRequest(
+    accessToken,
+    `${DRIVE_FILES_ENDPOINT}/${encodeURIComponent(safeFileId)}?fields=id,name,mimeType,trashed`,
+    { method: "GET" },
+    fetchImpl,
+  );
+  if (response.status === 404) return false;
+  if (response.status === 403)
+    throw new Error("Sem permissão para verificar uma pasta no Drive.");
+  if (!response.ok)
+    throw new Error("Não foi possível verificar uma pasta no Drive.");
+  const folder = driveFileSchema.parse(await response.json());
+  return (
+    folder.mimeType === "application/vnd.google-apps.folder" && !folder.trashed
+  );
+}
+
+export async function moveDriveFolderForUser(
+  userId: number,
+  folderId: string,
+  destinationParentId: string,
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+): Promise<void> {
+  const ownerId = idSchema.parse(userId);
+  const safeFolderId = z.string().trim().min(1).max(255).parse(folderId);
+  const safeParentId = z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .parse(destinationParentId);
+  const connection = options.connection ?? getDatabase();
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const accessToken = await getGoogleAccessToken(ownerId, {
+    connection,
+    fetchImpl,
+  });
+  const endpoint = `${DRIVE_FILES_ENDPOINT}/${encodeURIComponent(safeFolderId)}`;
+  const lookup = await driveRequest(
+    accessToken,
+    `${endpoint}?fields=id,name,mimeType,trashed,parents`,
+    { method: "GET" },
+    fetchImpl,
+  );
+  if (lookup.status === 403)
+    throw new Error("Sem permissão para organizar a pasta do projeto.");
+  if (lookup.status === 404)
+    throw new Error("A pasta original do projeto não foi encontrada no Drive.");
+  if (!lookup.ok)
+    throw new Error("Não foi possível verificar a pasta do projeto.");
+  const folder = driveFileSchema
+    .extend({ parents: z.array(z.string()).default([]) })
+    .parse(await lookup.json());
+  if (
+    folder.trashed ||
+    folder.mimeType !== "application/vnd.google-apps.folder"
+  )
+    throw new Error("A pasta original do projeto não está disponível.");
+  if (folder.parents.includes(safeParentId)) return;
+  if (folder.parents.length !== 1)
+    throw new Error(
+      "Não foi possível confirmar a localização atual da pasta do projeto.",
+    );
+  const url = new URL(endpoint);
+  url.searchParams.set("addParents", safeParentId);
+  url.searchParams.set("removeParents", folder.parents[0]);
+  url.searchParams.set("fields", "id,parents");
+  const moved = await driveRequest(
+    accessToken,
+    url,
+    { method: "PATCH", body: JSON.stringify({}) },
+    fetchImpl,
+  );
+  if (!moved.ok)
+    throw new Error(
+      "O Drive não conseguiu mover a pasta existente do projeto.",
+    );
 }
 
 export async function copyDriveFile(

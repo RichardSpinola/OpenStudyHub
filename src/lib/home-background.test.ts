@@ -56,8 +56,8 @@ describe("background privado da Home", () => {
     await rm(assetRoot, { recursive: true, force: true });
   });
 
-  it("mantém o limite público em 5 MiB", () => {
-    expect(homeBackgroundLimitBytes).toBe(5 * 1024 * 1024);
+  it("mantém o limite público em 10 MiB", () => {
+    expect(homeBackgroundLimitBytes).toBe(10 * 1024 * 1024);
   });
 
   it("adiciona, substitui e remove somente o asset do proprietário", async () => {

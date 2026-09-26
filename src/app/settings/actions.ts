@@ -35,6 +35,19 @@ import { discoverShortcutIcon } from "@/lib/shortcut-icons";
 import { updateNotificationPreferences } from "@/lib/notifications";
 import { setProjectsFeatureEnabled } from "@/lib/feature-flags";
 import { setDriveStorageOwner } from "@/lib/google/storage-owner";
+import {
+  appearanceSchema,
+  getAppearance,
+  updateAppearance,
+} from "@/lib/appearance";
+import { redirect } from "next/navigation";
+import { clearSessionCookie } from "@/lib/session-cookie";
+import {
+  clearUserSessionV2,
+  currentUserV2,
+  withV2DbAsync,
+} from "@/lib/v2/runtime";
+import { recordAdminAction } from "@/lib/v2/audit";
 
 const shortcutIdSchema = z.coerce.number().int().positive();
 const directionSchema = z.enum(["up", "down"]);
@@ -154,6 +167,79 @@ export async function updateHomePreferencesAction(formData: FormData) {
     summary: "personal Home appearance updated",
   });
   revalidatePath("/", "layout");
+  revalidatePath("/settings");
+}
+
+export async function updateAppearanceAction(formData: FormData) {
+  const actor = await requireAuthenticatedUser();
+  updateAppearance(
+    actor.id,
+    appearanceSchema.parse({
+      ...getAppearance(actor.id),
+      theme: formData.get("designTheme"),
+      mode: formData.get("appearanceMode"),
+      density: formData.get("density"),
+      accent: formData.get("accent"),
+      customAccent: formData.get("customAccent"),
+      navigationLayout: formData.get("navigationLayout"),
+      searchEngine: formData.get("searchEngine"),
+    }),
+  );
+  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+}
+
+export async function saveAppearanceSelectionAction(input: unknown) {
+  const actor = await requireAuthenticatedUser();
+  updateAppearance(actor.id, appearanceSchema.parse(input));
+  revalidatePath("/", "layout");
+}
+
+export async function updateAccessibilityAction(formData: FormData) {
+  const actor = await requireAuthenticatedUser();
+  const motion = z.enum(["system", "reduce"]).parse(formData.get("motion"));
+  const contrast = z.enum(["system", "high"]).parse(formData.get("contrast"));
+  updateAppearance(actor.id, { ...getAppearance(actor.id), motion, contrast });
+  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+}
+
+export async function deactivateOwnV2AccountAction(
+  formData: FormData,
+): Promise<void> {
+  if (process.env.OPENSTUDYHUB_V2_ENABLED !== "1")
+    throw new Error("Esta ação exige a identidade V2.");
+  await withV2DbAsync(async (db) => {
+    const user = await currentUserV2(db);
+    if (!user || user.kind !== "user")
+      throw new Error("Entre com sua conta normal.");
+    const login = (
+      db.prepare("SELECT login FROM users WHERE id=?").get(user.id) as {
+        login: string;
+      }
+    ).login;
+    if (formData.get("confirmation") !== login)
+      throw new Error("Digite seu login exato para confirmar.");
+    db.transaction(() => {
+      db.prepare("UPDATE users SET active=0 WHERE id=?").run(user.id);
+      db.prepare(
+        "UPDATE user_sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL",
+      ).run(Date.now(), user.id);
+      recordAdminAction(db, user, "user.self_deactivate", "user", user.id);
+    })();
+  });
+  await clearUserSessionV2();
+  await clearSessionCookie();
+  redirect("/login");
+}
+
+export async function updateHomeSearchAction(formData: FormData) {
+  const actor = await requireAuthenticatedUser();
+  const searchEngine = z
+    .enum(["google", "scholar", "duckduckgo", "startpage", "ecosia"])
+    .parse(formData.get("searchEngine"));
+  updateAppearance(actor.id, { ...getAppearance(actor.id), searchEngine });
+  revalidatePath("/");
   revalidatePath("/settings");
 }
 

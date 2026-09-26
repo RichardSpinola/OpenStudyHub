@@ -248,6 +248,17 @@ export function deleteShortcut(
   })();
 }
 
+export const DEFAULT_SHORTCUT_PRESETS = [
+  { name: "Google Drive", url: "https://drive.google.com", icon: "DRV" },
+  {
+    name: "Google Classroom",
+    url: "https://classroom.google.com",
+    icon: "CLS",
+  },
+  { name: "Gmail", url: "https://mail.google.com", icon: "MAIL" },
+  { name: "GitHub", url: "https://github.com", icon: "GH" },
+] as const;
+
 export function addDemoShortcuts(
   connection: DatabaseConnection = getDatabase(),
 ): Shortcut[] {
@@ -257,16 +268,9 @@ export function addDemoShortcuts(
 
   const created: Shortcut[] = [];
   connection.sqlite.transaction(() => {
-    [
-      { name: "Google Drive", url: "https://drive.google.com", icon: "DRV" },
-      {
-        name: "Google Classroom",
-        url: "https://classroom.google.com",
-        icon: "CLS",
-      },
-      { name: "Gmail", url: "https://mail.google.com", icon: "MAIL" },
-      { name: "GitHub", url: "https://github.com", icon: "GH" },
-    ].forEach((shortcut) => created.push(createShortcut(shortcut, connection)));
+    DEFAULT_SHORTCUT_PRESETS.forEach((shortcut) =>
+      created.push(createShortcut(shortcut, connection)),
+    );
   })();
   return created;
 }

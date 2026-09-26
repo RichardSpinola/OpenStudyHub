@@ -5,6 +5,7 @@
 Verifique:
 
 - `DATABASE_PATH` existe e é gravável;
+- `OPENSTUDYHUB_V2_DATABASE_PATH` é absoluto, gravável e aponta para outro banco;
 - volume persistente está montado;
 - migrations foram aplicadas;
 - processo/container possui permissão sobre `data/`.
@@ -22,7 +23,7 @@ Reinicie a aplicação após alterar env.
 
 ## OAuth volta com erro de redirect
 
-A URI cadastrada no Google Cloud deve coincidir exatamente com `GOOGLE_REDIRECT_URI`.
+A URI cadastrada no Google Cloud deve coincidir exatamente com `GOOGLE_REDIRECT_URI`, usando `/api/v2/google/callback`.
 
 Em produção use HTTPS.
 
@@ -46,7 +47,7 @@ Mapeie a Offering manualmente por Course ID + nome. O aluno sincroniza depois co
 
 ## Notificação do sistema não aparece com o browser fechado
 
-Esperado na V1. A V1 usa Notification API enquanto o Hub está carregado/ativo. Web Push/background delivery fica para versão futura.
+Confirme permissão de notificação no navegador, HTTPS (ou localhost), configuração de push da instância e registro do navegador. Um navegador ou sistema pode restringir entrega em segundo plano; confira também as notificações internas no App.
 
 ## Favicon não aparece
 

@@ -6,8 +6,7 @@ import {
   GoogleClassroomAdapter,
   syncClassroom,
 } from "@/lib/v2/classroom";
-import { getServerEnvironment } from "@/lib/env";
-import { fakeClassroomAdapter, fakeGoogleEnabled } from "@/lib/v2/fake-google";
+import { googleAutomationStatus } from "@/lib/v2/google-automation";
 
 export async function GET(request: NextRequest) {
   const offeringId = Number(request.nextUrl.searchParams.get("offeringId"));
@@ -28,15 +27,19 @@ export async function GET(request: NextRequest) {
       )
       .get(user.id, offeringId);
     if (!mapping) return null;
-    return { userId: user.id, cache: classroomCache(db, user.id, offeringId) };
+    return {
+      userId: user.id,
+      cache: classroomCache(db, user.id, offeringId),
+      intervalMinutes: googleAutomationStatus(db).intervalMinutes,
+    };
   });
   if (!result)
     return NextResponse.json({ error: "Sem acesso." }, { status: 403 });
-  const ttl = getServerEnvironment().CLASSROOM_SYNC_TTL_MINUTES * 60_000;
+  const ttl = result.intervalMinutes * 60_000;
   const stale =
     !result.cache.state.success ||
     Date.now() - result.cache.state.success >= ttl;
-  if (stale && result.cache.state.status !== "needs_reconnect") {
+  if (ttl > 0 && stale && result.cache.state.status !== "needs_reconnect") {
     after(async () => {
       try {
         await withV2DbAsync(async (db) =>
@@ -44,9 +47,7 @@ export async function GET(request: NextRequest) {
             db,
             result.userId,
             offeringId,
-            fakeGoogleEnabled()
-              ? fakeClassroomAdapter(db, result.userId)
-              : new GoogleClassroomAdapter(db),
+            new GoogleClassroomAdapter(db),
             false,
             Date.now(),
             ttl,

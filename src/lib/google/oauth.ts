@@ -199,8 +199,25 @@ export async function getGoogleAccessToken(
     fetchImpl?: GoogleFetch;
   } = {},
 ): Promise<string> {
-  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1")
-    throw new Error("Use a integração Google da V2.");
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+    const [
+      { withV2DbAsync },
+      { canonicalIdForLegacy },
+      { googleAccessTokenV2 },
+    ] = await Promise.all([
+      import("@/lib/v2/runtime-database"),
+      import("@/lib/v2/identity-bridge"),
+      import("@/lib/v2/google-oauth"),
+    ]);
+    return withV2DbAsync(async (db) => {
+      const canonicalId = canonicalIdForLegacy(db, idSchema.parse(userId));
+      if (!canonicalId) throw new Error("Conta local não vinculada à V2.");
+      return googleAccessTokenV2(db, canonicalId, {
+        config: options.config,
+        fetchImpl: options.fetchImpl,
+      });
+    });
+  }
   const connection = options.connection ?? getDatabase();
   const config = options.config ?? requireGoogleIntegrationConfig();
   const refreshToken = getGoogleRefreshToken(

@@ -43,6 +43,7 @@ export type DocumentGenerationErrorCode =
   | "template-invalid"
   | "template-access"
   | "drive-folder-missing"
+  | "drive-access-pending"
   | "copy-failed"
   | "merge-failed";
 
@@ -76,6 +77,7 @@ type ContextRow = {
   subjectCode: string | null;
   programName: string;
   programShortName: string | null;
+  programCode: string | null;
   periodLabel: string;
   instructorDisplayName: string | null;
   instructorName: string | null;
@@ -116,6 +118,7 @@ function getContext(
     .prepare(
       `select s.name as subjectName, s.code as subjectCode,
               p.name as programName, p.short_name as programShortName,
+              p.code as programCode,
               ap.label as periodLabel, i.display_name as instructorDisplayName,
               i.name as instructorName
        from subject_offerings so
@@ -340,18 +343,28 @@ export function listSharedGeneratedDocuments(
               d.drive_file_id as driveFileId, d.web_view_link as webViewLink,
               d.name, d.google_modified_at as googleModifiedAt,
               d.created_at as createdAt, d.updated_at as updatedAt,
-              dgs.google_permission_status as googlePermissionStatus
+              coalesce(
+                (select dps.google_permission_status from document_person_shares dps
+                 where dps.document_id=d.id and dps.recipient_user_id=?),
+                (select dgs.google_permission_status from document_group_shares dgs
+                 join study_group_members gm on gm.group_id=dgs.group_id
+                 where dgs.document_id=d.id and gm.user_id=? limit 1),
+                'needs_authorization'
+              ) as googlePermissionStatus
        from generated_documents d
-       join document_group_shares dgs on dgs.document_id = d.id
-       join study_group_members gm on gm.group_id = dgs.group_id and gm.user_id = ?
        left join document_templates dt on dt.id = d.template_id
        join subject_offerings so on so.id = d.offering_id
        join subjects s on s.id = so.subject_id
        left join activities a on a.id = d.activity_id
-       where d.owner_user_id != ?
+       where d.owner_user_id != ? and (
+         exists(select 1 from document_person_shares dps where dps.document_id=d.id and dps.recipient_user_id=?)
+         or exists(select 1 from document_group_shares dgs
+           join study_group_members gm on gm.group_id=dgs.group_id
+           where dgs.document_id=d.id and gm.user_id=?)
+       )
        order by d.updated_at desc, d.id desc`,
     )
-    .all(idSchema.parse(userId), userId) as Array<
+    .all(idSchema.parse(userId), userId, userId, userId, userId) as Array<
     GeneratedDocumentRecord & { googlePermissionStatus: string }
   >;
 }
@@ -421,6 +434,11 @@ export async function generateDocument(
     integration.driveStorageUserId,
     { connection, useConfiguredForNew: false },
   );
+  if (
+    process.env.OPENSTUDYHUB_V2_ENABLED === "1" &&
+    destinationStorageUserId !== ownerId
+  )
+    throw new DocumentGenerationError("drive-access-pending");
   if (templateStorageUserId !== destinationStorageUserId) {
     throw new DocumentGenerationError("template-access");
   }
@@ -436,7 +454,8 @@ export async function generateDocument(
     "subject.name": context.subjectName,
     "subject.code": context.subjectCode ?? "",
     "program.name": context.programName,
-    "program.short_name": context.programShortName ?? "",
+    "program.short_name":
+      context.programShortName?.trim() || context.programCode || "",
     "period.label": context.periodLabel,
     "students.names": participants
       .map(({ displayName }) => displayName)
@@ -461,6 +480,13 @@ export async function generateDocument(
     }
   }
   const name = renderPattern(template.namingPattern, values);
+  const isBundledStarter = Boolean(
+    connection.sqlite
+      .prepare(
+        `SELECT 1 FROM app_settings WHERE key LIKE ? AND value = ? LIMIT 1`,
+      )
+      .get(`starter_template.imported.${ownerId}.%`, String(template.id)),
+  );
 
   await validateDocumentTemplateSource(storageUserId, template.sourceFileId, {
     connection,
@@ -497,7 +523,7 @@ export async function generateDocument(
           placeholder,
           value: values[placeholder],
         })),
-        values["document.sections"],
+        isBundledStarter ? "" : values["document.sections"],
         { connection, fetchImpl },
       );
     } catch (error) {

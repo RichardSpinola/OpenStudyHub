@@ -6,7 +6,7 @@ Veja `docs/getting-started.md` para Node local e `docs/deployment.md` para Docke
 
 ## 2. Primeiro ADMIN
 
-Em banco vazio, abra `/setup` e crie o primeiro administrador. Não reutilize senha institucional.
+Em banco vazio, conclua o setup do primeiro administrador. A superfície Admin roda separada do App e permanece local/LAN por padrão. Não reutilize senha institucional.
 
 O setup pode criar o primeiro Program/período/Subject e definir a organização inicial do storage.
 
@@ -57,7 +57,7 @@ Audience Chat usa Program/Cohort. Visual Tags não concedem autorização.
 
 ## 9. Projects
 
-Projects são owner-private na V1 e podem ser ocultados em Configurações sem apagar dados.
+Projects são privados do dono e podem ser ocultados pela configuração administrativa sem apagar dados. O usuário cria um projeto vazio ou importa uma pasta/ZIP e pode editar a stack depois.
 
 ## 10. Links externos e identidade da instância
 
@@ -71,10 +71,14 @@ O cabeçalho mostra `OpenStudyHub / Instituição` quando um nome institucional 
 
 O antigo campo único de documentação é lido como um link legado e pode ser migrado naturalmente ao cadastrar/remover links no novo gerenciador.
 
-## 11. Backup e manutenção
+## 11. Extras
 
-Veja `docs/backup-update.md`. Preserve banco, private-assets e segredos fora do Git.
+Em Admin → Extras, ative ou desative a área, o Quadro Branco, Joguinhos e cada jogo. Desligar uma área também bloqueia suas rotas para usuários normais.
 
-## 12. Auditoria
+## 12. Backup e manutenção
+
+Em Sistema → Backup manual, crie e baixe o arquivo. Preserve os dois bancos, private-assets e segredos fora do Git. A restauração exige App, Admin e realtime parados. Veja `docs/backup-update.md`.
+
+## 13. Auditoria
 
 Antes de publicar ou atualizar, use `docs/release-checklist.md` e mantenha o repositório público livre de dados da instância.

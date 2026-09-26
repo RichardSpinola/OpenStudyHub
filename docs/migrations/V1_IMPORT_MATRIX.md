@@ -1,6 +1,6 @@
 # OpenStudyHub V2 — matriz de importação V1
 
-Base: schema público V1 em `99f15fdd099d8277e6c81297b19cb2ec946eda3`; 50 tabelas em `src/lib/db/schema.ts`. `MIGRATE` preserva registros com remapeamento de IDs; `TRANSFORM` exige conversão de modelo/colunas; `SKIP/RUNTIME` recria estado efêmero; `REVIEW` depende de política ou validação humana. Esta matriz orienta o importador V2 e não autoriza importar banco real.
+Base: schema V1 atual em `src/lib/db/schema.ts`, com 52 tabelas. `MIGRATE` preserva registros com remapeamento de IDs; `TRANSFORM` exige conversão de modelo/colunas; `SKIP/RUNTIME` recria estado efêmero; `REVIEW` depende de política ou validação humana. Esta matriz orienta o importador V2 e não autoriza importar banco real.
 
 |   # | Tabela V1                      | Ação         | Destino/critério V2                                                                                                                                                                         |
 | --: | ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -54,5 +54,7 @@ Base: schema público V1 em `99f15fdd099d8277e6c81297b19cb2ec946eda3`; 50 tabela
 |  48 | `chat_message_mentions`        | REVIEW       | Somente junto com mensagens e usuários importados.                                                                                                                                          |
 |  49 | `chat_attachments`             | REVIEW       | Somente junto com Chat e cópia verificada dos assets privados.                                                                                                                              |
 |  50 | `notifications`                | REVIEW       | Importar somente notificações ainda úteis; descartar links/eventos obsoletos.                                                                                                               |
+|  51 | `note_person_shares`           | TRANSFORM    | Remapear nota, destinatário e autor do compartilhamento; descartar vínculos sem os três registros autorizados.                                                                              |
+|  52 | `document_person_shares`       | TRANSFORM    | Remapear documento, destinatário e autor do compartilhamento; revalidar acesso ao conteúdo e referência de storage.                                                                         |
 
 Ordem do importador: backup consistente + verificação de restore V1; esquema V2 vazio; usuários/configuração segura; acadêmico e currículo; matrículas; conteúdo/asset; shares; Chat opcional; relatório de contagens, referências órfãs, hashes de assets e itens ignorados. IDs são mapeados por tabela em staging, com transações por lote e checkpoint; reexecução começa de DB V2 descartável. O original V1 fica intacto. A prévia exige escolha humana para `REVIEW`, `curriculum_term` ambíguo e conflitos de turma; matching por nome nunca promove integração Google automaticamente.

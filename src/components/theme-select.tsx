@@ -1,4 +1,5 @@
 "use client";
+import { UiCopy } from "@/components/ui-language-provider";
 
 import { useState } from "react";
 
@@ -24,8 +25,12 @@ export function ThemeSelect({
         document.documentElement.dataset.theme = next;
       }}
     >
-      <option value="dark">Escuro</option>
-      <option value="light">Claro</option>
+      <option value="dark">
+        <UiCopy pt="Escuro" en="Dark" />
+      </option>
+      <option value="light">
+        <UiCopy pt="Claro" en="Light" />
+      </option>
     </select>
   );
 }

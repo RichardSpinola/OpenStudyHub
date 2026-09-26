@@ -1,4 +1,5 @@
 "use client";
+import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useRef, useState } from "react";
 
@@ -6,6 +7,14 @@ import {
   cancelProjectUploadAction,
   confirmProjectUploadAction,
 } from "@/app/projects/actions";
+import {
+  projectLanguageLabels,
+  projectLanguages,
+  type ProjectLanguage,
+} from "@/lib/project-manifest";
+import { ProjectSyncSubmit } from "@/components/project-sync-submit";
+import { ProjectTechnologyPicker } from "@/components/project-technology-picker";
+import type { ProjectTechnology } from "@/lib/project-manifest";
 
 type Preview = {
   token: string;
@@ -17,19 +26,27 @@ type Preview = {
     unchanged: string[];
   };
   ignored: Array<{ path: string; reason: string }>;
+  suggestedLanguage: ProjectLanguage;
+  suggestedTechnologies: ProjectTechnology[];
 };
 
 export function ProjectUpload({
   projectId,
   currentVersionNumber,
+  currentLanguage,
+  currentTechnologies,
 }: {
   projectId: number;
   currentVersionNumber: number;
+  currentLanguage: ProjectLanguage;
+  currentTechnologies: ProjectTechnology[];
 }) {
+  const tr = useUiText();
   const folderInput = useRef<HTMLInputElement>(null);
   const zipInput = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   async function send(files: File[], zip: File | null) {
     setState("loading");
@@ -69,21 +86,46 @@ export function ProjectUpload({
       if (!response.ok) throw new Error(result.error);
       setPreview(result);
       setState("idle");
-    } catch {
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Falha ao preparar o envio.",
+      );
       setState("error");
     }
   }
 
   return (
     <section className="utility-panel project-upload-panel">
-      <div className="panel-title">
-        {currentVersionNumber === 0 ? "PRIMEIRA VERSÃO" : "ATUALIZAR PROJETO"}
+      <div className="project-upload-heading">
+        <div>
+          <p className="eyebrow">
+            <UiCopy pt="ARQUIVOS E DIFF" en="FILES AND DIFF" />
+          </p>
+          <h2>
+            {currentVersionNumber === 0
+              ? tr("Envie a primeira versão", "Upload the first version")
+              : tr("Prepare uma nova versão", "Prepare a new version")}
+          </h2>
+          <p>
+            <UiCopy
+              pt="Confira as mudanças antes de sincronizar. Nenhum arquivo é executado aqui."
+              en="Review changes before syncing. No file is executed here."
+            />
+          </p>
+        </div>
+        <span>
+          {currentVersionNumber
+            ? `v${String(currentVersionNumber).padStart(4, "0")}`
+            : tr("Sem versão", "No version")}
+        </span>
       </div>
       {!preview ? (
         <div className="project-upload-picker">
           <p className="panel-help">
-            Selecione a pasta atual do projeto. Caches, .git e arquivos
-            sensíveis são ignorados no servidor.
+            <UiCopy
+              pt="Envie a pasta atual ou um ZIP. Arquivos temporários e sensíveis são ignorados com segurança."
+              en="Upload the current folder or a ZIP. Temporary and sensitive files are safely ignored."
+            />
           </p>
           <input
             ref={folderInput}
@@ -104,38 +146,64 @@ export function ProjectUpload({
           />
           <div className="panel-actions">
             <button type="button" onClick={() => folderInput.current?.click()}>
-              Selecionar pasta
+              <UiCopy pt="Selecionar pasta" en="Select folder" />
             </button>
             <button type="button" onClick={() => zipInput.current?.click()}>
-              Enviar ZIP
+              <UiCopy pt="Enviar ZIP" en="Upload ZIP" />
             </button>
           </div>
           {state === "loading" ? (
             <p className="feedback-banner" role="status">
-              Validando arquivos e calculando hashes…
+              <UiCopy
+                pt="Conferindo os arquivos e preparando a prévia…"
+                en="Checking files and preparing the preview…"
+              />
             </p>
           ) : state === "error" ? (
             <p className="feedback-banner is-error" role="alert">
-              O upload não passou pela validação. Revise limites, paths e o
-              formato enviado.
+              {errorMessage === "version-conflict"
+                ? tr("Existe uma versão mais recente. Atualize a página antes de enviar.", "A newer version exists. Refresh before uploading.")
+                : errorMessage === "invalid-upload"
+                  ? tr("O envio não passou pela validação. Confira o ZIP ou os arquivos.", "The upload did not pass validation. Check the ZIP or files.")
+                  : errorMessage}
             </p>
           ) : null}
         </div>
       ) : (
         <div className="project-upload-preview">
           <div className="diff-summary">
-            <strong>{preview.files} arquivos aceitos</strong>
-            <span>+{preview.diff.added.length} adicionados</span>
-            <span>~{preview.diff.modified.length} modificados</span>
-            <span>−{preview.diff.removed.length} removidos</span>
-            <span>{preview.diff.unchanged.length} sem mudança</span>
+            <strong>
+              {preview.files}
+              <UiCopy pt="arquivos aceitos" en="accepted files" />
+            </strong>
+            <span>
+              +{preview.diff.added.length}
+              <UiCopy pt="adicionados" en="added" />
+            </span>
+            <span>
+              ~{preview.diff.modified.length}
+              <UiCopy pt="modificados" en="modified" />
+            </span>
+            <span>
+              −{preview.diff.removed.length}
+              <UiCopy pt="removidos" en="removed" />
+            </span>
+            <span>
+              {preview.diff.unchanged.length}
+              <UiCopy pt="sem mudança" en="unchanged" />
+            </span>
           </div>
           {(["added", "modified", "removed"] as const).map((kind) => {
             const paths = preview.diff[kind];
+            const label = {
+              added: "Adicionados",
+              modified: "Modificados",
+              removed: "Removidos",
+            }[kind];
             return paths.length ? (
               <details key={kind}>
                 <summary>
-                  {kind} ({paths.length})
+                  {label} ({paths.length})
                 </summary>
                 <ul className="path-list">
                   {paths.map((path) => (
@@ -148,7 +216,8 @@ export function ProjectUpload({
           {preview.ignored.length ? (
             <details>
               <summary>
-                Ignorados com segurança ({preview.ignored.length})
+                <UiCopy pt="Ignorados com segurança (" en="Safely ignored (" />
+                {preview.ignored.length})
               </summary>
               <ul className="path-list">
                 {preview.ignored.map((item) => (
@@ -162,17 +231,49 @@ export function ProjectUpload({
           <form action={confirmProjectUploadAction} className="stack-form">
             <input type="hidden" name="projectId" value={projectId} />
             <input type="hidden" name="token" value={preview.token} />
+            <input type="hidden" name="technologySelection" value="1" />
             <label>
-              Descrição desta versão (opcional)
+              <UiCopy
+                pt="Linguagem sugerida — você pode corrigir"
+                en="Suggested language — you can change it"
+              />
+              <select
+                name="language"
+                defaultValue={
+                  currentLanguage === "other"
+                    ? preview.suggestedLanguage
+                    : currentLanguage
+                }
+              >
+                {projectLanguages.map((language) => (
+                  <option key={language} value={language}>
+                    {projectLanguageLabels[language]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <ProjectTechnologyPicker
+              key={preview.token}
+              initial={
+                currentTechnologies.length
+                  ? currentTechnologies
+                  : preview.suggestedTechnologies
+              }
+            />
+            <label>
+              <UiCopy
+                pt="Descrição desta versão (opcional)"
+                en="Description of this version (optional)"
+              />
               <input name="message" maxLength={500} />
             </label>
-            <button type="submit">Confirmar e sincronizar no Drive</button>
+            <ProjectSyncSubmit />
           </form>
           <form action={cancelProjectUploadAction}>
             <input type="hidden" name="projectId" value={projectId} />
             <input type="hidden" name="token" value={preview.token} />
             <button type="submit" className="secondary-button">
-              Cancelar
+              <UiCopy pt="Cancelar" en="Cancel" />
             </button>
           </form>
         </div>

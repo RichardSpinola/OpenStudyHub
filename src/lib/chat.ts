@@ -30,6 +30,8 @@ export type ChatMessage = {
   bodySource: string;
   replyToMessageId: number | null;
   replyBody: string | null;
+  replyAuthorName: string | null;
+  replyAuthorUserId: number | null;
   editedAt: number | null;
   createdAt: number;
   attachmentIds: number[];
@@ -468,9 +470,12 @@ export function sendChatMessage(
     },
     connection,
   );
-  return listChatMessages(actorId, targetRoomId, 0, connection).find(
-    ({ id }) => id === messageId,
-  )!;
+  return listChatMessages(
+    actorId,
+    targetRoomId,
+    messageId - 1,
+    connection,
+  ).find(({ id }) => id === messageId)!;
 }
 
 export function listChatMessages(
@@ -488,10 +493,13 @@ export function listChatMessages(
       `select m.id, m.room_id as roomId, m.author_user_id as authorUserId,
               u.display_name as authorName, m.body_source as bodySource,
               m.reply_to_message_id as replyToMessageId,
-              reply.body_source as replyBody, m.edited_at as editedAt,
+              reply.body_source as replyBody, reply_author.display_name as replyAuthorName,
+              reply.author_user_id as replyAuthorUserId,
+              m.edited_at as editedAt,
               m.created_at as createdAt
        from chat_messages m join users u on u.id = m.author_user_id
        left join chat_messages reply on reply.id = m.reply_to_message_id
+       left join users reply_author on reply_author.id = reply.author_user_id
        where m.room_id = ? and m.id > ? and m.deleted_at is null
        order by m.id asc limit 200`,
     )

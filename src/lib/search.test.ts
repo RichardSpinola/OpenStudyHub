@@ -14,4 +14,19 @@ describe("buildWebSearchUrl", () => {
   it("recusa consultas vazias", () => {
     expect(buildWebSearchUrl("   ")).toBeNull();
   });
+
+  it("usa somente os provedores aprovados", () => {
+    expect(buildWebSearchUrl("álgebra", "scholar")?.hostname).toBe(
+      "scholar.google.com",
+    );
+    expect(buildWebSearchUrl("álgebra", "duckduckgo")?.hostname).toBe(
+      "duckduckgo.com",
+    );
+    expect(
+      buildWebSearchUrl("álgebra", "startpage")?.searchParams.get("query"),
+    ).toBe("álgebra");
+    expect(buildWebSearchUrl("álgebra", "ecosia")?.hostname).toBe(
+      "www.ecosia.org",
+    );
+  });
 });

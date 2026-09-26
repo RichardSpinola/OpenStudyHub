@@ -67,6 +67,76 @@ export function editV2User(
     );
   })();
 }
+
+const removableUserState = new Set([
+  "user_sessions",
+  "user_appearance",
+  "user_home_background_choice",
+]);
+
+export function previewDeleteV2User(db: V2Database, actor: Actor, id: number) {
+  admin(db, actor);
+  const user = db.prepare("SELECT id,login FROM users WHERE id=?").get(id) as
+    { id: number; login: string } | undefined;
+  if (!user) throw new Error("Usuário não encontrado.");
+  const tables = db
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+    )
+    .all() as Array<{ name: string }>;
+  const dependencies: Array<{ table: string; count: number }> = [];
+  for (const { name } of tables) {
+    const foreignKeys = db.pragma(
+      `foreign_key_list("${name.replaceAll('"', '""')}")`,
+    ) as Array<{ table: string; from: string; to: string }>;
+    for (const key of foreignKeys) {
+      if (key.table !== "users" || key.to !== "id") continue;
+      const count = (
+        db
+          .prepare(
+            `SELECT count(*) n FROM "${name.replaceAll('"', '""')}" WHERE "${key.from.replaceAll('"', '""')}"=?`,
+          )
+          .get(id) as { n: number }
+      ).n;
+      if (count && !removableUserState.has(name))
+        dependencies.push({ table: name, count });
+    }
+  }
+  return { user, dependencies, canDelete: dependencies.length === 0 };
+}
+
+export function deleteV2User(
+  db: V2Database,
+  actor: Actor,
+  id: number,
+  confirmation: string,
+) {
+  admin(db, actor);
+  return db.transaction(() => {
+    const preview = previewDeleteV2User(db, actor, id);
+    if (confirmation !== preview.user.login)
+      throw new Error("Digite o login exato para confirmar a exclusão.");
+    if (!preview.canDelete)
+      throw new Error(
+        `Esta conta possui ${preview.dependencies.reduce((sum, item) => sum + item.count, 0)} vínculo(s) que impedem exclusão. Desative a conta para impedir acesso.`,
+      );
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+      .all() as Array<{ name: string }>;
+    for (const name of removableUserState) {
+      if (tables.some((table) => table.name === name))
+        db.prepare(`DELETE FROM "${name}" WHERE user_id=?`).run(id);
+    }
+    db.prepare("DELETE FROM users WHERE id=?").run(id);
+    recordAdminAction(
+      db,
+      actor,
+      "user.delete_without_dependencies",
+      "user",
+      id,
+    );
+  })();
+}
 function canEnrollUser(
   db: V2Database,
   actor: Actor,

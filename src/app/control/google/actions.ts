@@ -6,7 +6,10 @@ import {
   GoogleDriveStorageProvider,
   storageOwnerStatus,
 } from "@/lib/v2/drive-storage";
-import { fakeDriveProvider, fakeGoogleEnabled } from "@/lib/v2/fake-google";
+import { provisionPendingDriveFolders } from "@/lib/v2/drive-folders";
+import { desiredRootFolderName } from "@/lib/google/drive";
+import { getDatabase } from "@/lib/db/client";
+import { setGoogleAutomationInterval } from "@/lib/v2/google-automation";
 
 export async function setStorageOwnerAction(form: FormData): Promise<void> {
   let result = "Storage owner atualizado.";
@@ -36,10 +39,11 @@ export async function repairDriveRootAction(): Promise<void> {
       const owner = storageOwnerStatus(db);
       if (!owner?.ownerId || !owner.connected)
         throw new Error("Storage owner precisa conectar Drive.");
-      const provider = fakeGoogleEnabled()
-        ? fakeDriveProvider(db, owner.backendId, owner.ownerId)
-        : new GoogleDriveStorageProvider(db, owner.backendId);
-      await provider.repairRoot(admin);
+      const provider = new GoogleDriveStorageProvider(db, owner.backendId);
+      await provider.repairRoot(admin, desiredRootFolderName(getDatabase()));
+      db.prepare(
+        "UPDATE google_automation_v2 SET drive_status='pending',last_drive_check_at=NULL WHERE id=1",
+      ).run();
     });
   } catch (error) {
     message =
@@ -47,4 +51,41 @@ export async function repairDriveRootAction(): Promise<void> {
     redirect("/control/google?error=" + encodeURIComponent(message));
   }
   redirect("/control/google?ok=" + encodeURIComponent(message));
+}
+
+export async function provisionDriveFoldersAction(): Promise<void> {
+  try {
+    const created = await withV2DbAsync(async (db) => {
+      const admin = await currentAdminV2(db);
+      if (!admin) throw new Error("Sessão Admin necessária.");
+      return provisionPendingDriveFolders(db, admin);
+    });
+    redirect(
+      "/control/google?ok=" +
+        encodeURIComponent(
+          `${created.checked} disciplina(s) conferida(s); ${created.created} pasta(s) criada(s) ou recriada(s).`,
+        ),
+    );
+  } catch (error) {
+    if (error && typeof error === "object" && "digest" in error) throw error;
+    const message =
+      error instanceof Error ? error.message : "Falha ao criar pastas Drive.";
+    redirect("/control/google?error=" + encodeURIComponent(message));
+  }
+}
+
+export async function setGoogleAutomationAction(form: FormData): Promise<void> {
+  try {
+    const minutes = Number(form.get("intervalMinutes"));
+    await withV2DbAsync(async (db) => {
+      const admin = await currentAdminV2(db);
+      if (!admin) throw new Error("Sessão Admin necessária.");
+      setGoogleAutomationInterval(db, admin, minutes);
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Intervalo inválido.";
+    redirect("/control/google?error=" + encodeURIComponent(message));
+  }
+  redirect("/control/google?ok=Intervalo%20atualizado.");
 }

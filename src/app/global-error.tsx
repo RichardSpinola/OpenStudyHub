@@ -1,14 +1,25 @@
 "use client";
+import { UiCopy } from "@/components/ui-language-provider";
 
 export default function GlobalError({ reset }: { reset: () => void }) {
   return (
     <html lang="pt-BR">
       <body>
         <main>
-          <h1>OpenStudyHub indisponível</h1>
-          <p>Ocorreu um erro inesperado.</p>
+          <h1>
+            <UiCopy
+              pt="OpenStudyHub indisponível"
+              en="OpenStudyHub unavailable"
+            />
+          </h1>
+          <p>
+            <UiCopy
+              pt="Ocorreu um erro inesperado."
+              en="An unexpected error occurred."
+            />
+          </p>
           <button type="button" onClick={reset}>
-            Tentar novamente
+            <UiCopy pt="Tentar novamente" en="Try again" />
           </button>
         </main>
       </body>

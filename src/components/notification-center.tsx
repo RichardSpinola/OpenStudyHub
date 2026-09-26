@@ -1,6 +1,11 @@
 "use client";
+import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { IconBell } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
+import { PushControls } from "@/components/push-controls";
+import { usePopover } from "@/components/use-popover";
 
 type Item = {
   id: number;
@@ -8,7 +13,21 @@ type Item = {
   bodyPreview: string | null;
   readAt: number | null;
   createdAt: number;
+  actorName: string | null;
+  type: string;
+  entityType: string;
+  entityId: string;
 };
+
+function destination(item: Item): string {
+  if (item.entityType === "chat_room" && /^\d+$/.test(item.entityId))
+    return `/chat?room=${item.entityId}`;
+  if (item.entityType === "study_group" && /^\d+$/.test(item.entityId))
+    return `/chat?group=${item.entityId}`;
+  if (item.entityType === "note" && /^\d+$/.test(item.entityId))
+    return `/notes/${item.entityId}`;
+  return "/today";
+}
 
 function mergeUnique(current: Item[], incoming: Item[]): Item[] {
   const map = new Map<number, Item>();
@@ -17,16 +36,18 @@ function mergeUnique(current: Item[], incoming: Item[]): Item[] {
 }
 
 export function NotificationCenter() {
+  const tr = useUiText();
   const [items, setItems] = useState<Item[]>([]);
   const [unread, setUnread] = useState(0);
-  const [open, setOpen] = useState(false);
+  const { open, setOpen, rootRef, triggerRef } = usePopover<HTMLDivElement>();
+  const [error, setError] = useState("");
+  const router = useRouter();
   const [permission, setPermission] = useState<
     NotificationPermission | "unsupported"
   >("unsupported");
   const lastId = useRef(0);
   const inFlight = useRef(false);
   const bootstrapped = useRef(false);
-  const rootRef = useRef<HTMLDivElement>(null);
 
   const poll = useCallback(async () => {
     if (inFlight.current) return;
@@ -63,7 +84,10 @@ export function NotificationCenter() {
         for (const item of payload.notifications) {
           if (item.id <= previousLastId) continue;
           new Notification(item.title, {
-            body: item.bodyPreview ?? undefined,
+            body: tr(
+              "Você tem uma nova notificação.",
+              "You have a new notification.",
+            ),
             icon: "/brand/notification-icon.png",
           });
         }
@@ -72,7 +96,7 @@ export function NotificationCenter() {
     } finally {
       inFlight.current = false;
     }
-  }, []);
+  }, [tr]);
 
   useEffect(() => {
     const permissionTimer = window.setTimeout(() => {
@@ -86,46 +110,23 @@ export function NotificationCenter() {
       if (!document.hidden) void poll();
     };
     document.addEventListener("visibilitychange", visibility);
+    const realtime = (event: Event) => {
+      if (
+        (event as CustomEvent<{ type: string }>).detail.type === "notification"
+      )
+        void poll();
+    };
+    window.addEventListener("openstudyhub:realtime", realtime);
     return () => {
       window.clearTimeout(permissionTimer);
       document.removeEventListener("visibilitychange", visibility);
       window.clearInterval(interval);
+      window.removeEventListener("openstudyhub:realtime", realtime);
     };
   }, [poll]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
-  async function requestPermission() {
-    if (typeof Notification === "undefined") return;
-    const next = await Notification.requestPermission();
-    setPermission(next);
-  }
-
-  function testNotification() {
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission !== "granted") return;
-    new Notification("OpenStudyHub", {
-      body: "As notificações estão funcionando.",
-      icon: "/brand/notification-icon.png",
-    });
-  }
-
-  async function markRead(item: Item) {
-    if (item.readAt) return;
+  async function markRead(item: Item): Promise<boolean> {
+    if (item.readAt) return true;
     const response = await fetch("/api/notifications", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
@@ -140,41 +141,81 @@ export function NotificationCenter() {
         ),
       );
       setUnread((value) => Math.max(0, value - 1));
+      return true;
     }
+    setError(
+      tr("Não foi possível marcar como lida.", "Could not mark as read."),
+    );
+    return false;
+  }
+
+  async function markAll() {
+    const response = await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ all: true }),
+    });
+    if (!response.ok) {
+      setError(
+        tr(
+          "Não foi possível marcar todas como lidas.",
+          "Could not mark all as read.",
+        ),
+      );
+      return;
+    }
+    setItems((current) =>
+      current.map((item) => ({ ...item, readAt: item.readAt ?? Date.now() })),
+    );
+    setUnread(0);
   }
 
   return (
     <div className="notification-center" ref={rootRef}>
       <button
+        ref={triggerRef}
         type="button"
         aria-expanded={open}
-        aria-label={`Notificações: ${unread} não lidas`}
+        aria-label={tr(
+          `Notificações: ${unread} não lidas`,
+          `Notifications: ${unread} unread`,
+        )}
         onClick={() => setOpen((value) => !value)}
       >
-        NOTIF{unread ? ` ${unread}` : ""}
+        <IconBell size={20} stroke={1.8} aria-hidden="true" />
+        {unread ? <span className="notification-count">{unread}</span> : null}
       </button>
       {open ? (
         <div
           className="notification-popover"
           role="dialog"
-          aria-label="Notificações"
+          aria-label={tr("Notificações", "Notifications")}
         >
-          <strong>NOTIFICAÇÕES</strong>
-          {permission === "unsupported" ? (
-            <span>
-              Notificações do sistema não são suportadas neste navegador.
-            </span>
-          ) : permission === "default" ? (
-            <button type="button" onClick={() => void requestPermission()}>
-              Permitir no sistema
-            </button>
-          ) : permission === "granted" ? (
-            <button type="button" onClick={testNotification}>
-              Testar notificação
-            </button>
-          ) : (
-            <span>Notificações do sistema estão bloqueadas no navegador.</span>
-          )}
+          <header className="notification-header">
+            <strong>
+              <UiCopy pt="Notificações" en="Notifications" />
+            </strong>
+            {unread ? (
+              <button type="button" onClick={() => void markAll()}>
+                <UiCopy pt="Marcar todas como lidas" en="Mark all as read" />
+              </button>
+            ) : null}
+          </header>
+          <p className="notification-permission">
+            {permission === "denied"
+              ? tr(
+                  "Avisos do navegador bloqueados; os avisos aqui continuam funcionando.",
+                  "Browser notifications are blocked; notifications here still work.",
+                )
+              : permission === "unsupported"
+                ? tr(
+                    "Avisos neste painel continuam disponíveis.",
+                    "Notifications remain available in this panel.",
+                  )
+                : ""}
+          </p>
+          <PushControls onEnabled={() => setPermission("granted")} />
+          {error ? <p role="alert">{error}</p> : null}
           {items.length ? (
             <ol>
               {items.map((item) => (
@@ -182,15 +223,39 @@ export function NotificationCenter() {
                   key={`notification-${item.id}`}
                   data-read={Boolean(item.readAt)}
                 >
-                  <button type="button" onClick={() => void markRead(item)}>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (await markRead(item)) {
+                        setOpen(false);
+                        router.push(destination(item));
+                      }
+                    }}
+                  >
+                    <small>
+                      {item.actorName ??
+                        (item.type.startsWith("chat")
+                          ? "Conversa"
+                          : "OpenStudyHub")}{" "}
+                      ·{" "}
+                      {new Intl.DateTimeFormat("pt-BR", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      }).format(item.createdAt)}
+                    </small>
                     <b>{item.title}</b>
                     {item.bodyPreview ? <span>{item.bodyPreview}</span> : null}
+                    <small>
+                      <UiCopy pt="Ver detalhes →" en="View details →" />
+                    </small>
                   </button>
                 </li>
               ))}
             </ol>
           ) : (
-            <span>Nenhuma notificação.</span>
+            <span>
+              <UiCopy pt="Nenhuma notificação." en="No notifications." />
+            </span>
           )}
         </div>
       ) : null}

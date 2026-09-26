@@ -1,26 +1,38 @@
 "use client";
+import { UiCopy } from "@/components/ui-language-provider";
+
 import { useActionState } from "react";
 import { csvAction, type CsvState } from "../actions";
 export function CsvImport() {
   const [state, action, pending] = useActionState(csvAction, {} as CsvState);
   return (
     <section>
-      <h2>Importar usuários por CSV</h2>
+      <h2>
+        <UiCopy pt="Importar usuários por CSV" en="Import users from CSV" />
+      </h2>
       <p>
-        Cabeçalho: <code>login,nome</code>. Até 1000 linhas. Revise antes de
-        aplicar; qualquer linha inválida bloqueia o lote inteiro.
+        <UiCopy pt="Cabeçalho:" en="Header:" />
+        <code>
+          login,nome
+        </code>
+        <UiCopy
+          pt=". Até 1000 linhas. Revise antes de aplicar; qualquer linha inválida bloqueia o lote inteiro."
+          en=". Up to 1000 rows. Review before applying; any invalid row blocks the entire batch."
+        />
       </p>
       <form action={action}>
         <label>
-          Conteúdo CSV
+          <UiCopy pt="Conteúdo CSV" en="CSV content" />
           <textarea
             name="csv"
-            defaultValue={state.csv ?? "login,nome\naluno.fake,Aluno Fictício"}
+            defaultValue={state.csv ?? "login,nome"}
             required
           />
         </label>
         <input type="hidden" name="mode" value="preview" />
-        <button disabled={pending}>Pré-visualizar</button>
+        <button disabled={pending}>
+          <UiCopy pt="Pré-visualizar" en="Preview" />
+        </button>
       </form>
       {state.error ? (
         <div role="alert" className="v2-message" data-type="error">
@@ -30,16 +42,21 @@ export function CsvImport() {
       {state.preview ? (
         <>
           <h3>
-            Prévia: {state.preview.valid.length} válidos ·{" "}
-            {state.preview.errors.length} inválidos
+            <UiCopy pt="Prévia:" en="Preview:" /> {state.preview.valid.length}
+            <UiCopy pt="válidos ·" en="valid ·" /> {state.preview.errors.length}
+            <UiCopy pt="inválidos" en="invalid" />
           </h3>
           <div className="v2-table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Linha</th>
+                  <th>
+                    <UiCopy pt="Linha" en="Row" />
+                  </th>
                   <th>Login</th>
-                  <th>Nome / problema</th>
+                  <th>
+                    <UiCopy pt="Nome / problema" en="Name / issue" />
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -53,7 +70,9 @@ export function CsvImport() {
                 {state.preview.errors.map((r) => (
                   <tr key={r.line}>
                     <td>{r.line}</td>
-                    <td>Inválida</td>
+                    <td>
+                      <UiCopy pt="Inválida" en="Invalid" />
+                    </td>
                     <td>{r.reason}</td>
                   </tr>
                 ))}
@@ -61,7 +80,11 @@ export function CsvImport() {
             </table>
           </div>
           {state.preview.valid.length > 30 ? (
-            <p>Mostrando 30 dos {state.preview.valid.length} válidos.</p>
+            <p>
+              <UiCopy pt="Mostrando 30 dos" en="Showing 30 of" />{" "}
+              {state.preview.valid.length}
+              <UiCopy pt="válidos." en="valid." />
+            </p>
           ) : null}
           {!state.preview.errors.length && state.preview.valid.length ? (
             <form action={action}>
@@ -72,24 +95,33 @@ export function CsvImport() {
                 name="fingerprint"
                 value={state.preview.fingerprint}
               />
-              <button disabled={pending}>Aplicar lote inteiro</button>
+              <button disabled={pending}>
+                <UiCopy pt="Aplicar lote inteiro" en="Apply entire batch" />
+              </button>
             </form>
           ) : null}
         </>
       ) : null}
       {state.credentials ? (
         <div className="v2-message" role="status">
-          <strong>{state.credentials.length} contas criadas.</strong>
+          <strong>
+            {state.credentials.length}
+            <UiCopy pt="contas criadas." en="accounts created." />
+          </strong>
           <p>
-            Senhas temporárias aparecem somente agora; entregue por canal
-            seguro. Cada usuário deve alterá-la no primeiro acesso.
+            <UiCopy
+              pt="Senhas temporárias aparecem somente agora; entregue por canal seguro. Cada usuário deve alterá-la no primeiro acesso."
+              en="Temporary passwords are shown only now; send them through a secure channel. Each user must change theirs at first sign-in."
+            />
           </p>
           <div className="v2-table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Login</th>
-                  <th>Senha temporária</th>
+                  <th>
+                    <UiCopy pt="Senha temporária" en="Temporary password" />
+                  </th>
                 </tr>
               </thead>
               <tbody>

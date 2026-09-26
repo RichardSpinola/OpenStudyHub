@@ -1,0 +1,125 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background: #191b1d;
+  color: #f4f4f1;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+.shell {
+  width: min(100%, 30rem);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid #4b5054;
+  border-radius: 0.75rem;
+  background: #24272a;
+  box-shadow: 0 1rem 3rem #0003;
+}
+.brand {
+  display: block;
+  margin-bottom: 1.2rem;
+}
+.eyebrow {
+  color: #a4c4d2;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+h1 {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  line-height: 1.15;
+  margin: 0.35rem 0 1rem;
+}
+p {
+  line-height: 1.5;
+  color: #c6c9cb;
+}
+form {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+input {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #90979b;
+  border-radius: 0.35rem;
+  background: #151719;
+  color: #fff;
+  font: inherit;
+}
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid #a4c4d2;
+  outline-offset: 2px;
+}
+small {
+  color: #aeb4b7;
+  line-height: 1.5;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+button {
+  min-height: 2.8rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid #d7e5e9;
+  border-radius: 0.35rem;
+  background: #d7e5e9;
+  color: #11191c;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+button.secondary {
+  background: transparent;
+  color: #eef4f5;
+}
+button:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+#feedback {
+  min-height: 1.5rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+}
+#feedback[data-state="success"] {
+  color: #9bdfb4;
+}
+#feedback[data-state="error"] {
+  color: #ffb4aa;
+}
+.privacy {
+  margin: 1.3rem 0 0;
+  font-size: 0.8rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto;
+  }
+}

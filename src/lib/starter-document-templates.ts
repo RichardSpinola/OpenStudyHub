@@ -1,7 +1,11 @@
 import { z } from "zod";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
+import { isUserEnrolled } from "@/lib/enrollments";
+import { generateDocument } from "@/lib/document-workflows";
 import { getServerEnvironment, type ServerEnvironment } from "@/lib/env";
 import {
   addDocumentTemplateSection,
@@ -14,6 +18,7 @@ import {
   ensureDriveFolderForUser,
   ensureDriveRootFolder,
   trashDriveFile,
+  uploadDriveFile,
 } from "@/lib/google/drive";
 import type { GoogleFetch } from "@/lib/google/oauth";
 import { resolveDriveStorageUser } from "@/lib/google/storage-owner";
@@ -135,6 +140,86 @@ function getStarter(keyInput: string): StarterDefinition {
   return starterDocumentTemplates.find((item) => item.key === key)!;
 }
 
+const bundledSettingPrefix = "starter_template.enabled.";
+
+export function listBundledStarterTemplates(
+  connection: DatabaseConnection = getDatabase(),
+) {
+  const settings = new Map(
+    (
+      connection.sqlite
+        .prepare(
+          "SELECT key,value FROM app_settings WHERE key LIKE 'starter_template.enabled.%'",
+        )
+        .all() as Array<{ key: string; value: string }>
+    ).map(({ key, value }) => [key, value]),
+  );
+  return starterDocumentTemplates.map((template) => ({
+    ...template,
+    enabled: settings.get(bundledSettingPrefix + template.key) !== "0",
+  }));
+}
+
+export function setBundledStarterEnabled(
+  keyInput: string,
+  enabled: boolean,
+  connection: DatabaseConnection = getDatabase(),
+) {
+  const key = getStarter(keyInput).key;
+  connection.sqlite
+    .prepare(
+      `INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?)
+     ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`,
+    )
+    .run(bundledSettingPrefix + key, enabled ? "1" : "0", Date.now());
+}
+
+export function readBundledStarter(
+  keyInput: string,
+  connection: DatabaseConnection = getDatabase(),
+) {
+  const template = listBundledStarterTemplates(connection).find(
+    ({ key }) => key === starterKeySchema.parse(keyInput),
+  );
+  if (!template?.enabled) throw new Error("Modelo indisponível.");
+  const path = resolve(
+    /* turbopackIgnore: true */ process.cwd(),
+    "assets",
+    "starter-templates",
+    template.filename,
+  );
+  return { template, content: readFileSync(path) };
+}
+
+export async function createGoogleDocumentFromStarter(
+  ownerUserId: number,
+  input: { key: string; title: string; offeringId: number },
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+): Promise<number> {
+  const ownerId = z.number().int().positive().parse(ownerUserId);
+  const offeringId = z.number().int().positive().parse(input.offeringId);
+  const title = z.string().trim().min(1).max(160).parse(input.title);
+  const connection = options.connection ?? getDatabase();
+  if (!isUserEnrolled(ownerId, offeringId, connection))
+    throw new Error("Disciplina fora da sua matrícula.");
+  const templateId = await importStarterDocumentTemplate(
+    ownerId,
+    input.key,
+    options,
+  );
+  const generated = await generateDocument(
+    ownerId,
+    {
+      templateId,
+      offeringId,
+      title,
+      date: new Date().toISOString().slice(0, 10),
+    },
+    options,
+  );
+  return generated.id;
+}
+
 function starterSourceIds(environment: ServerEnvironment) {
   return {
     generic_activity: environment.GOOGLE_TEMPLATE_GENERIC_ACTIVITY_ID,
@@ -168,12 +253,19 @@ export async function importStarterDocumentTemplate(
   const starter = getStarter(keyInput);
   const connection = options.connection ?? getDatabase();
   const fetchImpl = options.fetchImpl ?? fetch;
+  const settingKey = `starter_template.imported.${ownerId}.${starter.key}`;
+  const existing = connection.sqlite
+    .prepare(
+      `SELECT dt.id FROM app_settings s JOIN document_templates dt
+     ON dt.id = CAST(s.value AS INTEGER) AND dt.owner_user_id = ?
+     WHERE s.key = ?`,
+    )
+    .get(ownerId, settingKey) as { id: number } | undefined;
+  if (existing) return existing.id;
   const sourceFileId = starterSourceIds(
     options.environment ?? getServerEnvironment(),
   )[starter.key];
-  if (!sourceFileId) {
-    throw new Error("Starter document template is not configured.");
-  }
+  const { content } = readBundledStarter(starter.key, connection);
   const storageUserId = resolveDriveStorageUser(ownerId, null, { connection });
   const root = await ensureDriveRootFolder(storageUserId, {
     connection,
@@ -188,15 +280,29 @@ export async function importStarterDocumentTemplate(
     },
     { connection, fetchImpl },
   );
-  const imported = await copyDriveFile(
-    storageUserId,
-    {
-      sourceFileId,
-      name: `${starter.name} — OpenStudyHub`,
-      parentFolderId: templatesFolder.id,
-    },
-    { connection, fetchImpl },
-  );
+  const imported = sourceFileId
+    ? await copyDriveFile(
+        storageUserId,
+        {
+          sourceFileId,
+          name: `${starter.name} — OpenStudyHub`,
+          parentFolderId: templatesFolder.id,
+        },
+        { connection, fetchImpl },
+      )
+    : await uploadDriveFile(
+        storageUserId,
+        {
+          name: `${starter.name} — OpenStudyHub`,
+          parentFolderId: templatesFolder.id,
+          data: content,
+          mimeType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          targetMimeType: "application/vnd.google-apps.document",
+          appProperties: { openStudyHubType: "starter-template" },
+        },
+        { connection, fetchImpl },
+      );
 
   let templateId: number | null = null;
   try {
@@ -218,6 +324,12 @@ export async function importStarterDocumentTemplate(
     for (const section of starter.sections) {
       addDocumentTemplateSection(ownerId, template.id, section, connection);
     }
+    connection.sqlite
+      .prepare(
+        `INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?)
+       ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`,
+      )
+      .run(settingKey, String(template.id), Date.now());
     return template.id;
   } catch (error) {
     if (templateId !== null) {

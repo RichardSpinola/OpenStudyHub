@@ -1,3 +1,4 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 
 import {
@@ -42,7 +43,10 @@ export default async function ActivitiesPage() {
           <p className="system-label">{academic.activitiesSystem}</p>
           <h1>{academic.activitiesTitle}</h1>
           <p className="page-description">
-            Acompanhe prazos locais e atividades sincronizadas do Classroom.
+            <UiCopy
+              pt="Acompanhe prazos locais e atividades sincronizadas do Classroom."
+              en="Follow local deadlines and activities synced from Classroom."
+            />
           </p>
         </div>
         <span className="count-label">
@@ -92,10 +96,14 @@ export default async function ActivitiesPage() {
         <div className="useful-empty">
           <strong>{academic.noActivities}</strong>
           <p>
-            Crie uma Activity local ou sincronize o Classroom a partir de uma
-            disciplina conectada.
+            <UiCopy
+              pt="Crie uma Activity local ou sincronize o Classroom a partir de uma disciplina conectada."
+              en="Create a local activity or sync Classroom from a connected subject."
+            />
           </p>
-          <Link href="/subjects">Ver disciplinas</Link>
+          <Link href="/subjects">
+            <UiCopy pt="Ver disciplinas" en="View subjects" />
+          </Link>
         </div>
       ) : (
         <ol className="activity-list activity-card-list">
@@ -152,7 +160,8 @@ export default async function ActivitiesPage() {
                 activity.description.length > 180 ? (
                   <details className="activity-description activity-excerpt">
                     <summary>
-                      {activity.description.slice(0, 180)}… Ver mais
+                      {activity.description.slice(0, 180)}
+                      <UiCopy pt="… Ver mais" en="… See more" />
                     </summary>
                     <p>{activity.description}</p>
                   </details>
@@ -167,19 +176,19 @@ export default async function ActivitiesPage() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Abrir no {academic.classroom} ↗
+                  <UiCopy pt="Abrir no" en="Open in" /> {academic.classroom} ↗
                 </a>
               ) : null}
               <div className="context-actions activity-context-actions">
                 <Link
                   href={`/notes?offeringId=${activity.offeringId}&activityId=${activity.id}`}
                 >
-                  + Criar nota
+                  <UiCopy pt="+ Criar nota" en="+ Create note" />
                 </Link>
                 <Link
                   href={`/documents?offeringId=${activity.offeringId}&activityId=${activity.id}`}
                 >
-                  Gerar documento
+                  <UiCopy pt="Gerar documento" en="Create document" />
                 </Link>
               </div>
               {activity.origin === "local" ? (

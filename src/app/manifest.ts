@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "OpenStudyHub",
     short_name: "OpenStudyHub",
-    description: "Workspace acadêmico self-hosted.",
+    description: "Workspace acadêmico para estudos e colaboração.",
     start_url: "/",
     display: "standalone",
     background_color: "#080808",

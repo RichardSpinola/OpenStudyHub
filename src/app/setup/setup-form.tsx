@@ -1,4 +1,5 @@
 "use client";
+import { UiCopy } from "@/components/ui-language-provider";
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
@@ -113,9 +114,14 @@ export function SetupForm({
       </fieldset>
 
       <fieldset>
-        <legend>03–06 · Estrutura acadêmica inicial</legend>
+        <legend>
+          <UiCopy
+            pt="03–06 · Estrutura acadêmica inicial"
+            en="03–06 · Initial academic structure"
+          />
+        </legend>
         <label>
-          Programa
+          <UiCopy pt="Programa" en="Program" />
           <input name="programName" type="text" maxLength={160} required />
         </label>
         <label>
@@ -127,15 +133,15 @@ export function SetupForm({
           <input name="cohortName" type="text" maxLength={160} />
         </label>
         <label>
-          Período atual
+          <UiCopy pt="Período atual" en="Current period" />
           <input name="periodLabel" type="text" maxLength={80} required />
         </label>
         <label>
-          Início do período
+          <UiCopy pt="Início do período" en="Period start" />
           <input name="periodStartsOn" type="date" required />
         </label>
         <label>
-          Fim do período
+          <UiCopy pt="Fim do período" en="Period end" />
           <input name="periodEndsOn" type="date" required />
         </label>
         <label>
@@ -149,7 +155,12 @@ export function SetupForm({
       </fieldset>
 
       <fieldset>
-        <legend>07 · Organização de arquivos</legend>
+        <legend>
+          <UiCopy
+            pt="07 · Organização de arquivos"
+            en="07 · File organization"
+          />
+        </legend>
         <label className="checkbox-label">
           <input
             name="includeCohortInStorage"
@@ -157,18 +168,28 @@ export function SetupForm({
             value="true"
             defaultChecked
           />
-          Incluir turma no caminho quando disponível
+          <UiCopy
+            pt="Incluir turma no caminho quando disponível"
+            en="Include cohort in path when available"
+          />
         </label>
         <p className="access-hint">
-          Pastas serão criadas no Drive somente quando usadas.
+          <UiCopy
+            pt="Pastas serão criadas no Drive somente quando usadas."
+            en="Folders will be created in Drive only when used."
+          />
         </p>
       </fieldset>
 
       <fieldset>
-        <legend>08 · Google (opcional)</legend>
+        <legend>
+          <UiCopy pt="08 · Google (opcional)" en="08 · Google (optional)" />
+        </legend>
         <p className="access-hint">
-          Conecte sua própria conta com segurança em Configurações após
-          concluir.
+          <UiCopy
+            pt="Conecte sua própria conta com segurança em Configurações após concluir."
+            en="Connect your own account securely in Settings after finishing."
+          />
         </p>
       </fieldset>
 

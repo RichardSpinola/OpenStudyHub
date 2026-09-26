@@ -6,7 +6,6 @@ import {
   syncClassroom,
 } from "@/lib/v2/classroom";
 import { getServerEnvironment } from "@/lib/env";
-import { fakeClassroomAdapter, fakeGoogleEnabled } from "@/lib/v2/fake-google";
 
 export async function POST(request: NextRequest) {
   const expected = new URL(getServerEnvironment().APP_URL).origin;
@@ -30,9 +29,7 @@ export async function POST(request: NextRequest) {
         db,
         user.id,
         offeringId,
-        fakeGoogleEnabled()
-          ? fakeClassroomAdapter(db, user.id)
-          : new GoogleClassroomAdapter(db),
+        new GoogleClassroomAdapter(db),
         true,
       );
       return { outcome, ...classroomCache(db, user.id, offeringId) };

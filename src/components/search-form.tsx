@@ -1,31 +1,41 @@
 "use client";
+import { UiCopy } from "@/components/ui-language-provider";
 
 import { useEffect, useRef } from "react";
 import { useUiTranslations } from "@/components/ui-language-provider";
+import type { Appearance } from "@/lib/appearance";
 
-export function SearchForm() {
+const engineLabels: Record<Appearance["searchEngine"], string> = {
+  google: "Google",
+  scholar: "Google Acadêmico",
+  duckduckgo: "DuckDuckGo",
+  startpage: "Startpage",
+  ecosia: "Ecosia",
+};
+
+export function SearchForm({
+  engine = "google",
+}: {
+  engine?: Appearance["searchEngine"];
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { search } = useUiTranslations();
-
   useEffect(() => {
     function focusSearch(event: KeyboardEvent) {
       const target = event.target;
-      const isEditing =
+      const editing =
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement ||
         target instanceof HTMLSelectElement ||
         (target instanceof HTMLElement && target.isContentEditable);
-
-      if (event.key === "/" && !isEditing) {
+      if (event.key === "/" && !editing) {
         event.preventDefault();
         inputRef.current?.focus();
       }
     }
-
     window.addEventListener("keydown", focusSearch);
     return () => window.removeEventListener("keydown", focusSearch);
   }, []);
-
   return (
     <form
       className="search-form"
@@ -58,7 +68,9 @@ export function SearchForm() {
           </svg>
         </button>
       </div>
-      <p className="search-help">{search.mode}</p>
+      <p className="search-help">
+        <UiCopy pt="Busca na web ·" en="Web search ·" /> {engineLabels[engine]}
+      </p>
     </form>
   );
 }

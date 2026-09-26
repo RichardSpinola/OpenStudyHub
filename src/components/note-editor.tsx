@@ -1,4 +1,5 @@
 "use client";
+import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -25,6 +26,7 @@ export function NoteEditor({
   offerings: Option[];
   activities: Option[];
 }) {
+  const tr = useUiText();
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [offeringId, setOfferingId] = useState(note.offeringId);
@@ -67,12 +69,68 @@ export function NoteEditor({
 
   useEffect(() => {
     const guard = (event: BeforeUnloadEvent) => {
-      if (saveState !== "saving") return;
+      if (saveState !== "saving" && saveState !== "error") return;
       event.preventDefault();
     };
     window.addEventListener("beforeunload", guard);
     return () => window.removeEventListener("beforeunload", guard);
   }, [saveState]);
+
+  useEffect(() => {
+    const guardNavigation = (event: MouseEvent) => {
+      if (saveState !== "saving" && saveState !== "error") return;
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest("a[href]");
+      if (
+        !(link instanceof HTMLAnchorElement) ||
+        link.target === "_blank" ||
+        link.hasAttribute("download")
+      )
+        return;
+      const destination = new URL(link.href, window.location.href);
+      if (
+        destination.origin !== window.location.origin ||
+        destination.href === window.location.href
+      )
+        return;
+      if (
+        !window.confirm(
+          tr(
+            "Há alterações sendo salvas. Salvar antes de sair desta nota?",
+            "Changes are still being saved. Save before leaving this note?",
+          ),
+        )
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      void autosaveNoteAction({
+        noteId: note.id,
+        title,
+        content,
+        offeringId,
+        activityId,
+      }).then((result) => {
+        if (result.ok) window.location.assign(destination.href);
+        else setSaveState("error");
+      });
+    };
+    document.addEventListener("click", guardNavigation, true);
+    return () => document.removeEventListener("click", guardNavigation, true);
+  }, [activityId, content, note.id, offeringId, saveState, title, tr]);
 
   function serializeNode(node: Node): string {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
@@ -150,6 +208,24 @@ export function NoteEditor({
     );
   }
 
+  async function saveNow() {
+    const currentRevision = ++revision.current;
+    setSaveState("saving");
+    try {
+      const result = await autosaveNoteAction({
+        noteId: note.id,
+        title,
+        content,
+        offeringId,
+        activityId,
+      });
+      if (revision.current === currentRevision)
+        setSaveState(result.ok ? "saved" : "error");
+    } catch {
+      if (revision.current === currentRevision) setSaveState("error");
+    }
+  }
+
   function format(formatType: NoteFormat) {
     const editor = editorRef.current;
     if (!editor) return;
@@ -170,7 +246,7 @@ export function NoteEditor({
       document.execCommand(
         "insertHTML",
         false,
-        '<ul class="task-list"><li data-task="open"><span contenteditable="false">☐</span> tarefa</li></ul>',
+        '<ul class="task-list"><li data-task="open"><span contenteditable="false">☐</span> <UiCopy pt="tarefa" en="task" /></li></ul>',
       );
     else if (formatType === "link") {
       const href = window.prompt("URL HTTPS do link");
@@ -216,7 +292,7 @@ export function NoteEditor({
     <div className="note-page-editor">
       <div className="note-editor-context">
         <label>
-          Matéria
+          <UiCopy pt="Matéria" en="Subject" />
           <select
             value={offeringId ?? ""}
             onChange={(event) => {
@@ -233,7 +309,9 @@ export function NoteEditor({
               }
             }}
           >
-            <option value="">Sem matéria</option>
+            <option value="">
+              <UiCopy pt="Sem matéria" en="No subject" />
+            </option>
             {offerings.map((offering) => (
               <option key={offering.id} value={offering.id}>
                 {offering.label}
@@ -242,7 +320,7 @@ export function NoteEditor({
           </select>
         </label>
         <label>
-          Atividade
+          <UiCopy pt="Atividade" en="Activity" />
           <select
             value={activityId ?? ""}
             onChange={(event) =>
@@ -251,7 +329,9 @@ export function NoteEditor({
               )
             }
           >
-            <option value="">Sem atividade</option>
+            <option value="">
+              <UiCopy pt="Sem atividade" en="No activity" />
+            </option>
             {visibleActivities.map((activity) => (
               <option key={activity.id} value={activity.id}>
                 {activity.label}
@@ -259,34 +339,73 @@ export function NoteEditor({
             ))}
           </select>
         </label>
-        <span
-          className={`autosave-state is-${saveState}`}
-          role="status"
-          aria-live="polite"
-        >
-          {saveState === "saving"
-            ? "Salvando…"
-            : saveState === "error"
-              ? "Não foi possível salvar"
-              : saveState === "saved"
-                ? "Salvo"
-                : "Pronto"}
-        </span>
+        <div className="note-editor-save-actions">
+          <span
+            className={`autosave-state is-${saveState}`}
+            role="status"
+            aria-live="polite"
+          >
+            {saveState === "saving"
+              ? tr("Salvando…", "Saving…")
+              : saveState === "error"
+                ? tr("Não foi possível salvar", "Could not save")
+                : saveState === "saved"
+                  ? tr("Salvo", "Saved")
+                  : tr("Pronto para escrever", "Ready to write")}
+          </span>
+          <button type="button" onClick={() => void saveNow()}>
+            <UiCopy pt="Salvar agora" en="Save now" />
+          </button>
+        </div>
       </div>
       <input
         className="note-title-input"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         maxLength={180}
-        aria-label="Título da nota"
+        aria-label={tr("Título da nota", "Note title")}
       />
-      <div className="note-format-toolbar" aria-label="Formatação da nota">
+      <p className="note-editor-writing-label">
+        <UiCopy pt="SUA PÁGINA" en="YOUR PAGE" />
+      </p>
+      <div
+        className="note-format-toolbar"
+        aria-label={tr("Formatação da nota", "Note formatting")}
+      >
         {toolbar.map(([label, command, titleText]) => (
           <button
             key={command}
             type="button"
-            title={titleText}
-            aria-label={titleText}
+            title={tr(
+              titleText,
+              {
+                heading: "Heading",
+                bold: "Bold",
+                italic: "Italic",
+                bullet: "Bulleted list",
+                numbered: "Numbered list",
+                checklist: "Checklist",
+                quote: "Quote",
+                "inline-code": "Inline code",
+                "code-block": "Code block",
+                link: "Link",
+              }[command],
+            )}
+            aria-label={tr(
+              titleText,
+              {
+                heading: "Heading",
+                bold: "Bold",
+                italic: "Italic",
+                bullet: "Bulleted list",
+                numbered: "Numbered list",
+                checklist: "Checklist",
+                quote: "Quote",
+                "inline-code": "Inline code",
+                "code-block": "Code block",
+                link: "Link",
+              }[command],
+            )}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => format(command)}
           >
@@ -296,8 +415,8 @@ export function NoteEditor({
         <span className="toolbar-separator" />
         <button
           type="button"
-          aria-label="Desfazer"
-          title="Desfazer"
+          aria-label={tr("Desfazer", "Undo")}
+          title={tr("Desfazer", "Undo")}
           onClick={() => {
             document.execCommand("undo");
             syncMarkdown();
@@ -307,8 +426,8 @@ export function NoteEditor({
         </button>
         <button
           type="button"
-          aria-label="Refazer"
-          title="Refazer"
+          aria-label={tr("Refazer", "Redo")}
+          title={tr("Refazer", "Redo")}
           onClick={() => {
             document.execCommand("redo");
             syncMarkdown();
@@ -322,7 +441,7 @@ export function NoteEditor({
         className="note-content-editor"
         contentEditable
         suppressContentEditableWarning
-        data-placeholder="Comece a escrever…"
+        data-placeholder={tr("Comece a escrever…", "Start writing…")}
         onInput={syncMarkdown}
         onPaste={(event) => {
           event.preventDefault();
@@ -334,7 +453,7 @@ export function NoteEditor({
           syncMarkdown();
         }}
         dangerouslySetInnerHTML={{ __html: initialEditorHtml }}
-        aria-label="Conteúdo da nota"
+        aria-label={tr("Conteúdo da nota", "Note content")}
         role="textbox"
         aria-multiline="true"
       />

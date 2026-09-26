@@ -1,4 +1,5 @@
 "use client";
+import { UiCopy, useUiLanguage, useUiText } from "@/components/ui-language-provider";
 import { useCallback, useEffect, useState } from "react";
 
 type Status = {
@@ -12,6 +13,8 @@ export function ClassroomSyncStatus({
   offeringId: number;
   label: string;
 }) {
+  const tr = useUiText();
+  const language = useUiLanguage();
   const [data, setData] = useState<Status | null>(null);
   const [busy, setBusy] = useState(false);
   const load = useCallback(async () => {
@@ -49,28 +52,28 @@ export function ClassroomSyncStatus({
   const state = data?.state;
   const status =
     busy || state?.status === "updating"
-      ? "Atualizando…"
+      ? tr("Atualizando…", "Updating…")
       : state?.status === "needs_reconnect"
-        ? "Reconectar Google"
+        ? tr("Reconectar Google", "Reconnect Google")
         : state?.status === "error"
-          ? "Erro de sincronização"
+          ? tr("Erro de sincronização", "Sync error")
           : state?.success
-            ? `Última sincronização: ${new Date(state.success).toLocaleString()}`
-            : "Ainda não sincronizado";
+            ? tr(`Última sincronização: ${new Date(state.success).toLocaleString(language)}`, `Last sync: ${new Date(state.success).toLocaleString(language)}`)
+            : tr("Ainda não sincronizado", "Not synced yet");
   return (
     <section className="v2-sync-status" aria-live="polite">
       <h3>{label}</h3>
       <p>{status}</p>
       {state?.error && (
         <p>
-          Motivo:{" "}
+          <UiCopy pt="Motivo:" en="Reason:" />{" "}
           {state.error === "rate_limit"
-            ? "Limite do Google; tente mais tarde"
-            : "Google indisponível ou autorização pendente"}
+            ? tr("Limite do Google; tente mais tarde", "Google rate limit; try later")
+            : tr("Google indisponível ou autorização pendente", "Google unavailable or authorization pending")}
         </p>
       )}
       <button type="button" onClick={() => void sync()} disabled={busy}>
-        Sincronizar agora
+        <UiCopy pt="Sincronizar agora" en="Sync now" />
       </button>
       {data?.items.length ? (
         <ul>

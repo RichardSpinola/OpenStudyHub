@@ -1,48 +1,34 @@
 "use client";
+import { UiCopy } from "@/components/ui-language-provider";
 
-import { useEffect, useRef, useState } from "react";
+import { IconLink } from "@tabler/icons-react";
+import { usePopover } from "@/components/use-popover";
 
 import type { ExternalLink } from "@/lib/external-links";
 
 export function ExternalLinksMenu({ links }: { links: ExternalLink[] }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const closeOnOutsideClick = (event: MouseEvent) => {
-      const target = event.target;
-      if (target instanceof Node && !rootRef.current?.contains(target)) {
-        setOpen(false);
-      }
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", closeOnOutsideClick);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("mousedown", closeOnOutsideClick);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [open]);
+  const { open, setOpen, rootRef, triggerRef } = usePopover<HTMLDivElement>();
 
   if (!links.length) return null;
 
   return (
     <div className="external-links-menu" ref={rootRef}>
       <button
+        ref={triggerRef}
         type="button"
         className="external-links-trigger"
+        aria-label="Links externos"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        LINKS {links.length}
+        <IconLink size={19} stroke={1.8} aria-hidden="true" />
       </button>
       {open ? (
         <div className="external-links-popover" role="menu">
-          <strong>Links externos</strong>
+          <strong>
+            <UiCopy pt="Links externos" en="External links" />
+          </strong>
           <ul>
             {links.map((link) => (
               <li key={link.id}>

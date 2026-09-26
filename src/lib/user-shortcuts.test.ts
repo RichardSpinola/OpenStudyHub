@@ -70,6 +70,36 @@ describe("atalhos pessoais", () => {
     ).toEqual({ initialized: 1 });
   });
 
+  it("inclui atalhos básicos para nova conta V2 sem botão do Admin e evita duplicar defaults", () => {
+    const previous = process.env.OPENSTUDYHUB_V2_ENABLED;
+    process.env.OPENSTUDYHUB_V2_ENABLED = "1";
+    try {
+      createShortcut(
+        {
+          name: "Classroom da instituição",
+          url: "https://classroom.google.com",
+        },
+        connection,
+      );
+      const userId = createTestUser(connection, "pessoa.nova.v2");
+      const shortcuts = listUserShortcuts(userId, connection);
+      expect(shortcuts.map(({ name }) => name)).toEqual([
+        "Default A",
+        "Default B",
+        "Classroom da instituição",
+        "Google Drive",
+        "Gmail",
+        "GitHub",
+      ]);
+      expect(
+        shortcuts.filter(({ url }) => url === "https://classroom.google.com"),
+      ).toHaveLength(1);
+    } finally {
+      if (previous === undefined) delete process.env.OPENSTUDYHUB_V2_ENABLED;
+      else process.env.OPENSTUDYHUB_V2_ENABLED = previous;
+    }
+  });
+
   it("mantém listas independentes para dois usuários", () => {
     const firstId = createTestUser(connection, "primeira.pessoa");
     const secondId = createTestUser(connection, "segunda.pessoa");

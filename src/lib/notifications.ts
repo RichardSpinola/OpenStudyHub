@@ -63,6 +63,11 @@ export function createNotification(
       input.bodyPreview?.trim().slice(0, 300) || null,
       Date.now(),
     );
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1" && getNotificationPreferences(recipientId, connection).desktopEnabled) {
+    void import("@/lib/v2/push").then(({ sendPushForLegacyUser }) =>
+      sendPushForLegacyUser(recipientId, input.entityType, String(input.entityId)),
+    ).catch(() => undefined);
+  }
 }
 
 export function listNotifications(
@@ -111,6 +116,15 @@ export function markNotificationRead(
       "update notifications set read_at = coalesce(read_at, ?) where id = ? and user_id = ?",
     )
     .run(Date.now(), idSchema.parse(notificationId), idSchema.parse(userId));
+}
+
+export function markAllNotificationsRead(
+  userId: number,
+  connection: DatabaseConnection = getDatabase(),
+): void {
+  connection.sqlite.prepare(
+    "UPDATE notifications SET read_at=? WHERE user_id=? AND read_at IS NULL",
+  ).run(Date.now(), idSchema.parse(userId));
 }
 
 export function getNotificationPreferences(

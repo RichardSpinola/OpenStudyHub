@@ -6,6 +6,8 @@ import { createMigratedTestDatabase } from "@/lib/test-database";
 import {
   copyDriveFile,
   createOfferingDriveFolder,
+  downloadDriveFile,
+  driveFolderExistsForUser,
   getDriveFileMetadata,
   listDriveFolderItems,
   trashDriveFile,
@@ -101,6 +103,55 @@ describe("Drive folder foundation", () => {
   });
 
   afterEach(() => connection.close());
+
+  it("distingue pasta presente, excluída e acesso negado", async () => {
+    const { adminId } = seed(connection);
+    const check = (status: number, body: unknown) =>
+      driveFolderExistsForUser(adminId, "folder-123", {
+        connection,
+        fetchImpl: vi.fn<typeof fetch>(async () =>
+          Response.json(body, { status }),
+        ),
+      });
+    await expect(
+      check(200, {
+        id: "folder-123",
+        name: "Disciplina",
+        mimeType: "application/vnd.google-apps.folder",
+        trashed: false,
+      }),
+    ).resolves.toBe(true);
+    await expect(
+      check(200, {
+        id: "folder-123",
+        name: "Disciplina",
+        mimeType: "application/vnd.google-apps.folder",
+        trashed: true,
+      }),
+    ).resolves.toBe(false);
+    await expect(check(404, {})).resolves.toBe(false);
+    await expect(check(403, {})).rejects.toThrow("permissão");
+  });
+
+  it("limita a leitura do Drive usada pela prévia", async () => {
+    const { adminId } = seed(connection);
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response("123456"));
+
+    await expect(
+      downloadDriveFile(adminId, "file-123", {
+        connection,
+        fetchImpl,
+        maxBytes: 4,
+      }),
+    ).rejects.toThrow("Drive file exceeds preview limit.");
+    await expect(
+      downloadDriveFile(adminId, "file-123", {
+        connection,
+        fetchImpl,
+        maxBytes: 6,
+      }),
+    ).resolves.toEqual(Buffer.from("123456"));
+  });
 
   it("cria a hierarquia acadêmica da oferta uma única vez", async () => {
     const { adminId, offeringId } = seed(connection);

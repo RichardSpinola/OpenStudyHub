@@ -16,6 +16,8 @@ describe("navegação contextual de configurações", () => {
       "personalization",
     );
     expect(resolveSettingsSection("google", personal)).toBe("google");
+    expect(resolveSettingsSection("privacy", personal)).toBe("profile");
+    expect(resolveSettingsSection("accessibility", personal)).toBe("profile");
     expect(resolveSettingsSection("administration", personal)).toBe("profile");
     expect(resolveSettingsSection("storage", personal)).toBe("profile");
   });

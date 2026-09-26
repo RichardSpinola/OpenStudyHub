@@ -3,6 +3,9 @@ node_modules/
 
 # Build
 .next/
+.next-admin/
+.next-app/
+.next-app-phase6/
 dist/
 build/
 coverage/

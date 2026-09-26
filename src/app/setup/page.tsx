@@ -1,3 +1,4 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import { redirect } from "next/navigation";
 
 import { SetupForm } from "@/app/setup/setup-form";
@@ -27,7 +28,12 @@ export default async function SetupPage() {
         <span>{access.setupSystem}</span>
         <div>
           <h1>{access.setupTitle}</h1>
-          <p>Crie a primeira conta administrativa desta instância.</p>
+          <p>
+            <UiCopy
+              pt="Crie a primeira conta administrativa desta instância."
+              en="Create the first administrative account for this instance."
+            />
+          </p>
         </div>
       </header>
       <SetupForm labels={access} defaultLanguage={language} />

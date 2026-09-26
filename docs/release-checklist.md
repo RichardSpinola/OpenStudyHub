@@ -1,53 +1,27 @@
-# Checklist de release pública
+# Checklist de release V2
 
-Não faça o primeiro push público antes de concluir todos os itens críticos.
+Este checklist pertence ao gate da Fase 10.2. Nenhum item marcado aqui substitui execução e evidência do gate final.
 
-## Código e dados
+## Código, dados e licenças
 
-- [ ] `git status` limpo.
-- [ ] nenhum `.env`, banco, WAL/SHM, token, cookie, ID privado ou upload real.
-- [ ] histórico público não contém `AGENTS.md` privado nem dados removidos posteriormente.
-- [ ] licença escolhida e `LICENSE` preenchido.
+- [ ] Revisar diff e histórico público: nenhum banco de QA, dado pessoal, `.env`, token, cookie, upload real, credencial ou caminho local.
+- [ ] Conservar código oficial, migrations V1/V2, scripts de manutenção, testes úteis, extensão e atribuições de terceiros.
+- [ ] Confirmar `LICENSE`, licença MIT do Excalidraw e notas de licença das fontes incorporadas.
 
-## Validação
+## Verificações técnicas
 
-- [ ] format.
-- [ ] lint sem warnings.
-- [ ] typecheck.
-- [ ] testes completos.
-- [ ] build de produção.
-- [ ] `db:generate` sem delta inesperado.
-- [ ] clean install das migrations.
-- [ ] upgrade de banco temporário representativo.
-- [ ] foreign key/integrity checks.
-- [ ] `/api/health` 200.
-- [ ] build e health do Docker.
+- [ ] Formatação, lint sem warnings, typecheck e suíte completa.
+- [ ] Builds finais de App, Admin, realtime e extensão.
+- [ ] Instalação limpa e atualização com migrations V1/V2 em bancos separados.
+- [ ] Integridade e chaves estrangeiras dos bancos; `/api/health` do App e acesso ao login do Admin.
+- [ ] Build da imagem Docker e Compose com volume persistente e Admin acessível apenas na rede prevista.
+- [ ] Backup, restauração com serviços parados e recuperação após falha.
+- [ ] Revisão de sessões, autorização, OAuth, uploads, WebSocket, logs e exposição de dados.
 
-## Segurança
+## Smoke humano e publicação
 
-- [ ] cookies/sessões revisados.
-- [ ] OAuth/tokens revisados.
-- [ ] autorização server-side revisada.
-- [ ] Groups/Chat/Notes/Documents revisados.
-- [ ] uploads/ZIP/DOCX/imagens revisados.
-- [ ] SSRF de favicons revisado.
-- [ ] headers de segurança revisados.
-- [ ] logs não contêm segredo.
-
-## Smoke test humano
-
-- [ ] setup/login/logout.
-- [ ] Home/Hoje/Disciplinas.
-- [ ] Chat básico.
-- [ ] Notes privadas e sharing.
-- [ ] Documents.
-- [ ] Google opcional, se configurado.
-- [ ] backup restaurável.
-
-## Publicação do site
-
-- [ ] `mkdocs build --strict` passa.
-- [ ] GitHub Pages habilitado para GitHub Actions.
-- [ ] landing page e navegação da documentação abrem corretamente.
-- [ ] favicon/logo da documentação carregam.
-- [ ] links públicos não apontam para localhost.
+- [ ] Setup, login e logout no App/Admin; Home, Hoje, Disciplinas, Notes, Documents, Projects, Chat e Extras.
+- [ ] Google Classroom e Drive com consentimento real apenas se o ambiente estiver configurado; verificar callback V2.
+- [ ] Extensão Chromium instalada sem compactação: opções, URL inválida, Nova Aba e sessão web normal.
+- [ ] Documentação publicada sem links locais e sem afirmar que há pacote de loja para ZimaOS/CasaOS/UmbrelOS.
+- [ ] Definir versão, tag, push e publicação somente após aprovação explícita do gate.

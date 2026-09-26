@@ -19,4 +19,10 @@ describe("chat markdown", () => {
     expect(html).toContain("&lt;b&gt;oi&lt;/b&gt;");
     expect(html).not.toContain("<script>");
   });
+
+  it("mantém citações consecutivas em um único bloco", () => {
+    expect(renderChatMarkdown("> primeira\n> segunda\nresposta")).toBe(
+      "<blockquote><p>primeira</p><p>segunda</p></blockquote><p>resposta</p>",
+    );
+  });
 });

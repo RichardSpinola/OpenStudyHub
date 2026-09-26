@@ -1,0 +1,9 @@
+:3000 {
+  @realtime path /realtime
+  handle @realtime {
+    reverse_proxy openstudyhub-realtime:3045
+  }
+  handle {
+    reverse_proxy openstudyhub-app:3000
+  }
+}

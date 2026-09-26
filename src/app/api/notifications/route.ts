@@ -7,6 +7,7 @@ import {
   getNotificationPreferences,
   listNotifications,
   markNotificationRead,
+  markAllNotificationsRead,
 } from "@/lib/notifications";
 import { isSameOriginRequest } from "@/lib/request-security";
 
@@ -38,9 +39,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
     const input = z
-      .object({ notificationId: z.number().int().positive() })
+      .union([z.object({ all: z.literal(true) }), z.object({ notificationId: z.number().int().positive() })])
       .parse(await request.json());
-    markNotificationRead(session.user.id, input.notificationId);
+    if ("all" in input) markAllNotificationsRead(session.user.id);
+    else markNotificationRead(session.user.id, input.notificationId);
     return new NextResponse(null, { status: 204 });
   } catch {
     return NextResponse.json(

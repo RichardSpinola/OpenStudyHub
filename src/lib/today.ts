@@ -1,6 +1,15 @@
 import type { ActivityRecord } from "@/lib/activities";
-import type { AgendaSlot, CurrentAcademicPeriod } from "@/lib/academic";
-import { getCurrentAcademicPeriod, listUserAgenda } from "@/lib/academic";
+import type {
+  AgendaSlot,
+  CurrentAcademicPeriod,
+  TimelineEventRecord,
+} from "@/lib/academic";
+import {
+  getCurrentAcademicPeriod,
+  listUserAgenda,
+  listUserSubjectOfferings,
+  listUserSubjectTimeline,
+} from "@/lib/academic";
 import { listUserActivities } from "@/lib/activities";
 import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
@@ -9,8 +18,10 @@ export type TodayData = {
   date: string;
   currentPeriod: CurrentAcademicPeriod | null;
   classes: AgendaSlot[];
+  weekSlots: AgendaSlot[];
   upcomingClasses: Array<AgendaSlot & { date: string }>;
   activities: ActivityRecord[];
+  upcomingEvents: Array<TimelineEventRecord & { subjectId: number }>;
 };
 
 function localIsoDate(date: Date): string {
@@ -27,13 +38,13 @@ export function getTodayData(
 ): TodayData {
   const date = localIsoDate(now);
   const weekday = now.getDay() === 0 ? 7 : now.getDay();
-  const classes = listUserAgenda(userId, connection).filter(
+  const agenda = listUserAgenda(userId, connection);
+  const classes = agenda.filter(
     (slot) =>
       slot.weekday === weekday &&
       (slot.validFrom === null || slot.validFrom <= date) &&
       (slot.validUntil === null || slot.validUntil >= date),
   );
-  const agenda = listUserAgenda(userId, connection);
   const upcomingClasses: Array<AgendaSlot & { date: string }> = [];
   for (let offset = 1; offset <= 7; offset += 1) {
     const target = new Date(now);
@@ -61,11 +72,33 @@ export function getTodayData(
         !["completed", "submitted", "archived"].includes(status),
     )
     .slice(0, 12);
+  const subjectIds = [
+    ...new Set(
+      listUserSubjectOfferings(userId, connection).map(
+        (item) => item.subjectId,
+      ),
+    ),
+  ];
+  const upcomingEvents = subjectIds
+    .flatMap((subjectId) =>
+      listUserSubjectTimeline(userId, subjectId, connection)
+        .filter(
+          (item) =>
+            item.type === "academic_event" &&
+            item.startsAt >= now.getTime() &&
+            item.startsAt <= now.getTime() + 7 * 86400000,
+        )
+        .map((item) => ({ ...item, subjectId })),
+    )
+    .sort((a, b) => a.startsAt - b.startsAt)
+    .slice(0, 6);
   return {
     date,
     currentPeriod: getCurrentAcademicPeriod(connection),
     classes,
+    weekSlots: agenda,
     upcomingClasses,
     activities,
+    upcomingEvents,
   };
 }

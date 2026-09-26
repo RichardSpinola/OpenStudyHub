@@ -24,6 +24,16 @@ type Options = {
   config?: GoogleV2Config;
   fetchImpl?: GoogleFetch;
   now?: number;
+  onStage?: (
+    stage:
+      | "state"
+      | "token_exchange"
+      | "google_identity"
+      | "refresh_token"
+      | "classroom_scopes"
+      | "save_connection",
+  ) => void;
+  onMissingClassroomScopes?: (missing: string[]) => void;
 };
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -119,6 +129,7 @@ export async function completeGoogleV2(
 ): Promise<void> {
   const config = options.config ?? requireGoogleV2Config();
   const fetchImpl = options.fetchImpl ?? fetch;
+  options.onStage?.("state");
   const verifier = consumeState(
     db,
     userId,
@@ -127,6 +138,7 @@ export async function completeGoogleV2(
     options.now ?? Date.now(),
   );
   if (!code || code.length > 4096) throw new Error("Resposta OAuth inválida.");
+  options.onStage?.("token_exchange");
   const response = await fetchImpl(TOKEN_URL, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -142,12 +154,14 @@ export async function completeGoogleV2(
   });
   if (!response.ok) throw new Error("Autorização Google indisponível.");
   const tokens = tokenSchema.parse(await response.json());
+  options.onStage?.("google_identity");
   const profileResponse = await fetchImpl(USERINFO_URL, {
     headers: { authorization: `Bearer ${tokens.access_token}` },
     signal: AbortSignal.timeout(15_000),
   });
   if (!profileResponse.ok) throw new Error("Identidade Google indisponível.");
   const profile = userSchema.parse(await profileResponse.json());
+  options.onStage?.("refresh_token");
   const previous = db
     .prepare(
       "SELECT google_subject subject,encrypted_refresh_token token FROM google_connections_v2 WHERE user_id=?",
@@ -167,13 +181,25 @@ export async function completeGoogleV2(
     .get(profile.sub) as { id: number } | undefined;
   if (other && other.id !== userId)
     throw new Error("Esta conta Google já está vinculada a outro usuário.");
+  options.onStage?.("classroom_scopes");
   const scopes = [
     ...new Set(
-      (tokens.scope ?? CLASSROOM_SCOPES.join(" ")).split(" ").filter(Boolean),
+      (tokens.scope ?? CLASSROOM_SCOPES.join(" ")).split(/\s+/).filter(Boolean),
     ),
   ];
-  if (!CLASSROOM_SCOPES.slice(2).every((scope) => scopes.includes(scope)))
+  const scopeNames = ["cursos", "atividades", "materiais", "avisos"] as const;
+  const missingClassroomScopes: string[] = [];
+  CLASSROOM_SCOPES.slice(2).forEach((scope, index) => {
+    const granted = scopes.includes(scope) ||
+      (scopeNames[index] === "atividades" &&
+        scopes.includes("https://www.googleapis.com/auth/classroom.student-submissions.me.readonly"));
+    if (!granted) missingClassroomScopes.push(scopeNames[index]);
+  });
+  if (missingClassroomScopes.length) {
+    options.onMissingClassroomScopes?.(missingClassroomScopes);
     throw new Error("Permissões Classroom insuficientes.");
+  }
+  options.onStage?.("save_connection");
   db.prepare(
     `INSERT INTO google_connections_v2(user_id,google_subject,encrypted_refresh_token,scopes,status,updated_at)
      VALUES(?,?,?,?,'connected',?)

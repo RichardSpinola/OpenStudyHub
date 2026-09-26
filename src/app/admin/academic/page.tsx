@@ -1,3 +1,4 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -180,8 +181,10 @@ export default async function AdminAcademicPage({
           <span>{admin.system}</span>
           <h1>{admin.academicTitle}</h1>
           <p className="page-description">
-            Cadastre a estrutura em etapas e trabalhe sempre dentro do contexto
-            selecionado.
+            <UiCopy
+              pt="Cadastre a estrutura em etapas e trabalhe sempre dentro do contexto selecionado."
+              en="Set up the structure step by step and work within the selected context."
+            />
           </p>
         </div>
         <Link href="/admin">← {admin.back}</Link>
@@ -204,7 +207,7 @@ export default async function AdminAcademicPage({
             href={sectionHref("periods")}
             aria-current={section === "periods" ? "page" : undefined}
           >
-            Períodos
+            <UiCopy pt="Períodos" en="Periods" />
           </Link>
         ) : null}
         <Link
@@ -218,7 +221,7 @@ export default async function AdminAcademicPage({
             href={sectionHref("subjects")}
             aria-current={section === "subjects" ? "page" : undefined}
           >
-            Disciplinas
+            <UiCopy pt="Disciplinas" en="Subjects" />
           </Link>
         ) : null}
         {canManageProgram ? (
@@ -234,7 +237,7 @@ export default async function AdminAcademicPage({
             href={sectionHref("integrations")}
             aria-current={section === "integrations" ? "page" : undefined}
           >
-            Integrações
+            <UiCopy pt="Integrações" en="Integrations" />
           </Link>
         ) : null}
         {canManageProgram ? (
@@ -242,7 +245,7 @@ export default async function AdminAcademicPage({
             href={sectionHref("schedules")}
             aria-current={section === "schedules" ? "page" : undefined}
           >
-            Horários
+            <UiCopy pt="Horários" en="Schedules" />
           </Link>
         ) : null}
         {canManageGlobal ? (

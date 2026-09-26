@@ -1,3 +1,4 @@
+import { UiCopy } from "@/components/ui-language-provider";
 import { redirect } from "next/navigation";
 import { withV2DbAsync, currentUserV2 } from "@/lib/v2/runtime";
 import { controlAction } from "@/app/control/actions";
@@ -12,10 +13,13 @@ export default async function ManagementPassword() {
         title="Trocar senha temporária"
         kicker="Segurança da conta"
         name={user.name}
+        showNavigation={false}
       >
         <p>
-          Defina uma senha própria antes de continuar. A sessão atual será
-          encerrada após a troca.
+          <UiCopy
+            pt="Defina uma senha própria antes de continuar. A sessão atual será encerrada após a troca."
+            en="Set your own password before continuing. The current session will end after the change."
+          />
         </p>
         <form action={controlAction} className="v2-fields">
           <HiddenContext returnTo="/gestao/login" intent="changeOwnPassword" />
@@ -29,7 +33,9 @@ export default async function ManagementPassword() {
               required
             />
           </label>
-          <button>Salvar nova senha</button>
+          <button>
+            <UiCopy pt="Salvar nova senha" en="Save new password" />
+          </button>
         </form>
       </ConsoleShell>
     );

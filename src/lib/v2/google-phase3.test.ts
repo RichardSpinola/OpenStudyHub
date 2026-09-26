@@ -71,6 +71,37 @@ function connected(db: ReturnType<typeof fixture>, userId = 3, drive = false) {
 }
 
 describe("Google V2 isolated boundaries", () => {
+  it("identifica somente a permissão Classroom ausente no diagnóstico", async () => {
+    const db = fixture();
+    try {
+      const state = new URL(
+        startGoogleV2(db, 3, false, { config }),
+      ).searchParams.get("state")!;
+      let missing: string[] = [];
+      await expect(
+        completeGoogleV2(db, 3, "fake-code", state, {
+          config,
+          fetchImpl: (async (input: string | URL | Request) =>
+            String(input).includes("userinfo")
+              ? json({ sub: "fake-sub", email: "fake@example.invalid" })
+              : json({
+                  access_token: "access-fake",
+                  refresh_token: "refresh-fake",
+                  scope: CLASSROOM_SCOPES.filter(
+                    (scope) => !scope.includes("courseworkmaterials"),
+                  ).join(" "),
+                })) as typeof fetch,
+          onMissingClassroomScopes: (names) => {
+            missing = names;
+          },
+        }),
+      ).rejects.toThrow("Permissões Classroom insuficientes.");
+      expect(missing).toEqual(["materiais"]);
+      expect(googleConnectionStatus(db, 3)).toBeUndefined();
+    } finally {
+      db.close();
+    }
+  });
   it("requires a coherent canonical URL, HTTPS and matching callback", () => {
     const env = {
       NODE_ENV: "production" as const,
@@ -414,6 +445,7 @@ describe("Google V2 isolated boundaries", () => {
       const backend = storageOwnerStatus(db)!.backendId;
       let rootMissing = false;
       let permissionDenied = false;
+      let createdRootName: string | null = null;
       const fakeFetch = async (
         input: string | URL | Request,
         init?: RequestInit,
@@ -426,7 +458,13 @@ describe("Google V2 isolated boundaries", () => {
             mimeType: "application/vnd.google-apps.folder",
             trashed: false,
           });
-        if (url.includes("/files?fields=id") && init?.method === "POST")
+        if (url.includes("/files?fields=id") && init?.method === "POST") {
+          const payload = JSON.parse(String(init.body)) as {
+            name: string;
+            mimeType?: string;
+          };
+          if (payload.mimeType === "application/vnd.google-apps.folder")
+            createdRootName = payload.name;
           return json({
             id: String(init.body).includes("application/vnd.google-apps.folder")
               ? rootMissing
@@ -434,6 +472,7 @@ describe("Google V2 isolated boundaries", () => {
                 : "root-fake"
               : "file-fake",
           });
+        }
         if (permissionDenied && url.includes("/file-fake?alt=media"))
           return json({}, 403);
         if (url.includes("/file-fake?alt=media"))
@@ -449,6 +488,9 @@ describe("Google V2 isolated boundaries", () => {
         async () => "fake-access",
       );
       registry.register("Central Drive", provider);
+      expect(await provider.ensureRootFolder("UCSAL - OSH")).toBe("root-fake");
+      expect(createdRootName).toBe("UCSAL - OSH");
+      expect(await provider.repairRoot(adminActor(1), "UCSAL - OSH")).toBe("root-fake");
       const driveId = await storeObject(
         db,
         registry,
@@ -466,7 +508,10 @@ describe("Google V2 isolated boundaries", () => {
       rootMissing = true;
       await expect(provider.put(Buffer.from("x"))).rejects.toThrow("reparar");
       expect(storageOwnerStatus(db)?.rootReady).toBe(true);
-      expect(await provider.repairRoot(adminActor(1))).toBe("root-repaired");
+      expect(await provider.repairRoot(adminActor(1), "UCSAL - OSH")).toBe(
+        "root-repaired",
+      );
+      expect(createdRootName).toBe("UCSAL - OSH");
       expect(() => setStorageOwner(db, adminActor(1), null)).toThrow("objetos");
     } finally {
       rmSync(root, { recursive: true, force: true });

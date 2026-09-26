@@ -16,6 +16,8 @@ import {
 } from "./auth";
 import { seedV2Fake } from "./fixtures";
 import { visiblePrograms } from "./control";
+import { getUserProfile } from "@/lib/profile";
+import { updateUiLanguage } from "@/lib/ui-language";
 
 describe("normal identity bridge", () => {
   it("uses a V2 session and an explicit legacy mapping even when numeric IDs differ", async () => {
@@ -23,6 +25,7 @@ describe("normal identity bridge", () => {
     const v2 = openV2Database(":memory:");
     try {
       migrateV2(v2);
+      updateUiLanguage("en", v1);
       const hash = await hashPassword("FicticioLocal!2030");
       v1.sqlite
         .prepare(
@@ -43,6 +46,7 @@ describe("normal identity bridge", () => {
       expect(projected?.user.id).not.toBe(2);
       expect(projected?.expiresAt).toBeGreaterThan(Date.now());
       expect(canonicalIdForLegacy(v2, projected!.user.id)).toBe(2);
+      expect(getUserProfile(projected!.user.id, v1).locale).toBe("en");
       expect(projectLegacySession(v2, "invalid", v1)).toBeNull();
     } finally {
       v2.close();

@@ -1,25 +1,48 @@
 site_name: OpenStudyHub
-site_description: Workspace acadêmico self-hosted
+site_description: Workspace acadêmico OpenStudyHub
 nav:
   - Início: index.md
-  - Instalação do zero: instalacao-do-zero.md
-  - Primeiros passos: getting-started.md
-  - Google: google.md
-  - Modelos personalizados: modelos-personalizados.md
-  - Administração: deployment/ADMIN_GUIDE.md
-  - Deploy: deployment.md
-  - ZimaOS: zimaos.md
-  - Backup e atualização: backup-update.md
-  - Troubleshooting: troubleshooting.md
-  - Release checklist: release-checklist.md
-  - IA no desenvolvimento: ai-usage.md
-  - Licença: LICENSING.md
+  - English: en.md
+  - Instalar:
+      - Instalação do zero: instalacao-do-zero.md
+      - Primeiros passos: getting-started.md
+      - Deploy: deployment.md
+      - ZimaOS: zimaos.md
+      - CasaOS: casaos.md
+      - UmbrelOS: umbrelos.md
+  - Usar:
+      - Google: google.md
+      - Modelos personalizados: modelos-personalizados.md
+      - Extensão Nova Aba: extension.md
+  - Administrar:
+      - Guia do Admin: deployment/ADMIN_GUIDE.md
+      - Backup e atualização: backup-update.md
+      - Troubleshooting: troubleshooting.md
+      - Release checklist: release-checklist.md
+  - Projeto:
+      - IA no desenvolvimento: ai-usage.md
+      - Licença: LICENSING.md
 theme:
-  name: mkdocs
+  name: material
+  language: pt
+  font: false
   logo: assets/openstudyhub-icon.png
   favicon: assets/openstudyhub-icon.png
+  palette:
+    scheme: slate
+    primary: custom
+    accent: custom
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
 extra_css:
   - stylesheets/extra.css
+extra_javascript:
+  - assets/landing.js
+extra:
+  generator: false
 markdown_extensions:
   - tables
   - fenced_code

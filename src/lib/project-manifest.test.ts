@@ -4,9 +4,26 @@ import {
   buildProjectManifest,
   diffProjectManifests,
   normalizeProjectPath,
+  suggestProjectTechnologies,
 } from "@/lib/project-manifest";
 
 describe("project manifest", () => {
+  it("sugere tecnologias pelos arquivos sem tratar sugestão como obrigação", () => {
+    const manifest = buildProjectManifest(
+      [
+        { path: "package.json", data: Buffer.from("{}") },
+        { path: "src/App.tsx", data: Buffer.from("export {}") },
+        { path: "src/style.css", data: Buffer.from("body {}") },
+      ],
+      "other",
+    ).manifest;
+    expect(suggestProjectTechnologies(manifest.files)).toEqual([
+      "css",
+      "typescript",
+      "react",
+      "node",
+    ]);
+  });
   it("preserva árvore, calcula SHA-256 e ignora cache e secrets", () => {
     const result = buildProjectManifest(
       [
@@ -27,7 +44,14 @@ describe("project manifest", () => {
   });
 
   it("rejeita paths absolutos, traversal, drive letters e NUL", () => {
-    for (const path of ["../x", "/tmp/x", "C:\\x", "a/../../x", "a\0b"]) {
+    for (const path of [
+      "../x",
+      "a/../x",
+      "/tmp/x",
+      "C:\\x",
+      "a/../../x",
+      "a\0b",
+    ]) {
       expect(() => normalizeProjectPath(path)).toThrow();
     }
   });

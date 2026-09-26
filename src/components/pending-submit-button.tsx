@@ -10,7 +10,7 @@ export function PendingSubmitButton({
   className,
 }: {
   children: ReactNode;
-  pendingLabel?: string;
+  pendingLabel?: ReactNode;
   disabled?: boolean;
   className?: string;
 }) {

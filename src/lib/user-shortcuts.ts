@@ -3,7 +3,9 @@ import { z } from "zod";
 import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
 import {
+  DEFAULT_SHORTCUT_PRESETS,
   shortcutInputSchema,
+  listShortcuts,
   type Shortcut,
   type ShortcutInput,
 } from "@/lib/shortcuts";
@@ -68,6 +70,35 @@ export function initializeUserShortcuts(
            order by sort_order, id`,
         )
         .run(userId, now, now);
+      if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+        const configuredUrls = new Set(
+          listShortcuts(connection).map(({ url }) => url),
+        );
+        let nextOrder = (
+          connection.sqlite
+            .prepare(
+              "select coalesce(max(sort_order), -1) + 1 as value from user_shortcuts where user_id = ?",
+            )
+            .get(userId) as { value: number }
+        ).value;
+        const addPreset = connection.sqlite.prepare(
+          `insert into user_shortcuts
+           (user_id, name, url, icon, sort_order, enabled, created_at, updated_at)
+           values (?, ?, ?, ?, ?, 1, ?, ?)`,
+        );
+        for (const preset of DEFAULT_SHORTCUT_PRESETS) {
+          if (configuredUrls.has(preset.url)) continue;
+          addPreset.run(
+            userId,
+            preset.name,
+            preset.url,
+            preset.icon,
+            nextOrder++,
+            now,
+            now,
+          );
+        }
+      }
     }
     connection.sqlite
       .prepare(

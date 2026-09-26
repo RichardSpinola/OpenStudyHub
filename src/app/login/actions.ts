@@ -28,6 +28,7 @@ export async function loginAction(
     redirect("/setup");
 
   if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+    const destination = field(formData, "next") === "/gestao" ? "/gestao" : "/";
     let normal: {
       token: string;
       legacyId: number | null;
@@ -59,7 +60,7 @@ export async function loginAction(
     redirect(
       getUserProfile(normal.legacyId!).onboardingVersion < 1
         ? "/onboarding"
-        : "/",
+        : destination,
     );
   }
 

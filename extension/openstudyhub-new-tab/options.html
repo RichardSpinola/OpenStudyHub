@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Configurar OpenStudyHub</title>
+    <link rel="icon" href="icons/icon-32.png" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="options.js" defer></script>
+  </head>
+  <body>
+    <main class="shell options" aria-labelledby="title">
+      <img
+        class="brand"
+        src="icons/icon-96.png"
+        width="64"
+        height="64"
+        alt=""
+      />
+      <span class="eyebrow">NOVA ABA</span>
+      <h1 id="title">Conectar à sua instância</h1>
+      <p>Informe o endereço usado normalmente para abrir o OpenStudyHub.</p>
+      <form id="settings-form" novalidate>
+        <label for="instance-url">URL da instância</label>
+        <input
+          id="instance-url"
+          name="instance-url"
+          type="url"
+          required
+          autocomplete="url"
+          inputmode="url"
+          placeholder="https://openstudyhub.exemplo.org"
+          aria-describedby="url-help"
+        />
+        <small id="url-help"
+          >Use HTTPS ou o endereço HTTP da instalação local/LAN. Informe apenas
+          o endereço base.</small
+        >
+        <div class="actions">
+          <button type="submit">Salvar URL</button>
+          <button id="test" type="button" class="secondary" disabled>
+            Abrir instância
+          </button>
+        </div>
+        <p id="feedback" role="status" aria-live="polite"></p>
+      </form>
+      <p class="privacy">
+        A extensão guarda apenas essa URL neste navegador. O login continua no
+        próprio OpenStudyHub.
+      </p>
+    </main>
+  </body>
+</html>
