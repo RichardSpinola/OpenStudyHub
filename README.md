@@ -2,7 +2,7 @@
 
 # OpenStudyHub
 
-[Português](#o-que-a-v2-oferece) · [English guide](docs/en.md) · [Public site](docs/index.md)
+[Português](#o-que-a-v2-oferece) · [English guide](docs/en.md) · [Public site](https://richardspinola.github.io/OpenStudyHub/)
 
 OpenStudyHub reúne aulas, atividades, arquivos e conversas em um espaço que a instituição pode hospedar. A comunidade usa o App no dia a dia; quem administra a instalação usa um Control Plane separado. Você pode começar sem Google e conectar Classroom ou Drive quando fizer sentido. [Read in English](docs/en.md).
 
