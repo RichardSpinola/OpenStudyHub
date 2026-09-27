@@ -10,9 +10,11 @@ Notes, Documents, Projects and Chat support daily work and explicit sharing. Ext
 
 ## Install with Docker
 
-Start with the [Compose file](https://github.com/RichardSpinola/OpenStudyHub/blob/main/docker-compose.example.yml), which uses the public pinned image `ghcr.io/richardspinola/openstudyhub:2.0.0` without a GitHub account or PAT, if you want one installation with the App, Admin, realtime WebSocket, Caddy proxy and migrations. Copy `.env.example` to a private `.env`; set `NODE_ENV=production`, an HTTPS `APP_URL`, separate SQLite paths for the main and V2 databases, and a persistent `/app/data` volume. Keep the Admin bind address private. Run `docker compose -f docker-compose.example.yml up -d`, then check `/api/health` on the App and finish first-run setup at `/control/setup` on Admin.
+Start with the [Compose file](https://github.com/RichardSpinola/OpenStudyHub/blob/main/docker-compose.example.yml), which uses the public pinned image `ghcr.io/richardspinola/openstudyhub:2.0.1` without a GitHub account or PAT, if you want one installation with the App, Admin, realtime WebSocket, Caddy proxy and migrations. Copy `.env.example` to a private `.env`; set `NODE_ENV=production`, an HTTPS `APP_URL`, separate SQLite paths for the main and V2 databases, and a persistent `/app/data` volume. Keep the Admin bind address private. Run `docker compose -f docker-compose.example.yml up -d`, then check `/api/health` on the App and finish first-run setup at `/control/setup` on Admin.
 
-Do not expose the data volume, Admin port or realtime service directly to the internet. A reverse proxy or Cloudflare Tunnel should route the public hostname to the App proxy, including the `/realtime` and `/whiteboard` WebSocket paths. The ZimaOS, CasaOS and UmbrelOS guides describe **manual Compose deployment**; native app-store packages have not been published.
+Do not expose the data volume, Admin port or realtime service directly to the internet. A reverse proxy or Cloudflare Tunnel should route the public hostname to the App proxy, including the `/realtime` and `/whiteboard` WebSocket paths. ZimaOS and CasaOS can import the self-contained `deploy/zimaos-compose.yml` through their custom-app GUI; set its App and WebSocket URLs in the GUI before installation. UmbrelOS uses manual Compose deployment. Native app-store packages have not been published.
+
+Admin sessions work over HTTP on a trusted LAN, but the password and cookie are unencrypted in transit there. Keep port `3001` restricted to a trusted local network; use private HTTPS for access from an untrusted network. Never publish the Admin port to the internet.
 
 ## Google Classroom and Drive
 

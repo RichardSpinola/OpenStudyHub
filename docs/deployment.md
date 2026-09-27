@@ -1,6 +1,6 @@
 # Instalação V2 com Docker
 
-Se você vai hospedar o OpenStudyHub, comece decidindo quem pode acessar cada entrada. A comunidade usa o App; a configuração da instituição fica no Admin / Control Plane. O [Compose de exemplo](https://github.com/RichardSpinola/OpenStudyHub/blob/main/docker-compose.example.yml) usa a imagem pública fixa `ghcr.io/richardspinola/openstudyhub:2.0.0` e instala essas duas superfícies junto com colaboração em tempo real, proxy local e migrations; quem instala não precisa de PAT ou login no GHCR. O App pode receber tráfego público por HTTPS. O Admin deve ficar na rede local ou em acesso administrativo privado.
+Se você vai hospedar o OpenStudyHub, comece decidindo quem pode acessar cada entrada. A comunidade usa o App; a configuração da instituição fica no Admin / Control Plane. O [Compose de exemplo](https://github.com/RichardSpinola/OpenStudyHub/blob/main/docker-compose.example.yml) usa a imagem pública fixa `ghcr.io/richardspinola/openstudyhub:2.0.1` e instala essas duas superfícies junto com colaboração em tempo real, proxy local e migrations; quem instala não precisa de PAT ou login no GHCR. O App pode receber tráfego público por HTTPS. O Admin deve ficar na rede local ou em acesso administrativo privado.
 
 ## Portas e persistência
 
@@ -13,6 +13,8 @@ Se você vai hospedar o OpenStudyHub, comece decidindo quem pode acessar cada en
 | `openstudyhub-migrate`  | sem porta                | aplica migrations V1 e V2 antes do App/Admin            |
 
 O volume `openstudyhub-data` guarda os dois bancos SQLite, anexos privados, assets locais e backups em `/app/data`. Nunca exponha esse volume nem o Docker socket ao público. O `.env` privado guarda os segredos e deve ser incluído no plano de backup seguro, fora do Git.
+
+O Admin em HTTP na LAN aceita sessão nesse endereço, mas login e cookie trafegam sem criptografia. Use apenas uma rede local confiável e restrita; para acesso por redes não confiáveis, coloque o Admin atrás de HTTPS privado. Nunca publique a porta `3001` na internet.
 
 ## Primeiro deploy
 
@@ -36,7 +38,7 @@ Se usar domínio LAN sem HTTPS, não espere que OAuth de produção aceite esse 
 
 ## Plataformas domésticas
 
-O mesmo Compose é a base para [ZimaOS](zimaos.md), [CasaOS](casaos.md) e [UmbrelOS](umbrelos.md). Esses guias explicam o caminho manual e os limites de integração com as respectivas lojas. Não existe pacote de loja publicado nesta fase.
+Para importar pela GUI do [ZimaOS](zimaos.md) ou [CasaOS](casaos.md), use o Compose autocontido em `deploy/zimaos-compose.yml`, com metadata do card e proxy embutido. O Compose genérico desta página continua sendo o caminho para hosts com `.env` e arquivo Caddyfile. [UmbrelOS](umbrelos.md) continua com instalação manual por Compose; não há pacote publicado nas lojas.
 
 ## Atualização e recuperação
 

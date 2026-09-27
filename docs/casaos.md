@@ -1,10 +1,9 @@
 # CasaOS
 
-O OpenStudyHub V2 é uma implantação com cinco serviços Docker. Use o [Compose V2](deployment.md) pelo Docker Compose no host CasaOS; não converta o arquivo em um único contêiner no instalador de apps personalizados. Ainda não existe pacote publicado na loja CasaOS.
+Use o mesmo [Compose de importação gráfica do ZimaOS](https://github.com/RichardSpinola/OpenStudyHub/blob/main/deploy/zimaos-compose.yml) no instalador de aplicativos personalizados do CasaOS. O arquivo usa Docker Compose e metadata `x-casaos`; não há uma segunda implementação nem pacote de loja. Importe **todos** os cinco serviços juntos.
 
-1. No host, mantenha o checkout/Compose e um `.env` privado. Configure o domínio público do App e o WebSocket em `APP_URL` e `OPENSTUDYHUB_REALTIME_PUBLIC_URL`.
-2. Execute `docker compose -f docker-compose.example.yml up -d` num ambiente que disponha de Docker Compose.
-3. Confira `http://127.0.0.1:3000/api/health` e o Admin em `http://127.0.0.1:3001/control/login`. Para Admin via LAN, use o IP LAN em `OPENSTUDYHUB_ADMIN_BIND` e proteja a porta.
-4. Publique apenas a porta do App por HTTPS; o callback Google é `APP_URL + /api/v2/google/callback`.
+Antes de instalar, ajuste na GUI `APP_URL` e `REALTIME_PUBLIC_URL` dos serviços App, Admin e realtime para o endereço real do App. O padrão `localhost` do arquivo serve apenas para acesso local; para dispositivos da LAN, use `http://IP-DO-CASAOS:3000` e `ws://IP-DO-CASAOS:3000/realtime`. O card principal abre o App na porta `3000`. Se sua versão do CasaOS permitir atalhos, o Admin pode receber um atalho separado para `http://IP-DO-CASAOS:3001`; isso não duplica a instalação.
 
-O volume `openstudyhub-data` contém bancos e assets. Faça backup antes de atualizar e siga [o procedimento de recuperação](backup-update.md). A opção de importar Compose pela UI do CasaOS pode variar por versão; esta orientação usa o mecanismo Docker do host para preservar todos os serviços e dependências.
+O volume Docker nomeado `openstudyhub-data:/app/data` guarda bancos e arquivos. Não substitua por diretório temporário. Restrinja a porta `3001` à LAN ou ao acesso administrativo privado; só o App na porta `3000` pode ser exposto publicamente. Para recuperação, veja [Backup e atualização](backup-update.md).
+
+Em HTTP na LAN, senha e cookie do Admin não são criptografados em trânsito. Mantenha o acesso numa rede confiável ou use HTTPS privado; nunca exponha a porta `3001` à internet.

@@ -1,7 +1,14 @@
 # ZimaOS
 
-Use o [Compose V2](deployment.md) como instalação manual no host ZimaOS com Docker/Compose. Ainda não existe entrada publicada em loja ZimaOS. Mantenha **todos** os serviços do Compose na mesma implantação: migration, App, Admin, realtime e proxy. Não importe apenas o primeiro contêiner como se fosse o aplicativo inteiro.
+Use o [Compose para importação gráfica](https://github.com/RichardSpinola/OpenStudyHub/blob/main/deploy/zimaos-compose.yml). Ele instala migration, App, Admin, realtime e proxy como **uma instalação**, com o volume Docker persistente `openstudyhub-data:/app/data`. A imagem `2.0.1` é pública: não precisa de terminal, conta GitHub ou PAT.
 
-Configure `.env` e volume persistente antes de iniciar. O App sai em `127.0.0.1:3000` e pode ser ligado a um túnel HTTPS; o Admin sai em `127.0.0.1:3001` e deve permanecer na LAN. Se acessar o Admin por outro computador, altere `OPENSTUDYHUB_ADMIN_BIND` para o IP LAN do servidor e restrinja por firewall. Ajuste `APP_URL`, `OPENSTUDYHUB_REALTIME_PUBLIC_URL` e o callback Google V2 ao domínio público do App. Confira `/api/health` e `/control/login` após subir.
+1. No ZimaOS, abra **App Center → Install a Customized App → Import → Docker Compose**.
+2. Cole o conteúdo completo de `deploy/zimaos-compose.yml` ou importe esse arquivo.
+3. Antes de clicar em **Install**, confira na própria GUI as variáveis `APP_URL` e `REALTIME_PUBLIC_URL` dos serviços App, Admin e realtime. O arquivo traz `localhost` como padrão local; para acesso pela rede, use em todos eles o endereço real que abrirá no navegador, por exemplo `http://IP-DO-ZIMAOS:3000` e `ws://IP-DO-ZIMAOS:3000/realtime`. Se usar HTTPS depois, os valores passam a `https://...` e `wss://...`. Não é necessário corrigir o YAML após a importação.
+4. Clique em **Install**. O card principal **OpenStudyHub** abre `http://IP-DO-ZIMAOS:3000`.
+5. Na GUI do ZimaOS, crie **manualmente um atalho**, chamado **OpenStudyHub Admin**, com URL `http://IP-DO-ZIMAOS:3001` e o [mesmo ícone](https://raw.githubusercontent.com/RichardSpinola/OpenStudyHub/v2.0.0/public/brand/icon-512.png). Esse atalho não instala outra stack nem cria outro card pelo Compose.
+6. Abra o Admin pelo atalho e conclua o primeiro setup. Mantenha a porta `3001` acessível apenas na LAN ou em acesso administrativo privado; só o App na porta `3000` pode ser exposto publicamente.
 
-O caminho de execução e atualização é o mesmo de [Backup e atualização](backup-update.md). A interface do ZimaOS pode mudar; a instalação documentada depende apenas do Docker Compose no host, sem prometer integração nativa de loja.
+O proxy encaminha `/realtime` e `/whiteboard` ao serviço realtime interno. Não mova `/app/data` para `/tmp`, tmpfs ou uma pasta temporária do instalador. Antes de atualizar ou restaurar, siga [Backup e atualização](backup-update.md).
+
+Em HTTP LAN, a senha e o cookie do Admin trafegam sem criptografia. Restrinja a porta `3001` a uma rede confiável; para acesso fora dela, use HTTPS privado. Não exponha o Admin publicamente.

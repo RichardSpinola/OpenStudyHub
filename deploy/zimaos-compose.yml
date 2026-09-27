@@ -1,0 +1,130 @@
+# ZimaOS/CasaOS custom-app import. Set APP_URL and REALTIME_PUBLIC_URL in the
+# imported App, Admin and realtime service settings to the address users open.
+# The localhost defaults allow a first local installation without an .env file.
+name: openstudyhub
+
+services:
+  openstudyhub-migrate:
+    image: ghcr.io/richardspinola/openstudyhub:2.0.1
+    environment:
+      NODE_ENV: production
+      OPENSTUDYHUB_V2_ENABLED: "1"
+      DATABASE_PATH: /app/data/openstudyhub.db
+      OPENSTUDYHUB_V2_DATABASE_PATH: /app/data/v2.db
+      PRIVATE_ASSET_PATH: /app/data/private-assets
+    volumes:
+      - openstudyhub-data:/app/data
+    restart: "no"
+    command:
+      - sh
+      - -c
+      - node scripts/migrate-production.mjs && node scripts/migrate-v2-production.mjs
+
+  openstudyhub-app:
+    image: ghcr.io/richardspinola/openstudyhub:2.0.1
+    environment:
+      NODE_ENV: production
+      OPENSTUDYHUB_V2_ENABLED: "1"
+      OPENSTUDYHUB_SURFACE: app
+      APP_URL: http://localhost:3000
+      REALTIME_PUBLIC_URL: ws://localhost:3000/realtime
+      DATABASE_PATH: /app/data/openstudyhub.db
+      OPENSTUDYHUB_V2_DATABASE_PATH: /app/data/v2.db
+      PRIVATE_ASSET_PATH: /app/data/private-assets
+    volumes:
+      - openstudyhub-data:/app/data
+    restart: unless-stopped
+    depends_on:
+      openstudyhub-migrate:
+        condition: service_completed_successfully
+
+  openstudyhub-admin:
+    image: ghcr.io/richardspinola/openstudyhub:2.0.1
+    environment:
+      NODE_ENV: production
+      OPENSTUDYHUB_V2_ENABLED: "1"
+      OPENSTUDYHUB_SURFACE: admin
+      APP_URL: http://localhost:3000
+      REALTIME_PUBLIC_URL: ws://localhost:3000/realtime
+      DATABASE_PATH: /app/data/openstudyhub.db
+      OPENSTUDYHUB_V2_DATABASE_PATH: /app/data/v2.db
+      PRIVATE_ASSET_PATH: /app/data/private-assets
+    volumes:
+      - openstudyhub-data:/app/data
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    depends_on:
+      openstudyhub-migrate:
+        condition: service_completed_successfully
+
+  openstudyhub-realtime:
+    image: ghcr.io/richardspinola/openstudyhub:2.0.1
+    environment:
+      NODE_ENV: production
+      OPENSTUDYHUB_V2_ENABLED: "1"
+      OPENSTUDYHUB_SURFACE: app
+      APP_URL: http://localhost:3000
+      REALTIME_PUBLIC_URL: ws://localhost:3000/realtime
+      REALTIME_HOST: 0.0.0.0
+      REALTIME_PORT: "3045"
+      DATABASE_PATH: /app/data/openstudyhub.db
+      OPENSTUDYHUB_V2_DATABASE_PATH: /app/data/v2.db
+      PRIVATE_ASSET_PATH: /app/data/private-assets
+    volumes:
+      - openstudyhub-data:/app/data
+    command:
+      - node
+      - dist/realtime-server.mjs
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3045/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+    restart: unless-stopped
+    depends_on:
+      openstudyhub-migrate:
+        condition: service_completed_successfully
+
+  openstudyhub-web:
+    image: caddy:2-alpine
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        cat > /etc/caddy/Caddyfile <<'EOF'
+        :3000 {
+          @realtime path /realtime /whiteboard
+          handle @realtime {
+            reverse_proxy openstudyhub-realtime:3045
+          }
+          handle {
+            reverse_proxy openstudyhub-app:3000
+          }
+        }
+        EOF
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      - openstudyhub-app
+      - openstudyhub-realtime
+
+volumes:
+  openstudyhub-data:
+
+x-casaos:
+  id: org.openstudyhub.openstudyhub
+  main: openstudyhub-web
+  index: /
+  port_map: "3000"
+  scheme: http
+  icon: https://raw.githubusercontent.com/RichardSpinola/OpenStudyHub/v2.0.0/public/brand/icon-512.png
+  title:
+    en_US: OpenStudyHub
+    pt_BR: OpenStudyHub
+  category: Productivity
+  version: "2.0.1"
+  website: https://richardspinola.github.io/OpenStudyHub/

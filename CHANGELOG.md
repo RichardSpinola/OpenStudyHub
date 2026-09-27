@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1
+
+Corrige o loop de login do Control Plane quando o Admin é acessado por HTTP em uma rede local confiável e o App usa HTTPS. O cookie do Admin passa a seguir a origem da requisição, preservando `Secure` para HTTPS, `HttpOnly`, `SameSite=Lax`, isolamento por host e revogação no logout. O Compose de importação gráfica para ZimaOS/CasaOS acompanha a atualização da imagem fixa.
+
+Leia as [notas da hotfix](RELEASE_NOTES_2_0_1.md) antes de atualizar.
+
 ## 2.0.0
 
 O OpenStudyHub V2 organiza cursos, períodos, turmas, disciplinas, professores, horários e matrículas em uma estrutura acadêmica própria. A instalação separa o App, usado pela comunidade, do Admin / Control Plane, mantido em acesso local ou de rede privada por padrão.

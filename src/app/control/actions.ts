@@ -23,6 +23,10 @@ import {
 } from "@/lib/v2/runtime";
 import { authenticateNormal } from "@/lib/v2/identity-bridge";
 import { clearSessionCookie } from "@/lib/session-cookie";
+import {
+  clearV2SessionCookie,
+  writeV2SessionCookie,
+} from "@/lib/v2/session-cookie";
 import { uiLanguageSchema, updateUiLanguage } from "@/lib/ui-language";
 import {
   createInstitution,
@@ -132,13 +136,7 @@ export async function loginAction(f: FormData): Promise<void> {
       authenticateAdminV2(db, str(f, "login"), str(f, "password")),
     );
     if (result) {
-      (await cookies()).set(ADMIN_COOKIE, result.token, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-        maxAge: 604800,
-      });
+      await writeV2SessionCookie(ADMIN_COOKIE, result.token);
       ok = true;
     }
   } catch {}
@@ -192,7 +190,7 @@ export async function logoutAdminAction(): Promise<void> {
   try {
     await withV2DbAsync(async (db) => revokeAdminSessionV2(db, token));
   } catch {}
-  jar.delete(ADMIN_COOKIE);
+  await clearV2SessionCookie(ADMIN_COOKIE);
   redirect("/control/login");
 }
 export async function logoutUserAction(): Promise<void> {

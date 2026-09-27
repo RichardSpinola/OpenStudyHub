@@ -51,7 +51,7 @@ Google pode ficar vazio até o Core estar funcionando.
 
 ## 4. Suba a aplicação
 
-O Compose usa a imagem pública fixa `ghcr.io/richardspinola/openstudyhub:2.0.0`; a instalação não exige conta GitHub nem PAT.
+O Compose usa a imagem pública fixa `ghcr.io/richardspinola/openstudyhub:2.0.1`; a instalação não exige conta GitHub nem PAT.
 
 ```bash
 docker compose -f docker-compose.example.yml up -d
