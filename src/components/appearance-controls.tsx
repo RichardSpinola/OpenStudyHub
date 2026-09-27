@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
-
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveAppearanceSelectionAction } from "@/app/settings/actions";
@@ -49,7 +48,12 @@ export function AppearanceControls({ initial }: { initial: Appearance }) {
           router.refresh();
         } catch {
           setValue(lastSaved.current);
-          setStatus(tr("Não foi possível salvar. Tente novamente.", "Could not save. Try again."));
+          setStatus(
+            tr(
+              "Não foi possível salvar. Tente novamente.",
+              "Could not save. Try again.",
+            ),
+          );
         }
       });
     }, 350);
@@ -64,7 +68,9 @@ export function AppearanceControls({ initial }: { initial: Appearance }) {
   return (
     <div className="appearance-controls appearance-visual-controls">
       <fieldset className="appearance-choice-grid">
-        <legend><UiCopy pt="Visual do aplicativo" en="App appearance" /></legend>
+        <legend>
+          <UiCopy pt="Visual do aplicativo" en="App appearance" />
+        </legend>
         {(
           [
             ["material", "Material", "Superfícies suaves e navegação clara"],
@@ -88,12 +94,21 @@ export function AppearanceControls({ initial }: { initial: Appearance }) {
               <i />
             </span>
             <strong>{label}</strong>
-            <small>{tr(description, id === "material" ? "Soft surfaces and clear navigation" : "OpenStudyHub's classic look")}</small>
+            <small>
+              {tr(
+                description,
+                id === "material"
+                  ? "Soft surfaces and clear navigation"
+                  : "OpenStudyHub's classic look",
+              )}
+            </small>
           </label>
         ))}
       </fieldset>
       <fieldset className="appearance-segmented">
-        <legend><UiCopy pt="Modo de cor" en="Color mode" /></legend>
+        <legend>
+          <UiCopy pt="Modo de cor" en="Color mode" />
+        </legend>
         {(
           [
             ["light", "Claro"],
@@ -114,7 +129,9 @@ export function AppearanceControls({ initial }: { initial: Appearance }) {
         ))}
       </fieldset>
       <fieldset className="appearance-swatches">
-        <legend><UiCopy pt="Cor de destaque" en="Accent color" /></legend>
+        <legend>
+          <UiCopy pt="Cor de destaque" en="Accent color" />
+        </legend>
         {(
           [
             ["neutral", "Neutra"],
@@ -128,7 +145,18 @@ export function AppearanceControls({ initial }: { initial: Appearance }) {
         ).map(([id, label]) => (
           <label
             key={id}
-            title={tr(label, { neutral: "Neutral", green: "Green", blue: "Blue", red: "Red", purple: "Purple", amber: "Amber", custom: "My color" }[id])}
+            title={tr(
+              label,
+              {
+                neutral: "Neutral",
+                green: "Green",
+                blue: "Blue",
+                red: "Red",
+                purple: "Purple",
+                amber: "Amber",
+                custom: "My color",
+              }[id],
+            )}
             data-selected={value.accent === id}
             data-accent={id}
           >
@@ -140,17 +168,32 @@ export function AppearanceControls({ initial }: { initial: Appearance }) {
               onChange={() => change("accent", id)}
             />
             <span aria-hidden="true" />
-            {tr(label, { neutral: "Neutral", green: "Green", blue: "Blue", red: "Red", purple: "Purple", amber: "Amber", custom: "My color" }[id])}
+            {tr(
+              label,
+              {
+                neutral: "Neutral",
+                green: "Green",
+                blue: "Blue",
+                red: "Red",
+                purple: "Purple",
+                amber: "Amber",
+                custom: "My color",
+              }[id],
+            )}
           </label>
         ))}
       </fieldset>
       {value.accent === "custom" ? (
-        <label className="appearance-custom-color"><UiCopy pt="Minha cor" en="My color" />
+        <label className="appearance-custom-color">
+          <UiCopy pt="Minha cor" en="My color" />
           <input
             type="color"
             name="customAccent"
             value={value.customAccent}
-            aria-label={tr("Escolher minha cor de destaque", "Choose my accent color")}
+            aria-label={tr(
+              "Escolher minha cor de destaque",
+              "Choose my accent color",
+            )}
             onChange={(event) =>
               setValue((current) => ({
                 ...current,
@@ -159,13 +202,20 @@ export function AppearanceControls({ initial }: { initial: Appearance }) {
               }))
             }
           />
-          <small><UiCopy pt="Clique na amostra para escolher. O tom mantém contraste." en="Click the sample to choose. The color keeps adequate contrast." /></small>
+          <small>
+            <UiCopy
+              pt="Clique na amostra para escolher. O tom mantém contraste."
+              en="Click the sample to choose. The color keeps adequate contrast."
+            />
+          </small>
         </label>
       ) : (
         <input type="hidden" name="customAccent" value={value.customAccent} />
       )}
       <fieldset className="appearance-segmented">
-        <legend><UiCopy pt="Espaçamento" en="Spacing" /></legend>
+        <legend>
+          <UiCopy pt="Espaçamento" en="Spacing" />
+        </legend>
         {(
           [
             ["comfortable", "Confortável"],
@@ -185,7 +235,9 @@ export function AppearanceControls({ initial }: { initial: Appearance }) {
         ))}
       </fieldset>
       <fieldset className="appearance-segmented">
-        <legend><UiCopy pt="Navegação" en="Navigation" /></legend>
+        <legend>
+          <UiCopy pt="Navegação" en="Navigation" />
+        </legend>
         {(
           [
             ["top", "Superior"],

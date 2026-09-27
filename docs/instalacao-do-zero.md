@@ -51,8 +51,10 @@ Google pode ficar vazio até o Core estar funcionando.
 
 ## 4. Suba a aplicação
 
+O Compose usa a imagem pública fixa `ghcr.io/richardspinola/openstudyhub:2.0.0`; a instalação não exige conta GitHub nem PAT.
+
 ```bash
-docker compose -f docker-compose.example.yml up -d --build
+docker compose -f docker-compose.example.yml up -d
 ```
 
 Confira o App em `http://127.0.0.1:3000` e o Admin local em `http://127.0.0.1:3001/control/login`. Publique somente o App por HTTPS. Confira:

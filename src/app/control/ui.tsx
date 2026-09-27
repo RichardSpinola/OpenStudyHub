@@ -5,6 +5,7 @@ import { logoutAdminAction, logoutUserAction } from "./actions";
 import "./console.css";
 import { ContextPreserver } from "./context-preserver";
 import { getUiLanguage } from "@/lib/ui-language";
+export { HiddenContext } from "./hidden-context";
 export function ConsoleShell({
   title,
   kicker,
@@ -53,22 +54,29 @@ export function ConsoleShell({
   const feedback: Record<string, string> = {
     "Alteração salva.": "Changes saved.",
     "Sessão expirada. Entre novamente.": "Session expired. Sign in again.",
-    "Troque sua senha temporária antes de continuar.": "Change your temporary password before continuing.",
+    "Troque sua senha temporária antes de continuar.":
+      "Change your temporary password before continuing.",
     "Ligação com a turma V1 confirmada.": "Link to V1 cohort confirmed.",
     "Envie uma imagem de até 5 MiB.": "Upload an image up to 5 MiB.",
     "Capa da disciplina salva.": "Subject cover saved.",
-    "Capa removida. O visual padrão foi restaurado.": "Cover removed. Default appearance restored.",
-    "Matrícula em lote aplicada integralmente.": "Batch enrollment applied in full.",
+    "Capa removida. O visual padrão foi restaurado.":
+      "Cover removed. Default appearance restored.",
+    "Matrícula em lote aplicada integralmente.":
+      "Batch enrollment applied in full.",
     "Conta sem vínculos excluída.": "Account without protected links deleted.",
-    "Senha redefinida. Compartilhe a senha temporária por um canal seguro.": "Password reset. Share the temporary password through a secure channel.",
-    "Troca de senha temporária não pendente.": "No temporary password change is pending.",
+    "Senha redefinida. Compartilhe a senha temporária por um canal seguro.":
+      "Password reset. Share the temporary password through a secure channel.",
+    "Troca de senha temporária não pendente.":
+      "No temporary password change is pending.",
     "Senha alterada. Entre novamente.": "Password changed. Sign in again.",
     "Conjunto de horários inválido.": "Invalid schedule set.",
-    "Novo período ativado; histórico preservado.": "New period activated; history preserved.",
+    "Novo período ativado; histórico preservado.":
+      "New period activated; history preserved.",
     "Ação desconhecida.": "Unknown action.",
     "Operação não concluída.": "Operation not completed.",
   };
-  const localizeFeedback = (value: string) => english ? (feedback[value] ?? value) : value;
+  const localizeFeedback = (value: string) =>
+    english ? (feedback[value] ?? value) : value;
   const navigation = [
     { href: "/control", label: tr("Visão geral", "Overview"), key: "overview" },
     {
@@ -200,22 +208,6 @@ export function ConsoleShell({
       ) : null}
       <ContextPreserver>{children}</ContextPreserver>
     </div>
-  );
-}
-export function HiddenContext({
-  returnTo,
-  ...fields
-}: {
-  returnTo: string;
-  [key: string]: string | number;
-}) {
-  return (
-    <>
-      <input type="hidden" name="returnTo" value={returnTo} />
-      {Object.entries(fields).map(([key, value]) => (
-        <input key={key} type="hidden" name={key} value={value} />
-      ))}
-    </>
   );
 }
 export function Help({ children }: { children: ReactNode }) {

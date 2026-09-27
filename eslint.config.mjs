@@ -10,6 +10,7 @@ export default defineConfig([
     ".next-app/**",
     ".next-admin/**",
     "coverage/**",
+    "dist/**",
     "drizzle/**",
   ]),
 ]);

@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
-
 import { useEffect, useRef, useState } from "react";
 import {
   mineChordTargets,
@@ -108,15 +107,24 @@ function TwentyFortyEight() {
     <section className="local-game game-2048">
       <div className="game-dashboard">
         <span>
-          <small><UiCopy pt="PONTOS" en="SCORE" /></small>
+          <small>
+            <UiCopy pt="PONTOS" en="SCORE" />
+          </small>
           <strong>{state.score}</strong>
         </span>
         <span>
-          <small><UiCopy pt="RECORDE" en="HIGH SCORE" /></small>
+          <small>
+            <UiCopy pt="RECORDE" en="HIGH SCORE" />
+          </small>
           <strong>{Math.max(best, state.score)}</strong>
         </span>
       </div>
-      <p className="game-hint"><UiCopy pt="Una números iguais com as setas ou deslizando o tabuleiro." en="Join equal numbers with the arrow keys or swipe across the board." /></p>
+      <p className="game-hint">
+        <UiCopy
+          pt="Una números iguais com as setas ou deslizando o tabuleiro."
+          en="Join equal numbers with the arrow keys or swipe across the board."
+        />
+      </p>
       <div
         className="game-2048-grid"
         role="grid"
@@ -154,13 +162,21 @@ function TwentyFortyEight() {
       </div>
       {lastGain > 0 ? (
         <p className="game-merge-feedback" role="status">
-          +{lastGain}<UiCopy pt="na última união" en="in the last merge" />
+          +{lastGain}
+          <UiCopy pt="na última união" en="in the last merge" />
         </p>
       ) : null}
       {over ? (
-        <p role="status"><UiCopy pt="Fim de jogo." en="Game over." /></p>
+        <p role="status">
+          <UiCopy pt="Fim de jogo." en="Game over." />
+        </p>
       ) : state.grid.some((value) => value >= 2048) ? (
-        <p role="status"><UiCopy pt="Você alcançou 2048! Pode continuar jogando." en="You reached 2048! You can keep playing." /></p>
+        <p role="status">
+          <UiCopy
+            pt="Você alcançou 2048! Pode continuar jogando."
+            en="You reached 2048! You can keep playing."
+          />
+        </p>
       ) : null}
       <div className="game-options">
         <button
@@ -174,7 +190,8 @@ function TwentyFortyEight() {
             setPrevious(null);
             setLastGain(0);
           }}
-        ><UiCopy pt="Novo jogo" en="New game" />
+        >
+          <UiCopy pt="Novo jogo" en="New game" />
         </button>
         <button
           type="button"
@@ -183,7 +200,8 @@ function TwentyFortyEight() {
             if (previous) setState(previous);
             setPrevious(null);
           }}
-        ><UiCopy pt="Desfazer" en="Undo" />
+        >
+          <UiCopy pt="Desfazer" en="Undo" />
         </button>
       </div>
       <DirectionButtons onMove={move} />
@@ -198,7 +216,10 @@ function DirectionButtons({
 }) {
   const tr = useUiText();
   return (
-    <div className="game-direction-buttons" aria-label={tr("Controles de direção", "Direction controls")}>
+    <div
+      className="game-direction-buttons"
+      aria-label={tr("Controles de direção", "Direction controls")}
+    >
       {(["up", "left", "down", "right"] as Direction[]).map((direction) => (
         <button
           key={direction}
@@ -356,23 +377,34 @@ function Snake() {
     <section className="local-game game-snake">
       <div className="game-dashboard">
         <span>
-          <small><UiCopy pt="PONTOS" en="SCORE" /></small>
+          <small>
+            <UiCopy pt="PONTOS" en="SCORE" />
+          </small>
           <strong>{state.score}</strong>
         </span>
         <span>
-          <small><UiCopy pt="RECORDE" en="HIGH SCORE" /></small>
+          <small>
+            <UiCopy pt="RECORDE" en="HIGH SCORE" />
+          </small>
           <strong>{Math.max(best, state.score)}</strong>
         </span>
       </div>
       <div className="game-options">
-        <label><UiCopy pt="Velocidade" en="Speed" />{" "}
+        <label>
+          <UiCopy pt="Velocidade" en="Speed" />{" "}
           <select
             value={speed}
             onChange={(event) => setSpeed(Number(event.target.value))}
           >
-            <option value={230}><UiCopy pt="Lenta" en="Slow" /></option>
-            <option value={170}><UiCopy pt="Normal" en="Normal" /></option>
-            <option value={110}><UiCopy pt="Rápida" en="Fast" /></option>
+            <option value={230}>
+              <UiCopy pt="Lenta" en="Slow" />
+            </option>
+            <option value={170}>
+              <UiCopy pt="Normal" en="Normal" />
+            </option>
+            <option value={110}>
+              <UiCopy pt="Rápida" en="Fast" />
+            </option>
           </select>
         </label>
         <label>
@@ -380,13 +412,17 @@ function Snake() {
             type="checkbox"
             checked={wrap}
             onChange={(event) => setWrap(event.target.checked)}
-          />{" "}<UiCopy pt="Atravessar bordas" en="Wrap around edges" />
+          />{" "}
+          <UiCopy pt="Atravessar bordas" en="Wrap around edges" />
         </label>
       </div>
       <div
         className="snake-grid"
         role="img"
-        aria-label={tr(`Snake: ${state.score} pontos`, `Snake: ${state.score} points`)}
+        aria-label={tr(
+          `Snake: ${state.score} pontos`,
+          `Snake: ${state.score} points`,
+        )}
       >
         {Array.from({ length: snakeWidth * snakeWidth }, (_, index) => (
           <div
@@ -405,7 +441,8 @@ function Snake() {
       </div>
       {state.over ? (
         <p className="game-result" role="status">
-          {state.score > best ? "Novo recorde!" : "Fim de jogo."} {state.score}{" "}<UiCopy pt="pontos." en="points." />
+          {state.score > best ? "Novo recorde!" : "Fim de jogo."} {state.score}{" "}
+          <UiCopy pt="pontos." en="points." />
         </p>
       ) : null}
       <div className="game-options">
@@ -420,7 +457,11 @@ function Snake() {
             );
           }}
         >
-          {state.over ? tr("Recomeçar", "Restart") : state.running ? tr("Pausar", "Pause") : tr("Iniciar", "Start")}
+          {state.over
+            ? tr("Recomeçar", "Restart")
+            : state.running
+              ? tr("Pausar", "Pause")
+              : tr("Iniciar", "Start")}
         </button>
         <button
           type="button"
@@ -428,7 +469,8 @@ function Snake() {
             setBest(Math.max(best, state.score));
             setState(initialSnake());
           }}
-        ><UiCopy pt="Novo jogo" en="New game" />
+        >
+          <UiCopy pt="Novo jogo" en="New game" />
         </button>
       </div>
       <DirectionButtons onMove={turn} />
@@ -552,16 +594,21 @@ function Minesweeper() {
     <section className="local-game game-minesweeper">
       <div className="game-dashboard">
         <span>
-          <small><UiCopy pt="MINAS RESTANTES" en="MINES LEFT" /></small>
+          <small>
+            <UiCopy pt="MINAS RESTANTES" en="MINES LEFT" />
+          </small>
           <strong>{mineCount - state.flags.size}</strong>
         </span>
         <span>
-          <small><UiCopy pt="TEMPO" en="TIME" /></small>
+          <small>
+            <UiCopy pt="TEMPO" en="TIME" />
+          </small>
           <strong>{elapsed}s</strong>
         </span>
       </div>
       <div className="game-options">
-        <label><UiCopy pt="Dificuldade" en="Difficulty" />{" "}
+        <label>
+          <UiCopy pt="Dificuldade" en="Difficulty" />{" "}
           <select
             value={difficulty}
             onChange={(event) => {
@@ -569,9 +616,15 @@ function Minesweeper() {
               reset();
             }}
           >
-            <option value="easy"><UiCopy pt="Iniciante 8×8" en="Beginner 8×8" /></option>
-            <option value="medium"><UiCopy pt="Médio 12×12" en="Intermediate 12×12" /></option>
-            <option value="hard"><UiCopy pt="Avançado 16×16" en="Advanced 16×16" /></option>
+            <option value="easy">
+              <UiCopy pt="Iniciante 8×8" en="Beginner 8×8" />
+            </option>
+            <option value="medium">
+              <UiCopy pt="Médio 12×12" en="Intermediate 12×12" />
+            </option>
+            <option value="hard">
+              <UiCopy pt="Avançado 16×16" en="Advanced 16×16" />
+            </option>
           </select>
         </label>
         <label>
@@ -579,10 +632,16 @@ function Minesweeper() {
             type="checkbox"
             checked={flagMode}
             onChange={(event) => setFlagMode(event.target.checked)}
-          />{" "}<UiCopy pt="Modo bandeira (toque)" en="Flag mode (touch)" />
+          />{" "}
+          <UiCopy pt="Modo bandeira (toque)" en="Flag mode (touch)" />
         </label>
       </div>
-      <p><UiCopy pt="Toque para abrir; clique direito marca. Em um número aberto, clique do meio ou esquerdo e direito juntos abrem os vizinhos quando as bandeiras conferem." en="Tap to open; right-click marks. On an open number, middle-click or left and right together open its neighbors when the flags match." /></p>
+      <p>
+        <UiCopy
+          pt="Toque para abrir; clique direito marca. Em um número aberto, clique do meio ou esquerdo e direito juntos abrem os vizinhos quando as bandeiras conferem."
+          en="Tap to open; right-click marks. On an open number, middle-click or left and right together open its neighbors when the flags match."
+        />
+      </p>
       <div
         className="mines-grid"
         role="grid"
@@ -603,7 +662,10 @@ function Minesweeper() {
               key={index}
               type="button"
               role="gridcell"
-              aria-label={tr(`Casa ${index + 1}${state.flags.has(index) ? ", marcada" : ""}`, `Cell ${index + 1}${state.flags.has(index) ? ", flagged" : ""}`)}
+              aria-label={tr(
+                `Casa ${index + 1}${state.flags.has(index) ? ", marcada" : ""}`,
+                `Cell ${index + 1}${state.flags.has(index) ? ", flagged" : ""}`,
+              )}
               disabled={state.lost || won}
               data-open={visible}
               data-number={

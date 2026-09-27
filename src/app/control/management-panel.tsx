@@ -1021,7 +1021,10 @@ export function ManagementPanel({
                                     ? `/control/offering-cover/${o.id}`
                                     : undefined
                                 }
-                          alt={tr("Capa atual ou prévia da disciplina", "Current cover or subject preview")}
+                                alt={tr(
+                                  "Capa atual ou prévia da disciplina",
+                                  "Current cover or subject preview",
+                                )}
                                 maxMiB={5}
                               />
                               <button>
@@ -1041,7 +1044,10 @@ export function ManagementPanel({
                                 <ConfirmSubmitButton
                                   type="submit"
                                   className="secondary-button"
-                        confirmation={tr("Remover a capa desta disciplina e restaurar o visual padrão?", "Remove this subject cover and restore the default appearance?")}
+                                  confirmation={tr(
+                                    "Remover a capa desta disciplina e restaurar o visual padrão?",
+                                    "Remove this subject cover and restore the default appearance?",
+                                  )}
                                 >
                                   <UiCopy pt="Remover capa" en="Remove cover" />
                                 </ConfirmSubmitButton>

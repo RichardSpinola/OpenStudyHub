@@ -394,7 +394,10 @@ export default async function SettingsPage({
           </p>
         </div>
       </header>
-        <nav className="section-tabs settings-tabs" aria-label={tr("Configurações", "Settings")}>
+      <nav
+        className="section-tabs settings-tabs"
+        aria-label={tr("Configurações", "Settings")}
+      >
         <Link
           href="/settings?section=profile"
           aria-current={section === "profile" ? "page" : undefined}

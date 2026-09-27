@@ -67,10 +67,15 @@ export function getAppearanceFromDb(
       "SELECT theme,mode,density,accent,custom_accent customAccent,navigation_layout navigationLayout,search_engine searchEngine,motion,contrast FROM user_appearance WHERE user_id=?",
     )
     .get(canonicalUserId);
-  const stored = row as (Record<string, unknown> & { theme?: string }) | undefined;
-  return appearanceSchema.catch(defaultAppearance).parse(
-    stored?.theme === "custom" ? { ...stored, theme: "material" } : (stored ?? defaultAppearance),
-  );
+  const stored = row as
+    (Record<string, unknown> & { theme?: string }) | undefined;
+  return appearanceSchema
+    .catch(defaultAppearance)
+    .parse(
+      stored?.theme === "custom"
+        ? { ...stored, theme: "material" }
+        : (stored ?? defaultAppearance),
+    );
 }
 
 export function saveAppearanceToDb(

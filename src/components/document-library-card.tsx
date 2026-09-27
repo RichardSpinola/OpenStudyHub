@@ -49,7 +49,9 @@ export function DocumentLibraryCard({
         aria-label={`Abrir ${document.name} no Google Docs`}
       >
         <span className="document-paper-preview" aria-hidden="true">
-          <span className="document-paper-topline"><UiCopy pt="DOCUMENTO" en="DOCUMENT" /></span>
+          <span className="document-paper-topline">
+            <UiCopy pt="DOCUMENTO" en="DOCUMENT" />
+          </span>
           <strong>{document.name}</strong>
           <span className="document-paper-context">{document.subjectName}</span>
           <span className="document-paper-lines">
@@ -68,17 +70,27 @@ export function DocumentLibraryCard({
             <small>{document.templateName ?? "Documento"}</small>
             <time dateTime={new Date(updatedAt).toISOString()}>{date}</time>
           </span>
-          <b><UiCopy pt="Abrir documento ↗" en="Open document ↗" /></b>
+          <b>
+            <UiCopy pt="Abrir documento ↗" en="Open document ↗" />
+          </b>
         </span>
       </a>
       {!shared ? (
         <details className="document-share-panel">
-          <summary><UiCopy pt="Compartilhar" en="Share" /></summary>
-          <p><UiCopy pt="Escolha quem pode ver este documento no Hub. O acesso ao arquivo no Google Drive pode exigir autorização separada." en="Choose who can see this document in the Hub. Access to the Google Drive file may require separate authorization." /></p>
+          <summary>
+            <UiCopy pt="Compartilhar" en="Share" />
+          </summary>
+          <p>
+            <UiCopy
+              pt="Escolha quem pode ver este documento no Hub. O acesso ao arquivo no Google Drive pode exigir autorização separada."
+              en="Choose who can see this document in the Hub. Access to the Google Drive file may require separate authorization."
+            />
+          </p>
           {personShares.length || groupShares.length ? (
             <ul>
               {personShares.map((person) => (
-                <li key={`person-${person.userId}`}><UiCopy pt="Pessoa:" en="Person:" /> {person.displayName} ·{" "}
+                <li key={`person-${person.userId}`}>
+                  <UiCopy pt="Pessoa:" en="Person:" /> {person.displayName} ·{" "}
                   {person.googlePermissionStatus === "granted"
                     ? "Drive liberado"
                     : "confira o acesso no Drive"}
@@ -103,7 +115,8 @@ export function DocumentLibraryCard({
                 </li>
               ))}
               {groupShares.map((group) => (
-                <li key={`group-${group.groupId}`}><UiCopy pt="Grupo:" en="Group:" /> {group.groupName}
+                <li key={`group-${group.groupId}`}>
+                  <UiCopy pt="Grupo:" en="Group:" /> {group.groupName}
                   <form action={setDocumentGroupShareAction}>
                     <input
                       type="hidden"
@@ -122,7 +135,9 @@ export function DocumentLibraryCard({
               ))}
             </ul>
           ) : (
-            <p><UiCopy pt="Privado no Hub." en="Private in the Hub." /></p>
+            <p>
+              <UiCopy pt="Privado no Hub." en="Private in the Hub." />
+            </p>
           )}
           {people.some(
             ({ id }) => !personShares.some((person) => person.userId === id),
@@ -130,9 +145,12 @@ export function DocumentLibraryCard({
             <form action={setDocumentPersonShareAction}>
               <input type="hidden" name="documentId" value={document.id} />
               <input type="hidden" name="shared" value="true" />
-              <label><UiCopy pt="Pessoa" en="Person" />{" "}
+              <label>
+                <UiCopy pt="Pessoa" en="Person" />{" "}
                 <select name="recipientUserId" required defaultValue="">
-                  <option value=""><UiCopy pt="Selecione" en="Select" /></option>
+                  <option value="">
+                    <UiCopy pt="Selecione" en="Select" />
+                  </option>
                   {people
                     .filter(
                       ({ id }) =>
@@ -145,7 +163,9 @@ export function DocumentLibraryCard({
                     ))}
                 </select>
               </label>
-              <button type="submit"><UiCopy pt="Compartilhar com pessoa" en="Share with a person" /></button>
+              <button type="submit">
+                <UiCopy pt="Compartilhar com pessoa" en="Share with a person" />
+              </button>
             </form>
           ) : null}
           {groups.some(
@@ -154,9 +174,12 @@ export function DocumentLibraryCard({
             <form action={setDocumentGroupShareAction}>
               <input type="hidden" name="documentId" value={document.id} />
               <input type="hidden" name="shared" value="true" />
-              <label><UiCopy pt="Grupo" en="Group" />{" "}
+              <label>
+                <UiCopy pt="Grupo" en="Group" />{" "}
                 <select name="groupId" required defaultValue="">
-                  <option value=""><UiCopy pt="Selecione" en="Select" /></option>
+                  <option value="">
+                    <UiCopy pt="Selecione" en="Select" />
+                  </option>
                   {groups
                     .filter(
                       ({ id }) =>
@@ -169,22 +192,36 @@ export function DocumentLibraryCard({
                     ))}
                 </select>
               </label>
-              <button type="submit"><UiCopy pt="Compartilhar com grupo" en="Share with a group" /></button>
+              <button type="submit">
+                <UiCopy pt="Compartilhar com grupo" en="Share with a group" />
+              </button>
             </form>
           ) : null}
         </details>
       ) : null}
       {!shared ? (
         <DismissibleDetails className="resource-item-actions document-card-options">
-          <summary aria-label={tr(`Opções de ${document.name}`, `Options for ${document.name}`)}>⋯</summary>
+          <summary
+            aria-label={tr(
+              `Opções de ${document.name}`,
+              `Options for ${document.name}`,
+            )}
+          >
+            ⋯
+          </summary>
           <div>
             <form action={deleteGeneratedDocumentAction}>
               <input type="hidden" name="documentId" value={document.id} />
               <input type="hidden" name="mode" value="hub" />
               <ConfirmSubmitButton
                 type="submit"
-                confirmation={tr("Remover este documento da biblioteca? O arquivo continuará no Google Drive.", "Remove this document from the library? The file will remain in Google Drive.")}
-              ><UiCopy pt="Remover da biblioteca" en="Remove from library" /></ConfirmSubmitButton>
+                confirmation={tr(
+                  "Remover este documento da biblioteca? O arquivo continuará no Google Drive.",
+                  "Remove this document from the library? The file will remain in Google Drive.",
+                )}
+              >
+                <UiCopy pt="Remover da biblioteca" en="Remove from library" />
+              </ConfirmSubmitButton>
             </form>
             <form action={deleteGeneratedDocumentAction}>
               <input type="hidden" name="documentId" value={document.id} />
@@ -192,10 +229,23 @@ export function DocumentLibraryCard({
               <ConfirmSubmitButton
                 type="submit"
                 className="danger-button"
-                confirmation={tr("Mover este arquivo para a lixeira do Google Drive e removê-lo da biblioteca?", "Move this file to Google Drive trash and remove it from the library?")}
-              ><UiCopy pt="Excluir também do Drive" en="Delete from Drive too" /></ConfirmSubmitButton>
+                confirmation={tr(
+                  "Mover este arquivo para a lixeira do Google Drive e removê-lo da biblioteca?",
+                  "Move this file to Google Drive trash and remove it from the library?",
+                )}
+              >
+                <UiCopy
+                  pt="Excluir também do Drive"
+                  en="Delete from Drive too"
+                />
+              </ConfirmSubmitButton>
             </form>
-            <p><UiCopy pt="Remover da biblioteca mantém o arquivo no Drive." en="Removing it from the library keeps the file in Drive." /></p>
+            <p>
+              <UiCopy
+                pt="Remover da biblioteca mantém o arquivo no Drive."
+                en="Removing it from the library keeps the file in Drive."
+              />
+            </p>
           </div>
         </DismissibleDetails>
       ) : null}

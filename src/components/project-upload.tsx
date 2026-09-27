@@ -162,9 +162,15 @@ export function ProjectUpload({
           ) : state === "error" ? (
             <p className="feedback-banner is-error" role="alert">
               {errorMessage === "version-conflict"
-                ? tr("Existe uma versão mais recente. Atualize a página antes de enviar.", "A newer version exists. Refresh before uploading.")
+                ? tr(
+                    "Existe uma versão mais recente. Atualize a página antes de enviar.",
+                    "A newer version exists. Refresh before uploading.",
+                  )
                 : errorMessage === "invalid-upload"
-                  ? tr("O envio não passou pela validação. Confira o ZIP ou os arquivos.", "The upload did not pass validation. Check the ZIP or files.")
+                  ? tr(
+                      "O envio não passou pela validação. Confira o ZIP ou os arquivos.",
+                      "The upload did not pass validation. Check the ZIP or files.",
+                    )
                   : errorMessage}
             </p>
           ) : null}

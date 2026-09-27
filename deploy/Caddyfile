@@ -1,5 +1,5 @@
 :3000 {
-  @realtime path /realtime
+  @realtime path /realtime /whiteboard
   handle @realtime {
     reverse_proxy openstudyhub-realtime:3045
   }

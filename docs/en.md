@@ -10,9 +10,9 @@ Notes, Documents, Projects and Chat support daily work and explicit sharing. Ext
 
 ## Install with Docker
 
-Start with the [Compose file](https://github.com/RichardSpinola/OpenStudyHub/blob/main/docker-compose.example.yml) if you want one installation with the App, Admin, realtime WebSocket, Caddy proxy and migrations. Copy `.env.example` to a private `.env`; set `NODE_ENV=production`, an HTTPS `APP_URL`, separate SQLite paths for the main and V2 databases, and a persistent `/app/data` volume. Keep the Admin bind address private. Run `docker compose -f docker-compose.example.yml up -d --build`, then check `/api/health` on the App and finish first-run setup at `/control/setup` on Admin.
+Start with the [Compose file](https://github.com/RichardSpinola/OpenStudyHub/blob/main/docker-compose.example.yml), which uses the public pinned image `ghcr.io/richardspinola/openstudyhub:2.0.0` without a GitHub account or PAT, if you want one installation with the App, Admin, realtime WebSocket, Caddy proxy and migrations. Copy `.env.example` to a private `.env`; set `NODE_ENV=production`, an HTTPS `APP_URL`, separate SQLite paths for the main and V2 databases, and a persistent `/app/data` volume. Keep the Admin bind address private. Run `docker compose -f docker-compose.example.yml up -d`, then check `/api/health` on the App and finish first-run setup at `/control/setup` on Admin.
 
-Do not expose the data volume, Admin port or realtime service directly to the internet. A reverse proxy or Cloudflare Tunnel should route the public hostname to the App proxy, including the `/realtime` WebSocket path. The ZimaOS, CasaOS and UmbrelOS guides describe **manual Compose deployment**; native app-store packages have not been published.
+Do not expose the data volume, Admin port or realtime service directly to the internet. A reverse proxy or Cloudflare Tunnel should route the public hostname to the App proxy, including the `/realtime` and `/whiteboard` WebSocket paths. The ZimaOS, CasaOS and UmbrelOS guides describe **manual Compose deployment**; native app-store packages have not been published.
 
 ## Google Classroom and Drive
 
@@ -46,7 +46,7 @@ The backup ZIP includes both SQLite snapshots and private local assets, but no r
 
 ## Troubleshooting
 
-If the App does not start, check the migration service first, then `/api/health`, volume permissions and the two distinct database paths. If Google returns `redirect_uri_mismatch`, compare the full callback URI in Google Cloud Console with `GOOGLE_REDIRECT_URI` and `APP_URL`; scheme, host, port and path must agree. If realtime collaboration fails, check the `/realtime` WebSocket proxy route. If a document cannot reach Drive, check the connected storage owner, granted Drive scope and folder status in Admin. Never paste OAuth codes, tokens, cookies or encryption keys into a report.
+If the App does not start, check the migration service first, then `/api/health`, volume permissions and the two distinct database paths. If Google returns `redirect_uri_mismatch`, compare the full callback URI in Google Cloud Console with `GOOGLE_REDIRECT_URI` and `APP_URL`; scheme, host, port and path must agree. If realtime collaboration fails, check the `/realtime` and `/whiteboard` WebSocket proxy routes. If a document cannot reach Drive, check the connected storage owner, granted Drive scope and folder status in Admin. Never paste OAuth codes, tokens, cookies or encryption keys into a report.
 
 ## More information
 

@@ -1,5 +1,9 @@
 "use client";
-import { UiCopy, useUiLanguage, useUiText } from "@/components/ui-language-provider";
+import {
+  UiCopy,
+  useUiLanguage,
+  useUiText,
+} from "@/components/ui-language-provider";
 import { localizePushStatus } from "@/lib/translations";
 
 import { useState } from "react";
@@ -35,7 +39,12 @@ export function OnboardingNotificationPermission({
               setStatus(localizePushStatus(language, message));
               if (message.startsWith("Notificações ativadas")) onEnabled();
             } catch {
-              setStatus(tr("Não foi possível ativar agora.", "Could not enable notifications now."));
+              setStatus(
+                tr(
+                  "Não foi possível ativar agora.",
+                  "Could not enable notifications now.",
+                ),
+              );
             } finally {
               setBusy(false);
             }
@@ -48,7 +57,9 @@ export function OnboardingNotificationPermission({
           disabled={busy}
           onClick={() => {
             onSkipped();
-            setStatus(tr("Você pode ativar depois.", "You can enable them later."));
+            setStatus(
+              tr("Você pode ativar depois.", "You can enable them later."),
+            );
           }}
         >
           <UiCopy pt="Agora não" en="Not now" />

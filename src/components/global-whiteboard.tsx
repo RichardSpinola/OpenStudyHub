@@ -29,7 +29,9 @@ export function GlobalWhiteboard() {
   const tr = useUiText();
   const [scene, setScene] = useState<BoardElement[] | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [status, setStatus] = useState(() => tr("Carregando quadro…", "Loading whiteboard…"));
+  const [status, setStatus] = useState(() =>
+    tr("Carregando quadro…", "Loading whiteboard…"),
+  );
   const api = useRef<ExcalidrawImperativeAPI | null>(null);
   const socket = useRef<WebSocket | null>(null);
   const pending = useRef<number | null>(null);
@@ -57,7 +59,13 @@ export function GlobalWhiteboard() {
         }
       })
       .catch(() => {
-        if (!cancelled) setStatus(tr("Não foi possível carregar o quadro.", "Could not load whiteboard."));
+        if (!cancelled)
+          setStatus(
+            tr(
+              "Não foi possível carregar o quadro.",
+              "Could not load whiteboard.",
+            ),
+          );
       });
     return () => {
       cancelled = true;
@@ -84,7 +92,12 @@ export function GlobalWhiteboard() {
         const ws = new WebSocket(url);
         socket.current = ws;
         ws.onopen = () => {
-          setStatus(tr("Conectado · alterações salvas automaticamente", "Connected · changes saved automatically"));
+          setStatus(
+            tr(
+              "Conectado · alterações salvas automaticamente",
+              "Connected · changes saved automatically",
+            ),
+          );
           if (unsent.current) {
             ws.send(
               JSON.stringify({ type: "patch", elements: unsent.current }),
@@ -101,7 +114,9 @@ export function GlobalWhiteboard() {
           if (message.type === "presence" && message.participants)
             setParticipants(message.participants);
           if (message.type === "saved")
-            setStatus(tr("Conectado · alterações salvas", "Connected · changes saved"));
+            setStatus(
+              tr("Conectado · alterações salvas", "Connected · changes saved"),
+            );
           if (
             (message.type === "scene" || message.type === "patch") &&
             message.elements
@@ -152,10 +167,15 @@ export function GlobalWhiteboard() {
 
   if (!scene) return <p role="status">{status}</p>;
   return (
-    <section className="global-whiteboard" aria-label={tr("Quadro Global", "Global Whiteboard")}>
+    <section
+      className="global-whiteboard"
+      aria-label={tr("Quadro Global", "Global Whiteboard")}
+    >
       <div className="whiteboard-status">
         <span role="status">{status}</span>
-        <div aria-label={tr("Participantes no quadro", "Whiteboard participants")}>
+        <div
+          aria-label={tr("Participantes no quadro", "Whiteboard participants")}
+        >
           {participants.map((person) => (
             <span
               key={person.id}
@@ -198,7 +218,12 @@ export function GlobalWhiteboard() {
                 ) as unknown as ExcalidrawElement[],
                 captureUpdate: "NEVER",
               });
-              setStatus(tr("Imagens ainda não são suportadas neste quadro.", "Images are not yet supported on this whiteboard."));
+              setStatus(
+                tr(
+                  "Imagens ainda não são suportadas neste quadro.",
+                  "Images are not yet supported on this whiteboard.",
+                ),
+              );
               return;
             }
             const changed = changedBoardElements(

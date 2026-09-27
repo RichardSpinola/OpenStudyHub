@@ -35,8 +35,15 @@ export function GoogleConnectionNotice() {
   if (!status?.attention) return null;
   return (
     <aside className="google-connection-notice" role="alert">
-      <span><UiCopy pt="Sua conta Google precisa ser reconectada." en="Your Google account needs to be reconnected." /></span>
-      <Link href="/google"><UiCopy pt="Abrir integração" en="Open integration" /></Link>
+      <span>
+        <UiCopy
+          pt="Sua conta Google precisa ser reconectada."
+          en="Your Google account needs to be reconnected."
+        />
+      </span>
+      <Link href="/google">
+        <UiCopy pt="Abrir integração" en="Open integration" />
+      </Link>
       <button
         type="button"
         onClick={async () => {
@@ -45,7 +52,9 @@ export function GoogleConnectionNotice() {
           });
           if (response.ok) setStatus((await response.json()) as Status);
         }}
-      ><UiCopy pt="Não mostrar novamente" en="Do not show again" /></button>
+      >
+        <UiCopy pt="Não mostrar novamente" en="Do not show again" />
+      </button>
     </aside>
   );
 }

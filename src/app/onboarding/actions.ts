@@ -13,7 +13,11 @@ import {
 import { updateNotificationPreferences } from "@/lib/notifications";
 import { initializeUserShortcuts } from "@/lib/user-shortcuts";
 import { currentUserV2, withV2DbAsync } from "@/lib/v2/runtime";
-import { appearanceSchema, getAppearance, updateAppearance } from "@/lib/appearance";
+import {
+  appearanceSchema,
+  getAppearance,
+  updateAppearance,
+} from "@/lib/appearance";
 
 const text = (formData: FormData, key: string) => {
   const value = formData.get(key);

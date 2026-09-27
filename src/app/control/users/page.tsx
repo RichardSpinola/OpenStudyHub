@@ -161,8 +161,12 @@ export default async function Users({
                       <span className="v2-muted">{user.login}</span>
                     </td>
                     <td>
-                      {user.active ? tr("Ativa", "Active") : tr("Desativada", "Disabled")}
-                      {user.temporary ? tr(" · senha temporária", " · temporary password") : ""}
+                      {user.active
+                        ? tr("Ativa", "Active")
+                        : tr("Desativada", "Disabled")}
+                      {user.temporary
+                        ? tr(" · senha temporária", " · temporary password")
+                        : ""}
                     </td>
                     <td>
                       <Link href={`/control/users?${params}`}>
@@ -185,7 +189,9 @@ export default async function Users({
             <h2>{selected.name}</h2>
             <p>
               <UiCopy pt="Login:" en="Username:" /> {selected.login} ·{" "}
-              {selected.active ? tr("conta ativa", "active account") : tr("conta desativada", "disabled account")}
+              {selected.active
+                ? tr("conta ativa", "active account")
+                : tr("conta desativada", "disabled account")}
             </p>
             <div className="admin-account-actions">
               <AdminActionPanel title="Editar conta">
@@ -258,13 +264,23 @@ export default async function Users({
                   name="active"
                   value={selected.active ? "0" : "1"}
                 />
-                <button>{selected.active ? tr("Desativar", "Disable") : tr("Reativar", "Reactivate")}</button>
+                <button>
+                  {selected.active
+                    ? tr("Desativar", "Disable")
+                    : tr("Reativar", "Reactivate")}
+                </button>
               </form>
               <AdminActionPanel title="Excluir conta">
                 <p>
                   {deletion.canDelete
-                    ? tr("Esta conta não possui vínculos protegidos e pode ser excluída.", "This account has no protected links and can be deleted.")
-                    : tr(`Esta conta possui ${deletion.dependencies.reduce((sum, item) => sum + item.count, 0)} vínculo(s) que impedem a exclusão. Desative a conta para impedir o acesso.`, `This account has ${deletion.dependencies.reduce((sum, item) => sum + item.count, 0)} protected link(s) that prevent deletion. Disable it to block access.`)}
+                    ? tr(
+                        "Esta conta não possui vínculos protegidos e pode ser excluída.",
+                        "This account has no protected links and can be deleted.",
+                      )
+                    : tr(
+                        `Esta conta possui ${deletion.dependencies.reduce((sum, item) => sum + item.count, 0)} vínculo(s) que impedem a exclusão. Desative a conta para impedir o acesso.`,
+                        `This account has ${deletion.dependencies.reduce((sum, item) => sum + item.count, 0)} protected link(s) that prevent deletion. Disable it to block access.`,
+                      )}
                 </p>
                 {deletion.canDelete ? (
                   <form action={controlAction} className="v2-fields">

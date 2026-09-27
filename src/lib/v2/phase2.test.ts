@@ -178,6 +178,11 @@ describe("Fase 2: Admin e Gestão", () => {
     const id = await bootstrapV2(x, input);
     expect(id).toBe(1);
     expect(
+      x
+        .prepare("SELECT code,short_name shortName FROM programs WHERE id=1")
+        .get(),
+    ).toEqual({ code: "ADS", shortName: "ADS" });
+    expect(
       (x.prepare("SELECT count(*) n FROM users").get() as { n: number }).n,
     ).toBe(0);
     expect(

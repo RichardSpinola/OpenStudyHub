@@ -12,9 +12,7 @@ export function CsvImport() {
       </h2>
       <p>
         <UiCopy pt="Cabeçalho:" en="Header:" />
-        <code>
-          login,nome
-        </code>
+        <code>login,nome</code>
         <UiCopy
           pt=". Até 1000 linhas. Revise antes de aplicar; qualquer linha inválida bloqueia o lote inteiro."
           en=". Up to 1000 rows. Review before applying; any invalid row blocks the entire batch."

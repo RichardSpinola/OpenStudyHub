@@ -490,7 +490,9 @@ describe("Google V2 isolated boundaries", () => {
       registry.register("Central Drive", provider);
       expect(await provider.ensureRootFolder("UCSAL - OSH")).toBe("root-fake");
       expect(createdRootName).toBe("UCSAL - OSH");
-      expect(await provider.repairRoot(adminActor(1), "UCSAL - OSH")).toBe("root-fake");
+      expect(await provider.repairRoot(adminActor(1), "UCSAL - OSH")).toBe(
+        "root-fake",
+      );
       const driveId = await storeObject(
         db,
         registry,

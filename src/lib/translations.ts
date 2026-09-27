@@ -642,21 +642,32 @@ export function getTranslations(language: UiLanguage): TranslationCatalog {
   return translations[language];
 }
 
-export function uiText(language: UiLanguage, portuguese: string, english: string) {
+export function uiText(
+  language: UiLanguage,
+  portuguese: string,
+  english: string,
+) {
   return language === "en" ? english : portuguese;
 }
 
 const pushStatusEnglish: Record<string, string> = {
-  "Este navegador não oferece notificações em segundo plano.": "This browser does not support background notifications.",
-  "Entre novamente para ativar as notificações.": "Sign in again to enable notifications.",
-  "Notificações em segundo plano não foram configuradas nesta instalação.": "Background notifications are not configured for this installation.",
+  "Este navegador não oferece notificações em segundo plano.":
+    "This browser does not support background notifications.",
+  "Entre novamente para ativar as notificações.":
+    "Sign in again to enable notifications.",
+  "Notificações em segundo plano não foram configuradas nesta instalação.":
+    "Background notifications are not configured for this installation.",
   "Permissão bloqueada no navegador.": "Permission is blocked in the browser.",
   "Permissão não concedida.": "Permission was not granted.",
-  "Não foi possível registrar este dispositivo.": "Could not register this device.",
-  "Notificações ativadas neste dispositivo.": "Notifications enabled on this device.",
+  "Não foi possível registrar este dispositivo.":
+    "Could not register this device.",
+  "Notificações ativadas neste dispositivo.":
+    "Notifications enabled on this device.",
   "Nenhuma inscrição neste navegador.": "No subscription in this browser.",
-  "Não foi possível remover a inscrição. Tente novamente.": "Could not remove the subscription. Try again.",
-  "Notificações desativadas neste dispositivo.": "Notifications disabled on this device.",
+  "Não foi possível remover a inscrição. Tente novamente.":
+    "Could not remove the subscription. Try again.",
+  "Notificações desativadas neste dispositivo.":
+    "Notifications disabled on this device.",
 };
 
 export function localizePushStatus(language: UiLanguage, message: string) {

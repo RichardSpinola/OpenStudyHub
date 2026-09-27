@@ -33,7 +33,10 @@ import { getDatabase } from "@/lib/db/client";
 import { listShortcuts } from "@/lib/shortcuts";
 import packageManifest from "../../../../package.json";
 
-function storageState(path: string, language: ReturnType<typeof getUiLanguage>): string {
+function storageState(
+  path: string,
+  language: ReturnType<typeof getUiLanguage>,
+): string {
   if (!path) return uiText(language, "não configurado", "not configured");
   try {
     const folder = existsSync(path) ? path : dirname(path);
@@ -106,13 +109,21 @@ export default async function SystemPage({
         admin
         active="system"
         message={
-          status && !status.endsWith("error") ? tr("Alteração salva.", "Changes saved.") : undefined
+          status && !status.endsWith("error")
+            ? tr("Alteração salva.", "Changes saved.")
+            : undefined
         }
         error={
           status === "backup-error"
-            ? tr("Backup não foi criado. Verifique os bancos e o espaço disponível.", "Backup could not be created. Check the databases and free space.")
+            ? tr(
+                "Backup não foi criado. Verifique os bancos e o espaço disponível.",
+                "Backup could not be created. Check the databases and free space.",
+              )
             : status?.endsWith("error")
-              ? tr("Confira os dados informados.", "Check the entered information.")
+              ? tr(
+                  "Confira os dados informados.",
+                  "Check the entered information.",
+                )
               : undefined
         }
       >
@@ -120,10 +131,22 @@ export default async function SystemPage({
           className="admin-system-language"
           aria-labelledby="instance-language-title"
         >
-          <h2 id="instance-language-title"><UiCopy pt="Idioma padrão da instância / Instance language" en="Instance default language / Idioma padrão" /></h2>
-          <p><UiCopy pt="Define o idioma inicial da interface do App e do Control Plane. Cada pessoa mantém sua preferência individual quando disponível. Conteúdo cadastrado não é traduzido." en="Sets the initial language of the App and Control Plane. Each person keeps their individual preference when available. Entered content is not translated." /></p>
+          <h2 id="instance-language-title">
+            <UiCopy
+              pt="Idioma padrão da instância / Instance language"
+              en="Instance default language / Idioma padrão"
+            />
+          </h2>
+          <p>
+            <UiCopy
+              pt="Define o idioma inicial da interface do App e do Control Plane. Cada pessoa mantém sua preferência individual quando disponível. Conteúdo cadastrado não é traduzido."
+              en="Sets the initial language of the App and Control Plane. Each person keeps their individual preference when available. Entered content is not translated."
+            />
+          </p>
           <form action={setInstanceLanguageAction}>
-            <label htmlFor="instance-language"><UiCopy pt="Idioma / Language" en="Language / Idioma" /></label>
+            <label htmlFor="instance-language">
+              <UiCopy pt="Idioma / Language" en="Language / Idioma" />
+            </label>
             <select
               id="instance-language"
               name="language"
@@ -132,36 +155,68 @@ export default async function SystemPage({
               <option value="en">English</option>
               <option value="pt-BR">Português</option>
             </select>
-            <button type="submit"><UiCopy pt="Salvar idioma / Save language" en="Save language / Salvar idioma" /></button>
+            <button type="submit">
+              <UiCopy
+                pt="Salvar idioma / Save language"
+                en="Save language / Salvar idioma"
+              />
+            </button>
           </form>
         </section>
-        <h2><UiCopy pt="Estado do banco V2" en="V2 database status" /></h2>
+        <h2>
+          <UiCopy pt="Estado do banco V2" en="V2 database status" />
+        </h2>
         <p role="status">
           <UiCopy pt="Integridade:" en="Integrity:" />{" "}
-          {integrity ? tr("sem problemas detectados", "no issues detected") : tr("precisa de verificação", "needs checking")}.
+          {integrity
+            ? tr("sem problemas detectados", "no issues detected")
+            : tr("precisa de verificação", "needs checking")}
+          .
           <UiCopy pt="Relações:" en="Relations:" />{" "}
           {foreignKeys
-            ? tr(`${foreignKeys} problema(s) detectado(s)`, `${foreignKeys} issue(s) detected`)
+            ? tr(
+                `${foreignKeys} problema(s) detectado(s)`,
+                `${foreignKeys} issue(s) detected`,
+              )
             : tr("sem problemas detectados", "no issues detected")}
           .
         </p>
         <section className="admin-diagnostics-summary">
-          <h2><UiCopy pt="Diagnóstico básico" en="Basic diagnostics" /></h2>
+          <h2>
+            <UiCopy pt="Diagnóstico básico" en="Basic diagnostics" />
+          </h2>
           <dl>
             <div>
-              <dt><UiCopy pt="APP_URL deste processo" en="APP_URL for this process" /></dt>
+              <dt>
+                <UiCopy
+                  pt="APP_URL deste processo"
+                  en="APP_URL for this process"
+                />
+              </dt>
               <dd>{environment.APP_URL}</dd>
             </div>
             <div>
-              <dt><UiCopy pt="Migrations V2" en="V2 migrations" /></dt>
+              <dt>
+                <UiCopy pt="Migrations V2" en="V2 migrations" />
+              </dt>
               <dd>{migrations}</dd>
             </div>
             <div>
-              <dt><UiCopy pt="Migrations do banco principal" en="Main database migrations" /></dt>
-              <dd>{legacyMigrations ?? tr("sem registro no banco", "no database record")}</dd>
+              <dt>
+                <UiCopy
+                  pt="Migrations do banco principal"
+                  en="Main database migrations"
+                />
+              </dt>
+              <dd>
+                {legacyMigrations ??
+                  tr("sem registro no banco", "no database record")}
+              </dd>
             </div>
             <div>
-              <dt><UiCopy pt="Banco principal" en="Main database" /></dt>
+              <dt>
+                <UiCopy pt="Banco principal" en="Main database" />
+              </dt>
               <dd>
                 {legacyIntegrity && legacyForeignKeys === 0
                   ? tr("íntegro", "healthy")
@@ -177,7 +232,9 @@ export default async function SystemPage({
               </dd>
             </div>
             <div>
-              <dt><UiCopy pt="Drive acadêmico" en="Academic Drive" /></dt>
+              <dt>
+                <UiCopy pt="Drive acadêmico" en="Academic Drive" />
+              </dt>
               <dd>
                 {google.storage?.connected && google.storage.rootReady
                   ? tr("pronto", "ready")
@@ -187,40 +244,72 @@ export default async function SystemPage({
               </dd>
             </div>
             <div>
-              <dt><UiCopy pt="Superfície" en="Surface" /></dt>
-              <dd><UiCopy pt="Admin local" en="Local Admin" /></dd>
-            </div>
-            <div>
-              <dt><UiCopy pt="Escrita no banco principal" en="Main database writes" /></dt>
-              <dd>{storageState(environment.DATABASE_PATH, language)}</dd>
-            </div>
-            <div>
-              <dt><UiCopy pt="Escrita no banco V2" en="V2 database writes" /></dt>
+              <dt>
+                <UiCopy pt="Superfície" en="Surface" />
+              </dt>
               <dd>
-                {storageState(process.env.OPENSTUDYHUB_V2_DATABASE_PATH ?? "", language)}
+                <UiCopy pt="Admin local" en="Local Admin" />
               </dd>
             </div>
             <div>
-              <dt><UiCopy pt="Assets privados" en="Private assets" /></dt>
+              <dt>
+                <UiCopy
+                  pt="Escrita no banco principal"
+                  en="Main database writes"
+                />
+              </dt>
+              <dd>{storageState(environment.DATABASE_PATH, language)}</dd>
+            </div>
+            <div>
+              <dt>
+                <UiCopy pt="Escrita no banco V2" en="V2 database writes" />
+              </dt>
+              <dd>
+                {storageState(
+                  process.env.OPENSTUDYHUB_V2_DATABASE_PATH ?? "",
+                  language,
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>
+                <UiCopy pt="Assets privados" en="Private assets" />
+              </dt>
               <dd>{storageState(environment.PRIVATE_ASSET_PATH, language)}</dd>
             </div>
             <div>
-              <dt><UiCopy pt="Versão do pacote" en="Package version" /></dt>
+              <dt>
+                <UiCopy pt="Versão do pacote" en="Package version" />
+              </dt>
               <dd>{packageManifest.version}</dd>
             </div>
           </dl>
         </section>
         <section className="admin-system-links">
-          <h2><UiCopy pt="Backup manual" en="Manual backup" /></h2>
-          <p><UiCopy pt="Cria uma cópia consistente dos dois bancos e dos assets locais. Sessões e tokens de acesso são removidos; após uma restauração, reconecte o Google. O arquivo ainda contém dados privados e hashes de senha: guarde-o em local protegido." en="Creates a consistent copy of both databases and local assets. Sessions and access tokens are removed; reconnect Google after a restore. The file still contains private data and password hashes, so keep it protected." /></p>
+          <h2>
+            <UiCopy pt="Backup manual" en="Manual backup" />
+          </h2>
+          <p>
+            <UiCopy
+              pt="Cria uma cópia consistente dos dois bancos e dos assets locais. Sessões e tokens de acesso são removidos; após uma restauração, reconecte o Google. O arquivo ainda contém dados privados e hashes de senha: guarde-o em local protegido."
+              en="Creates a consistent copy of both databases and local assets. Sessions and access tokens are removed; reconnect Google after a restore. The file still contains private data and password hashes, so keep it protected."
+            />
+          </p>
           <form action={createManualBackupAction}>
-            <button type="submit"><UiCopy pt="Criar backup" en="Create backup" /></button>
+            <button type="submit">
+              <UiCopy pt="Criar backup" en="Create backup" />
+            </button>
           </form>
           {backup &&
           status === "backup-created" &&
           backups.some((item) => item.id === backup) ? (
             <p role="status">
-              <a href={`/control/system/backup/${backup}`}><UiCopy pt="Baixar backup criado" en="Download created backup" /></a>
+              <a href={`/control/system/backup/${backup}`}>
+                <UiCopy
+                  pt="Baixar backup criado"
+                  en="Download created backup"
+                />
+              </a>
             </p>
           ) : null}
           {backups.length ? (
@@ -228,25 +317,46 @@ export default async function SystemPage({
               {backups.map((item) => (
                 <li key={item.id}>
                   <span>{new Date(item.date).toLocaleString(language)}</span>{" "}
-                  <a href={`/control/system/backup/${item.id}`}><UiCopy pt="Baixar" en="Download" /></a>
+                  <a href={`/control/system/backup/${item.id}`}>
+                    <UiCopy pt="Baixar" en="Download" />
+                  </a>
                 </li>
               ))}
             </ul>
           ) : (
-            <p><UiCopy pt="Nenhum backup criado nesta instalação." en="No backup has been created for this installation." /></p>
+            <p>
+              <UiCopy
+                pt="Nenhum backup criado nesta instalação."
+                en="No backup has been created for this installation."
+              />
+            </p>
           )}
-          <p><UiCopy pt="Para restaurar, pare os serviços e use a ferramenta local documentada em" en="To restore, stop the services and use the local tool documented in" /><code>docs/operations/manual-backup-restore.md</code>
-            .
+          <p>
+            <UiCopy
+              pt="Para restaurar, pare os serviços e use a ferramenta local documentada em"
+              en="To restore, stop the services and use the local tool documented in"
+            />
+            <code>docs/operations/manual-backup-restore.md</code>.
           </p>
         </section>
         <section className="admin-system-links">
-          <h2><UiCopy pt="Modelos iniciais" en="Starter templates" /></h2>
-          <p><UiCopy pt="Estes três DOCX acompanham a instalação. Ativar um modelo permite ao usuário escolher título e disciplina antes de criar uma cópia DOCX privada; não exige ID do Google Drive." en="These three DOCX files come with the installation. Enabling a template lets users choose a title and subject before creating a private DOCX copy; no Google Drive ID is needed." /></p>
+          <h2>
+            <UiCopy pt="Modelos iniciais" en="Starter templates" />
+          </h2>
+          <p>
+            <UiCopy
+              pt="Estes três DOCX acompanham a instalação. Ativar um modelo permite ao usuário escolher título e disciplina antes de criar uma cópia DOCX privada; não exige ID do Google Drive."
+              en="These three DOCX files come with the installation. Enabling a template lets users choose a title and subject before creating a private DOCX copy; no Google Drive ID is needed."
+            />
+          </p>
           <ul>
             {starters.map((starter) => (
               <li key={starter.key}>
                 <span>
-                  {starter.name} · {starter.enabled ? tr("ativo", "enabled") : tr("desativado", "disabled")}
+                  {starter.name} ·{" "}
+                  {starter.enabled
+                    ? tr("ativo", "enabled")
+                    : tr("desativado", "disabled")}
                 </span>
                 <form action={setBundledStarterAction}>
                   <input type="hidden" name="starterKey" value={starter.key} />
@@ -255,19 +365,34 @@ export default async function SystemPage({
                     name="enabled"
                     value={starter.enabled ? "false" : "true"}
                   >
-                    {starter.enabled ? tr("Desativar", "Disable") : tr("Ativar", "Enable")}
+                    {starter.enabled
+                      ? tr("Desativar", "Disable")
+                      : tr("Ativar", "Enable")}
                   </button>
                 </form>
               </li>
             ))}
           </ul>
         </section>
-        <p><UiCopy pt="Atualizações continuam manuais. Faça backup antes de migrations e siga a documentação da instalação." en="Updates remain manual. Back up before migrations and follow the installation guide." /></p>
+        <p>
+          <UiCopy
+            pt="Atualizações continuam manuais. Faça backup antes de migrations e siga a documentação da instalação."
+            en="Updates remain manual. Back up before migrations and follow the installation guide."
+          />
+        </p>
         <section className="admin-system-links">
-          <h2><UiCopy pt="Identidade e links institucionais" en="Institution identity and links" /></h2>
+          <h2>
+            <UiCopy
+              pt="Identidade e links institucionais"
+              en="Institution identity and links"
+            />
+          </h2>
           <form action={saveInstitutionDisplayAction}>
             <label>
-              <UiCopy pt="Nome exibido no aplicativo" en="Name shown in the App" />{" "}
+              <UiCopy
+                pt="Nome exibido no aplicativo"
+                en="Name shown in the App"
+              />{" "}
               <input
                 name="name"
                 maxLength={160}
@@ -275,7 +400,9 @@ export default async function SystemPage({
                 placeholder={tr("Instituição", "Institution")}
               />
             </label>
-            <button type="submit"><UiCopy pt="Salvar nome" en="Save name" /></button>
+            <button type="submit">
+              <UiCopy pt="Salvar nome" en="Save name" />
+            </button>
           </form>
           <form action={saveBrandDisplayAction}>
             <label>
@@ -287,7 +414,9 @@ export default async function SystemPage({
                 required
               />
             </label>
-            <label><UiCopy pt="Estilo da marca" en="Brand style" /><select name="brandFont" defaultValue={brand.font}>
+            <label>
+              <UiCopy pt="Estilo da marca" en="Brand style" />
+              <select name="brandFont" defaultValue={brand.font}>
                 {figletFontOptions.map((font) => (
                   <option key={font} value={font}>
                     {font}
@@ -295,9 +424,16 @@ export default async function SystemPage({
                 ))}
               </select>
             </label>
-            <button type="submit"><UiCopy pt="Salvar marca" en="Save branding" /></button>
+            <button type="submit">
+              <UiCopy pt="Salvar marca" en="Save branding" />
+            </button>
           </form>
-          <p><UiCopy pt="Estes links aparecem para usuários no aplicativo. Atalhos pessoais da Home são separados." en="These links appear for users in the App. Personal Home shortcuts are separate." /></p>
+          <p>
+            <UiCopy
+              pt="Estes links aparecem para usuários no aplicativo. Atalhos pessoais da Home são separados."
+              en="These links appear for users in the App. Personal Home shortcuts are separate."
+            />
+          </p>
           <ul>
             {links.map((link, index) => (
               <li key={link.id}>
@@ -311,7 +447,10 @@ export default async function SystemPage({
                     name="direction"
                     value="up"
                     disabled={index === 0}
-                    aria-label={tr(`Mover ${link.label} para cima`, `Move ${link.label} up`)}
+                    aria-label={tr(
+                      `Mover ${link.label} para cima`,
+                      `Move ${link.label} up`,
+                    )}
                   >
                     ↑
                   </button>
@@ -320,7 +459,10 @@ export default async function SystemPage({
                     name="direction"
                     value="down"
                     disabled={index === links.length - 1}
-                    aria-label={tr(`Mover ${link.label} para baixo`, `Move ${link.label} down`)}
+                    aria-label={tr(
+                      `Mover ${link.label} para baixo`,
+                      `Move ${link.label} down`,
+                    )}
                   >
                     ↓
                   </button>
@@ -328,7 +470,10 @@ export default async function SystemPage({
                 <form action={removeInstitutionalLinkAction}>
                   <input type="hidden" name="id" value={link.id} />
                   <ConfirmSubmitButton
-                    confirmation={tr(`Remover o link ${link.label}?`, `Remove the link ${link.label}?`)}
+                    confirmation={tr(
+                      `Remover o link ${link.label}?`,
+                      `Remove the link ${link.label}?`,
+                    )}
                   >
                     <UiCopy pt="Remover" en="Remove" />
                   </ConfirmSubmitButton>
@@ -338,7 +483,12 @@ export default async function SystemPage({
                 ) ? (
                   <form action={publishLinkAsShortcutAction}>
                     <input type="hidden" name="id" value={link.id} />
-                    <button type="submit"><UiCopy pt="Adicionar à Home como padrão" en="Add to Home by default" /></button>
+                    <button type="submit">
+                      <UiCopy
+                        pt="Adicionar à Home como padrão"
+                        en="Add to Home by default"
+                      />
+                    </button>
                   </form>
                 ) : null}
               </li>
@@ -346,7 +496,8 @@ export default async function SystemPage({
           </ul>
           <form action={saveInstitutionalLinkAction}>
             <label>
-              <UiCopy pt="Nome do link" en="Link name" /> <input name="label" required maxLength={80} />
+              <UiCopy pt="Nome do link" en="Link name" />{" "}
+              <input name="label" required maxLength={80} />
             </label>
             <label>
               URL HTTPS{" "}
@@ -359,13 +510,27 @@ export default async function SystemPage({
               />
             </label>
             <label>
-              <input type="checkbox" name="alsoShortcut" defaultChecked /><UiCopy pt="Também adicionar como atalho padrão da Home" en="Also add as a default Home shortcut" /></label>
-            <button type="submit"><UiCopy pt="Adicionar link" en="Add link" /></button>
+              <input type="checkbox" name="alsoShortcut" defaultChecked />
+              <UiCopy
+                pt="Também adicionar como atalho padrão da Home"
+                en="Also add as a default Home shortcut"
+              />
+            </label>
+            <button type="submit">
+              <UiCopy pt="Adicionar link" en="Add link" />
+            </button>
           </form>
         </section>
         <section className="admin-system-links">
-          <h2><UiCopy pt="Atalhos padrão da Home" en="Default Home shortcuts" /></h2>
-          <p><UiCopy pt="Google Drive, Google Classroom, Gmail e GitHub já aparecem na Home de novas contas. Os atalhos adicionais abaixo também são recebidos no primeiro acesso. Cada pessoa pode personalizar a própria Home." en="Google Drive, Google Classroom, Gmail and GitHub already appear on Home for new accounts. The additional shortcuts below also appear at first access. Everyone can customize their own Home." /></p>
+          <h2>
+            <UiCopy pt="Atalhos padrão da Home" en="Default Home shortcuts" />
+          </h2>
+          <p>
+            <UiCopy
+              pt="Google Drive, Google Classroom, Gmail e GitHub já aparecem na Home de novas contas. Os atalhos adicionais abaixo também são recebidos no primeiro acesso. Cada pessoa pode personalizar a própria Home."
+              en="Google Drive, Google Classroom, Gmail and GitHub already appear on Home for new accounts. The additional shortcuts below also appear at first access. Everyone can customize their own Home."
+            />
+          </p>
           <ul>
             {defaultShortcuts.map((shortcut) => (
               <li key={shortcut.id}>
@@ -375,14 +540,21 @@ export default async function SystemPage({
                 <form action={removeDefaultShortcutAction}>
                   <input type="hidden" name="id" value={shortcut.id} />
                   <ConfirmSubmitButton
-                    confirmation={tr(`Remover ${shortcut.name} dos atalhos padrão?`, `Remove ${shortcut.name} from default shortcuts?`)}
-                  ><UiCopy pt="Remover padrão" en="Remove default" /></ConfirmSubmitButton>
+                    confirmation={tr(
+                      `Remover ${shortcut.name} dos atalhos padrão?`,
+                      `Remove ${shortcut.name} from default shortcuts?`,
+                    )}
+                  >
+                    <UiCopy pt="Remover padrão" en="Remove default" />
+                  </ConfirmSubmitButton>
                 </form>
               </li>
             ))}
           </ul>
           <form action={saveDefaultShortcutAction}>
-            <label><UiCopy pt="Nome" en="Name" /><input name="name" required maxLength={80} />
+            <label>
+              <UiCopy pt="Nome" en="Name" />
+              <input name="name" required maxLength={80} />
             </label>
             <label>
               URL{" "}
@@ -394,7 +566,9 @@ export default async function SystemPage({
                 placeholder="https://"
               />
             </label>
-            <button type="submit"><UiCopy pt="Adicionar atalho padrão" en="Add default shortcut" /></button>
+            <button type="submit">
+              <UiCopy pt="Adicionar atalho padrão" en="Add default shortcut" />
+            </button>
           </form>
         </section>
       </ConsoleShell>

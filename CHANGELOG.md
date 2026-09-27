@@ -1,39 +1,13 @@
 # Changelog
 
-Todas as mudanças relevantes serão registradas aqui.
+## 2.0.0
 
-O formato segue, de forma simplificada, Keep a Changelog.
+O OpenStudyHub V2 organiza cursos, períodos, turmas, disciplinas, professores, horários e matrículas em uma estrutura acadêmica própria. A instalação separa o App, usado pela comunidade, do Admin / Control Plane, mantido em acesso local ou de rede privada por padrão.
 
-## [Unreleased]
+- Google Classroom por usuário, com acesso somente de leitura, descoberta de turmas, associação manual às disciplinas e sincronização. Drive e Google Docs são opcionais e podem usar uma conta de armazenamento designada pelo administrador.
+- Home personalizável, Hoje, notas, documentos com modelos, projetos com arquivos e versões, Chat em tempo real, perfis e notificações.
+- Extras controlados pelo Admin: Quadro Global colaborativo e minigames Snake, 2048, Campo Minado, Paciência e Dominó.
+- Interface em Português e English, com temas Material e Legacy/TUI e fluxo inicial de configuração da instância.
+- Backup manual dos bancos e assets privados, restauração offline, extensão Nova Aba para Chromium e Firefox e implantação self-hosted com Docker Compose.
 
-- Preparação de segurança, documentação, deploy e release pública.
-
-## [1.0.0] - 2026-09-21
-
-### Added
-
-- autenticação local, sessões e administração;
-- Programs, Cohorts, períodos, Subjects, Offerings e Enrollments;
-- Hoje, agenda, atividades e páginas de disciplina;
-- Google OAuth opcional, Drive/Docs e Classroom read-only;
-- armazenamento acadêmico central opcional no Drive;
-- Notes privadas e Notes de disciplina;
-- templates Google Docs, importação DOCX e geração por categoria;
-- Groups, compartilhamento explícito de Notes/Documents e Chat;
-- perfis, Visual Tags, onboarding e notificações;
-- Projects com versionamento e feature flag;
-- favicon discovery seguro e personalização da Home;
-- temas claro/escuro e interface TUI-inspired.
-
-### Security
-
-- tokens Google criptografados em repouso;
-- cookies HttpOnly e Secure em produção;
-- uploads privados e validação de imagens/DOCX/ZIP;
-- proteção SSRF para descoberta de ícones;
-- autorização server-side para recursos compartilhados;
-- scopes Google mínimos para as capacidades atuais.
-
-### Notes
-
-A primeira publicação pública ainda depende da auditoria final e da escolha da licença.
+Leia as [notas da versão](RELEASE_NOTES.md) antes de instalar ou atualizar.

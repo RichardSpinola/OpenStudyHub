@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy } from "@/components/ui-language-provider";
 
-
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -102,7 +101,9 @@ export function HomeWallpaperPicker({
             <span className="wallpaper-choice" aria-current="true">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/api/home-background" alt="" />
-              <span><UiCopy pt="Imagem atual" en="Current image" /></span>
+              <span>
+                <UiCopy pt="Imagem atual" en="Current image" />
+              </span>
             </span>
             <button
               type="button"
@@ -126,7 +127,9 @@ export function HomeWallpaperPicker({
                 src={`/api/home-background?wallpaperId=${wallpaper.id}`}
                 alt=""
               />
-              <span><UiCopy pt="Imagem pessoal" en="Personal image" /></span>
+              <span>
+                <UiCopy pt="Imagem pessoal" en="Personal image" />
+              </span>
             </button>
             <button
               type="button"
@@ -146,14 +149,31 @@ export function HomeWallpaperPicker({
           <span className="wallpaper-thumbnail" aria-hidden="true">
             +
           </span>
-          <span><UiCopy pt="Adicionar imagem" en="Add image" /></span>
+          <span>
+            <UiCopy pt="Adicionar imagem" en="Add image" />
+          </span>
         </button>
       </div>
-      <small><UiCopy pt="PNG, JPEG ou WebP · até" en="PNG, JPEG or WebP · up to" /> {limitMiB}<UiCopy pt="MiB · últimas 3 imagens pessoais." en="MiB · last 3 personal images." />
+      <small>
+        <UiCopy pt="PNG, JPEG ou WebP · até" en="PNG, JPEG or WebP · up to" />{" "}
+        {limitMiB}
+        <UiCopy
+          pt="MiB · últimas 3 imagens pessoais."
+          en="MiB · last 3 personal images."
+        />
       </small>
-      {state === "loading" ? <span role="status"><UiCopy pt="Salvando fundo…" en="Saving background…" /></span> : null}
+      {state === "loading" ? (
+        <span role="status">
+          <UiCopy pt="Salvando fundo…" en="Saving background…" />
+        </span>
+      ) : null}
       {state === "error" ? (
-        <span className="form-error" role="alert"><UiCopy pt="Não foi possível alterar o fundo. Confira a imagem e tente de novo." en="The background could not be changed. Check the image and try again." /></span>
+        <span className="form-error" role="alert">
+          <UiCopy
+            pt="Não foi possível alterar o fundo. Confira a imagem e tente de novo."
+            en="The background could not be changed. Check the image and try again."
+          />
+        </span>
       ) : null}
     </div>
   );

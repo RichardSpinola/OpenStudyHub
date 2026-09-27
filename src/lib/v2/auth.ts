@@ -79,9 +79,15 @@ export async function bootstrapV2(
     );
     const programId = Number(
       db
-        .prepare("INSERT INTO programs(institution_id,code,name) VALUES(?,?,?)")
-        .run(institutionId, input.code.trim(), input.program.trim())
-        .lastInsertRowid,
+        .prepare(
+          "INSERT INTO programs(institution_id,code,name,short_name) VALUES(?,?,?,?)",
+        )
+        .run(
+          institutionId,
+          input.code.trim(),
+          input.program.trim(),
+          input.code.trim(),
+        ).lastInsertRowid,
     );
     const shiftId = Number(
       db

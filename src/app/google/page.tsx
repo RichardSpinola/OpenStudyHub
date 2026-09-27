@@ -204,7 +204,10 @@ export default async function GoogleOnboarding({
         </p>
       ) : null}
       {step !== "summary" ? (
-        <ol className="google-steps" aria-label={tr("Etapas da integração", "Integration steps")}>
+        <ol
+          className="google-steps"
+          aria-label={tr("Etapas da integração", "Integration steps")}
+        >
           <li
             data-done={connected}
             aria-current={step === "connect" ? "step" : undefined}
@@ -246,7 +249,10 @@ export default async function GoogleOnboarding({
         </ol>
       ) : null}
       {step === "summary" || step === "connect" || step === "done" ? (
-        <section className="google-service-grid" aria-label={tr("Serviços Google", "Google services")}>
+        <section
+          className="google-service-grid"
+          aria-label={tr("Serviços Google", "Google services")}
+        >
           <div className="google-service-card">
             <span className="page-kicker">CLASSROOM</span>
             <h2>
@@ -258,8 +264,14 @@ export default async function GoogleOnboarding({
             </strong>
             <p>
               {data.lastSyncAt
-                ? tr(`Atualizado em ${new Intl.DateTimeFormat(language, { dateStyle: "short", timeStyle: "short" }).format(data.lastSyncAt)}`, `Updated ${new Intl.DateTimeFormat(language, { dateStyle: "short", timeStyle: "short" }).format(data.lastSyncAt)}`)
-                : tr("Ainda sem atualização sincronizada.", "No update has been synced yet.")}
+                ? tr(
+                    `Atualizado em ${new Intl.DateTimeFormat(language, { dateStyle: "short", timeStyle: "short" }).format(data.lastSyncAt)}`,
+                    `Updated ${new Intl.DateTimeFormat(language, { dateStyle: "short", timeStyle: "short" }).format(data.lastSyncAt)}`,
+                  )
+                : tr(
+                    "Ainda sem atualização sincronizada.",
+                    "No update has been synced yet.",
+                  )}
             </p>
             {connected ? (
               <div className="google-summary-actions">
@@ -299,8 +311,14 @@ export default async function GoogleOnboarding({
             </strong>
             <p>
               {data.driveOwner?.ownerId === data.user.id
-                ? tr("Esta conta guarda os arquivos centrais.", "This account stores central files.")
-                : tr("O armazenamento é configurado pelo responsável da instância.", "Storage is configured by the instance owner.")}
+                ? tr(
+                    "Esta conta guarda os arquivos centrais.",
+                    "This account stores central files.",
+                  )
+                : tr(
+                    "O armazenamento é configurado pelo responsável da instância.",
+                    "Storage is configured by the instance owner.",
+                  )}
             </p>
             {connected &&
             step === "summary" &&

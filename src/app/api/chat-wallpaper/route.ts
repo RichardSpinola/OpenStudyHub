@@ -9,9 +9,11 @@ export async function GET() {
   if (!session) return new NextResponse(null, { status: 401 });
   const wallpaper = readChatWallpaperImage(session.user.id);
   if (!wallpaper) return new NextResponse(null, { status: 404 });
-  return new NextResponse(new Uint8Array(wallpaper.image), { headers: {
-    "cache-control": "private, no-cache",
-    "content-type": wallpaper.mimeType,
-    "x-content-type-options": "nosniff",
-  }});
+  return new NextResponse(new Uint8Array(wallpaper.image), {
+    headers: {
+      "cache-control": "private, no-cache",
+      "content-type": wallpaper.mimeType,
+      "x-content-type-options": "nosniff",
+    },
+  });
 }

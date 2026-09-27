@@ -42,7 +42,10 @@ export function LocalDocumentCard({
       >
         <span className="document-paper-preview" aria-hidden="true">
           <span className="document-paper-topline">
-            {document.shared ? tr("COMPARTILHADO", "SHARED") : tr("ARQUIVO LOCAL", "LOCAL FILE")} · {type}
+            {document.shared
+              ? tr("COMPARTILHADO", "SHARED")
+              : tr("ARQUIVO LOCAL", "LOCAL FILE")}{" "}
+            · {type}
           </span>
           <strong>{document.name}</strong>
           <span className="document-paper-context">
@@ -56,27 +59,42 @@ export function LocalDocumentCard({
         </span>
         <span className="document-card-info">
           <strong>{document.name}</strong>
-          <small>{document.subjectName ?? tr("Sem disciplina", "No subject")}</small>
+          <small>
+            {document.subjectName ?? tr("Sem disciplina", "No subject")}
+          </small>
           <span>
-            <small>{type}<UiCopy pt="· Local" en="· Local" /></small>
+            <small>
+              {type}
+              <UiCopy pt="· Local" en="· Local" />
+            </small>
             <time dateTime={new Date(document.updatedAt).toISOString()}>
               {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(
                 document.updatedAt,
               )}
             </time>
           </span>
-          <b><UiCopy pt="Baixar arquivo ↓" en="Download file ↓" /></b>
+          <b>
+            <UiCopy pt="Baixar arquivo ↓" en="Download file ↓" />
+          </b>
         </span>
       </a>
       {!document.shared && ownerUserId ? (
         <details className="document-card-share">
-          <summary><UiCopy pt="Compartilhar" en="Share" /></summary>
-          <p><UiCopy pt="Escolha uma pessoa ou grupo. O arquivo continua privado fora dessas escolhas." en="Choose a person or group. The file remains private outside those choices." /></p>
+          <summary>
+            <UiCopy pt="Compartilhar" en="Share" />
+          </summary>
+          <p>
+            <UiCopy
+              pt="Escolha uma pessoa ou grupo. O arquivo continua privado fora dessas escolhas."
+              en="Choose a person or group. The file remains private outside those choices."
+            />
+          </p>
           <form action={setLocalDocumentShareAction}>
             <input type="hidden" name="documentId" value={document.id} />
             <input type="hidden" name="kind" value="person" />
             <input type="hidden" name="enabled" value="true" />
-            <label><UiCopy pt="Pessoa" en="Person" />{" "}
+            <label>
+              <UiCopy pt="Pessoa" en="Person" />{" "}
               <select name="recipientId" required defaultValue="">
                 <option value="" disabled>
                   <UiCopy pt="Selecione" en="Select" />
@@ -96,7 +114,8 @@ export function LocalDocumentCard({
             <input type="hidden" name="documentId" value={document.id} />
             <input type="hidden" name="kind" value="group" />
             <input type="hidden" name="enabled" value="true" />
-            <label><UiCopy pt="Grupo" en="Group" />{" "}
+            <label>
+              <UiCopy pt="Grupo" en="Group" />{" "}
               <select name="recipientId" required defaultValue="">
                 <option value="" disabled>
                   <UiCopy pt="Selecione" en="Select" />
@@ -118,7 +137,8 @@ export function LocalDocumentCard({
               <input type="hidden" name="kind" value="person" />
               <input type="hidden" name="recipientId" value={id} />
               <input type="hidden" name="enabled" value="false" />
-              <ConfirmSubmitButton confirmation="Remover o acesso desta pessoa?"><UiCopy pt="Remover" en="Remove" />{" "}
+              <ConfirmSubmitButton confirmation="Remover o acesso desta pessoa?">
+                <UiCopy pt="Remover" en="Remove" />{" "}
                 {people.find((person) => person.id === id)?.displayName ??
                   "pessoa"}
               </ConfirmSubmitButton>
@@ -130,7 +150,8 @@ export function LocalDocumentCard({
               <input type="hidden" name="kind" value="group" />
               <input type="hidden" name="recipientId" value={id} />
               <input type="hidden" name="enabled" value="false" />
-              <ConfirmSubmitButton confirmation="Remover o acesso deste grupo?"><UiCopy pt="Remover" en="Remove" />{" "}
+              <ConfirmSubmitButton confirmation="Remover o acesso deste grupo?">
+                <UiCopy pt="Remover" en="Remove" />{" "}
                 {groups.find((group) => group.id === id)?.name ?? "grupo"}
               </ConfirmSubmitButton>
             </form>
@@ -144,8 +165,13 @@ export function LocalDocumentCard({
         >
           <input type="hidden" name="documentId" value={document.id} />
           <ConfirmSubmitButton
-            confirmation={tr(`Excluir ${document.name} da sua biblioteca? Esta ação não pode ser desfeita.`, `Delete ${document.name} from your library? This cannot be undone.`)}
-          ><UiCopy pt="Excluir arquivo local" en="Delete local file" /></ConfirmSubmitButton>
+            confirmation={tr(
+              `Excluir ${document.name} da sua biblioteca? Esta ação não pode ser desfeita.`,
+              `Delete ${document.name} from your library? This cannot be undone.`,
+            )}
+          >
+            <UiCopy pt="Excluir arquivo local" en="Delete local file" />
+          </ConfirmSubmitButton>
         </form>
       ) : null}
     </li>

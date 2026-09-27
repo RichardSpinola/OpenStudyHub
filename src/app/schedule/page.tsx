@@ -7,6 +7,12 @@ import {
 import { formatMinutes, joinLocation } from "@/lib/academic-format";
 import { requireAuthenticatedUser } from "@/lib/authorization";
 import { getTranslations } from "@/lib/translations";
+import { canonicalIdForLegacy } from "@/lib/v2/identity-bridge";
+import { withV2Db } from "@/lib/v2/runtime";
+import {
+  getV2UserCurrentPeriod,
+  listV2UserAgenda,
+} from "@/lib/v2/academic-read";
 import {
   defaultUiLanguage,
   getUiLanguage,
@@ -29,6 +35,18 @@ function loadScheduleData(userId: number): ScheduleData {
 
   try {
     language = getUiLanguage();
+    if (process.env.OPENSTUDYHUB_V2_ENABLED === "1")
+      return withV2Db((db) => {
+        const canonicalId = canonicalIdForLegacy(db, userId);
+        return {
+          available: true as const,
+          language,
+          slots: canonicalId ? listV2UserAgenda(db, canonicalId) : [],
+          currentPeriod: canonicalId
+            ? getV2UserCurrentPeriod(db, canonicalId)
+            : null,
+        };
+      });
     return {
       available: true,
       language,

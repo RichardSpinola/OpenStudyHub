@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy } from "@/components/ui-language-provider";
 
-
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -83,14 +82,18 @@ export function AccountMenu({
           }}
         >
           <div className="account-menu-heading">
-            <span><UiCopy pt="SUA CONTA" en="YOUR ACCOUNT" /></span>
+            <span>
+              <UiCopy pt="SUA CONTA" en="YOUR ACCOUNT" />
+            </span>
             <strong>{name}</strong>
           </div>
           <Link href={`/profile/${userId}`}>
-            <IconUserCircle size={18} aria-hidden="true" /><UiCopy pt="Perfil" en="Profile" />
+            <IconUserCircle size={18} aria-hidden="true" />
+            <UiCopy pt="Perfil" en="Profile" />
           </Link>
           <Link href="/settings">
-            <IconSettings size={18} aria-hidden="true" /> <UiCopy pt="Configurações" en="Settings" />
+            <IconSettings size={18} aria-hidden="true" />{" "}
+            <UiCopy pt="Configurações" en="Settings" />
           </Link>
           {managementLink}
           <form

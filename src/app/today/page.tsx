@@ -34,7 +34,9 @@ export default async function TodayPage() {
       <header className="academic-heading today-heading">
         <div>
           <p className="system-label">
-            <UiCopy pt="AGENDA" en="SCHEDULE" /> / {data.currentPeriod?.label ?? uiText(profile.locale, "SEM PERÍODO", "NO PERIOD")}
+            <UiCopy pt="AGENDA" en="SCHEDULE" /> /{" "}
+            {data.currentPeriod?.label ??
+              uiText(profile.locale, "SEM PERÍODO", "NO PERIOD")}
           </p>
           <h1>
             <UiCopy pt="Hoje" en="Today" />
@@ -86,7 +88,9 @@ export default async function TodayPage() {
         {highlights.lesson ? (
           <section className="today-priority-item">
             <span className="page-kicker">
-              {highlights.lessonIsToday ? uiText(profile.locale, "AULA DE HOJE", "TODAY'S CLASS") : uiText(profile.locale, "PRÓXIMO ENCONTRO", "NEXT MEETING")}
+              {highlights.lessonIsToday
+                ? uiText(profile.locale, "AULA DE HOJE", "TODAY'S CLASS")
+                : uiText(profile.locale, "PRÓXIMO ENCONTRO", "NEXT MEETING")}
             </span>
             <strong>{highlights.lesson.subjectName}</strong>
             <span>
@@ -98,7 +102,12 @@ export default async function TodayPage() {
               {joinLocation([
                 highlights.lesson.locationName,
                 highlights.lesson.room,
-              ]) ?? uiText(profile.locale, "Sala não informada", "Room not specified")}
+              ]) ??
+                uiText(
+                  profile.locale,
+                  "Sala não informada",
+                  "Room not specified",
+                )}
             </span>
             <Link href={`/subjects/${highlights.lesson.subjectId}`}>
               <UiCopy pt="Ver disciplina →" en="View subject →" />
@@ -269,7 +278,11 @@ export default async function TodayPage() {
                     {formatMinutes(item.startsAtMinutes)}–
                     {formatMinutes(item.endsAtMinutes)} ·{" "}
                     {joinLocation([item.locationName, item.room]) ??
-                      uiText(profile.locale, "Sala não informada", "Room not specified")}
+                      uiText(
+                        profile.locale,
+                        "Sala não informada",
+                        "Room not specified",
+                      )}
                   </span>
                 </div>
               </li>

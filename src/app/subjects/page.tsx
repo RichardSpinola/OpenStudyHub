@@ -5,7 +5,13 @@ import { toggleSubjectHistoryAction } from "@/app/subjects/actions";
 import { getAcademicPreferences } from "@/lib/academic-preferences";
 import { partitionOfferingsByPeriod } from "@/lib/subject-periods";
 import { withV2Db } from "@/lib/v2/runtime";
-import { legacyOfferingIdsWithCover } from "@/lib/v2/offering-covers";
+import { canonicalIdForLegacy } from "@/lib/v2/identity-bridge";
+import {
+  getV2UserCurrentPeriod,
+  listV2UserOfferings,
+  listV2UserSubjects,
+  v2UserOfferingIdsWithCover,
+} from "@/lib/v2/academic-read";
 
 import {
   getCurrentAcademicPeriod,
@@ -38,6 +44,20 @@ function loadSubjectsData(userId: number): SubjectsData {
 
   try {
     language = getUiLanguage();
+    if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+      return withV2Db((db) => {
+        const canonicalId = canonicalIdForLegacy(db, userId);
+        return {
+          available: true as const,
+          language,
+          subjects: canonicalId ? listV2UserSubjects(db, canonicalId) : [],
+          offerings: canonicalId ? listV2UserOfferings(db, canonicalId) : [],
+          currentPeriod: canonicalId
+            ? getV2UserCurrentPeriod(db, canonicalId)
+            : null,
+        };
+      });
+    }
     return {
       available: true,
       language,
@@ -64,10 +84,9 @@ export default async function SubjectsPage() {
   const coveredOfferings =
     data.available && process.env.OPENSTUDYHUB_V2_ENABLED === "1"
       ? withV2Db((db) =>
-          legacyOfferingIdsWithCover(
-            db,
-            data.offerings.map((offering) => offering.offeringId),
-          ),
+          canonicalIdForLegacy(db, user.id)
+            ? v2UserOfferingIdsWithCover(db, canonicalIdForLegacy(db, user.id)!)
+            : new Set<number>(),
         )
       : new Set<number>();
 

@@ -23,7 +23,12 @@ export default async function ProjectsPage({
   } catch {
     return (
       <div className="workflow-shell">
-        <p role="alert"><UiCopy pt="Não foi possível carregar seus projetos agora." en="Your projects could not be loaded right now." /></p>
+        <p role="alert">
+          <UiCopy
+            pt="Não foi possível carregar seus projetos agora."
+            en="Your projects could not be loaded right now."
+          />
+        </p>
       </div>
     );
   }
@@ -31,11 +36,22 @@ export default async function ProjectsPage({
     <div className="workflow-shell projects-index resource-workspace">
       <header className="section-header resource-page-header">
         <div>
-          <p className="eyebrow"><UiCopy pt="SEU TRABALHO EM VERSÕES" en="YOUR WORK, VERSIONED" /></p>
-          <h1><UiCopy pt="Meus projetos" en="My projects" /></h1>
-          <p className="page-description"><UiCopy pt="Acompanhe arquivos, alterações e versões de cada projeto das suas disciplinas." en="Follow the files, changes and versions of each subject project." /></p>
+          <p className="eyebrow">
+            <UiCopy pt="SEU TRABALHO EM VERSÕES" en="YOUR WORK, VERSIONED" />
+          </p>
+          <h1>
+            <UiCopy pt="Meus projetos" en="My projects" />
+          </h1>
+          <p className="page-description">
+            <UiCopy
+              pt="Acompanhe arquivos, alterações e versões de cada projeto das suas disciplinas."
+              en="Follow the files, changes and versions of each subject project."
+            />
+          </p>
         </div>
-        <Link className="primary-link" href="/projects/new?from=projects"><UiCopy pt="+ Novo projeto" en="+ New project" /></Link>
+        <Link className="primary-link" href="/projects/new?from=projects">
+          <UiCopy pt="+ Novo projeto" en="+ New project" />
+        </Link>
       </header>
       <section
         className="resource-collection"
@@ -43,13 +59,21 @@ export default async function ProjectsPage({
       >
         <div className="resource-collection-header">
           <div>
-            <span className="page-kicker"><UiCopy pt="BIBLIOTECA" en="LIBRARY" /></span>
-            <h2 id="project-list-title"><UiCopy pt="Todos os projetos" en="All projects" /><small>{projects.length}</small>
+            <span className="page-kicker">
+              <UiCopy pt="BIBLIOTECA" en="LIBRARY" />
+            </span>
+            <h2 id="project-list-title">
+              <UiCopy pt="Todos os projetos" en="All projects" />
+              <small>{projects.length}</small>
             </h2>
           </div>
           <nav
             className="resource-view-toggle"
-            aria-label={uiText(language, "Visualização dos projetos", "Project view")}
+            aria-label={uiText(
+              language,
+              "Visualização dos projetos",
+              "Project view",
+            )}
           >
             <Link
               href="/projects?layout=grid"
@@ -60,7 +84,8 @@ export default async function ProjectsPage({
             <Link
               href="/projects?layout=list"
               aria-current={layout === "list" ? "page" : undefined}
-            ><UiCopy pt="Lista" en="List" />
+            >
+              <UiCopy pt="Lista" en="List" />
             </Link>
           </nav>
         </div>
@@ -77,9 +102,21 @@ export default async function ProjectsPage({
           </ul>
         ) : (
           <div className="useful-empty resource-empty">
-            <strong><UiCopy pt="Comece seu primeiro projeto" en="Start your first project" /></strong>
-            <p><UiCopy pt="Escolha a disciplina, crie o projeto e envie uma pasta ou um ZIP." en="Choose a subject, create a project and upload a folder or ZIP." /></p>
-            <Link href="/projects/new?from=projects"><UiCopy pt="Criar projeto →" en="Create project →" /></Link>
+            <strong>
+              <UiCopy
+                pt="Comece seu primeiro projeto"
+                en="Start your first project"
+              />
+            </strong>
+            <p>
+              <UiCopy
+                pt="Escolha a disciplina, crie o projeto e envie uma pasta ou um ZIP."
+                en="Choose a subject, create a project and upload a folder or ZIP."
+              />
+            </p>
+            <Link href="/projects/new?from=projects">
+              <UiCopy pt="Criar projeto →" en="Create project →" />
+            </Link>
           </div>
         )}
       </section>

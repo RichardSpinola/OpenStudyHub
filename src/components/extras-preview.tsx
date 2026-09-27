@@ -18,7 +18,9 @@ export function ExtrasPreview({ kind }: { kind: Preview }) {
         <span className="preview-board">
           <i className="preview-board-line" />
           <i className="preview-board-circle" />
-          <i className="preview-board-note"><UiCopy pt="ideias" en="ideas" /></i>
+          <i className="preview-board-note">
+            <UiCopy pt="ideias" en="ideas" />
+          </i>
           <i className="preview-board-cursor">↖</i>
         </span>
       ) : kind === "games" ? (

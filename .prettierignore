@@ -3,4 +3,5 @@ coverage
 node_modules
 pnpm-lock.yaml
 drizzle
+dist
 docs/product/PRODUCT_REQUIREMENTS.md

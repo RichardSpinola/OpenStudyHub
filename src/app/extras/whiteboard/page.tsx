@@ -10,7 +10,9 @@ export default function WhiteboardPage() {
     notFound();
   return (
     <div className="whiteboard-workspace">
-      <Link className="whiteboard-exit" href="/extras"><UiCopy pt="← Voltar para Extras" en="← Back to Extras" /></Link>
+      <Link className="whiteboard-exit" href="/extras">
+        <UiCopy pt="← Voltar para Extras" en="← Back to Extras" />
+      </Link>
       <GlobalWhiteboard />
     </div>
   );

@@ -11,7 +11,7 @@ Os snapshots dos dois bancos são feitos em sequência. Para uma migração crí
 ## Atualização segura com Docker Compose
 
 1. Leia as notas da nova versão. Crie e **baixe** o backup. Guarde também uma cópia externa do volume atual e do `.env`, além da referência da imagem/código anterior.
-2. Obtenha a versão desejada e construa a nova imagem (`docker compose -f docker-compose.example.yml build --pull`). Não remova o volume `openstudyhub-data`.
+2. Atualize a tag fixa no Compose para a versão desejada e baixe a imagem pública (`docker compose -f docker-compose.example.yml pull`). Não remova o volume `openstudyhub-data`.
 3. Execute `docker compose -f docker-compose.example.yml up -d`. O serviço de migrations aplica V1 e V2 antes dos serviços. Se a migration falhar, pare e investigue; não force App/Admin a iniciar com schema incompleto.
 4. Verifique `/api/health`, login do Admin, login do App e ao menos uma função acadêmica usada pela instância. Confira WebSocket e integrações quando utilizadas.
 

@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
-
 import { useEffect, useRef, useState } from "react";
 
 export function ImageUploadPreview({
@@ -44,7 +43,12 @@ export function ImageUploadPreview({
             !file.type.startsWith("image/") ||
             file.size > maxMiB * 1024 * 1024
           ) {
-            setError(tr(`Escolha uma imagem válida com até ${maxMiB} MiB.`, `Choose a valid image up to ${maxMiB} MiB.`));
+            setError(
+              tr(
+                `Escolha uma imagem válida com até ${maxMiB} MiB.`,
+                `Choose a valid image up to ${maxMiB} MiB.`,
+              ),
+            );
             setPreview(null);
             event.target.value = "";
             return;
@@ -60,7 +64,11 @@ export function ImageUploadPreview({
         <span className="image-upload-preview-frame">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={preview ?? currentSrc} alt={alt} />
-          {preview ? <span role="status"><UiCopy pt="Prévia da nova imagem" en="New image preview" /></span> : null}
+          {preview ? (
+            <span role="status">
+              <UiCopy pt="Prévia da nova imagem" en="New image preview" />
+            </span>
+          ) : null}
         </span>
       ) : null}
       {error ? (

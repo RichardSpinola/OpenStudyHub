@@ -76,11 +76,21 @@ export default async function NotePage({
             <UiCopy pt="NOTAS /" en="NOTES /" />{" "}
             {offering?.subjectName ?? tr("NOTA LIVRE", "FREE NOTE")}
           </p>
-          <h1>{note.editable ? tr("Editar nota", "Edit note") : tr("Nota compartilhada", "Shared note")}</h1>
+          <h1>
+            {note.editable
+              ? tr("Editar nota", "Edit note")
+              : tr("Nota compartilhada", "Shared note")}
+          </h1>
           <p className="page-description">
             {note.editable
-              ? tr("Escreva com calma. Alterações são salvas automaticamente.", "Take your time. Changes are saved automatically.")
-              : tr("Disponível para leitura porque foi compartilhada com você.", "Available to read because it was shared with you.")}
+              ? tr(
+                  "Escreva com calma. Alterações são salvas automaticamente.",
+                  "Take your time. Changes are saved automatically.",
+                )
+              : tr(
+                  "Disponível para leitura porque foi compartilhada com você.",
+                  "Available to read because it was shared with you.",
+                )}
           </p>
         </div>
         <div className="note-heading-actions">
@@ -201,7 +211,10 @@ export default async function NotePage({
                           />
                           <input type="hidden" name="shared" value="false" />
                           <ConfirmSubmitButton
-                            confirmation={tr(`Remover o acesso de ${person.displayName}?`, `Remove access for ${person.displayName}?`)}
+                            confirmation={tr(
+                              `Remover o acesso de ${person.displayName}?`,
+                              `Remove access for ${person.displayName}?`,
+                            )}
                           >
                             <UiCopy pt="Remover acesso" en="Remove access" />
                           </ConfirmSubmitButton>
@@ -220,7 +233,10 @@ export default async function NotePage({
                           />
                           <input type="hidden" name="shared" value="false" />
                           <ConfirmSubmitButton
-                            confirmation={tr(`Remover o acesso do grupo ${group.groupName}?`, `Remove access for group ${group.groupName}?`)}
+                            confirmation={tr(
+                              `Remover o acesso do grupo ${group.groupName}?`,
+                              `Remove access for group ${group.groupName}?`,
+                            )}
                           >
                             <UiCopy pt="Remover acesso" en="Remove access" />
                           </ConfirmSubmitButton>
@@ -306,7 +322,10 @@ export default async function NotePage({
                 <ConfirmSubmitButton
                   className="danger-button"
                   type="submit"
-                  confirmation={tr("Excluir esta nota? Esta ação não pode ser desfeita.", "Delete this note? This cannot be undone.")}
+                  confirmation={tr(
+                    "Excluir esta nota? Esta ação não pode ser desfeita.",
+                    "Delete this note? This cannot be undone.",
+                  )}
                 >
                   <UiCopy pt="Excluir nota" en="Delete note" />
                 </ConfirmSubmitButton>

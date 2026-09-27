@@ -39,7 +39,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
     const input = z
-      .union([z.object({ all: z.literal(true) }), z.object({ notificationId: z.number().int().positive() })])
+      .union([
+        z.object({ all: z.literal(true) }),
+        z.object({ notificationId: z.number().int().positive() }),
+      ])
       .parse(await request.json());
     if ("all" in input) markAllNotificationsRead(session.user.id);
     else markNotificationRead(session.user.id, input.notificationId);

@@ -49,9 +49,18 @@ export default function GamesPage() {
   return (
     <>
       <header className="extras-header">
-        <Link href="/extras"><UiCopy pt="← Extras" en="← Extras" /></Link>
-        <h1><UiCopy pt="Joguinhos" en="Minigames" /></h1>
-        <p><UiCopy pt="Jogos sem anúncios nem conta externa; Dominó permite partidas privadas entre usuários da instância." en="Games without ads or external accounts; Domino supports private matches between instance users." /></p>
+        <Link href="/extras">
+          <UiCopy pt="← Extras" en="← Extras" />
+        </Link>
+        <h1>
+          <UiCopy pt="Joguinhos" en="Minigames" />
+        </h1>
+        <p>
+          <UiCopy
+            pt="Jogos sem anúncios nem conta externa; Dominó permite partidas privadas entre usuários da instância."
+            en="Games without ads or external accounts; Domino supports private matches between instance users."
+          />
+        </p>
       </header>
       <div className="extras-cards extras-games-grid">
         {games
@@ -65,9 +74,15 @@ export default function GamesPage() {
             >
               <ExtrasPreview kind={game.id} />
               <span className="extras-card-copy">
-                <strong><UiCopy pt={game.label} en={game.labelEn} /></strong>
-                <span><UiCopy pt={game.detail} en={game.detailEn} /></span>
-                <em><UiCopy pt="Jogar →" en="Play →" /></em>
+                <strong>
+                  <UiCopy pt={game.label} en={game.labelEn} />
+                </strong>
+                <span>
+                  <UiCopy pt={game.detail} en={game.detailEn} />
+                </span>
+                <em>
+                  <UiCopy pt="Jogar →" en="Play →" />
+                </em>
               </span>
             </Link>
           ))}

@@ -51,41 +51,72 @@ export function ProjectLibraryCard({
         <h3>{project.name}</h3>
         <p>
           {project.description ||
-            tr("Arquivos e versões deste projeto em um só lugar.", "Project files and versions in one place.")}
+            tr(
+              "Arquivos e versões deste projeto em um só lugar.",
+              "Project files and versions in one place.",
+            )}
         </p>
-        <div className="project-stack" aria-label={tr("Tecnologias", "Technologies")}>
+        <div
+          className="project-stack"
+          aria-label={tr("Tecnologias", "Technologies")}
+        >
           {stack.slice(0, 4).map((item) => (
             <span key={item}>{item}</span>
           ))}
           {stack.length > 4 ? <span>+{stack.length - 4}</span> : null}
         </div>
         <div className="project-card-meta">
-          <span>{tr(syncLabels[project.syncStatus], { prepared: "Awaiting upload", syncing: "Syncing", complete: "In Drive", failed: "Action required" }[project.syncStatus])}</span>
+          <span>
+            {tr(
+              syncLabels[project.syncStatus],
+              {
+                prepared: "Awaiting upload",
+                syncing: "Syncing",
+                complete: "In Drive",
+                failed: "Action required",
+              }[project.syncStatus],
+            )}
+          </span>
           <time dateTime={new Date(project.updatedAt).toISOString()}>
             {date}
           </time>
         </div>
         <div className="project-card-actions">
-          <Link className="primary-link" href={href}><UiCopy pt="Abrir projeto →" en="Open project →" />
+          <Link className="primary-link" href={href}>
+            <UiCopy pt="Abrir projeto →" en="Open project →" />
           </Link>
           {project.currentVersionNumber > 0 || project.driveProjectFolderId ? (
             <DismissibleDetails className="resource-item-actions">
-              <summary aria-label={tr(`Mais opções para ${project.name}`, `More options for ${project.name}`)}>
+              <summary
+                aria-label={tr(
+                  `Mais opções para ${project.name}`,
+                  `More options for ${project.name}`,
+                )}
+              >
                 ⋯
               </summary>
               <div>
-                <Link href={`${href}#versions`}><UiCopy pt="Ver versões" en="View versions" /></Link>
+                <Link href={`${href}#versions`}>
+                  <UiCopy pt="Ver versões" en="View versions" />
+                </Link>
                 {project.currentVersionNumber > 0 ? (
                   <a
                     href={`/api/projects/${project.id}/versions/${project.currentVersionNumber}/download`}
-                  ><UiCopy pt="Baixar versão atual" en="Download current version" /></a>
+                  >
+                    <UiCopy
+                      pt="Baixar versão atual"
+                      en="Download current version"
+                    />
+                  </a>
                 ) : null}
                 {project.driveProjectFolderId ? (
                   <a
                     href={`https://drive.google.com/drive/folders/${encodeURIComponent(project.driveProjectFolderId)}`}
                     target="_blank"
                     rel="noreferrer"
-                  ><UiCopy pt="Abrir no Drive ↗" en="Open in Drive ↗" /></a>
+                  >
+                    <UiCopy pt="Abrir no Drive ↗" en="Open in Drive ↗" />
+                  </a>
                 ) : null}
               </div>
             </DismissibleDetails>

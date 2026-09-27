@@ -104,14 +104,17 @@ export function GoogleDocPicker({
       script.onload = () =>
         window.gapi?.load("picker", {
           callback: show,
-          onerror: () => setStatus(tr("Picker indisponível.", "Picker unavailable.")),
+          onerror: () =>
+            setStatus(tr("Picker indisponível.", "Picker unavailable.")),
         });
-      script.onerror = () => setStatus(tr("Picker indisponível.", "Picker unavailable."));
+      script.onerror = () =>
+        setStatus(tr("Picker indisponível.", "Picker unavailable."));
       document.head.append(script);
     } else {
       window.gapi.load("picker", {
         callback: show,
-        onerror: () => setStatus(tr("Picker indisponível.", "Picker unavailable.")),
+        onerror: () =>
+          setStatus(tr("Picker indisponível.", "Picker unavailable.")),
       });
     }
   }

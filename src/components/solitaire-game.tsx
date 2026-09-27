@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
-
 import { useEffect, useState } from "react";
 import {
   cardColor,
@@ -37,7 +36,10 @@ export function SolitaireGame() {
   }
   function move(source: Pile, target: Target) {
     const next = moveSolitaire(state, source, target);
-    if (next === state) setFeedback(tr("Esse movimento não é permitido.", "That move is not allowed."));
+    if (next === state)
+      setFeedback(
+        tr("Esse movimento não é permitido.", "That move is not allowed."),
+      );
     else commit(next);
   }
   function targetClick(target: Target) {
@@ -48,7 +50,9 @@ export function SolitaireGame() {
       const next = moveSolitaire(state, selected, target);
       if (next === state) {
         setSelected(source);
-        setFeedback(tr("Selecione um destino válido.", "Select a valid destination."));
+        setFeedback(
+          tr("Selecione um destino válido.", "Select a valid destination."),
+        );
       } else commit(next);
       return;
     }
@@ -100,7 +104,12 @@ export function SolitaireGame() {
             index: cardSuit(id),
           });
           if (foundation === state)
-            setFeedback(tr("Esta carta ainda não pode ir para a fundação.", "This card cannot go to the foundation yet."));
+            setFeedback(
+              tr(
+                "Esta carta ainda não pode ir para a fundação.",
+                "This card cannot go to the foundation yet.",
+              ),
+            );
           else commit(foundation);
         }}
         className="solitaire-card"
@@ -124,11 +133,16 @@ export function SolitaireGame() {
   return (
     <section className="local-game solitaire-game">
       <div className="game-dashboard">
-        <span>{tr("Movimentos", "Moves")}: {state.moves}</span>
+        <span>
+          {tr("Movimentos", "Moves")}: {state.moves}
+        </span>
         <span>
           {solitaireWon(state)
             ? tr("Você venceu!", "You won!")
-            : tr("Organize as quatro sequências por naipe.", "Build all four sequences by suit.")}
+            : tr(
+                "Organize as quatro sequências por naipe.",
+                "Build all four sequences by suit.",
+              )}
         </span>
       </div>
       <div className="game-options">
@@ -143,8 +157,12 @@ export function SolitaireGame() {
               setSelected(null);
             }}
           >
-            <option value={1}><UiCopy pt="1 carta" en="1 card" /></option>
-            <option value={3}><UiCopy pt="3 cartas" en="3 cards" /></option>
+            <option value={1}>
+              <UiCopy pt="1 carta" en="1 card" />
+            </option>
+            <option value={3}>
+              <UiCopy pt="3 cartas" en="3 cards" />
+            </option>
           </select>
         </label>
         <button
@@ -154,7 +172,8 @@ export function SolitaireGame() {
             setHistory([]);
             setSelected(null);
           }}
-        ><UiCopy pt="Novo jogo" en="New game" />
+        >
+          <UiCopy pt="Novo jogo" en="New game" />
         </button>
         <button
           type="button"
@@ -164,10 +183,16 @@ export function SolitaireGame() {
             setHistory(history.slice(0, -1));
             setSelected(null);
           }}
-        ><UiCopy pt="Desfazer" en="Undo" />
+        >
+          <UiCopy pt="Desfazer" en="Undo" />
         </button>
       </div>
-      <p className="game-hint"><UiCopy pt="Toque em uma carta e no destino; arraste ou dê dois cliques para enviá-la à fundação." en="Tap a card and its destination; drag or double-click to send it to the foundation." /></p>
+      <p className="game-hint">
+        <UiCopy
+          pt="Toque em uma carta e no destino; arraste ou dê dois cliques para enviá-la à fundação."
+          en="Tap a card and its destination; drag or double-click to send it to the foundation."
+        />
+      </p>
       {feedback ? (
         <p className="game-feedback" role="status">
           {feedback}
@@ -197,7 +222,9 @@ export function SolitaireGame() {
               { kind: "tableau", index: -1 },
             )
           ) : (
-            <span><UiCopy pt="Descarte" en="Waste pile" /></span>
+            <span>
+              <UiCopy pt="Descarte" en="Waste pile" />
+            </span>
           )}
         </div>
         <div className="solitaire-foundations">
@@ -253,7 +280,12 @@ export function SolitaireGame() {
           </div>
         ))}
       </div>
-      <p className="game-hint"><UiCopy pt="Ás → Rei nas fundações. Nas colunas, cores alternadas em ordem decrescente." en="Ace → King in foundations. In columns, alternate colors in descending order." /></p>
+      <p className="game-hint">
+        <UiCopy
+          pt="Ás → Rei nas fundações. Nas colunas, cores alternadas em ordem decrescente."
+          en="Ace → King in foundations. In columns, alternate colors in descending order."
+        />
+      </p>
     </section>
   );
 }

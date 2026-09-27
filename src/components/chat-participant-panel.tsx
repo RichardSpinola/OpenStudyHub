@@ -79,7 +79,10 @@ export function ChatParticipantPanel({
 
   return (
     <div className="chat-participants">
-      <h3><UiCopy pt="Pessoas na conversa ·" en="People in this conversation ·" /> {participants.length}</h3>
+      <h3>
+        <UiCopy pt="Pessoas na conversa ·" en="People in this conversation ·" />{" "}
+        {participants.length}
+      </h3>
       {sections.map(({ label, people, online: isOnline }) =>
         people.length ? (
           <section key={label} aria-label={`${label}: ${people.length}`}>

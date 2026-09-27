@@ -8,7 +8,7 @@ x-openstudyhub-env: &openstudyhub-env
   REALTIME_PUBLIC_URL: ${OPENSTUDYHUB_REALTIME_PUBLIC_URL:-ws://127.0.0.1:3000/realtime}
 
 x-openstudyhub-service: &openstudyhub-service
-  image: openstudyhub:local
+  image: ghcr.io/richardspinola/openstudyhub:2.0.0
   env_file: .env
   volumes:
     - openstudyhub-data:/app/data
@@ -16,10 +16,7 @@ x-openstudyhub-service: &openstudyhub-service
 
 services:
   openstudyhub-migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: openstudyhub:local
+    image: ghcr.io/richardspinola/openstudyhub:2.0.0
     env_file: .env
     environment:
       <<: *openstudyhub-env
@@ -61,6 +58,14 @@ services:
       REALTIME_HOST: 0.0.0.0
       REALTIME_PORT: "3045"
     command: ["node", "dist/realtime-server.mjs"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3045/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
     depends_on:
       openstudyhub-migrate:
         condition: service_completed_successfully

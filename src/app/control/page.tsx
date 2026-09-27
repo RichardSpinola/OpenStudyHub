@@ -82,7 +82,10 @@ export default async function ControlHome() {
         </div>
         <div
           className="admin-presence-windows"
-          aria-label={tr("Atividade recente dos usuários", "Recent user activity")}
+          aria-label={tr(
+            "Atividade recente dos usuários",
+            "Recent user activity",
+          )}
         >
           <span>
             15 min: <strong>{presence.last15Minutes}</strong>

@@ -38,7 +38,14 @@ import {
   listPersonalClassroomFeed,
 } from "@/lib/v2/classroom-ui";
 import { withV2Db } from "@/lib/v2/runtime";
-import { legacyOfferingIdsWithCover } from "@/lib/v2/offering-covers";
+import { canonicalIdForLegacy } from "@/lib/v2/identity-bridge";
+import {
+  getV2UserSubject,
+  legacyOfferingIdsForV2User,
+  listV2UserAgenda,
+  listV2UserOfferings,
+  v2UserOfferingIdsWithCover,
+} from "@/lib/v2/academic-read";
 import { getAcademicPreferences } from "@/lib/academic-preferences";
 import {
   findNextSubjectFeedItem,
@@ -55,12 +62,12 @@ import {
 export const dynamic = "force-dynamic";
 
 const baseViews = [
-  ["overview", "Visão geral"],
-  ["wall", "Mural"],
-  ["activities", "Atividades"],
-  ["notes", "Notas"],
-  ["documents", "Documentos"],
-  ["projects", "Projetos"],
+  ["overview", "Visão geral", "Overview"],
+  ["wall", "Mural", "Stream"],
+  ["activities", "Atividades", "Activities"],
+  ["notes", "Notas", "Notes"],
+  ["documents", "Documentos", "Documents"],
+  ["projects", "Projetos", "Projects"],
 ] as const;
 type SubjectView = (typeof baseViews)[number][0];
 const classroomTypeLabel = {
@@ -132,32 +139,75 @@ export default async function SubjectPage({
     : "overview";
   let language: UiLanguage = defaultUiLanguage;
   let data;
+  let legacyOfferingForV2 = new Map<number, number>();
+  let coveredV2 = new Set<number>();
   try {
     language = getUiLanguage();
-    const offerings = listUserSubjectOfferings(user.id).filter(
-      (offering) => offering.subjectId === subjectId,
+    const v2Academic = v2Mode
+      ? withV2Db((db) => {
+          const canonicalId = canonicalIdForLegacy(db, user.id);
+          if (!canonicalId)
+            return {
+              subject: null,
+              offerings: [] as ReturnType<typeof listUserSubjectOfferings>,
+              slots: [] as ReturnType<typeof listUserAgenda>,
+            };
+          legacyOfferingForV2 = legacyOfferingIdsForV2User(db, canonicalId);
+          coveredV2 = v2UserOfferingIdsWithCover(db, canonicalId);
+          return {
+            subject: getV2UserSubject(db, canonicalId, subjectId),
+            offerings: listV2UserOfferings(db, canonicalId).filter(
+              (offering) => offering.subjectId === subjectId,
+            ),
+            slots: listV2UserAgenda(db, canonicalId).filter(
+              (slot) => slot.subjectId === subjectId,
+            ),
+          };
+        })
+      : null;
+    const offerings = v2Academic
+      ? v2Academic.offerings
+      : listUserSubjectOfferings(user.id).filter(
+          (offering) => offering.subjectId === subjectId,
+        );
+    const legacyIds = new Set(
+      v2Academic
+        ? offerings.flatMap((offering) => {
+            const id = legacyOfferingForV2.get(offering.offeringId);
+            return id ? [id] : [];
+          })
+        : offerings.map(({ offeringId }) => offeringId),
     );
-    const offeringIds = new Set(offerings.map(({ offeringId }) => offeringId));
     data = {
-      subject: getSubject(subjectId),
+      subject: v2Academic ? v2Academic.subject : getSubject(subjectId),
       offerings,
-      slots: listUserAgenda(user.id).filter(
-        (slot) => slot.subjectId === subjectId,
-      ),
-      feed: listUserSubjectFeed(user.id, subjectId),
+      slots: v2Academic
+        ? v2Academic.slots
+        : listUserAgenda(user.id).filter(
+            (slot) => slot.subjectId === subjectId,
+          ),
+      feed: v2Academic ? [] : listUserSubjectFeed(user.id, subjectId),
       activities: listUserActivities(user.id).filter(({ offeringId }) =>
-        offeringIds.has(offeringId),
+        legacyIds.has(offeringId),
       ),
       notes: listUserNotes(user.id).filter(
-        ({ offeringId }) => offeringId !== null && offeringIds.has(offeringId),
+        ({ offeringId }) => offeringId !== null && legacyIds.has(offeringId),
       ),
       documents: listUserGeneratedDocuments(user.id).filter(({ offeringId }) =>
-        offeringIds.has(offeringId),
+        legacyIds.has(offeringId),
       ),
       projects: projectsEnabled
-        ? offerings.flatMap(({ offeringId }) =>
-            listUserProjects(user.id, offeringId),
-          )
+        ? offerings
+            .filter(
+              (offering) =>
+                !v2Academic || legacyOfferingForV2.has(offering.offeringId),
+            )
+            .flatMap(({ offeringId }) =>
+              listUserProjects(
+                user.id,
+                legacyOfferingForV2.get(offeringId) ?? offeringId,
+              ),
+            )
         : [],
       classroomFeed: v2Mode
         ? listPersonalClassroomFeed(
@@ -210,18 +260,14 @@ export default async function SubjectPage({
     view === "documents" && documents.length ? listVisibleUsers(user.id) : [];
   const nextItem = findNextSubjectFeedItem(feed);
   const integrations = new Map(
-    listOfferingGoogleIntegrations(
-      offerings.map(({ offeringId }) => offeringId),
+    (v2Mode
+      ? []
+      : listOfferingGoogleIntegrations(
+          offerings.map(({ offeringId }) => offeringId),
+        )
     ).map((integration) => [integration.offeringId, integration]),
   );
-  const coveredOfferings = v2Mode
-    ? withV2Db((db) =>
-        legacyOfferingIdsWithCover(
-          db,
-          offerings.map((offering) => offering.offeringId),
-        ),
-      )
-    : new Set<number>();
+  const coveredOfferings = v2Mode ? coveredV2 : new Set<number>();
   const personalClassroom = getPersonalClassroomSummary(user.id);
   const googleConnected =
     !v2Mode && getGoogleConnection(user.id)?.status === "connected";
@@ -247,6 +293,9 @@ export default async function SubjectPage({
     academic.sunday,
   ];
   const primaryOffering = offerings[0];
+  const primaryLegacyOfferingId = v2Mode
+    ? legacyOfferingForV2.get(primaryOffering.offeringId)
+    : primaryOffering.offeringId;
   const bannerOfferingId = offerings.find((offering) =>
     coveredOfferings.has(offering.offeringId),
   )?.offeringId;
@@ -307,14 +356,16 @@ export default async function SubjectPage({
               {primaryOffering.instructorName ??
                 tr("Professor não informado", "Instructor not specified")}
             </span>
-            <span>
-              {primaryOffering.classGroup
-                ? tr(
-                    `Turma ${primaryOffering.classGroup}`,
-                    `Cohort ${primaryOffering.classGroup}`,
-                  )
-                : tr("Sem turma", "No cohort")}
-            </span>
+            {primaryOffering.classGroup?.trim() ? (
+              <span>
+                {tr(
+                  `Turma ${primaryOffering.classGroup.trim()}`,
+                  `Cohort ${primaryOffering.classGroup.trim()}`,
+                )}
+              </span>
+            ) : primaryOffering.cohortName ? (
+              <span>{primaryOffering.cohortName}</span>
+            ) : null}
             <span>{primaryOffering.periodLabel}</span>
           </div>
           {mappedOfferingIds.length ? (
@@ -349,13 +400,13 @@ export default async function SubjectPage({
         className="section-tabs subject-tabs"
         aria-label={uiText(language, "Áreas da disciplina", "Subject sections")}
       >
-        {views.map(([key, label]) => (
+        {views.map(([key, ptLabel, enLabel]) => (
           <Link
             key={key}
             href={`/subjects/${subjectId}?view=${key}`}
             aria-current={view === key ? "page" : undefined}
           >
-            {label}
+            {uiText(language, ptLabel, enLabel)}
           </Link>
         ))}
       </nav>
@@ -435,20 +486,32 @@ export default async function SubjectPage({
               </h2>
               <Link
                 className="action-button is-primary"
-                href={`/notes?offeringId=${primaryOffering.offeringId}#nova-nota`}
+                href={
+                  primaryLegacyOfferingId
+                    ? `/notes?offeringId=${primaryLegacyOfferingId}#nova-nota`
+                    : "/notes"
+                }
               >
                 <UiCopy pt="+ Nova nota" en="+ New note" />
               </Link>
               <Link
                 className="action-button"
-                href={`/documents?view=generate&offeringId=${primaryOffering.offeringId}`}
+                href={
+                  primaryLegacyOfferingId
+                    ? `/documents?view=generate&offeringId=${primaryLegacyOfferingId}`
+                    : "/documents?view=generate"
+                }
               >
                 <UiCopy pt="Gerar documento" en="Create document" />
               </Link>
               {projectsEnabled ? (
                 <Link
                   className="action-button"
-                  href={`/projects/new?offeringId=${primaryOffering.offeringId}`}
+                  href={
+                    primaryLegacyOfferingId
+                      ? `/projects/new?offeringId=${primaryLegacyOfferingId}`
+                      : "/projects/new"
+                  }
                 >
                   <UiCopy pt="Novo projeto" en="New project" />
                 </Link>
@@ -830,7 +893,11 @@ export default async function SubjectPage({
           </div>
           <div className="context-actions">
             <Link
-              href={`/activities?offeringId=${primaryOffering.offeringId}#nova-atividade`}
+              href={
+                primaryLegacyOfferingId
+                  ? `/activities?offeringId=${primaryLegacyOfferingId}#nova-atividade`
+                  : "/activities"
+              }
             >
               <UiCopy pt="+ Nova atividade manual" en="+ New manual activity" />
             </Link>
@@ -936,7 +1003,11 @@ export default async function SubjectPage({
             </div>
             <Link
               className="primary-link"
-              href={`/notes?offeringId=${primaryOffering.offeringId}#nova-nota`}
+              href={
+                primaryLegacyOfferingId
+                  ? `/notes?offeringId=${primaryLegacyOfferingId}#nova-nota`
+                  : "/notes"
+              }
             >
               <UiCopy pt="+ Nova nota" en="+ New note" />
             </Link>
@@ -988,7 +1059,11 @@ export default async function SubjectPage({
             </div>
             <Link
               className="primary-link"
-              href={`/documents?view=generate&offeringId=${primaryOffering.offeringId}`}
+              href={
+                primaryLegacyOfferingId
+                  ? `/documents?view=generate&offeringId=${primaryLegacyOfferingId}`
+                  : "/documents?view=generate"
+              }
             >
               <UiCopy pt="+ Gerar documento" en="+ Create document" />
             </Link>
@@ -1042,7 +1117,11 @@ export default async function SubjectPage({
               </div>
               <Link
                 className="primary-link"
-                href={`/projects/new?offeringId=${primaryOffering.offeringId}`}
+                href={
+                  primaryLegacyOfferingId
+                    ? `/projects/new?offeringId=${primaryLegacyOfferingId}`
+                    : "/projects/new"
+                }
               >
                 <UiCopy pt="+ Novo projeto" en="+ New project" />
               </Link>

@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentSession } from "@/lib/authorization";
-import { listUserSubjectOfferings } from "@/lib/academic";
 import { withV2DbAsync } from "@/lib/v2/runtime";
-import {
-  coverForLegacyOffering,
-  readOfferingCover,
-} from "@/lib/v2/offering-covers";
+import { coverForOffering, readOfferingCover } from "@/lib/v2/offering-covers";
+import { canonicalIdForLegacy } from "@/lib/v2/identity-bridge";
+import { listV2UserOfferings } from "@/lib/v2/academic-read";
 
 export async function GET(
   _request: Request,
@@ -18,15 +16,17 @@ export async function GET(
     return new Response(null, { status: 404 });
   const session = await getCurrentSession();
   if (!session) return new Response(null, { status: 401 });
-  if (
-    !listUserSubjectOfferings(session.user.id).some(
-      (offering) => offering.offeringId === id,
+  const cover = await withV2DbAsync(async (db) => {
+    const canonicalId = canonicalIdForLegacy(db, session.user.id);
+    if (
+      !canonicalId ||
+      !listV2UserOfferings(db, canonicalId).some(
+        (offering) => offering.offeringId === id,
+      )
     )
-  )
-    return new Response(null, { status: 404 });
-  const cover = await withV2DbAsync(async (db) =>
-    coverForLegacyOffering(db, id),
-  );
+      return null;
+    return coverForOffering(db, id) ?? null;
+  });
   if (!cover) return new Response(null, { status: 404 });
   const image = await readOfferingCover(cover);
   if (!image) return new Response(null, { status: 404 });

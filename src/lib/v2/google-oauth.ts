@@ -190,9 +190,12 @@ export async function completeGoogleV2(
   const scopeNames = ["cursos", "atividades", "materiais", "avisos"] as const;
   const missingClassroomScopes: string[] = [];
   CLASSROOM_SCOPES.slice(2).forEach((scope, index) => {
-    const granted = scopes.includes(scope) ||
+    const granted =
+      scopes.includes(scope) ||
       (scopeNames[index] === "atividades" &&
-        scopes.includes("https://www.googleapis.com/auth/classroom.student-submissions.me.readonly"));
+        scopes.includes(
+          "https://www.googleapis.com/auth/classroom.student-submissions.me.readonly",
+        ));
     if (!granted) missingClassroomScopes.push(scopeNames[index]);
   });
   if (missingClassroomScopes.length) {

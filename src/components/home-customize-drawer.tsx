@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -47,13 +46,10 @@ export function HomeCustomizeDrawer({
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
-  const [selectedClockPosition, setSelectedClockPosition] = useState(clockPosition);
+  const [selectedClockPosition, setSelectedClockPosition] =
+    useState(clockPosition);
   const [clockShown, setClockShown] = useState(clockEnabled);
   const [todayShown, setTodayShown] = useState(todayWidgetEnabled);
-
-  useEffect(() => setSelectedClockPosition(clockPosition), [clockPosition]);
-  useEffect(() => setClockShown(clockEnabled), [clockEnabled]);
-  useEffect(() => setTodayShown(todayWidgetEnabled), [todayWidgetEnabled]);
 
   useEffect(() => {
     dialog.current?.close();
@@ -79,7 +75,12 @@ export function HomeCustomizeDrawer({
         data-clock-position={clockEnabled ? clockPosition : "none"}
         type="button"
         aria-label="Personalizar Home"
-        onClick={() => dialog.current?.showModal()}
+        onClick={() => {
+          setSelectedClockPosition(clockPosition);
+          setClockShown(clockEnabled);
+          setTodayShown(todayWidgetEnabled);
+          dialog.current?.showModal();
+        }}
       >
         <IconPencil size={20} aria-hidden="true" />
       </button>
@@ -93,7 +94,9 @@ export function HomeCustomizeDrawer({
           <header>
             <div>
               <span className="page-kicker">HOME</span>
-              <h2 id="home-customize-title"><UiCopy pt="Personalizar" en="Customize" /></h2>
+              <h2 id="home-customize-title">
+                <UiCopy pt="Personalizar" en="Customize" />
+              </h2>
             </div>
             <button
               type="button"
@@ -106,7 +109,9 @@ export function HomeCustomizeDrawer({
           </header>
           <div className="home-customize-content">
             <section aria-labelledby="home-wallpaper-title">
-              <h3 id="home-wallpaper-title"><UiCopy pt="Fundo da Home" en="Home background" /></h3>
+              <h3 id="home-wallpaper-title">
+                <UiCopy pt="Fundo da Home" en="Home background" />
+              </h3>
               <HomeBackgroundSettings
                 configured={false}
                 catalog={catalog}
@@ -114,8 +119,15 @@ export function HomeCustomizeDrawer({
               />
             </section>
             <section aria-labelledby="home-shortcuts-title">
-              <h3 id="home-shortcuts-title"><UiCopy pt="Atalhos" en="Shortcuts" /></h3>
-              <p><UiCopy pt="Escolha o que aparece na Home ou abra o modo de edição." en="Choose what appears on Home or open edit mode." /></p>
+              <h3 id="home-shortcuts-title">
+                <UiCopy pt="Atalhos" en="Shortcuts" />
+              </h3>
+              <p>
+                <UiCopy
+                  pt="Escolha o que aparece na Home ou abra o modo de edição."
+                  en="Choose what appears on Home or open edit mode."
+                />
+              </p>
               <button
                 className="home-edit-shortcuts-button"
                 type="button"
@@ -123,7 +135,12 @@ export function HomeCustomizeDrawer({
                   dialog.current?.close();
                   onEditShortcuts();
                 }}
-              ><UiCopy pt="Editar atalhos na Home →" en="Edit shortcuts on Home →" /></button>
+              >
+                <UiCopy
+                  pt="Editar atalhos na Home →"
+                  en="Edit shortcuts on Home →"
+                />
+              </button>
               <div className="home-customize-shortcuts">
                 {shortcuts.map((shortcut) => (
                   <form key={shortcut.id} action={togglePersonalShortcutAction}>
@@ -146,10 +163,20 @@ export function HomeCustomizeDrawer({
               <Link
                 href="/settings?section=personalization"
                 onClick={() => dialog.current?.close()}
-              ><UiCopy pt="Adicionar e editar atalhos →" en="Add and edit shortcuts →" /></Link>
+              >
+                <UiCopy
+                  pt="Adicionar e editar atalhos →"
+                  en="Add and edit shortcuts →"
+                />
+              </Link>
             </section>
             <section aria-labelledby="home-widgets-title">
-              <h3 id="home-widgets-title"><UiCopy pt="Relógio e resumo Hoje" en="Clock and Today summary" /></h3>
+              <h3 id="home-widgets-title">
+                <UiCopy
+                  pt="Relógio e resumo Hoje"
+                  en="Clock and Today summary"
+                />
+              </h3>
               <form className="stack-form" action={updateHomePreferencesAction}>
                 <input type="hidden" name="theme" value={theme} />
                 <label className="checkbox-label">
@@ -159,13 +186,32 @@ export function HomeCustomizeDrawer({
                     value="true"
                     checked={clockShown}
                     onChange={(event) => setClockShown(event.target.checked)}
-                  />{" "}<UiCopy pt="Mostrar relógio" en="Show clock" />
+                  />{" "}
+                  <UiCopy pt="Mostrar relógio" en="Show clock" />
                 </label>
-                <label><UiCopy pt="Posição do relógio" en="Clock position" /><select name="homeClockPosition" value={selectedClockPosition} onChange={(event) => setSelectedClockPosition(event.target.value as typeof clockPosition)}>
-                    <option value="top-left"><UiCopy pt="Superior esquerdo" en="Top left" /></option>
-                    <option value="top-right"><UiCopy pt="Superior direito" en="Top right" /></option>
-                    <option value="bottom-left"><UiCopy pt="Inferior esquerdo" en="Bottom left" /></option>
-                    <option value="bottom-right"><UiCopy pt="Inferior direito" en="Bottom right" /></option>
+                <label>
+                  <UiCopy pt="Posição do relógio" en="Clock position" />
+                  <select
+                    name="homeClockPosition"
+                    value={selectedClockPosition}
+                    onChange={(event) =>
+                      setSelectedClockPosition(
+                        event.target.value as typeof clockPosition,
+                      )
+                    }
+                  >
+                    <option value="top-left">
+                      <UiCopy pt="Superior esquerdo" en="Top left" />
+                    </option>
+                    <option value="top-right">
+                      <UiCopy pt="Superior direito" en="Top right" />
+                    </option>
+                    <option value="bottom-left">
+                      <UiCopy pt="Inferior esquerdo" en="Bottom left" />
+                    </option>
+                    <option value="bottom-right">
+                      <UiCopy pt="Inferior direito" en="Bottom right" />
+                    </option>
                   </select>
                 </label>
                 <label className="checkbox-label">
@@ -175,15 +221,22 @@ export function HomeCustomizeDrawer({
                     value="true"
                     checked={todayShown}
                     onChange={(event) => setTodayShown(event.target.checked)}
-                  />{" "}<UiCopy pt="Mostrar resumo Hoje" en="Show Today summary" />
+                  />{" "}
+                  <UiCopy pt="Mostrar resumo Hoje" en="Show Today summary" />
                 </label>
-                <button type="submit"><UiCopy pt="Salvar widgets" en="Save widgets" /></button>
+                <button type="submit">
+                  <UiCopy pt="Salvar widgets" en="Save widgets" />
+                </button>
               </form>
             </section>
             <section aria-labelledby="home-search-title">
-              <h3 id="home-search-title"><UiCopy pt="Busca da Home" en="Home search" /></h3>
+              <h3 id="home-search-title">
+                <UiCopy pt="Busca da Home" en="Home search" />
+              </h3>
               <div className="stack-form">
-                <label><UiCopy pt="Mecanismo de busca" en="Search provider" /><select
+                <label>
+                  <UiCopy pt="Mecanismo de busca" en="Search provider" />
+                  <select
                     name="searchEngine"
                     value={searchEngine}
                     disabled={searchPending}
@@ -194,7 +247,9 @@ export function HomeCustomizeDrawer({
                     }
                   >
                     <option value="google">Google</option>
-                    <option value="scholar"><UiCopy pt="Google Acadêmico" en="Google Scholar" /></option>
+                    <option value="scholar">
+                      <UiCopy pt="Google Acadêmico" en="Google Scholar" />
+                    </option>
                     <option value="duckduckgo">DuckDuckGo</option>
                     <option value="startpage">Startpage</option>
                     <option value="ecosia">Ecosia</option>
@@ -202,10 +257,16 @@ export function HomeCustomizeDrawer({
                 </label>
                 <small role="status" aria-live="polite">
                   {searchError
-                    ? tr("Não foi possível salvar. Tente novamente.", "Could not save. Try again.")
+                    ? tr(
+                        "Não foi possível salvar. Tente novamente.",
+                        "Could not save. Try again.",
+                      )
                     : searchPending
                       ? tr("Salvando escolha…", "Saving choice…")
-                      : tr("A Home usa o mecanismo selecionado.", "Home uses the selected provider.")}
+                      : tr(
+                          "A Home usa o mecanismo selecionado.",
+                          "Home uses the selected provider.",
+                        )}
                 </small>
               </div>
             </section>
@@ -213,7 +274,12 @@ export function HomeCustomizeDrawer({
               className="home-customize-more"
               href="/settings?section=personalization"
               onClick={() => dialog.current?.close()}
-            ><UiCopy pt="Gerenciar mais configurações →" en="Manage more settings →" /></Link>
+            >
+              <UiCopy
+                pt="Gerenciar mais configurações →"
+                en="Manage more settings →"
+              />
+            </Link>
           </div>
         </div>
       </dialog>

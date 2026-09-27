@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
-
 import { useCallback, useEffect, useState } from "react";
 import { sendRealtime } from "@/components/realtime-bridge";
 import { tileById, type DominoAction, type PlayedTile } from "@/lib/domino";
@@ -100,14 +99,18 @@ export function DominoGame({
   const [selected, setSelected] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const load = useCallback(async (matchId: string) => {
-    const response = await fetch(
-      `/api/extras/domino?id=${encodeURIComponent(matchId)}`,
-      { cache: "no-store" },
-    );
-    if (!response.ok) throw new Error(tr("Partida indisponível.", "Match unavailable."));
-    setMatch((await response.json()) as Match);
-  }, [tr]);
+  const load = useCallback(
+    async (matchId: string) => {
+      const response = await fetch(
+        `/api/extras/domino?id=${encodeURIComponent(matchId)}`,
+        { cache: "no-store" },
+      );
+      if (!response.ok)
+        throw new Error(tr("Partida indisponível.", "Match unavailable."));
+      setMatch((await response.json()) as Match);
+    },
+    [tr],
+  );
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (id) void load(id).catch((cause) => setError(cause.message));
@@ -212,22 +215,38 @@ export function DominoGame({
       ) : null}
       {!id ? (
         <>
-          <p><UiCopy pt="Partida privada para duas pessoas. Compartilhe o convite com outro usuário da instância." en="A private match for two. Share the invite with another instance user." /></p>
-          <button type="button" disabled={busy} onClick={() => void create()}><UiCopy pt="Criar partida" en="Create match" /></button>
-          <label className="domino-invite-entry"><UiCopy pt="Código do convite" en="Invite code" /><input
+          <p>
+            <UiCopy
+              pt="Partida privada para duas pessoas. Compartilhe o convite com outro usuário da instância."
+              en="A private match for two. Share the invite with another instance user."
+            />
+          </p>
+          <button type="button" disabled={busy} onClick={() => void create()}>
+            <UiCopy pt="Criar partida" en="Create match" />
+          </button>
+          <label className="domino-invite-entry">
+            <UiCopy pt="Código do convite" en="Invite code" />
+            <input
               value={invite}
               onChange={(event) => setInvite(event.target.value)}
-              placeholder={tr("Cole o código recebido", "Paste the received code")}
+              placeholder={tr(
+                "Cole o código recebido",
+                "Paste the received code",
+              )}
             />
           </label>
           <button
             type="button"
             disabled={busy || !/^[a-f0-9]{32}$/i.test(invite)}
             onClick={() => void join()}
-          ><UiCopy pt="Entrar na partida" en="Join match" /></button>
+          >
+            <UiCopy pt="Entrar na partida" en="Join match" />
+          </button>
           {list.length ? (
             <div className="domino-match-list">
-              <h2><UiCopy pt="Suas partidas" en="Your matches" /></h2>
+              <h2>
+                <UiCopy pt="Suas partidas" en="Your matches" />
+              </h2>
               {list.map((item) => (
                 <button
                   type="button"
@@ -246,13 +265,21 @@ export function DominoGame({
           ) : null}
         </>
       ) : !match ? (
-        <p role="status"><UiCopy pt="Carregando partida…" en="Loading match…" /></p>
+        <p role="status">
+          <UiCopy pt="Carregando partida…" en="Loading match…" />
+        </p>
       ) : (
         <>
           {match.phase === "waiting" && match.inviteCode ? (
             <div className="domino-waiting">
-              <p><UiCopy pt="Aguardando segundo jogador." en="Waiting for a second player." /></p>
-              <label><UiCopy pt="Convite" en="Invitation" />
+              <p>
+                <UiCopy
+                  pt="Aguardando segundo jogador."
+                  en="Waiting for a second player."
+                />
+              </p>
+              <label>
+                <UiCopy pt="Convite" en="Invitation" />
                 <input
                   readOnly
                   value={`${location.origin}/extras/games/domino?invite=${match.inviteCode}`}
@@ -266,19 +293,25 @@ export function DominoGame({
                     `${location.origin}/extras/games/domino?invite=${match.inviteCode}`,
                   )
                 }
-              ><UiCopy pt="Copiar convite" en="Copy invite" /></button>
+              >
+                <UiCopy pt="Copiar convite" en="Copy invite" />
+              </button>
             </div>
           ) : null}
           <div className="game-dashboard">
             <span>
-              <small><UiCopy pt="PLACAR" en="SCORE" /></small>
+              <small>
+                <UiCopy pt="PLACAR" en="SCORE" />
+              </small>
               <strong>
                 {match.names[0]} {match.scores[0]} × {match.scores[1]}{" "}
                 {match.names[1]}
               </strong>
             </span>
             <span>
-              <small><UiCopy pt="PARTIDA" en="MATCH" /></small>
+              <small>
+                <UiCopy pt="PARTIDA" en="MATCH" />
+              </small>
               <strong>
                 {match.phase === "finished"
                   ? `Venceu: ${match.names[match.winner ?? 0]}`
@@ -287,7 +320,8 @@ export function DominoGame({
             </span>
           </div>
           {match.lastRound ? (
-            <p role="status"><UiCopy pt="Última rodada:" en="Last round:" />{" "}
+            <p role="status">
+              <UiCopy pt="Última rodada:" en="Last round:" />{" "}
               {match.lastRound.winner === null
                 ? "empate"
                 : `${match.names[match.lastRound.winner]} +${match.lastRound.points} pontos`}
@@ -304,10 +338,16 @@ export function DominoGame({
                     <i key={index} className="domino-back" />
                   ),
                 )}
-                <small>{match.opponentCount}<UiCopy pt="peças" en="tiles" /></small>
+                <small>
+                  {match.opponentCount}
+                  <UiCopy pt="peças" en="tiles" />
+                </small>
               </span>
             </div>
-            <div className="domino-chain" aria-label={tr("Peças na mesa", "Tiles on the table")}>
+            <div
+              className="domino-chain"
+              aria-label={tr("Peças na mesa", "Tiles on the table")}
+            >
               {match.chain.length ? (
                 match.chain.map((tile, index) => (
                   <Tile
@@ -320,17 +360,30 @@ export function DominoGame({
                 <span>
                   {match.openingTile === null
                     ? tr("Mesa vazia", "Empty table")
-                    : tr("Comece com a maior dupla", "Start with the highest double")}
+                    : tr(
+                        "Comece com a maior dupla",
+                        "Start with the highest double",
+                      )}
                 </span>
               )}
             </div>
             <div className="domino-stock">
-              <span className="domino-back" /><UiCopy pt="Monte ·" en="Stock ·" /> {match.stockCount}<UiCopy pt="peças" en="tiles" />
+              <span className="domino-back" />
+              <UiCopy pt="Monte ·" en="Stock ·" /> {match.stockCount}
+              <UiCopy pt="peças" en="tiles" />
             </div>
           </div>
-          <h3 className="domino-hand-title"><UiCopy pt="Sua mão" en="Your hand" /><small>{match.hand.length}<UiCopy pt="peças" en="tiles" /></small>
+          <h3 className="domino-hand-title">
+            <UiCopy pt="Sua mão" en="Your hand" />
+            <small>
+              {match.hand.length}
+              <UiCopy pt="peças" en="tiles" />
+            </small>
           </h3>
-          <div className="domino-hand" aria-label={tr("Suas peças", "Your tiles")}>
+          <div
+            className="domino-hand"
+            aria-label={tr("Suas peças", "Your tiles")}
+          >
             {match.hand.map((tile) => (
               <button
                 key={tile}
@@ -352,21 +405,26 @@ export function DominoGame({
               onClick={() =>
                 void act({ type: "play", tile: selected!, side: "left" })
               }
-            ><UiCopy pt="Jogar à esquerda" en="Play on left" /></button>
+            >
+              <UiCopy pt="Jogar à esquerda" en="Play on left" />
+            </button>
             <button
               type="button"
               disabled={!myTurn || selected === null || busy}
               onClick={() =>
                 void act({ type: "play", tile: selected!, side: "right" })
               }
-            ><UiCopy pt="Jogar à direita" en="Play on right" /></button>
+            >
+              <UiCopy pt="Jogar à direita" en="Play on right" />
+            </button>
             <button
               type="button"
               disabled={
                 !myTurn || !!match.canPlay.length || !match.stockCount || busy
               }
               onClick={() => void act({ type: "draw" })}
-            ><UiCopy pt="Comprar" en="Draw" />
+            >
+              <UiCopy pt="Comprar" en="Draw" />
             </button>
             <button
               type="button"
@@ -374,7 +432,8 @@ export function DominoGame({
                 !myTurn || !!match.canPlay.length || !!match.stockCount || busy
               }
               onClick={() => void act({ type: "pass" })}
-            ><UiCopy pt="Passar" en="Pass" />
+            >
+              <UiCopy pt="Passar" en="Pass" />
             </button>
             <button
               type="button"
@@ -383,7 +442,8 @@ export function DominoGame({
                 if (confirm("Abandonar a partida?"))
                   void act({ type: "resign" });
               }}
-            ><UiCopy pt="Abandonar" en="Forfeit" />
+            >
+              <UiCopy pt="Abandonar" en="Forfeit" />
             </button>
           </div>
           <button
@@ -393,9 +453,13 @@ export function DominoGame({
               setMatch(null);
               history.replaceState(null, "", "/extras/games/domino");
             }}
-          ><UiCopy pt="Voltar às partidas" en="Back to matches" /></button>
+          >
+            <UiCopy pt="Voltar às partidas" en="Back to matches" />
+          </button>
           {match.phase === "finished" ? (
-            <button type="button" disabled={busy} onClick={() => void create()}><UiCopy pt="Nova partida" en="New match" /></button>
+            <button type="button" disabled={busy} onClick={() => void create()}>
+              <UiCopy pt="Nova partida" en="New match" />
+            </button>
           ) : null}
         </>
       )}

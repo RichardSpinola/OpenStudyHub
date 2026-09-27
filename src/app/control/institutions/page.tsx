@@ -39,16 +39,25 @@ export default async function Institutions({
         error={q.error}
       >
         <div className="admin-section-header">
-          <p><UiCopy pt="Escolha a instituição antes de entrar em um curso." en="Choose an institution before opening a course." /></p>
+          <p>
+            <UiCopy
+              pt="Escolha a instituição antes de entrar em um curso."
+              en="Choose an institution before opening a course."
+            />
+          </p>
           <AdminActionPanel title="Adicionar instituição">
             <form action={controlAction} className="v2-fields">
               <HiddenContext
                 returnTo="/control/institutions"
                 intent="institution"
               />
-              <label><UiCopy pt="Nome da instituição" en="Institution name" /><input name="name" required minLength={2} />
+              <label>
+                <UiCopy pt="Nome da instituição" en="Institution name" />
+                <input name="name" required minLength={2} />
               </label>
-              <button type="submit"><UiCopy pt="Criar instituição" en="Create institution" /></button>
+              <button type="submit">
+                <UiCopy pt="Criar instituição" en="Create institution" />
+              </button>
             </form>
           </AdminActionPanel>
         </div>
@@ -61,7 +70,9 @@ export default async function Institutions({
             >
               <strong>{item.name}</strong>
               <span>
-                {item.courses}<UiCopy pt="curso(s)" en="course(s)" />{item.archivedAt ? " · Arquivada" : ""}
+                {item.courses}
+                <UiCopy pt="curso(s)" en="course(s)" />
+                {item.archivedAt ? " · Arquivada" : ""}
               </span>
               <span aria-hidden="true">→</span>
             </Link>

@@ -600,6 +600,7 @@ export type SubjectOfferingSummary = {
   periodLabel: string;
   instructorName: string | null;
   classGroup: string | null;
+  cohortName?: string | null;
   curriculumTerm: string | null;
   status: "planned" | "active" | "completed" | "cancelled";
 };

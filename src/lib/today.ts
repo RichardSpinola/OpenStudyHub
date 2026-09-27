@@ -13,6 +13,14 @@ import {
 import { listUserActivities } from "@/lib/activities";
 import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
+import { withV2Db } from "@/lib/v2/runtime-database";
+import { canonicalIdForLegacy } from "@/lib/v2/identity-bridge";
+import {
+  getV2UserCurrentPeriod,
+  legacyOfferingIdsForV2User,
+  listV2UserAgenda,
+  listV2UserOfferings,
+} from "@/lib/v2/academic-read";
 
 export type TodayData = {
   date: string;
@@ -38,7 +46,41 @@ export function getTodayData(
 ): TodayData {
   const date = localIsoDate(now);
   const weekday = now.getDay() === 0 ? 7 : now.getDay();
-  const agenda = listUserAgenda(userId, connection);
+  const v2Context =
+    process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+      ? withV2Db((db) => {
+          const canonicalId = canonicalIdForLegacy(db, userId);
+          if (!canonicalId)
+            return {
+              agenda: [] as AgendaSlot[],
+              period: null,
+              legacySubjects: new Map<
+                number,
+                { id: number; name: string; code: string | null }
+              >(),
+            };
+          const links = legacyOfferingIdsForV2User(db, canonicalId);
+          const legacySubjects = new Map<
+            number,
+            { id: number; name: string; code: string | null }
+          >();
+          for (const offering of listV2UserOfferings(db, canonicalId)) {
+            const legacyId = links.get(offering.offeringId);
+            if (legacyId)
+              legacySubjects.set(legacyId, {
+                id: offering.subjectId,
+                name: offering.subjectName,
+                code: offering.subjectCode,
+              });
+          }
+          return {
+            agenda: listV2UserAgenda(db, canonicalId),
+            period: getV2UserCurrentPeriod(db, canonicalId, now),
+            legacySubjects,
+          };
+        })
+      : null;
+  const agenda = v2Context?.agenda ?? listUserAgenda(userId, connection);
   const classes = agenda.filter(
     (slot) =>
       slot.weekday === weekday &&
@@ -64,6 +106,20 @@ export function getTodayData(
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
   const activities = listUserActivities(userId, connection)
+    .flatMap((activity) => {
+      if (!v2Context) return [activity];
+      const subject = v2Context.legacySubjects.get(activity.offeringId);
+      return subject
+        ? [
+            {
+              ...activity,
+              subjectId: subject.id,
+              subjectName: subject.name,
+              subjectCode: subject.code,
+            },
+          ]
+        : [];
+    })
     .filter(
       ({ dueAt, status }) =>
         dueAt !== null &&
@@ -74,9 +130,12 @@ export function getTodayData(
     .slice(0, 12);
   const subjectIds = [
     ...new Set(
-      listUserSubjectOfferings(userId, connection).map(
-        (item) => item.subjectId,
-      ),
+      listUserSubjectOfferings(userId, connection)
+        .filter(
+          ({ offeringId }) =>
+            !v2Context || v2Context.legacySubjects.has(offeringId),
+        )
+        .map((item) => item.subjectId),
     ),
   ];
   const upcomingEvents = subjectIds
@@ -85,16 +144,23 @@ export function getTodayData(
         .filter(
           (item) =>
             item.type === "academic_event" &&
+            (!v2Context || v2Context.legacySubjects.has(item.offeringId)) &&
             item.startsAt >= now.getTime() &&
             item.startsAt <= now.getTime() + 7 * 86400000,
         )
-        .map((item) => ({ ...item, subjectId })),
+        .map((item) => ({
+          ...item,
+          subjectId:
+            v2Context?.legacySubjects.get(item.offeringId)?.id ?? subjectId,
+        })),
     )
     .sort((a, b) => a.startsAt - b.startsAt)
     .slice(0, 6);
   return {
     date,
-    currentPeriod: getCurrentAcademicPeriod(connection),
+    currentPeriod:
+      v2Context?.period ??
+      (v2Context ? null : getCurrentAcademicPeriod(connection)),
     classes,
     weekSlots: agenda,
     upcomingClasses,

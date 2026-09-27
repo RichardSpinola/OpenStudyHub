@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
-
 import { useState } from "react";
 import Link from "next/link";
 import type { AgendaSlot } from "@/lib/academic";
@@ -16,7 +15,15 @@ export const weekdays = [
   "Sábado",
   "Domingo",
 ];
-const weekdaysEn = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const weekdaysEn = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 export function AcademicTimeGrid({
   slots,
   today,
@@ -47,8 +54,13 @@ export function AcademicTimeGrid({
   return (
     <section className="time-grid-panel" aria-labelledby="week-grid-title">
       <div className="section-heading">
-        <h2 id="week-grid-title"><UiCopy pt="Grade da semana" en="Weekly schedule" /></h2>
-        <span>{slots.length}<UiCopy pt="aula(s)" en="class(es)" /></span>
+        <h2 id="week-grid-title">
+          <UiCopy pt="Grade da semana" en="Weekly schedule" />
+        </h2>
+        <span>
+          {slots.length}
+          <UiCopy pt="aula(s)" en="class(es)" />
+        </span>
       </div>
       <div
         className="time-grid-day-picker"
@@ -71,7 +83,8 @@ export function AcademicTimeGrid({
           className="time-grid"
           style={{ "--grid-hours": endHour - startHour } as React.CSSProperties}
         >
-          <div className="time-grid-corner" aria-hidden="true"><UiCopy pt="Hora" en="Time" />
+          <div className="time-grid-corner" aria-hidden="true">
+            <UiCopy pt="Hora" en="Time" />
           </div>
           {weekdays.map((day, index) => (
             <div
@@ -122,15 +135,27 @@ export function AcademicTimeGrid({
                           {formatMinutes(slot.startsAtMinutes)}–
                           {formatMinutes(slot.endsAtMinutes)}
                         </time>
-                        <span>{location ?? tr("Sala não informada", "Room not specified")}</span>
+                        <span>
+                          {location ??
+                            tr("Sala não informada", "Room not specified")}
+                        </span>
                       </summary>
                       <div className="time-grid-popover">
                         <strong>{slot.subjectName}</strong>
                         <span>
-                          {slot.instructorName ?? tr("Professor não informado", "Instructor not specified")}
+                          {slot.instructorName ??
+                            tr(
+                              "Professor não informado",
+                              "Instructor not specified",
+                            )}
                         </span>
-                        <span>{location ?? tr("Sala não informada", "Room not specified")}</span>
-                        <Link href={`/subjects/${slot.subjectId}`}><UiCopy pt="Abrir disciplina" en="Open subject" /></Link>
+                        <span>
+                          {location ??
+                            tr("Sala não informada", "Room not specified")}
+                        </span>
+                        <Link href={`/subjects/${slot.subjectId}`}>
+                          <UiCopy pt="Abrir disciplina" en="Open subject" />
+                        </Link>
                       </div>
                     </details>
                   );
@@ -140,7 +165,12 @@ export function AcademicTimeGrid({
         </div>
       </div>
       {slots.length === 0 ? (
-        <p className="panel-help"><UiCopy pt="Nenhuma aula cadastrada nesta semana." en="No classes scheduled this week." /></p>
+        <p className="panel-help">
+          <UiCopy
+            pt="Nenhuma aula cadastrada nesta semana."
+            en="No classes scheduled this week."
+          />
+        </p>
       ) : null}
     </section>
   );

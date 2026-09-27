@@ -50,12 +50,20 @@ const labels: Record<string, string> = {
   room: "Sala",
 };
 const labelsEn: Record<string, string> = {
-  name: "Name", code: "Code", label: "Period (e.g. 2030.1)",
-  startsOn: "Start", endsOn: "End", campus: "Campus", room: "Room",
+  name: "Name",
+  code: "Code",
+  label: "Period (e.g. 2030.1)",
+  startsOn: "Start",
+  endsOn: "End",
+  campus: "Campus",
+  room: "Room",
 };
 const collectionTitlesEn: Record<string, string> = {
-  shifts: "Shifts", subjects: "Subjects", academic_periods: "Academic periods",
-  instructors: "Instructors", locations: "Rooms",
+  shifts: "Shifts",
+  subjects: "Subjects",
+  academic_periods: "Academic periods",
+  instructors: "Instructors",
+  locations: "Rooms",
 };
 const optional = new Set(["code", "campus", "room"]);
 
@@ -107,19 +115,30 @@ export default async function Institution({
         message={q.ok}
         error={q.error}
       >
-        <nav className="admin-breadcrumb" aria-label={tr("Caminho", "Breadcrumb")}>
-          <Link href="/control/institutions"><UiCopy pt="Instituições" en="Institutions" /></Link>
+        <nav
+          className="admin-breadcrumb"
+          aria-label={tr("Caminho", "Breadcrumb")}
+        >
+          <Link href="/control/institutions">
+            <UiCopy pt="Instituições" en="Institutions" />
+          </Link>
           <span aria-hidden="true">/</span>
           <span aria-current="page">{institution.name}</span>
         </nav>
         <div className="admin-context-summary">
           <strong>{institution.name}</strong>
           <span>
-            {institution.archivedAt ? tr("Arquivada", "Archived") : tr("Ativa", "Active")} ·{" "}
-            {courses.filter((c) => !c.archivedAt).length} <UiCopy pt="cursos ativos" en="active courses" />
+            {institution.archivedAt
+              ? tr("Arquivada", "Archived")
+              : tr("Ativa", "Active")}{" "}
+            · {courses.filter((c) => !c.archivedAt).length}{" "}
+            <UiCopy pt="cursos ativos" en="active courses" />
           </span>
         </div>
-        <nav className="admin-context-nav" aria-label={tr("Áreas da instituição", "Institution sections")}>
+        <nav
+          className="admin-context-nav"
+          aria-label={tr("Áreas da instituição", "Institution sections")}
+        >
           {[
             { key: "courses", label: "Cursos" },
             { key: "subjects", label: "Disciplinas" },
@@ -133,14 +152,26 @@ export default async function Institution({
               href={`${base}?area=${item.key}`}
               aria-current={area === item.key ? "page" : undefined}
             >
-              {tr(item.label, { courses: "Courses", subjects: "Subjects", academic_periods: "Periods", shifts: "Shifts", instructors: "Instructors", locations: "Rooms" }[item.key] ?? item.label)}
+              {tr(
+                item.label,
+                {
+                  courses: "Courses",
+                  subjects: "Subjects",
+                  academic_periods: "Periods",
+                  shifts: "Shifts",
+                  instructors: "Instructors",
+                  locations: "Rooms",
+                }[item.key] ?? item.label,
+              )}
             </Link>
           ))}
         </nav>
         {area === "courses" ? (
           <section>
             <div className="admin-section-header">
-              <h2><UiCopy pt="Cursos" en="Courses" /></h2>
+              <h2>
+                <UiCopy pt="Cursos" en="Courses" />
+              </h2>
               <AdminActionPanel title="Adicionar curso">
                 <form action={controlAction} className="v2-fields">
                   <HiddenContext
@@ -148,17 +179,33 @@ export default async function Institution({
                     intent="program"
                     institutionId={id}
                   />
-                  <label><UiCopy pt="Nome do curso" en="Course name" /><input name="name" required />
+                  <label>
+                    <UiCopy pt="Nome do curso" en="Course name" />
+                    <input name="name" required />
                   </label>
-                  <label><UiCopy pt="Código institucional" en="Institutional code" /><input name="code" required />
-                    <small><UiCopy pt="Identificador interno do curso." en="Internal course identifier." /></small>
+                  <label>
+                    <UiCopy pt="Código institucional" en="Institutional code" />
+                    <input name="code" required />
+                    <small>
+                      <UiCopy
+                        pt="Identificador interno do curso."
+                        en="Internal course identifier."
+                      />
+                    </small>
                   </label>
                   <label>
                     <UiCopy pt="Nome curto" en="Short name" />
                     <input name="shortName" required placeholder="ADS" />
-                    <small><UiCopy pt="Usado no nome da pasta de projetos." en="Used in the project folder name." /></small>
+                    <small>
+                      <UiCopy
+                        pt="Usado no nome da pasta de projetos."
+                        en="Used in the project folder name."
+                      />
+                    </small>
                   </label>
-                  <button><UiCopy pt="Criar curso" en="Create course" /></button>
+                  <button>
+                    <UiCopy pt="Criar curso" en="Create course" />
+                  </button>
                 </form>
               </AdminActionPanel>
             </div>
@@ -171,12 +218,23 @@ export default async function Institution({
                 >
                   <strong>{course.name}</strong>
                   <span>{course.shortName || course.code}</span>
-                  <span>{course.archivedAt ? tr("Arquivado", "Archived") : tr("Ativo", "Active")}</span>
+                  <span>
+                    {course.archivedAt
+                      ? tr("Arquivado", "Archived")
+                      : tr("Ativo", "Active")}
+                  </span>
                   <span aria-hidden="true">→</span>
                 </Link>
               ))}
             </div>
-            {!courses.length ? <p><UiCopy pt="Nenhum curso nesta instituição." en="No courses in this institution." /></p> : null}
+            {!courses.length ? (
+              <p>
+                <UiCopy
+                  pt="Nenhum curso nesta instituição."
+                  en="No courses in this institution."
+                />
+              </p>
+            ) : null}
           </section>
         ) : null}
         {collections
@@ -196,9 +254,17 @@ export default async function Institution({
             return (
               <section key={collection.entity}>
                 <div className="admin-section-header">
-                  <h2>{tr(collection.title, collectionTitlesEn[collection.entity])}</h2>
+                  <h2>
+                    {tr(
+                      collection.title,
+                      collectionTitlesEn[collection.entity],
+                    )}
+                  </h2>
                   <AdminActionPanel
-                    title={tr(`Adicionar ${collection.title.toLowerCase()}`, `Add ${collectionTitlesEn[collection.entity].toLowerCase()}`)}
+                    title={tr(
+                      `Adicionar ${collection.title.toLowerCase()}`,
+                      `Add ${collectionTitlesEn[collection.entity].toLowerCase()}`,
+                    )}
                   >
                     <form action={controlAction} className="v2-fields">
                       <HiddenContext
@@ -220,7 +286,9 @@ export default async function Institution({
                           />
                         </label>
                       ))}
-                      <button><UiCopy pt="Salvar" en="Save" /></button>
+                      <button>
+                        <UiCopy pt="Salvar" en="Save" />
+                      </button>
                     </form>
                   </AdminActionPanel>
                 </div>
@@ -229,9 +297,18 @@ export default async function Institution({
                     <div className="admin-entity-row" key={row.id}>
                       <div>
                         <strong>{row.display_name}</strong>
-                        <small>{row.archived_at ? tr("Arquivado", "Archived") : tr("Ativo", "Active")}</small>
+                        <small>
+                          {row.archived_at
+                            ? tr("Arquivado", "Archived")
+                            : tr("Ativo", "Active")}
+                        </small>
                       </div>
-                      <AdminActionPanel title={tr(`Editar ${row.display_name}`, `Edit ${row.display_name}`)}>
+                      <AdminActionPanel
+                        title={tr(
+                          `Editar ${row.display_name}`,
+                          `Edit ${row.display_name}`,
+                        )}
+                      >
                         <form action={controlAction} className="v2-fields">
                           <HiddenContext
                             returnTo={returnTo}
@@ -260,7 +337,9 @@ export default async function Institution({
                               />
                             </label>
                           ))}
-                          <button><UiCopy pt="Salvar alterações" en="Save changes" /></button>
+                          <button>
+                            <UiCopy pt="Salvar alterações" en="Save changes" />
+                          </button>
                         </form>
                       </AdminActionPanel>
                       <form action={controlAction}>
@@ -272,13 +351,19 @@ export default async function Institution({
                           operation={row.archived_at ? "reactivate" : "archive"}
                         />
                         <button>
-                          {row.archived_at ? tr("Reativar", "Reactivate") : tr("Arquivar", "Archive")}
+                          {row.archived_at
+                            ? tr("Reativar", "Reactivate")
+                            : tr("Arquivar", "Archive")}
                         </button>
                       </form>
                     </div>
                   ))}
                 </div>
-                {!list.length ? <p><UiCopy pt="Nenhum cadastro ainda." en="No records yet." /></p> : null}
+                {!list.length ? (
+                  <p>
+                    <UiCopy pt="Nenhum cadastro ainda." en="No records yet." />
+                  </p>
+                ) : null}
               </section>
             );
           })}

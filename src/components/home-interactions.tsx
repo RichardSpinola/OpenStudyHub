@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy } from "@/components/ui-language-provider";
 
-
 import { useState, useTransition } from "react";
 
 import {
@@ -124,12 +123,24 @@ export function HomeInteractions({
       <div className="shortcut-section" data-editing={editing}>
         {editing ? (
           <div className="home-shortcut-edit-header" role="status">
-            <span><UiCopy pt="Organize seus atalhos com as setas" en="Arrange your shortcuts with the arrows" /></span>
-            <button type="button" onClick={() => setEditing(false)}><UiCopy pt="Concluir edição" en="Finish editing" /></button>
+            <span>
+              <UiCopy
+                pt="Organize seus atalhos com as setas"
+                en="Arrange your shortcuts with the arrows"
+              />
+            </span>
+            <button type="button" onClick={() => setEditing(false)}>
+              <UiCopy pt="Concluir edição" en="Finish editing" />
+            </button>
           </div>
         ) : null}
         {orderError ? (
-          <p className="feedback-banner is-error" role="alert"><UiCopy pt="A nova ordem não foi salva. Tente novamente." en="The new order was not saved. Try again." /></p>
+          <p className="feedback-banner is-error" role="alert">
+            <UiCopy
+              pt="A nova ordem não foi salva. Tente novamente."
+              en="The new order was not saved. Try again."
+            />
+          </p>
         ) : null}
         {available ? (
           <ShortcutGrid

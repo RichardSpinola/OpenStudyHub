@@ -74,7 +74,10 @@ export async function POST(
       const replyRaw = form.get("replyToMessageId");
       const replyToMessageId =
         typeof replyRaw === "string" && replyRaw ? id.parse(replyRaw) : null;
-      const clientMessageId = z.string().uuid().parse(form.get("clientMessageId") || randomUUID());
+      const clientMessageId = z
+        .string()
+        .uuid()
+        .parse(form.get("clientMessageId") || randomUUID());
       if (!(image instanceof File) || image.size > chatAttachmentLimitBytes) {
         return NextResponse.json(
           { error: "invalid-attachment" },
@@ -88,15 +91,37 @@ export async function POST(
           { status: 400 },
         );
       }
-      const outcome = process.env.OPENSTUDYHUB_V2_ENABLED === "1"
-        ? sendChatMessageOnce(
-            withV2Db((db) => canonicalChatUserId(db, session.user.id)),
-            session.user.id, roomId, clientMessageId, body, replyToMessageId, true,
-          )
-        : { messageId: sendChatMessage(session.user.id, roomId, { body, hasAttachment: true, replyToMessageId }).id, duplicate: false };
-      const message = listChatMessages(session.user.id, roomId, outcome.messageId - 1)
-        .find((item) => item.id === outcome.messageId)!;
-      if (outcome.duplicate) return NextResponse.json({ message: { ...message, bodyHtml: renderChatMarkdown(message.bodySource) } });
+      const outcome =
+        process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+          ? sendChatMessageOnce(
+              withV2Db((db) => canonicalChatUserId(db, session.user.id)),
+              session.user.id,
+              roomId,
+              clientMessageId,
+              body,
+              replyToMessageId,
+              true,
+            )
+          : {
+              messageId: sendChatMessage(session.user.id, roomId, {
+                body,
+                hasAttachment: true,
+                replyToMessageId,
+              }).id,
+              duplicate: false,
+            };
+      const message = listChatMessages(
+        session.user.id,
+        roomId,
+        outcome.messageId - 1,
+      ).find((item) => item.id === outcome.messageId)!;
+      if (outcome.duplicate)
+        return NextResponse.json({
+          message: {
+            ...message,
+            bodyHtml: renderChatMarkdown(message.bodySource),
+          },
+        });
       try {
         const attachmentId = await saveChatAttachment(
           session.user.id,
@@ -135,18 +160,28 @@ export async function POST(
         clientMessageId: z.string().uuid().optional(),
         replyToMessageId: z.number().int().positive().nullable().optional(),
       })
-      .refine((value) => value.body.length > 0, { message: "Message is required." })
+      .refine((value) => value.body.length > 0, {
+        message: "Message is required.",
+      })
       .parse(await request.json());
-    const message = process.env.OPENSTUDYHUB_V2_ENABLED === "1"
-      ? (() => {
-          const outcome = sendChatMessageOnce(
-            withV2Db((db) => canonicalChatUserId(db, session.user.id)),
-            session.user.id, roomId, input.clientMessageId || randomUUID(), input.body, input.replyToMessageId ?? null,
-          );
-          return listChatMessages(session.user.id, roomId, outcome.messageId - 1)
-            .find((item) => item.id === outcome.messageId)!;
-        })()
-      : sendChatMessage(session.user.id, roomId, input);
+    const message =
+      process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+        ? (() => {
+            const outcome = sendChatMessageOnce(
+              withV2Db((db) => canonicalChatUserId(db, session.user.id)),
+              session.user.id,
+              roomId,
+              input.clientMessageId || randomUUID(),
+              input.body,
+              input.replyToMessageId ?? null,
+            );
+            return listChatMessages(
+              session.user.id,
+              roomId,
+              outcome.messageId - 1,
+            ).find((item) => item.id === outcome.messageId)!;
+          })()
+        : sendChatMessage(session.user.id, roomId, input);
     return NextResponse.json({
       message: { ...message, bodyHtml: renderChatMarkdown(message.bodySource) },
     });

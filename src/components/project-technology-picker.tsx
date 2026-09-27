@@ -1,7 +1,6 @@
 "use client";
 import { UiCopy } from "@/components/ui-language-provider";
 
-
 import { useState } from "react";
 
 import {
@@ -26,7 +25,9 @@ export function ProjectTechnologyPicker({
   );
   return (
     <div className="project-technology-picker">
-      <label><UiCopy pt="Tecnologias adicionais" en="Additional technologies" /><input
+      <label>
+        <UiCopy pt="Tecnologias adicionais" en="Additional technologies" />
+        <input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -56,7 +57,9 @@ export function ProjectTechnologyPicker({
             </span>
           ))
         ) : (
-          <small><UiCopy pt="Nenhuma selecionada." en="None selected." /></small>
+          <small>
+            <UiCopy pt="Nenhuma selecionada." en="None selected." />
+          </small>
         )}
       </div>
       {matches.length ? (
@@ -78,7 +81,12 @@ export function ProjectTechnologyPicker({
           ))}
         </div>
       ) : query ? (
-        <small><UiCopy pt="Nenhuma tecnologia encontrada." en="No technologies found." /></small>
+        <small>
+          <UiCopy
+            pt="Nenhuma tecnologia encontrada."
+            en="No technologies found."
+          />
+        </small>
       ) : null}
     </div>
   );

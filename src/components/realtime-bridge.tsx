@@ -4,7 +4,8 @@ import { useEffect } from "react";
 
 let currentSocket: WebSocket | null = null;
 export function sendRealtime(event: unknown): boolean {
-  if (!currentSocket || currentSocket.readyState !== WebSocket.OPEN) return false;
+  if (!currentSocket || currentSocket.readyState !== WebSocket.OPEN)
+    return false;
   currentSocket.send(JSON.stringify(event));
   return true;
 }
@@ -26,19 +27,31 @@ export function RealtimeBridge() {
     const connect = async () => {
       if (disposed || !navigator.onLine) return;
       try {
-        const response = await fetch("/api/realtime/config", { cache: "no-store" });
+        const response = await fetch("/api/realtime/config", {
+          cache: "no-store",
+        });
         if (!response.ok) return;
-        const config = await response.json() as { enabled: boolean; url?: string };
+        const config = (await response.json()) as {
+          enabled: boolean;
+          url?: string;
+        };
         if (!config.enabled || !config.url || disposed) return;
         socket = new WebSocket(config.url);
         currentSocket = socket;
         socket.onopen = () => {
           attempt = 0;
           emit({ type: "ready" });
-          heartbeat = window.setInterval(() => sendRealtime({ type: "heartbeat" }), 15000);
+          heartbeat = window.setInterval(
+            () => sendRealtime({ type: "heartbeat" }),
+            15000,
+          );
         };
         socket.onmessage = (event) => {
-          try { emit(JSON.parse(event.data)); } catch { /* Ignore malformed event. */ }
+          try {
+            emit(JSON.parse(event.data));
+          } catch {
+            /* Ignore malformed event. */
+          }
         };
         socket.onclose = () => {
           if (currentSocket === socket) currentSocket = null;
@@ -46,7 +59,10 @@ export function RealtimeBridge() {
           emit({ type: "disconnected" });
           if (!disposed) {
             const delay = Math.min(30000, 1000 * 2 ** Math.min(attempt++, 5));
-            retry = window.setTimeout(connect, delay + Math.round(Math.random() * 300));
+            retry = window.setTimeout(
+              connect,
+              delay + Math.round(Math.random() * 300),
+            );
           }
         };
         socket.onerror = () => socket?.close();
@@ -54,7 +70,12 @@ export function RealtimeBridge() {
         if (!disposed) retry = window.setTimeout(connect, 5000);
       }
     };
-    const online = () => { if (!currentSocket) { window.clearTimeout(retry); void connect(); } };
+    const online = () => {
+      if (!currentSocket) {
+        window.clearTimeout(retry);
+        void connect();
+      }
+    };
     window.addEventListener("online", online);
     void connect();
     return () => {

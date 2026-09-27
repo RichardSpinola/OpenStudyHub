@@ -24,10 +24,20 @@ export function SyncAllClassrooms({ offeringIds }: { offeringIds: number[] }) {
         if (result.outcome !== "updated" && result.outcome !== "fresh")
           throw new Error();
         completed += 1;
-        setMessage(tr(`${completed} de ${offeringIds.length} disciplinas sincronizadas.`, `${completed} of ${offeringIds.length} subjects synced.`));
+        setMessage(
+          tr(
+            `${completed} de ${offeringIds.length} disciplinas sincronizadas.`,
+            `${completed} of ${offeringIds.length} subjects synced.`,
+          ),
+        );
       }
     } catch {
-      setMessage(tr(`Sincronização interrompida após ${completed} de ${offeringIds.length} disciplinas. Tente novamente.`, `Sync stopped after ${completed} of ${offeringIds.length} subjects. Try again.`));
+      setMessage(
+        tr(
+          `Sincronização interrompida após ${completed} de ${offeringIds.length} disciplinas. Tente novamente.`,
+          `Sync stopped after ${completed} of ${offeringIds.length} subjects. Try again.`,
+        ),
+      );
     } finally {
       setBusy(false);
     }
@@ -35,8 +45,14 @@ export function SyncAllClassrooms({ offeringIds }: { offeringIds: number[] }) {
 
   return (
     <div>
-      <button type="button" onClick={() => void syncAll()} disabled={busy || !offeringIds.length}>
-        {busy ? tr("Sincronizando…", "Syncing…") : tr("Sincronizar tudo", "Sync all")}
+      <button
+        type="button"
+        onClick={() => void syncAll()}
+        disabled={busy || !offeringIds.length}
+      >
+        {busy
+          ? tr("Sincronizando…", "Syncing…")
+          : tr("Sincronizar tudo", "Sync all")}
       </button>
       {message ? <p role="status">{message}</p> : null}
     </div>

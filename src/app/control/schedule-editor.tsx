@@ -3,7 +3,7 @@ import { UiCopy } from "@/components/ui-language-provider";
 
 import { useState } from "react";
 import { controlAction } from "./actions";
-import { HiddenContext } from "./ui";
+import { HiddenContext } from "./hidden-context";
 const days = [
   ["Segunda", "Monday"],
   ["Terça", "Tuesday"],

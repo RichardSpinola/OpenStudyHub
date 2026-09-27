@@ -25,28 +25,26 @@ export type PersonalClassroomFeedItem = {
 
 export function listPersonalClassroomFeed(
   legacyUserId: number,
-  legacyOfferingIds: number[],
+  offeringIds: number[],
 ): PersonalClassroomFeedItem[] {
-  if (
-    process.env.OPENSTUDYHUB_V2_ENABLED !== "1" ||
-    legacyOfferingIds.length === 0
-  )
+  if (process.env.OPENSTUDYHUB_V2_ENABLED !== "1" || offeringIds.length === 0)
     return [];
   return withV2Db((db) => {
     const rows = db
       .prepare(
-        `SELECT f.external_id id,l.legacy_offering_id offeringId,f.title,
+        `SELECT f.external_id id,f.offering_id offeringId,f.title,
                 f.link externalUrl,f.published_at publishedAt
          FROM legacy_user_links u
          JOIN classroom_feed_v2 f ON f.user_id=u.user_id
-         JOIN legacy_offering_links l ON l.offering_id=f.offering_id
          JOIN user_classroom_mappings m ON m.user_id=f.user_id AND m.offering_id=f.offering_id
          JOIN enrollments e ON e.user_id=f.user_id AND e.offering_id=f.offering_id
+         JOIN offerings o ON o.id=f.offering_id
          WHERE u.legacy_user_id=? AND e.withdrawn_at IS NULL
-           AND l.legacy_offering_id IN (${legacyOfferingIds.map(() => "?").join(",")})
+           AND o.archived_at IS NULL AND o.state!='cancelled'
+           AND f.offering_id IN (${offeringIds.map(() => "?").join(",")})
          ORDER BY f.published_at DESC LIMIT 100`,
       )
-      .all(legacyUserId, ...legacyOfferingIds) as Array<{
+      .all(legacyUserId, ...offeringIds) as Array<{
       id: string;
       offeringId: number;
       title: string;
@@ -93,7 +91,12 @@ export function getPersonalClassroomSummary(
       const updates = db
         .prepare(
           `SELECT f.external_id id,f.offering_id offeringId,f.title,s.name subjectName,f.published_at publishedAt
-        FROM classroom_feed_v2 f JOIN offerings o ON o.id=f.offering_id JOIN subjects s ON s.id=o.subject_id
+        FROM classroom_feed_v2 f
+        JOIN enrollments e ON e.user_id=f.user_id AND e.offering_id=f.offering_id
+          AND e.withdrawn_at IS NULL
+        JOIN offerings o ON o.id=f.offering_id AND o.archived_at IS NULL
+          AND o.state!='cancelled'
+        JOIN subjects s ON s.id=o.subject_id AND s.archived_at IS NULL
         WHERE f.user_id=? ORDER BY f.published_at DESC LIMIT 4`,
         )
         .all(identity.id) as PersonalClassroomSummary["updates"];
