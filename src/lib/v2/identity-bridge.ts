@@ -183,3 +183,21 @@ export function canonicalIdForLegacy(
     .get(legacyId) as { id: number } | undefined;
   return row?.id ?? null;
 }
+
+export function synchronizeNormalProfileIdentity(
+  db: V2Database,
+  legacyUserId: number,
+  displayName: string,
+  locale: "pt-BR" | "en",
+) {
+  const id = canonicalIdForLegacy(db, legacyUserId);
+  if (
+    !id ||
+    db
+      .prepare(
+        "UPDATE users SET display_name=?,locale=? WHERE id=? AND active=1",
+      )
+      .run(displayName, locale, id).changes !== 1
+  )
+    throw new Error("Perfil não encontrado.");
+}

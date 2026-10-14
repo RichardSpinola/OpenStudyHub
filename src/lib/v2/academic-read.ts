@@ -1,3 +1,4 @@
+import { academicClock } from "../academic-clock";
 import type {
   AgendaSlot,
   CurrentAcademicPeriod,
@@ -108,12 +109,9 @@ export function getV2UserCurrentPeriod(
   db: V2Database,
   canonicalUserId: number,
   date = new Date(),
+  timeZone = "America/Bahia",
 ): CurrentAcademicPeriod | null {
-  const iso = [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
+  const iso = academicClock(date, timeZone).date;
   const row = db
     .prepare(
       `SELECT DISTINCT ap.id,ap.label,ap.starts_on startsOn,ap.ends_on endsOn

@@ -1,3 +1,4 @@
+import { academicClock } from "@/lib/academic-clock";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { AcademicTimeGrid } from "@/components/academic-time-grid";
@@ -18,12 +19,14 @@ export default async function TodayPage() {
   const data = getTodayData(user.id, now);
   const classroom = getPersonalClassroomSummary(user.id);
   const highlights = selectTodayHighlights(data, classroom, now);
-  const weekday = now.getDay() || 7;
+  const weekday = academicClock(now, data.timeZone).weekday;
   const dateTime = new Intl.DateTimeFormat(profile.locale, {
+    timeZone: data.timeZone,
     dateStyle: "short",
     timeStyle: "short",
   });
   const dateLabel = new Intl.DateTimeFormat(profile.locale, {
+    timeZone: data.timeZone,
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -117,6 +120,7 @@ export default async function TodayPage() {
                   <li key={item.id}>
                     <time>
                       {new Intl.DateTimeFormat(profile.locale, {
+                        timeZone: data.timeZone,
                         dateStyle: "short",
                         timeStyle: "short",
                       }).format(item.startsAt)}
@@ -167,6 +171,7 @@ export default async function TodayPage() {
                     <time>
                       {item.dueAt
                         ? new Intl.DateTimeFormat(profile.locale, {
+                            timeZone: data.timeZone,
                             dateStyle: "short",
                             timeStyle: "short",
                           }).format(item.dueAt)
@@ -211,6 +216,7 @@ export default async function TodayPage() {
                     <time>
                       {item.publishedAt
                         ? new Intl.DateTimeFormat(profile.locale, {
+                            timeZone: data.timeZone,
                             dateStyle: "short",
                           }).format(new Date(item.publishedAt))
                         : uiText(profile.locale, "Sem data", "No date")}

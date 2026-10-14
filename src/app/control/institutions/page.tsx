@@ -38,6 +38,9 @@ export default async function Institutions({
         message={q.ok}
         error={q.error}
       >
+        <Link href="/control/import">
+          Importar estrutura V1 desta instalação →
+        </Link>
         <div className="admin-section-header">
           <p>
             <UiCopy

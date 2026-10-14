@@ -13,7 +13,7 @@ import {
 import { sessionUserV2 } from "@/lib/v2/auth";
 import { withV2DbAsync, writeUserSessionV2 } from "@/lib/v2/runtime";
 
-export type LoginActionState = { status: "idle" | "invalid" };
+export type LoginActionState = { status: "idle" | "invalid" | "service-error" };
 
 function field(formData: FormData, name: string): string {
   const value = formData.get(name);
@@ -50,7 +50,7 @@ export async function loginAction(
         };
       });
     } catch {
-      return { status: "invalid" };
+      return { status: "service-error" };
     }
     if (!normal || (!normal.mustChangePassword && !normal.legacyId))
       return { status: "invalid" };

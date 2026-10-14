@@ -1,3 +1,4 @@
+import {AcademicProjectionError} from "@/lib/v2/academic-projection";
 import { redirect } from "next/navigation";
 
 import { isSetupRequired } from "@/lib/access";
@@ -17,7 +18,8 @@ export async function getCurrentSession(): Promise<SessionRecord | null> {
     }
     const token = await readSessionCookie();
     return token ? getSessionByToken(token) : null;
-  } catch {
+  } catch (error) {
+    if(error instanceof AcademicProjectionError)throw error;
     return null;
   }
 }

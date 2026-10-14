@@ -173,21 +173,29 @@ export default async function SubjectsPage() {
           <section className="subject-period-section">
             <div className="section-heading">
               <h2>
-                <UiCopy pt="Semestres anteriores" en="Previous semesters" />
+                <UiCopy pt="Outros períodos" en="Other periods" />
               </h2>
               <form action={toggleSubjectHistoryAction}>
-                <button type="submit" aria-pressed={showHistory}>
-                  {showHistory
-                    ? uiText(
-                        data.language,
-                        "Recolher histórico",
-                        "Hide history",
-                      )
-                    : uiText(
-                        data.language,
-                        "Mostrar histórico",
-                        "Show history",
-                      )}
+                <button
+                  type="submit"
+                  className="subject-history-toggle"
+                  aria-pressed={showHistory}
+                  aria-label={uiText(
+                    data.language,
+                    showHistory
+                      ? "Recolher outros períodos"
+                      : "Mostrar outros períodos",
+                    showHistory ? "Hide other periods" : "Show other periods",
+                  )}
+                  title={uiText(
+                    data.language,
+                    showHistory
+                      ? "Recolher outros períodos"
+                      : "Mostrar outros períodos",
+                    showHistory ? "Hide other periods" : "Show other periods",
+                  )}
+                >
+                  {showHistory ? "⌃" : "⌄"}
                 </button>
               </form>
             </div>
@@ -207,8 +215,8 @@ export default async function SubjectsPage() {
             ) : !periods?.history.size ? (
               <p className="panel-help">
                 <UiCopy
-                  pt="Nenhum semestre anterior disponível."
-                  en="No previous semesters available."
+                  pt="Nenhum outro período disponível."
+                  en="No other periods available."
                 />
               </p>
             ) : null}

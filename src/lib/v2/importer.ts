@@ -44,7 +44,7 @@ export function previewV1Import(
 ): { runId: number; rows: ImportPlanRow[]; reviewCount: number } {
   const tables = source
     .prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name!='__drizzle_migrations'",
     )
     .all() as { name: string }[];
   const actual = new Set(tables.map((x) => x.name));
@@ -60,13 +60,7 @@ export function previewV1Import(
     ).n;
     return { table, category, count };
   });
-  const fingerprint = createHash("sha256")
-    .update(
-      rows
-        .map(({ table, category, count }) => `${table}:${category}:${count}`)
-        .join("\n"),
-    )
-    .digest("hex");
+  const fingerprint = v1Fingerprint(source, matrix);
   return target.transaction(() => {
     const runId = Number(
       target
@@ -145,4 +139,20 @@ export function stageIdMapping(
       "INSERT INTO import_id_map(run_id,source_table,source_id,target_table,target_id) VALUES(?,?,?,?,?)",
     )
     .run(runId, sourceTable, sourceId, targetTable, targetId);
+}
+
+export function v1Fingerprint(
+  source: V2Database,
+  matrix = loadV1ImportMatrix(),
+) {
+  const hash = createHash("sha256");
+  // Stream every value: a rename or changed enrollment must invalidate the preview.
+  for (const table of [...matrix.keys()].sort()) {
+    hash.update(table);
+    for (const row of source
+      .prepare(`SELECT * FROM "${table}" ORDER BY rowid`)
+      .iterate())
+      hash.update(JSON.stringify(row));
+  }
+  return hash.digest("hex");
 }

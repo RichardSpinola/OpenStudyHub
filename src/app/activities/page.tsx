@@ -1,3 +1,6 @@
+import { academicDateTimeInput } from "@/lib/academic-clock";
+import { academicTimeZoneForLegacyUser } from "@/lib/v2/academic-timezone";
+import { withV2Db } from "@/lib/v2/runtime-database";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 
@@ -14,17 +17,21 @@ import { getTranslations } from "@/lib/translations";
 
 export const dynamic = "force-dynamic";
 
-function datetimeLocal(timestamp: number | null): string {
+function datetimeLocal(
+  timestamp: number | null,
+  timeZone: string | undefined,
+): string {
   if (timestamp === null) return "";
-  const date = new Date(
-    timestamp - new Date(timestamp).getTimezoneOffset() * 60_000,
-  );
-  return date.toISOString().slice(0, 16);
+  return academicDateTimeInput(new Date(timestamp), timeZone);
 }
 
 export default async function ActivitiesPage() {
   const user = await requireAuthenticatedUser();
   const profile = getUserProfile(user.id);
+  const timeZone =
+    process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+      ? withV2Db((db) => academicTimeZoneForLegacyUser(db, user.id))
+      : undefined;
   const { academic } = getTranslations(profile.locale);
   const offerings = listUserSubjectOfferings(user.id);
   const activities = listUserActivities(user.id);
@@ -227,7 +234,7 @@ export default async function ActivitiesPage() {
                       <input
                         name="dueAt"
                         type="datetime-local"
-                        defaultValue={datetimeLocal(activity.dueAt)}
+                        defaultValue={datetimeLocal(activity.dueAt, timeZone)}
                       />
                     </label>
                     <label>

@@ -37,7 +37,7 @@ export function ShortcutGrid({
 }) {
   const { shortcuts: labels } = useUiTranslations();
   const tr = useUiText();
-  const [failedIconIds, setFailedIconIds] = useState<Set<number>>(new Set());
+  const [failedIconIds, setFailedIconIds] = useState<Set<string>>(new Set());
   const items = shortcuts;
   const [editingShortcut, setEditingShortcut] = useState<Shortcut | null>(null);
   const dragId = useRef<number | null>(null);
@@ -91,15 +91,20 @@ export function ShortcutGrid({
                   {preset ? (
                     <ShortcutPresetIcon preset={preset} />
                   ) : shortcut.iconStorageName &&
-                    !failedIconIds.has(shortcut.id) ? (
+                    !failedIconIds.has(
+                      `${shortcut.id}:${shortcut.iconStorageName}`,
+                    ) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={`/api/shortcut-icon/user/${shortcut.id}`}
+                      key={shortcut.iconStorageName}
+                      src={`/api/shortcut-icon/user/${shortcut.id}?v=${shortcut.iconStorageName}`}
                       alt=""
                       onError={() =>
                         setFailedIconIds((current) => {
                           const next = new Set(current);
-                          next.add(shortcut.id);
+                          next.add(
+                            `${shortcut.id}:${shortcut.iconStorageName}`,
+                          );
                           return next;
                         })
                       }

@@ -1,3 +1,4 @@
+import { validCalendarDate } from "../academic-clock";
 import type { Actor } from "./actor";
 import type { V2Database } from "./database";
 import type { Capability, Scope } from "./access";
@@ -502,6 +503,7 @@ export function createInstitution(
   name: string,
 ): number {
   if (!isAdmin(db, actor)) throw new Error("Admin required");
+  if (!name.trim()) throw new Error("Informe o nome da instituição.");
   return db.transaction(() => {
     const id = Number(
       db.prepare("INSERT INTO institutions(name) VALUES(?)").run(name)
@@ -621,12 +623,14 @@ export function createAcademicPeriod(
   endsOn: string,
 ): number {
   if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(startsOn) ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(endsOn) ||
+    !validCalendarDate(startsOn) ||
+    !validCalendarDate(endsOn) ||
     startsOn > endsOn ||
     !label.trim()
   )
-    throw new Error("Invalid academic period");
+    throw new Error(
+      "Informe datas válidas; o fim do período deve ser igual ou posterior ao início.",
+    );
   return writeAcademic(
     db,
     actor,

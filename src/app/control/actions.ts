@@ -1,4 +1,5 @@
 "use server";
+import { setInstitutionTimeZone } from "@/lib/v2/academic-timezone";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -219,6 +220,14 @@ export async function controlAction(f: FormData): Promise<void> {
       if (actor.mustChangePassword && intent !== "changeOwnPassword")
         throw new Error("Troque sua senha temporária antes de continuar.");
       switch (intent) {
+        case "institutionTimezone":
+          setInstitutionTimeZone(
+            db,
+            actor,
+            num(f, "institutionId"),
+            str(f, "timeZone"),
+          );
+          break;
         case "institution":
           createInstitution(db, actor, str(f, "name"));
           break;
@@ -500,6 +509,14 @@ export async function controlAction(f: FormData): Promise<void> {
     });
   } catch (e) {
     error = e instanceof Error ? e.message : "Operação não concluída.";
+    if (error.includes("UNIQUE constraint"))
+      error =
+        "Este registro já existe. Confira o código, período ou login antes de tentar novamente.";
+    if (error.includes("FOREIGN KEY constraint"))
+      error =
+        "Uma das opções não existe mais ou possui vínculos. Atualize a página e confira suas escolhas.";
+    if (error.includes("CHECK constraint"))
+      error = "Confira os campos obrigatórios e os valores informados.";
   }
   revalidatePath("/control");
   revalidatePath("/gestao");

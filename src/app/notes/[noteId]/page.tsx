@@ -1,3 +1,4 @@
+import { subjectResourceHref } from "@/lib/v2/academic-links";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -105,7 +106,12 @@ export default async function NotePage({
               parameters.from === "notes"
                 ? "/notes"
                 : offering
-                  ? `/subjects/${offering.subjectId}?view=notes`
+                  ? subjectResourceHref(
+                      user.id,
+                      offering.offeringId,
+                      offering.subjectId,
+                      "notes",
+                    )
                   : "/notes"
             }
           >

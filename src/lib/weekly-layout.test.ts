@@ -16,7 +16,7 @@ describe("weekly schedule placement", () => {
       slot(3, 590, 665),
       slot(4, 675, 750),
     ]);
-    expect([value.start, value.end]).toEqual([420, 780]);
+    expect([value.start, value.end]).toEqual([420, 750]);
     expect(
       value.events.map((e) => [(e.row - 2) * 5 + value.start, e.span * 5]),
     ).toEqual([

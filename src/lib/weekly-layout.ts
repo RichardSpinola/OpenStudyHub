@@ -9,12 +9,12 @@ export function weeklyLayout(slots: AgendaSlot[]) {
       s.endsAtMinutes > s.startsAtMinutes,
   );
   const start = valid.length
-    ? Math.floor(Math.min(...valid.map((s) => s.startsAtMinutes)) / 60) * 60
+    ? Math.floor(Math.min(...valid.map((s) => s.startsAtMinutes)) / 30) * 30
     : 480;
   const end = valid.length
     ? Math.max(
         start + 60,
-        Math.ceil(Math.max(...valid.map((s) => s.endsAtMinutes)) / 60) * 60,
+        Math.ceil(Math.max(...valid.map((s) => s.endsAtMinutes)) / 30) * 30,
       )
     : 540;
   const events: Array<{

@@ -1,5 +1,5 @@
 "use client";
-import { UiCopy } from "@/components/ui-language-provider";
+import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useState } from "react";
 import { controlAction } from "./actions";
@@ -42,6 +42,8 @@ export function ScheduleEditor({
   }>;
   returnTo: string;
 }) {
+  const tr = useUiText();
+  const [error, setError] = useState("");
   const [offering, setOffering] = useState(offerings[0].id);
   const [blocks, setBlocks] = useState<Record<number, Slot[]>>(() =>
     Object.fromEntries(
@@ -170,7 +172,52 @@ export function ScheduleEditor({
       >
         <UiCopy pt="Adicionar bloco" en="Add slot" />
       </button>
-      <form action={controlAction}>
+      {error ? <p role="alert">{error}</p> : null}
+      <form
+        action={controlAction}
+        onSubmit={(event) => {
+          if (
+            current.some(
+              (s) =>
+                !Number.isInteger(s.start) ||
+                !Number.isInteger(s.end) ||
+                s.start < 0 ||
+                s.end > 1440 ||
+                s.end <= s.start,
+            )
+          ) {
+            event.preventDefault();
+            setError(
+              tr(
+                "Confira os horários: o fim deve ser posterior ao início. Seus blocos foram mantidos.",
+                "Check the times: the end must follow the start. Your slots were kept.",
+              ),
+            );
+            return;
+          }
+          if (
+            current.some((s, i) =>
+              current.some(
+                (other, j) =>
+                  i !== j &&
+                  s.weekday === other.weekday &&
+                  s.start < other.end &&
+                  s.end > other.start,
+              ),
+            )
+          ) {
+            event.preventDefault();
+            setError(
+              tr(
+                "Há blocos sobrepostos no mesmo dia. Ajuste os horários antes de salvar.",
+                "Slots overlap on the same day. Adjust the times before saving.",
+              ),
+            );
+            return;
+          }
+          setError("");
+        }}
+      >
         <HiddenContext
           returnTo={returnTo}
           intent="schedule"

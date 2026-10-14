@@ -23,6 +23,12 @@ export async function createV2User(
     password.length < 12
   )
     throw new Error("Dados de usuário inválidos.");
+  if (
+    db
+      .prepare("SELECT 1 FROM users WHERE login=? COLLATE NOCASE")
+      .get(login.trim())
+  )
+    throw new Error("Este login já existe. Escolha outro login.");
   const hash = await hashPassword(password);
   return db.transaction(() => {
     const id = Number(

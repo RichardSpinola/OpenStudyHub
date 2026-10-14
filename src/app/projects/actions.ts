@@ -1,5 +1,6 @@
 "use server";
 
+import { subjectResourceHref } from "@/lib/v2/academic-links";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -15,6 +16,9 @@ import {
   updateProjectTechnology,
   ProjectConflictError,
 } from "@/lib/projects";
+import { setProjectShare } from "@/lib/v2/project-sharing";
+import { withV2Db } from "@/lib/v2/runtime-database";
+import { listVisibleUsers } from "@/lib/collaboration";
 import { getDatabase } from "@/lib/db/client";
 import {
   projectLanguageSchema,
@@ -82,7 +86,12 @@ export async function archiveProjectAction(formData: FormData) {
   redirect(
     project.subjectId === null
       ? "/library?type=projects&status=archived"
-      : `/subjects/${project.subjectId}?view=projects&status=archived`,
+      : subjectResourceHref(
+          user.id,
+          project.offeringId,
+          project.subjectId,
+          "projects",
+        ) + "&status=archived",
   );
 }
 
@@ -146,4 +155,33 @@ export async function cancelProjectUploadAction(formData: FormData) {
     // Cancellation is intentionally idempotent.
   }
   redirect(`/projects/${projectId}`);
+}
+
+export async function shareProjectAction(form: FormData) {
+  const user = await requireAuthenticatedUser();
+  const projectId = Number(form.get("projectId")),
+    recipientId = Number(form.get("recipientId"));
+  let status = "shared";
+  try {
+    if (
+      form.get("enabled") === "1" &&
+      !listVisibleUsers(user.id).some((u) => u.id === recipientId)
+    )
+      throw new Error("Pessoa não disponível.");
+    withV2Db((db) =>
+      setProjectShare(
+        db,
+        getDatabase(),
+        user.id,
+        projectId,
+        recipientId,
+        form.get("enabled") === "1",
+      ),
+    );
+  } catch {
+    status = "share-error";
+  }
+  revalidatePath("/library");
+  revalidatePath(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}?from=projects&status=${status}`);
 }

@@ -4,7 +4,7 @@ import { lookup } from "node:dns/promises";
 import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import sharp from "sharp";
+import { faviconImage } from "./favicon-image";
 import { z } from "zod";
 
 import type { DatabaseConnection } from "@/lib/db/client";
@@ -88,13 +88,7 @@ async function decodeIconResponse(response: Response): Promise<Buffer | null> {
   const data = Buffer.from(await response.arrayBuffer());
   if (!data.length || data.length > maxIconBytes) return null;
   try {
-    return await sharp(data, {
-      failOn: "warning",
-      limitInputPixels: 4_000_000,
-    })
-      .resize(64, 64, { fit: "contain" })
-      .png()
-      .toBuffer();
+    return await faviconImage(data);
   } catch {
     return null;
   }

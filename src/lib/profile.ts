@@ -1,3 +1,5 @@
+import { withV2Db } from "@/lib/v2/runtime-database";
+import { synchronizeNormalProfileIdentity } from "@/lib/v2/identity-bridge";
 import { z } from "zod";
 
 import { displayNameSchema } from "@/lib/access";
@@ -84,6 +86,15 @@ export function updateOwnProfile(
   connection: DatabaseConnection = getDatabase(),
 ): UserProfile {
   const profile = profileInputSchema.parse(input);
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1")
+    withV2Db((db) =>
+      synchronizeNormalProfileIdentity(
+        db,
+        userId,
+        profile.displayName,
+        profile.locale,
+      ),
+    );
   const result = connection.sqlite
     .prepare(
       `update users

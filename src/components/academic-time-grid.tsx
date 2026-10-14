@@ -31,9 +31,19 @@ export function AcademicTimeGrid({
   today: number;
 }) {
   const tr = useUiText();
-  const [selected, setSelected] = useState(today),
+  const [selected, setSelected] = useState(
+      slots.some((s) => s.weekday === today)
+        ? today
+        : (slots[0]?.weekday ?? today),
+    ),
+    [allDays, setAllDays] = useState(false),
     [detail, setDetail] = useState<AgendaSlot | null>(null);
   const layout = weeklyLayout(slots);
+  const visibleDays = allDays
+    ? weekdays.map((_, i) => i + 1)
+    : [...new Set(layout.events.map((e) => e.slot.weekday))].sort(
+        (a, b) => a - b,
+      );
   return (
     <section className="weekly-board" aria-labelledby="week-grid-title">
       <header className="weekly-board-heading">
@@ -41,6 +51,26 @@ export function AcademicTimeGrid({
           <h2 id="week-grid-title">
             {tr("Grade da semana", "Weekly schedule")}
           </h2>
+          <div
+            className="weekly-view-switch"
+            role="group"
+            aria-label={tr("Dias exibidos", "Displayed days")}
+          >
+            <button
+              type="button"
+              aria-pressed={!allDays}
+              onClick={() => setAllDays(false)}
+            >
+              {tr("Dias com aulas", "Class days")}
+            </button>
+            <button
+              type="button"
+              aria-pressed={allDays}
+              onClick={() => setAllDays(true)}
+            >
+              {tr("Semana completa", "Full week")}
+            </button>
+          </div>
           <small>
             {layout.events.length} {tr("aula(s)", "class(es)")}
             {layout.events.length
@@ -67,52 +97,69 @@ export function AcademicTimeGrid({
               </button>
             ))}
           </div>
-          <div className="weekly-scroll">
+          <div
+            className="weekly-scroll"
+            data-selected-empty={
+              !layout.events.some((e) => e.slot.weekday === selected)
+            }
+          >
+            <p className="weekly-empty-day">
+              {tr("Nenhuma aula neste dia.", "No classes on this day.")}
+            </p>
             <div
               className="weekly-table"
               style={
                 {
                   "--calendar-rows": layout.rows,
+                  "--calendar-days": Math.max(1, visibleDays.length),
                   "--calendar-hours": (layout.end - layout.start) / 60,
                 } as CSSProperties
               }
             >
               <span className="weekly-corner">{tr("Hora", "Time")}</span>
-              {weekdays.map((day, i) => (
-                <div
-                  className="weekly-day-label"
-                  key={day}
-                  data-selected={selected === i + 1}
-                  style={{ "--calendar-day": i + 2 } as CSSProperties}
-                >
-                  {tr(day, weekdaysEn[i])}
-                </div>
-              ))}
-              {weekdays.map((day, i) => (
-                <div
-                  key={day}
-                  className="weekly-day-track"
-                  data-selected={selected === i + 1}
-                  data-today={today === i + 1}
-                  style={
-                    {
-                      "--calendar-day": i + 2,
-                      gridRow: `2 / span ${layout.rows}`,
-                    } as CSSProperties
-                  }
-                />
-              ))}
+              {weekdays.map((day, i) =>
+                visibleDays.includes(i + 1) ? (
+                  <div
+                    className="weekly-day-label"
+                    key={day}
+                    data-selected={selected === i + 1}
+                    style={
+                      {
+                        "--calendar-day": visibleDays.indexOf(i + 1) + 2,
+                      } as CSSProperties
+                    }
+                  >
+                    {tr(day, weekdaysEn[i])}
+                  </div>
+                ) : null,
+              )}
+              {weekdays.map((day, i) =>
+                visibleDays.includes(i + 1) ? (
+                  <div
+                    key={day}
+                    className="weekly-day-track"
+                    data-selected={selected === i + 1}
+                    data-today={today === i + 1}
+                    style={
+                      {
+                        "--calendar-day": visibleDays.indexOf(i + 1) + 2,
+                        gridRow: `2 / span ${layout.rows}`,
+                      } as CSSProperties
+                    }
+                  />
+                ) : null,
+              )}
               {Array.from(
-                { length: (layout.end - layout.start) / 60 + 1 },
+                { length: (layout.end - layout.start) / 30 + 1 },
                 (_, i) => (
                   <div
                     key={i}
                     className="weekly-hour-line"
                     data-start={i === 0}
-                    style={{ gridRow: i === 0 ? 2 : i * 12 + 1 }}
+                    style={{ gridRow: i === 0 ? 2 : i * 6 + 1 }}
                   >
                     <span className="weekly-hour-label">
-                      {formatMinutes(layout.start + i * 60)}
+                      {formatMinutes(layout.start + i * 30)}
                     </span>
                   </div>
                 ),
@@ -125,7 +172,7 @@ export function AcademicTimeGrid({
                   data-selected={selected === slot.weekday}
                   style={
                     {
-                      "--calendar-day": slot.weekday + 1,
+                      "--calendar-day": visibleDays.indexOf(slot.weekday) + 2,
                       gridRow: `${row} / span ${span}`,
                       width: `calc((100% - 6px) / ${lanes})`,
                       marginLeft: `calc(${lane} * (100% - 6px) / ${lanes} + 3px)`,

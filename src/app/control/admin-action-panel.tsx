@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { useUiText } from "@/components/ui-language-provider";
 
 export function AdminActionPanel({
@@ -11,6 +12,8 @@ export function AdminActionPanel({
   children: ReactNode;
 }) {
   const tr = useUiText();
+  const search = useSearchParams();
+  const feedback = useRef<HTMLParagraphElement>(null);
   const titles: Record<string, string> = {
     "Criar usuário": "Create user",
     "Editar conta": "Edit account",
@@ -38,6 +41,52 @@ export function AdminActionPanel({
     if (open && !element.open) element.showModal();
     if (!open && element.open) element.close();
   }, [open]);
+  // Keep nonsecret academic drafts in this tab so a rejected submission can be corrected.
+  useEffect(() => {
+    const element = dialog.current;
+    if (!element) return;
+    const key = `osh.academic-draft:${location.pathname}:${title}`;
+    try {
+      if (search.has("error")) {
+        if (feedback.current)
+          feedback.current.textContent = search.get("error");
+        const saved = sessionStorage.getItem(key);
+        if (saved) {
+          const values = JSON.parse(saved) as Record<string, string>;
+          for (const input of element.querySelectorAll<
+            HTMLInputElement | HTMLSelectElement
+          >("input,select,textarea"))
+            if (
+              input.name in values &&
+              !["hidden", "password", "file"].includes(input.type)
+            )
+              input.value = values[input.name];
+          if (!element.open) element.showModal();
+        }
+      } else if (search.has("ok")) sessionStorage.removeItem(key);
+    } catch {
+      /* Storage is optional; registration still works when disabled. */
+    }
+    const save = (event: Event) => {
+      const form = event.target;
+      if (
+        !(form instanceof HTMLFormElement) ||
+        form.querySelector('input[type="password"]')
+      )
+        return;
+      const values: Record<string, string> = {};
+      for (const input of form.querySelectorAll<
+        HTMLInputElement | HTMLSelectElement
+      >("input,select,textarea"))
+        if (input.name && !["hidden", "password", "file"].includes(input.type))
+          values[input.name] = input.value;
+      try {
+        sessionStorage.setItem(key, JSON.stringify(values));
+      } catch {}
+    };
+    element.addEventListener("submit", save);
+    return () => element.removeEventListener("submit", save);
+  }, [title, search]);
   return (
     <>
       <button ref={trigger} type="button" onClick={() => setOpen(true)}>
@@ -65,7 +114,10 @@ export function AdminActionPanel({
             ×
           </button>
         </header>
-        <div className="admin-action-dialog-body">{children}</div>
+        <div className="admin-action-dialog-body">
+          <p ref={feedback} role="alert" />
+          {children}
+        </div>
       </dialog>
     </>
   );

@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import { createDatabase } from "@/lib/db/client";
+import { synchronizeAcademicProjection } from "./academic-projection";
 import { resolve } from "node:path";
 import { openV2Database, migrateV2, type V2Database } from "./database";
 
@@ -28,11 +31,37 @@ export function v2RuntimePath(): string {
   return absolute;
 }
 
+function reconcile(db: V2Database) {
+  const path = process.env.DATABASE_PATH;
+  if (process.env.OPENSTUDYHUB_V2_ENABLED !== "1" || !path || !existsSync(path))
+    return;
+  const state = db
+    .prepare(
+      "SELECT revision,applied_revision FROM academic_projection_state WHERE id=1",
+    )
+    .get() as { revision: number; applied_revision: number } | undefined;
+  if (!state || state.revision === state.applied_revision) return;
+  const legacy = createDatabase(path);
+  try {
+    if (
+      legacy.sqlite
+        .prepare("SELECT 1 FROM sqlite_master WHERE name='subject_offerings'")
+        .get()
+    )
+      synchronizeAcademicProjection(db, legacy);
+  } finally {
+    legacy.close();
+  }
+}
+
 export function withV2Db<T>(fn: (db: V2Database) => T): T {
   const db = openV2Database(v2RuntimePath());
   try {
     migrateV2(db);
-    return fn(db);
+    reconcile(db);
+    const result = fn(db);
+    reconcile(db);
+    return result;
   } finally {
     db.close();
   }
@@ -44,7 +73,10 @@ export async function withV2DbAsync<T>(
   const db = openV2Database(v2RuntimePath());
   try {
     migrateV2(db);
-    return await fn(db);
+    reconcile(db);
+    const result = await fn(db);
+    reconcile(db);
+    return result;
   } finally {
     db.close();
   }

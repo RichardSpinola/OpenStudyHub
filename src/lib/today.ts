@@ -1,3 +1,10 @@
+import { academicTimeZoneForUser } from "./v2/academic-timezone";
+import {
+  academicClock,
+  addAcademicDays,
+  academicMidnight,
+  DEFAULT_ACADEMIC_TIME_ZONE,
+} from "./academic-clock";
 import type { ActivityRecord } from "@/lib/activities";
 import type {
   AgendaSlot,
@@ -24,6 +31,7 @@ import {
 
 export type TodayData = {
   date: string;
+  timeZone?: string;
   currentPeriod: CurrentAcademicPeriod | null;
   classes: AgendaSlot[];
   weekSlots: AgendaSlot[];
@@ -32,20 +40,21 @@ export type TodayData = {
   upcomingEvents: Array<TimelineEventRecord & { subjectId: number }>;
 };
 
-function localIsoDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 export function getTodayData(
   userId: number,
   now: Date = new Date(),
   connection: DatabaseConnection = getDatabase(),
 ): TodayData {
-  const date = localIsoDate(now);
-  const weekday = now.getDay() === 0 ? 7 : now.getDay();
+  const timeZone =
+    process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+      ? withV2Db((db) => {
+          const id = canonicalIdForLegacy(db, userId);
+          return id
+            ? academicTimeZoneForUser(db, id)
+            : DEFAULT_ACADEMIC_TIME_ZONE;
+        })
+      : DEFAULT_ACADEMIC_TIME_ZONE;
+  const { date, weekday } = academicClock(now, timeZone);
   const v2Context =
     process.env.OPENSTUDYHUB_V2_ENABLED === "1"
       ? withV2Db((db) => {
@@ -75,7 +84,7 @@ export function getTodayData(
           }
           return {
             agenda: listV2UserAgenda(db, canonicalId),
-            period: getV2UserCurrentPeriod(db, canonicalId, now),
+            period: getV2UserCurrentPeriod(db, canonicalId, now, timeZone),
             legacySubjects,
           };
         })
@@ -89,10 +98,8 @@ export function getTodayData(
   );
   const upcomingClasses: Array<AgendaSlot & { date: string }> = [];
   for (let offset = 1; offset <= 7; offset += 1) {
-    const target = new Date(now);
-    target.setDate(now.getDate() + offset);
-    const targetDate = localIsoDate(target);
-    const targetWeekday = target.getDay() === 0 ? 7 : target.getDay();
+    const targetDate = addAcademicDays(date, offset);
+    const targetWeekday = new Date(targetDate + "T00:00:00Z").getUTCDay() || 7;
     for (const slot of agenda) {
       if (
         slot.weekday === targetWeekday &&
@@ -103,8 +110,7 @@ export function getTodayData(
       }
     }
   }
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
+  const startOfToday = new Date(academicMidnight(date, timeZone));
   const activities = listUserActivities(userId, connection)
     .flatMap((activity) => {
       if (!v2Context) return [activity];
@@ -158,6 +164,7 @@ export function getTodayData(
     .slice(0, 6);
   return {
     date,
+    timeZone,
     currentPeriod:
       v2Context?.period ??
       (v2Context ? null : getCurrentAcademicPeriod(connection)),

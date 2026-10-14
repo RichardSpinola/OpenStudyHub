@@ -1,3 +1,9 @@
+import { ClassroomMaterialLinks } from "@/components/classroom-material-links";
+import { LocalDocumentCard } from "@/components/local-document-card";
+import {
+  listLocalDocuments,
+  listSharedLocalDocuments,
+} from "@/lib/v2/local-documents";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -122,7 +128,12 @@ export default async function SubjectPage({
   searchParams,
 }: {
   params: Promise<{ subjectId: string }>;
-  searchParams: Promise<{ google?: string; view?: string; status?: string }>;
+  searchParams: Promise<{
+    google?: string;
+    view?: string;
+    status?: string;
+    feed?: string;
+  }>;
 }) {
   const user = await requireAuthenticatedUser();
   const rawSubjectId = (await params).subjectId;
@@ -196,6 +207,12 @@ export default async function SubjectPage({
       documents: listUserGeneratedDocuments(user.id).filter(({ offeringId }) =>
         legacyIds.has(offeringId),
       ),
+      localDocuments: [
+        ...listLocalDocuments(user.id),
+        ...listSharedLocalDocuments(user.id),
+      ].filter(
+        ({ offeringId }) => offeringId !== null && legacyIds.has(offeringId),
+      ),
       projects: projectsEnabled
         ? offerings
             .filter(
@@ -249,15 +266,21 @@ export default async function SubjectPage({
     activities,
     notes,
     documents,
+    localDocuments,
     projects,
     classroomFeed,
   } = data;
+  const visibleClassroomFeed = classroomFeed.filter(
+    (item) => !parameters.feed || parameters.feed === item.type,
+  );
   const documentGroups =
-    view === "documents" && documents.length
+    view === "documents" && (documents.length || localDocuments.length)
       ? listUserStudyGroups(user.id)
       : [];
   const documentPeople =
-    view === "documents" && documents.length ? listVisibleUsers(user.id) : [];
+    view === "documents" && (documents.length || localDocuments.length)
+      ? listVisibleUsers(user.id)
+      : [];
   const nextItem = findNextSubjectFeedItem(feed);
   const integrations = new Map(
     (v2Mode
@@ -669,6 +692,11 @@ export default async function SubjectPage({
                                 </span>
                                 <div>
                                   <strong>{item.title}</strong>
+                                  {"materials" in item ? (
+                                    <ClassroomMaterialLinks
+                                      value={item.materials}
+                                    />
+                                  ) : null}
                                   {item.publishedAt ? (
                                     <time>
                                       {dateFormatter.format(item.publishedAt)}
@@ -717,6 +745,11 @@ export default async function SubjectPage({
                                 {upcomingEvents.map((item) => (
                                   <li key={item.key}>
                                     <strong>{item.title}</strong>
+                                    {"materials" in item ? (
+                                      <ClassroomMaterialLinks
+                                        value={item.materials}
+                                      />
+                                    ) : null}
                                     <time>
                                       {formatAcademicDateTime(
                                         item.relevantAt,
@@ -749,6 +782,11 @@ export default async function SubjectPage({
                                   .map((item) => (
                                     <li key={item.id}>
                                       <strong>{item.title}</strong>
+                                      {"materials" in item ? (
+                                        <ClassroomMaterialLinks
+                                          value={item.materials}
+                                        />
+                                      ) : null}
                                       <Link
                                         href={`/subjects/${subjectId}?view=activities`}
                                       >
@@ -849,7 +887,23 @@ export default async function SubjectPage({
               <div className="panel-title">
                 <UiCopy pt="MURAL DO CLASSROOM" en="CLASSROOM STREAM" />
               </div>
-              {classroomFeed.length === 0 ? (
+              <nav className="classroom-feed-filters" aria-label="Classroom">
+                <Link href={`/subjects/${subjectId}?view=wall`}>
+                  {tr("Tudo", "All")}
+                </Link>
+                <Link
+                  href={`/subjects/${subjectId}?view=wall&feed=announcement`}
+                >
+                  {tr("Avisos", "Announcements")}
+                </Link>
+                <Link href={`/subjects/${subjectId}?view=wall&feed=coursework`}>
+                  {tr("Atividades", "Coursework")}
+                </Link>
+                <Link href={`/subjects/${subjectId}?view=wall&feed=material`}>
+                  {tr("Materiais", "Materials")}
+                </Link>
+              </nav>
+              {visibleClassroomFeed.length === 0 ? (
                 <div className="useful-empty">
                   <strong>
                     <UiCopy
@@ -866,13 +920,16 @@ export default async function SubjectPage({
                 </div>
               ) : (
                 <ol className="classroom-wall">
-                  {classroomFeed.map((item) => (
+                  {visibleClassroomFeed.map((item) => (
                     <li key={`${item.offeringId}:${item.type}:${item.id}`}>
                       <span className="status-badge">
                         {classroomTypeLabel[item.type]}
                       </span>
                       <div>
                         <strong>{item.title}</strong>
+                        {"materials" in item ? (
+                          <ClassroomMaterialLinks value={item.materials} />
+                        ) : null}
                         {item.publishedAt ? (
                           <time>{dateFormatter.format(item.publishedAt)}</time>
                         ) : null}
@@ -948,6 +1005,9 @@ export default async function SubjectPage({
                         <li key={item.id}>
                           <div>
                             <strong>{item.title}</strong>
+                            {"materials" in item ? (
+                              <ClassroomMaterialLinks value={item.materials} />
+                            ) : null}
                             <span>
                               {item.origin === "external"
                                 ? "Classroom"
@@ -1067,12 +1127,22 @@ export default async function SubjectPage({
                       pt="Documentos desta disciplina"
                       en="Documents for this subject"
                     />{" "}
-                    <small>{documents.length}</small>
+                    <small>{documents.length + localDocuments.length}</small>
                   </h2>
                 </div>
               </div>
-              {documents.length ? (
+              {documents.length || localDocuments.length ? (
                 <ol className="document-library-grid is-grid">
+                  {localDocuments.map((document) => (
+                    <LocalDocumentCard
+                      key={`local:${document.id}`}
+                      document={document}
+                      ownerUserId={document.shared ? undefined : user.id}
+                      groups={documentGroups}
+                      people={documentPeople}
+                      language={language}
+                    />
+                  ))}
                   {documents.map((document) => (
                     <DocumentLibraryCard
                       key={document.id}

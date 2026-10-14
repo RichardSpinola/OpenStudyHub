@@ -1,3 +1,4 @@
+import { subjectResourceHref } from "@/lib/v2/academic-links";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 
@@ -30,7 +31,12 @@ export default async function ProjectCreateWorkspace({
   const fromProjects = query.from === "projects";
   const returnHref =
     !fromProjects && selected
-      ? `/subjects/${selected.subjectId}?view=projects`
+      ? subjectResourceHref(
+          user.id,
+          selected.offeringId,
+          selected.subjectId,
+          "projects",
+        )
       : "/library?type=projects";
 
   return (

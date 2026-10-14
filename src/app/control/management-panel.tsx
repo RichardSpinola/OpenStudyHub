@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ImageUploadPreview } from "@/components/image-upload-preview";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import type { V2Database } from "@/lib/v2/database";
-import { canManage } from "@/lib/v2/access";
+import { canManage, isAdmin } from "@/lib/v2/access";
 import { visiblePrograms } from "@/lib/v2/control";
 import { controlAction } from "./actions";
 import { ConsoleShell, HiddenContext, Help } from "./ui";
@@ -489,13 +489,18 @@ export function ManagementPanel({
         id: o.id,
       }),
     );
-  const members = enrollmentCohorts.length
-    ? rows<{ id: number; name: string; cohortId: number }>(
+  const members = isAdmin(db, actor)
+    ? rows<{ id: number; name: string }>(
         db,
-        "SELECT DISTINCT u.id,u.display_name name,x.cohort_id cohortId FROM users u JOIN user_academic_contexts x ON x.user_id=u.id WHERE x.program_id=? AND u.active=1 ORDER BY u.display_name",
-        pid,
-      ).filter((x) => enrollmentCohorts.some((c) => c.id === x.cohortId))
-    : [];
+        "SELECT id,display_name name FROM users WHERE active=1 ORDER BY display_name",
+      )
+    : enrollmentCohorts.length
+      ? rows<{ id: number; name: string; cohortId: number }>(
+          db,
+          "SELECT DISTINCT u.id,u.display_name name,x.cohort_id cohortId FROM users u JOIN user_academic_contexts x ON x.user_id=u.id WHERE x.program_id=? AND u.active=1 ORDER BY u.display_name",
+          pid,
+        ).filter((x) => enrollmentCohorts.some((c) => c.id === x.cohortId))
+      : [];
   let batchPreview: ReturnType<typeof previewCohortEnrollment> | null = null;
   let batchError = "";
   if (batchCohort && batchOffering) {
@@ -616,10 +621,12 @@ export function ManagementPanel({
             <strong>
               {institution} / {program.name}
             </strong>
-            <span>
-              <UiCopy pt="Período atual:" en="Current period:" />{" "}
-              {activePeriod?.name ?? tr("a definir", "not set")}
-            </span>
+            {activePeriod ? (
+              <span>
+                <UiCopy pt="Período das turmas:" en="Cohort period:" />{" "}
+                {activePeriod.name}
+              </span>
+            ) : null}
             <span>
               <UiCopy pt="Turmas:" en="Cohorts:" /> {cohorts.length} ·{" "}
               <UiCopy pt="Semestres:" en="Semesters:" /> {semesters.length}
@@ -1243,8 +1250,16 @@ export function ManagementPanel({
                   </h2>
                   <p>
                     <UiCopy
-                      pt="Estudantes vinculados a este curso podem ser matriculados em uma turma da disciplina. O histórico anterior permanece."
-                      en="Students linked to this course can be enrolled in a subject offering. Previous history remains."
+                      pt={
+                        isAdmin(db, actor)
+                          ? "Selecione um usuário cadastrado e uma oferta deste curso. A matrícula individual não exige uma turma e preserva os outros vínculos do usuário."
+                          : "Estudantes vinculados a este curso podem ser matriculados em uma turma da disciplina. O histórico anterior permanece."
+                      }
+                      en={
+                        isAdmin(db, actor)
+                          ? "Select a registered user and an offering in this course. Individual enrollment does not require a cohort and preserves the user's other contexts."
+                          : "Students linked to this course can be enrolled in a subject offering. Previous history remains."
+                      }
                     />
                   </p>
                   {canEnrollmentScoped ? (

@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "./v2/project-sharing";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -186,6 +187,8 @@ export function updateProjectTechnology(
   connection: DatabaseConnection = getDatabase(),
 ): ProjectRecord {
   const project = getUserProject(userId, projectId, connection);
+  if (project.ownerUserId !== userId)
+    throw new Error("Este projeto foi compartilhado somente para leitura.");
   const language = projectLanguageSchema.parse(input.language);
   const technologies = [
     ...new Set(
@@ -213,14 +216,15 @@ export function listUserProjects(
 ): ProjectRecord[] {
   const ownerId = idSchema.parse(userId);
   const targetId = offeringId === undefined ? null : idSchema.parse(offeringId);
+  const shared = sharedProjectIds(ownerId);
   const rows = connection.sqlite
     .prepare(
       `${projectSelect}
-       where p.owner_user_id = ? and p.archived_at is null
+       where (p.owner_user_id = ? OR p.id IN (SELECT value FROM json_each(?))) and p.archived_at is null
          and (? is null or p.offering_id = ?)
        order by p.updated_at desc, p.id desc`,
     )
-    .all(ownerId, targetId, targetId) as ProjectRow[];
+    .all(ownerId, JSON.stringify(shared), targetId, targetId) as ProjectRow[];
   return rows.map(parseProjectRow);
 }
 
@@ -230,13 +234,14 @@ export function getUserProject(
   connection: DatabaseConnection = getDatabase(),
 ): ProjectRecord {
   const project = connection.sqlite
-    .prepare(
-      `${projectSelect}
-       where p.id = ? and p.owner_user_id = ? and p.archived_at is null`,
-    )
-    .get(idSchema.parse(projectId), idSchema.parse(userId)) as
-    ProjectRow | undefined;
-  if (!project) throw new Error("Project not found.");
+    .prepare(`${projectSelect} WHERE p.id=? AND p.archived_at IS NULL`)
+    .get(idSchema.parse(projectId)) as ProjectRow | undefined;
+  if (
+    !project ||
+    (project.ownerUserId !== idSchema.parse(userId) &&
+      !sharedProjectIds(userId).includes(project.id))
+  )
+    throw new Error("Project not found.");
   return parseProjectRow(project);
 }
 
@@ -260,6 +265,8 @@ export function archiveUserProject(
   connection: DatabaseConnection = getDatabase(),
 ): void {
   const project = getUserProject(userId, projectId, connection);
+  if (project.ownerUserId !== userId)
+    throw new Error("Este projeto foi compartilhado somente para leitura.");
   const now = Date.now();
   connection.sqlite.transaction(() => {
     connection.sqlite
@@ -400,6 +407,8 @@ export async function prepareProjectUpload(
   connection: DatabaseConnection = getDatabase(),
 ) {
   const project = getUserProject(userId, projectId, connection);
+  if (project.ownerUserId !== userId)
+    throw new Error("Este projeto foi compartilhado somente para leitura.");
   if (
     project.currentVersionNumber > 0 &&
     input.baseVersionNumber !== project.currentVersionNumber
@@ -671,6 +680,8 @@ export async function confirmProjectUpload(
   const fetchImpl = options.fetchImpl ?? fetch;
   const preview = getProjectUploadPreview(userId, token, connection);
   const project = getUserProject(userId, preview.projectId, connection);
+  if (project.ownerUserId !== userId)
+    throw new Error("Este projeto foi compartilhado somente para leitura.");
   const storageUserId = getProjectDriveStorageUser(project, connection);
   if (
     (project.currentVersionNumber === 0 &&

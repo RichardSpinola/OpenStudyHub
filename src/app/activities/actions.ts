@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { academicLocalDateTime } from "@/lib/academic-clock";
+import { academicTimeZoneForLegacyUser } from "@/lib/v2/academic-timezone";
+import { withV2Db } from "@/lib/v2/runtime-database";
 import { z } from "zod";
 
 import {
@@ -19,10 +22,14 @@ function text(formData: FormData, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
-function dueDate(formData: FormData): Date | null {
+function dueDate(formData: FormData, userId: number): Date | null {
   const value = text(formData, "dueAt");
   if (!value) return null;
-  const date = new Date(value);
+  const zone =
+    process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+      ? withV2Db((db) => academicTimeZoneForLegacyUser(db, userId))
+      : undefined;
+  const date = academicLocalDateTime(value, zone);
   if (Number.isNaN(date.getTime())) throw new Error("Invalid due date.");
   return date;
 }
@@ -40,7 +47,7 @@ export async function createActivityAction(formData: FormData) {
       offeringId: idSchema.parse(formData.get("offeringId")),
       title: text(formData, "title"),
       description: text(formData, "description"),
-      dueAt: dueDate(formData),
+      dueAt: dueDate(formData, user.id),
       status: "pending",
     });
     refresh();
@@ -57,7 +64,7 @@ export async function updateActivityAction(formData: FormData) {
       offeringId: idSchema.parse(formData.get("offeringId")),
       title: text(formData, "title"),
       description: text(formData, "description"),
-      dueAt: dueDate(formData),
+      dueAt: dueDate(formData, user.id),
       status: activityStatusSchema.parse(formData.get("status")),
     });
     refresh();

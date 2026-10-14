@@ -7,6 +7,12 @@ export type FeedItem = {
   title: string;
   link?: string;
   publishedAt?: string;
+  description?: string;
+  dueAt?: number;
+  materials?: Array<{ title: string; url: string }>;
+  submissionState?: string;
+  submissionGraded?: boolean;
+  sourceState?: string;
 };
 export interface ClassroomAdapter {
   listCourses(userId: number): Promise<Course[]>;
@@ -40,6 +46,7 @@ async function classroomPage<T>(
       courseWork?: T[];
       courseWorkMaterials?: T[];
       announcements?: T[];
+      studentSubmissions?: T[];
       nextPageToken?: string;
     };
     results.push(
@@ -47,6 +54,7 @@ async function classroomPage<T>(
         body.courseWork ??
         body.courseWorkMaterials ??
         body.announcements ??
+        body.studentSubmissions ??
         []),
     );
     next = body.nextPageToken;
@@ -94,37 +102,103 @@ export class GoogleClassroomAdapter implements ClassroomAdapter {
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(courseId))
       throw new Error("Classroom inválido.");
     const access = await this.token(this.db, userId);
-    const parts = await Promise.all([
+    type GoogleItem = {
+      id?: string;
+      title?: string;
+      text?: string;
+      description?: string;
+      alternateLink?: string;
+      creationTime?: string;
+      state?: string;
+      dueDate?: { year: number; month: number; day: number };
+      dueTime?: { hours?: number; minutes?: number; seconds?: number };
+      materials?: Array<{
+        driveFile?: { driveFile?: { title?: string; alternateLink?: string } };
+        link?: { title?: string; url?: string };
+        youtubeVideo?: { title?: string; alternateLink?: string };
+        form?: { title?: string; formUrl?: string };
+      }>;
+    };
+    const [work, materials, announcements, submissions] = await Promise.all([
+      classroomPage<GoogleItem>(
+        access,
+        `courses/${courseId}/courseWork`,
+        this.fetchImpl,
+      ),
+      classroomPage<GoogleItem>(
+        access,
+        `courses/${courseId}/courseWorkMaterials`,
+        this.fetchImpl,
+      ),
+      classroomPage<GoogleItem>(
+        access,
+        `courses/${courseId}/announcements`,
+        this.fetchImpl,
+      ),
       classroomPage<{
-        id?: string;
-        title?: string;
-        alternateLink?: string;
-        creationTime?: string;
-      }>(access, `courses/${courseId}/courseWork`, this.fetchImpl),
-      classroomPage<{
-        id?: string;
-        title?: string;
-        alternateLink?: string;
-        creationTime?: string;
-      }>(access, `courses/${courseId}/courseWorkMaterials`, this.fetchImpl),
-      classroomPage<{
-        id?: string;
-        text?: string;
-        alternateLink?: string;
-        creationTime?: string;
-      }>(access, `courses/${courseId}/announcements`, this.fetchImpl),
+        courseWorkId: string;
+        state: string;
+        assignedGrade?: number;
+      }>(
+        access,
+        `courses/${courseId}/courseWork/-/studentSubmissions?userId=me`,
+        this.fetchImpl,
+      ),
     ]);
-    return parts.flatMap((rows, index) =>
+    const states = new Map(
+      submissions.map((row) => [
+        row.courseWorkId,
+        {
+          state: row.state,
+          graded:
+            typeof row.assignedGrade === "number" &&
+            Number.isFinite(row.assignedGrade),
+        },
+      ]),
+    );
+    return [work, materials, announcements].flatMap((rows, index) =>
       rows
-        .filter((row) => !!row.id)
-        .map((row) => ({
-          id: `${index}:${text(row.id, 128)}`,
-          title:
-            text("title" in row ? row.title : "text" in row ? row.text : "") ||
-            "Sem título",
-          link: safeLink(row.alternateLink),
-          publishedAt: text(row.creationTime, 40) || undefined,
-        })),
+        .filter((row) => row.id && (!row.state || row.state === "PUBLISHED"))
+        .map((row) => {
+          const date = row.dueDate;
+          const dueAt = date
+            ? Date.UTC(
+                date.year,
+                date.month - 1,
+                date.day,
+                row.dueTime?.hours ?? 0,
+                row.dueTime?.minutes ?? 0,
+                row.dueTime?.seconds ?? 0,
+              )
+            : undefined;
+          return {
+            id: `${index}:${text(row.id, 128)}`,
+            title: text(row.title ?? row.text) || "Sem título",
+            description: text(row.description ?? row.text, 30000) || undefined,
+            link: safeLink(row.alternateLink),
+            publishedAt: text(row.creationTime, 40) || undefined,
+            dueAt,
+            sourceState: row.state,
+            submissionState:
+              index === 0 ? states.get(row.id!)?.state : undefined,
+            submissionGraded:
+              index === 0 ? states.get(row.id!)?.graded : undefined,
+            materials: (row.materials ?? []).slice(0, 20).flatMap((m) => {
+              const title =
+                m.driveFile?.driveFile?.title ??
+                m.link?.title ??
+                m.youtubeVideo?.title ??
+                m.form?.title;
+              const url = safeLink(
+                m.driveFile?.driveFile?.alternateLink ??
+                  m.link?.url ??
+                  m.youtubeVideo?.alternateLink ??
+                  m.form?.formUrl,
+              );
+              return url ? [{ title: text(title) || url, url }] : [];
+            }),
+          };
+        }),
     );
   }
 }
@@ -415,6 +489,23 @@ export async function syncClassroom(
         title: text(item.title) || "Sem título",
         link: safeLink(item.link),
         publishedAt: text(item.publishedAt, 40) || undefined,
+        description: text(item.description, 30000) || null,
+        dueAt: Number.isFinite(item.dueAt) ? item.dueAt : null,
+        materials: (item.materials ?? [])
+          .slice(0, 20)
+          .flatMap((m) =>
+            safeLink(m.url)
+              ? [{ title: text(m.title), url: safeLink(m.url) }]
+              : [],
+          ),
+        submissionState: text(item.submissionState, 40) || null,
+        submissionGraded:
+          item.submissionGraded === undefined
+            ? null
+            : item.submissionGraded
+              ? 1
+              : 0,
+        sourceState: text(item.sourceState, 40) || null,
       }));
     const applied = db.transaction(() => {
       const current = db
@@ -422,12 +513,16 @@ export async function syncClassroom(
           "SELECT course_id id FROM user_classroom_mappings WHERE user_id=? AND offering_id=?",
         )
         .get(userId, offeringId) as { id: string } | undefined;
-      if (current?.id !== mapping.id) return false;
+      if (
+        current?.id !== mapping.id ||
+        !eligibleOfferings(db, userId).some((o) => o.offeringId === offeringId)
+      )
+        return false;
       db.prepare(
         "DELETE FROM classroom_feed_v2 WHERE user_id=? AND offering_id=?",
       ).run(userId, offeringId);
       const insert = db.prepare(
-        "INSERT INTO classroom_feed_v2(user_id,offering_id,external_id,title,link,published_at) VALUES(?,?,?,?,?,?)",
+        "INSERT INTO classroom_feed_v2(user_id,offering_id,external_id,title,link,published_at,description,due_at,materials_json,submission_state,source_state,submission_graded) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
       );
       for (const item of feed)
         insert.run(
@@ -437,6 +532,12 @@ export async function syncClassroom(
           item.title,
           item.link ?? null,
           item.publishedAt ?? null,
+          item.description,
+          item.dueAt,
+          JSON.stringify(item.materials),
+          item.submissionState,
+          item.sourceState,
+          item.submissionGraded,
         );
       db.prepare(
         "UPDATE classroom_sync_v2 SET status='ready',last_success_at=?,error_code=NULL WHERE user_id=? AND offering_id=?",

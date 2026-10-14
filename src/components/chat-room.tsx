@@ -66,6 +66,11 @@ export function ChatRoom({
   const tr = useUiText();
   const [messages, setMessages] = useState(initialMessages);
   const [body, setBody] = useState("");
+  const [editing, setEditing] = useState<{ id: number; body: string } | null>(
+    null,
+  );
+  const [editPending, setEditPending] = useState(false);
+  const [editError, setEditError] = useState("");
   const [error, setError] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -85,6 +90,7 @@ export function ChatRoom({
   const imagePreviewRef = useRef<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const stickToBottom = useRef(true);
+  const ownMessageScroll = useRef(false);
   const pendingId = useRef<string | null>(null);
   const lastTypingAt = useRef(0);
 
@@ -145,10 +151,11 @@ export function ChatRoom({
 
   useEffect(() => {
     const list = messageListRef.current;
-    if (!list || !stickToBottom.current) return;
+    if (!list || (!stickToBottom.current && !ownMessageScroll.current)) return;
     requestAnimationFrame(() => {
       const current = messageListRef.current;
       if (current) current.scrollTop = current.scrollHeight;
+      ownMessageScroll.current = false;
     });
   }, [messages]);
 
@@ -409,6 +416,7 @@ export function ChatRoom({
       }
       pendingId.current = null;
       sendRealtime({ type: "refresh", roomId });
+      ownMessageScroll.current = true;
       stickToBottom.current = true;
       lastId.current = Math.max(lastId.current, payload.message.id);
       setMessages((current) => {
@@ -617,6 +625,72 @@ export function ChatRoom({
                 />
               </a>
             ))}
+            {editing?.id === message.id ? (
+              <form
+                className="chat-inline-edit"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  if (!editing.body.trim() || editPending) return;
+                  setEditPending(true);
+                  setEditError("");
+                  try {
+                    const response = await fetch(`/api/chat/${roomId}`, {
+                      method: "PATCH",
+                      headers: { "content-type": "application/json" },
+                      body: JSON.stringify({
+                        messageId: editing.id,
+                        body: editing.body,
+                      }),
+                    });
+                    if (!response.ok) throw new Error();
+                    const payload = (await response.json()) as {
+                      message: Message;
+                    };
+                    setMessages((current) =>
+                      current.map((item) =>
+                        item.id === payload.message.id ? payload.message : item,
+                      ),
+                    );
+                    setEditing(null);
+                  } catch {
+                    setEditError(
+                      tr(
+                        "Não foi possível salvar. Seu texto foi mantido.",
+                        "Could not save. Your text was kept.",
+                      ),
+                    );
+                  } finally {
+                    setEditPending(false);
+                  }
+                }}
+              >
+                <label>
+                  {tr("Editar mensagem", "Edit message")}
+                  <textarea
+                    autoFocus
+                    value={editing.body}
+                    onChange={(event) =>
+                      setEditing({ ...editing, body: event.target.value })
+                    }
+                    maxLength={10000}
+                    required
+                  />
+                </label>
+                {editError ? <p role="alert">{editError}</p> : null}
+                <button
+                  type="button"
+                  disabled={editPending}
+                  onClick={() => setEditing(null)}
+                >
+                  {tr("Cancelar", "Cancel")}
+                </button>
+                <button disabled={editPending || !editing.body.trim()}>
+                  {editPending
+                    ? tr("Salvando…", "Saving…")
+                    : tr("Salvar alteração", "Save edit")}
+                </button>
+              </form>
+            ) : null}
             <div className="chat-message-actions">
               <button
                 type="button"
@@ -635,28 +709,9 @@ export function ChatRoom({
                 <>
                   <button
                     type="button"
-                    onClick={async () => {
-                      const next = window.prompt("Editar mensagem");
-                      if (!next?.trim()) return;
-                      const response = await fetch(`/api/chat/${roomId}`, {
-                        method: "PATCH",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify({
-                          messageId: message.id,
-                          body: next,
-                        }),
-                      });
-                      if (!response.ok) return;
-                      const payload = (await response.json()) as {
-                        message: Message;
-                      };
-                      setMessages((current) =>
-                        current.map((candidate) =>
-                          candidate.id === payload.message.id
-                            ? payload.message
-                            : candidate,
-                        ),
-                      );
+                    onClick={() => {
+                      setEditing({ id: message.id, body: message.bodySource });
+                      setEditError("");
                     }}
                   >
                     <UiCopy pt="Editar" en="Edit" />

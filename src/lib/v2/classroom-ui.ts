@@ -18,7 +18,8 @@ export type PersonalClassroomFeedItem = {
   offeringId: number;
   type: "announcement" | "coursework" | "material";
   title: string;
-  excerpt: null;
+  excerpt: string | null;
+  materials: Array<{ title: string; url: string }>;
   externalUrl: string | null;
   publishedAt: number | null;
 };
@@ -33,7 +34,7 @@ export function listPersonalClassroomFeed(
     const rows = db
       .prepare(
         `SELECT f.external_id id,f.offering_id offeringId,f.title,
-                f.link externalUrl,f.published_at publishedAt
+                f.link externalUrl,f.published_at publishedAt,f.description excerpt,f.materials_json materialsJson
          FROM legacy_user_links u
          JOIN classroom_feed_v2 f ON f.user_id=u.user_id
          JOIN user_classroom_mappings m ON m.user_id=f.user_id AND m.offering_id=f.offering_id
@@ -48,6 +49,8 @@ export function listPersonalClassroomFeed(
       id: string;
       offeringId: number;
       title: string;
+      excerpt: string | null;
+      materialsJson: string;
       externalUrl: string | null;
       publishedAt: string | null;
     }>;
@@ -58,7 +61,8 @@ export function listPersonalClassroomFeed(
         : row.id.startsWith("1:")
           ? "material"
           : "announcement",
-      excerpt: null,
+      excerpt: row.excerpt,
+      materials: classroomMaterials(row.materialsJson),
       publishedAt: row.publishedAt ? Date.parse(row.publishedAt) || null : null,
     }));
   });
@@ -114,5 +118,28 @@ export function getPersonalClassroomSummary(
     });
   } catch {
     return null;
+  }
+}
+
+function classroomMaterials(
+  json: string,
+): Array<{ title: string; url: string }> {
+  try {
+    const rows: unknown = JSON.parse(json);
+    if (!Array.isArray(rows)) return [];
+    return rows.slice(0, 20).flatMap((row) => {
+      if (!row || typeof row.title !== "string" || typeof row.url !== "string")
+        return [];
+      try {
+        const url = new URL(row.url);
+        return url.protocol === "https:"
+          ? [{ title: row.title, url: url.toString() }]
+          : [];
+      } catch {
+        return [];
+      }
+    });
+  } catch {
+    return [];
   }
 }

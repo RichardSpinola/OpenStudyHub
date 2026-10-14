@@ -1,3 +1,4 @@
+import { academicClock } from "./academic-clock";
 import type { TodayData } from "@/lib/today";
 import type { PersonalClassroomSummary } from "@/lib/v2/classroom-ui";
 
@@ -6,7 +7,9 @@ export function selectTodayHighlights(
   classroom: PersonalClassroomSummary | null,
   now: Date,
 ) {
-  const minutes = now.getHours() * 60 + now.getMinutes();
+  const minutes = data.timeZone
+    ? academicClock(now, data.timeZone).minutes
+    : now.getHours() * 60 + now.getMinutes();
   const currentOrLater = data.classes
     .filter((item) => item.endsAtMinutes > minutes)
     .sort((a, b) => a.startsAtMinutes - b.startsAtMinutes)[0];

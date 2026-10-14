@@ -84,6 +84,14 @@ export default async function Institution({
     const actor = await currentAdminV2(db);
     if (!actor) redirect("/control/login");
     if (actor.mustChangePassword) redirect("/control/password");
+    const timeZone =
+      (
+        db
+          .prepare(
+            "SELECT time_zone zone FROM institution_timezones WHERE institution_id=?",
+          )
+          .get(id) as { zone: string } | undefined
+      )?.zone ?? "America/Bahia";
     const institution = db
       .prepare(
         "SELECT id,name,archived_at archivedAt FROM institutions WHERE id=?",
@@ -115,6 +123,29 @@ export default async function Institution({
         message={q.ok}
         error={q.error}
       >
+        <AdminActionPanel title="Fuso da instituição">
+          <form action={controlAction} className="v2-fields">
+            <HiddenContext
+              intent="institutionTimezone"
+              returnTo={`/control/institutions/${id}`}
+              institutionId={id}
+            />
+            <label>
+              Fuso horário
+              <input
+                name="timeZone"
+                required
+                defaultValue={timeZone}
+                placeholder="America/Bahia"
+              />
+            </label>
+            <p>
+              Horários das aulas e o dia da agenda usam este fuso, mesmo quando
+              o servidor está em UTC.
+            </p>
+            <button>Salvar fuso</button>
+          </form>
+        </AdminActionPanel>
         <nav
           className="admin-breadcrumb"
           aria-label={tr("Caminho", "Breadcrumb")}

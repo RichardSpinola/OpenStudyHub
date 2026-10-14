@@ -137,7 +137,7 @@ export default async function LibraryPage({
       offeringId: value.offeringId,
       subjectName: value.subjectName,
       updatedAt: value.updatedAt,
-      shared: false,
+      shared: value.ownerUserId !== user.id,
     }));
   } else {
     for (const [records, shared] of [

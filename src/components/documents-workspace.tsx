@@ -331,6 +331,20 @@ export default async function DocumentsWorkspace({
 
       {view === "generate" ? (
         <section className="utility-panel document-generate-flow">
+          <div
+            className="document-flow-guide"
+            aria-label={tr("Etapas do documento", "Document steps")}
+          >
+            <span>
+              <b>1</b> {tr("Escolha o modelo", "Choose a template")}
+            </span>
+            <span>
+              <b>2</b> {tr("Preencha o documento", "Fill in the document")}
+            </span>
+            <span>
+              <b>3</b> {tr("Confira e crie", "Review and create")}
+            </span>
+          </div>
           <div className="panel-title">
             <span>
               <UiCopy pt="GERAR DOCUMENTO" en="CREATE DOCUMENT" />
@@ -1013,6 +1027,12 @@ export default async function DocumentsWorkspace({
                   en="Create personal template"
                 />
               </h3>
+              <p className="panel-help">
+                <UiCopy
+                  pt="Use um Google Doc como base reutilizável. Escolha um nome para encontrá-lo depois; o documento original permanece intacto."
+                  en="Use a Google Doc as a reusable base. Choose a name so you can find it later; the original document stays intact."
+                />
+              </p>
               <form
                 className="workflow-form"
                 action={createDocumentTemplateAction}

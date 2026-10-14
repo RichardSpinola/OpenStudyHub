@@ -1,3 +1,5 @@
+import { subjectResourceHref } from "@/lib/v2/academic-links";
+import { ProjectSharingPanel } from "@/components/project-sharing-panel";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -56,6 +58,7 @@ export default async function ProjectDetailPage({
   const parameters = await searchParams;
   const directDriveAccess = getProjectDriveStorageUser(project) === user.id;
   const status = parameters.status;
+  const isOwner = project.ownerUserId === user.id;
   const failureStage =
     status === "sync-error" ? getProjectSyncFailureStage(project.id) : null;
   const retryPreview =
@@ -65,7 +68,12 @@ export default async function ProjectDetailPage({
   const returnHref =
     parameters.from === "projects" || project.subjectId === null
       ? "/library?type=projects"
-      : `/subjects/${project.subjectId}?view=projects`;
+      : subjectResourceHref(
+          user.id,
+          project.offeringId,
+          project.subjectId,
+          "projects",
+        );
   const returnLabel =
     parameters.from === "projects" || project.subjectId === null
       ? tr("← Meus projetos", "← My projects")
@@ -76,7 +84,9 @@ export default async function ProjectDetailPage({
   });
 
   return (
-    <div className="workflow-shell project-detail-shell">
+    <div
+      className={`workflow-shell project-detail-shell ${isOwner ? "" : "project-read-only"}`}
+    >
       <header className="section-header">
         <div>
           <p className="eyebrow">
@@ -97,6 +107,29 @@ export default async function ProjectDetailPage({
         <Link href={returnHref}>{returnLabel}</Link>
       </header>
 
+      {!isOwner ? (
+        <p className="feedback-banner">
+          <UiCopy
+            pt="Compartilhado com você para leitura e download."
+            en="Shared with you for reading and download."
+          />
+        </p>
+      ) : null}
+      {status === "shared" ? (
+        <p role="status">
+          <UiCopy
+            pt="Acesso ao projeto atualizado."
+            en="Project access updated."
+          />
+        </p>
+      ) : status === "share-error" ? (
+        <p role="alert">
+          <UiCopy
+            pt="Não foi possível compartilhar. Confira a pessoa escolhida."
+            en="Could not share. Check the selected person."
+          />
+        </p>
+      ) : null}
       {status === "created" ? (
         <p className="feedback-banner is-success" role="status">
           <UiCopy
@@ -226,12 +259,26 @@ export default async function ProjectDetailPage({
       </section>
 
       <div className="project-detail-grid" id="files">
-        <ProjectUpload
-          projectId={project.id}
-          currentVersionNumber={project.currentVersionNumber}
-          currentLanguage={project.language}
-          currentTechnologies={project.technologies}
-        />
+        {isOwner ? (
+          <ProjectUpload
+            projectId={project.id}
+            currentVersionNumber={project.currentVersionNumber}
+            currentLanguage={project.language}
+            currentTechnologies={project.technologies}
+          />
+        ) : (
+          <section className="utility-panel">
+            <h2>
+              <UiCopy pt="Arquivos e versões" en="Files and versions" />
+            </h2>
+            <p>
+              <UiCopy
+                pt="Abra uma versão abaixo para visualizar ou baixar os arquivos compartilhados."
+                en="Open a version below to preview or download shared files."
+              />
+            </p>
+          </section>
+        )}
         <aside className="utility-panel project-summary-panel">
           <div className="panel-title">
             <UiCopy pt="ARMAZENAMENTO" en="STORAGE" />
@@ -426,6 +473,9 @@ export default async function ProjectDetailPage({
         )}
       </section>
 
+      {isOwner && process.env.OPENSTUDYHUB_V2_ENABLED === "1" ? (
+        <ProjectSharingPanel projectId={project.id} ownerId={user.id} />
+      ) : null}
       <section className="utility-panel project-sharing-panel" id="sharing">
         <div>
           <p className="eyebrow">

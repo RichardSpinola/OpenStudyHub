@@ -1,5 +1,6 @@
 "use client";
 
+import { UiCopy } from "@/components/ui-language-provider";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -59,6 +60,14 @@ export function LoginForm({
       {state.status === "invalid" ? (
         <p className="form-error" role="alert">
           {labels.invalidCredentials}
+        </p>
+      ) : null}
+      {state.status === "service-error" ? (
+        <p className="form-error" role="alert">
+          <UiCopy
+            pt="A instalação não conseguiu preparar sua sessão. Tente novamente; se persistir, peça ao Admin para conferir a sincronização acadêmica."
+            en="The installation could not prepare your session. Try again; if it persists, ask the Admin to check academic synchronization."
+          />
         </p>
       ) : null}
       <LoginSubmit label={labels.loginAction} />
