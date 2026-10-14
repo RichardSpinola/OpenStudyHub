@@ -1,0 +1,77 @@
+# Backlog V3 — cobertura dos pedidos e achados
+
+**Estado:** A01 consolidado nesta etapa; demais itens planejados, não implementados. Achados de código não são equivalentes a reprodução em navegador. Nenhum item some por não aparecer no resumo de uma etapa.
+
+## Achados técnicos
+
+| ID  | Etapa | Evidência                | Trabalho                                                                                         | Critério de fechamento                                                                     |
+| --- | ----- | ------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| A01 | 0     | Confirmado               | Uma base única: hotfix e patches pós-release, autoria das mudanças e identificação da imagem.    | Checkpoint rastreável; V2 preservada; patches sem dados particulares.                      |
+| A02 | 2     | Confirmado               | Eliminar leituras acadêmicas contraditórias entre V2 e legado em todas as ferramentas.           | Cadastro, matrícula e retirada pelo Admin refletem acesso sem scripts privados.            |
+| A03 | 2     | Confirmado na auditoria  | Classroom alimenta as atividades corretas de cada usuário.                                       | Contas diferentes têm suas tarefas; sync repetido não duplica nem mistura dados.           |
+| A04 | 2     | Confirmado               | Preservar descrição, prazo, materiais e estados de submissão do Classroom.                       | Hoje/atividades/modelos usam o mesmo contexto e mantêm estados pessoais.                   |
+| A05 | 2     | Confirmado               | Importador com execução completa, conflitos, mapa de IDs e repetição segura.                     | Importação de origens suportadas preserva conteúdo e passa integridade/FKs.                |
+| A06 | 2     | Confirmado               | Fuso explícito para datas locais, aulas e agrupamentos do Hoje.                                  | Mesmo resultado em servidor UTC e usuário no fuso configurado.                             |
+| A07 | 4     | Confirmado/proposta      | Proprietário/backend/acesso no schema; inventário completo antes de trocar storage owner.        | Não perder arquivos legados nem ampliar acesso ao mudar política/proprietário.             |
+| A08 | 4     | Confirmado               | Importação do modelo pessoal para o destino autorizado antes de mapear/gerar.                    | Picker e storage central trabalham com duas identidades sem tocar o original.              |
+| A09 | 4     | Confirmado/proposta      | Recuperação guiada da raiz/pastas; distinguir 403, 404 e indisponibilidade.                      | Não substituir raiz nem duplicar pastas silenciosamente.                                   |
+| A10 | 4     | Confirmado               | Staging de Projects persistente com expiração e retomada clara.                                  | Prévia sobrevive à recriação do serviço até o TTL.                                         |
+| A11 | 4     | Risco no fluxo           | Confirmação de Projects com posse exclusiva e idempotência.                                      | Duas confirmações concorrentes produzem uma única versão válida.                           |
+| A12 | 7     | Confirmado no fluxo      | Streaming, orçamento de corpo e concorrência limitada para ZIP/upload/download.                  | Carga grande não cria múltiplas cópias integrais em RAM; limites antes de materializar.    |
+| A13 | 7     | Confirmado               | Cache curto de access token e deduplicação de refresh por conta.                                 | Menos renovações; revogação continua refletida corretamente.                               |
+| A14 | 4     | Proposta aprovada        | Projects com backend local e diagnóstico antecipado do destino.                                  | Criar, enviar e baixar versões sem Google configurado.                                     |
+| A15 | 6     | Confirmado               | Propagar editar/excluir mensagem entre clientes com revisão/tombstone.                           | Duas contas convergem após ação e reconexão.                                               |
+| A16 | 6     | Confirmado               | Últimas mensagens primeiro, paginação anterior e janela limitada.                                | Conversa longa abre no presente sem acumular histórico inteiro.                            |
+| A17 | 5     | Risco no fluxo           | Proteção contra sobrescrita de notas e falha de autosave; evolução para colaboração.             | Duas abas/participantes não apagam trabalho recente; rascunho recuperável.                 |
+| A18 | 6     | Risco no fluxo           | Quadro com lote identificado, ACK e retransmissão idempotente.                                   | Queda entre envio e confirmação não apresenta salvamento falso.                            |
+| A19 | 6     | Confirmado/proposta      | Gravação consolidada, limites claros, compactação, exportação e ciclo de vida do quadro.         | Cena grande não cresce indefinidamente; tema e restauração coerentes.                      |
+| A20 | 1     | Sintoma pendente         | Reproduzir corte/área preta em Configurações.                                                    | Identificar causa na interface real e cobrir resolução afetada.                            |
+| A21 | 1     | Reproduzido isoladamente | Aviso Google cria linha adicional no shell e sobrepõe o conteúdo.                                | Shell calcula as regiões corretamente nos temas e navegações existentes.                   |
+| A22 | 1     | Confirmado/pedido        | Foco inicial e retorno à busca na Home/nova aba, preservando texto útil.                         | Desktop permite começar a digitar; celular não abre teclado sem intenção.                  |
+| A23 | 1     | Pedido aprovado          | Autocomplete real opcional por API oficial configurada; teclado e provedor final preservados.    | Sem serviço/chave a busca funciona; não disfarçar atalhos de sugestões web.                |
+| A24 | 6     | Pedido aprovado          | Confete breve e som opcional ao vencer.                                                          | Dispara uma vez por vitória, som desligado inicialmente e redução de movimento respeitada. |
+| A25 | 6     | Confirmado/pedido        | Jogos pausam ocultos e teclas não interferem em inputs; verificar chord do Campo Minado.         | Controles/toque e vitória/derrota consistentes nos cinco jogos.                            |
+| A26 | 1     | Confirmado               | Consolidar os estilos por componentes gradualmente; idioma revisado no checkpoint final.         | Dois temas coesos sem novas camadas globais contraditórias.                                |
+| A27 | 7     | Confirmado               | Conexões do banco reutilizadas e migrations/hashes fora da leitura por request.                  | Menos trabalho por operação com isolamento correto entre usuários.                         |
+| A28 | 7     | Confirmado               | Deduplicar automação e reduzir polling de notificações/chat/jogos/Google.                        | Sem jobs duplicados; reconexão e fallback HTTP continuam funcionais.                       |
+| A29 | 7     | Confirmado               | Health/readiness do banco canônico e realtime; diagnóstico operacional concreto.                 | Erro real de dependência não aparece como sistema pronto.                                  |
+| A30 | 7     | Confirmado               | Configuração oficial de notificações push/VAPID e diagnóstico claro.                             | Instalação nova consegue ativar o recurso sem ajustes particulares.                        |
+| A31 | 7     | Confirmado na instalação | Boot com rede tardia e gerenciamento ZimaOS/CasaOS; Compose original preservado.                 | Admin volta após rede; parar/reiniciar pelo gerenciador funciona.                          |
+| A32 | 7     | Confirmado/proposta      | Backup operacional consistente, exportação sanitizada distinta, agenda/retenção e restore.       | Recuperação ensaiada; cópia completa nunca declarada após falha parcial.                   |
+| A33 | 7     | Risco a validar          | Concorrência e limitação de login/realtime; proteção de autorização.                             | Testes controlados em fixture; nada de teste de carga ofensivo em produção.                |
+| A34 | 7     | Confirmado               | Runtime/dependências fixados, imagem identificável/menor e pacote com apenas runtime necessário. | Build reproduzível; consumo comparado antes/depois; segurança de superfície preservada.    |
+
+## Pedidos de produto confirmados
+
+| ID  | Etapa | Pedido                                                                                                                                                                                        |
+| --- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| U01 | 0–8   | Revisão UX de todas as famílias de telas, profissional e coesa, Material e Legacy, top/classic; uso confortável em monitores pequenos.                                                        |
+| U02 | 1     | Busca pronta para digitar, autocomplete real, arrastar/soltar atalhos, edição/remoção na Home; preservar ASCII.                                                                               |
+| U03 | 1     | Wallpaper com enquadramento ajustável, ícones nas bordas corretas e nenhum corte de viewport.                                                                                                 |
+| U04 | 2     | Hoje organizado, grade pelo intervalo real das aulas e localização sem duplicação; preservar proposta geral.                                                                                  |
+| U05 | 1/3   | Capas de disciplinas acessíveis com ajuste; cards/histórico e abas consistentes; lateral de aulas sem saltos.                                                                                 |
+| U06 | 3     | Admin revitalizado; sequência clara de instituição/curso/período/turma/oferta/contexto/matrícula.                                                                                             |
+| U07 | 3     | Gestores e concessões mantidos, testados e compreensíveis; remoção de curso preserva trabalhos e explicita dependências.                                                                      |
+| U08 | 3     | Eventos acadêmicos pontuais e aula excepcional por data, com público/escopo, integrados a Hoje e disciplina.                                                                                  |
+| U09 | 3     | Provas por turma/curso; negar ferramentas internas em rotas/APIs/realtime, mantendo busca e atalhos externos.                                                                                 |
+| U10 | 4     | Drive compartilhado acadêmico + Pessoais separados sob demanda; curso por sigla; projetos dentro da raiz da instituição.                                                                      |
+| U11 | 4     | Privacidade por recurso e compartilhamento com pessoas/grupos; política Admin App-only ou acesso direto.                                                                                      |
+| U12 | 4     | Documentos redesenhados, modelos importados/mapeados e Google Docs acessíveis ao dono real; não baixar local como único fluxo.                                                                |
+| U13 | 4     | Projects redesenhado; criar/importar distintos; progresso estilo TUI, prévia, versões e recuperação sem pastas duplicadas.                                                                    |
+| U14 | 5     | Notas úteis como workspace: páginas, subpáginas, blocos, busca, grupos, colaboração e bases simples tabela/Kanban.                                                                            |
+| U15 | 6     | Chat integrado a arquivos/projetos/documentos/notas; busca, histórico e fechamento/arquivamento de DMs.                                                                                       |
+| U16 | 6     | Admin configura/modera espaços institucionais com auditoria; DMs privados e denúncia voluntária.                                                                                              |
+| U17 | 6     | Quadro mantido com Excalidraw, mais leve e confiável; cinco jogos adaptáveis, controles bons, confete e som opcional.                                                                         |
+| U18 | 1/7   | Configurações reorganizadas, notificações/integrações/sobre claros, avatar local redondo/quadrado, idioma completo no checkpoint.                                                             |
+| U19 | 7     | Backup completo criptografado no Drive, agendamento/retenção e tutorial de restauração; redução medida de memória.                                                                            |
+| U20 | 0–8   | Nova pasta V3, mesmo histórico/repositório público, commits por etapa, retorno simples, instalação atual autorizada para entregas estáveis, GitHub no final e novas features após checkpoint. |
+
+## Limites já decididos
+
+- Sem IA, vídeo, apresentações ou expansão do quadro para uma plataforma inteira.
+- Sem novos minigames além dos cinco já escolhidos nesta entrega; melhorar os existentes.
+- Sem fórmulas/relacionamentos nas bases de Notas desta entrega.
+- Não trocar autenticação, idioma ou runtime por sistemas paralelos expostos aos usuários.
+- Backups não prometem capturar conteúdo de links externos sem acesso. Manifesto separa cópia real de referência.
+- A preparação não publica release, imagem ou documentação. Google real e extensão real exigem validação humana apenas quando houver alteração relevante.
+- Ao implementar cada item, registrar evidência, pendência e commit no acompanhamento; não declarar PASS só porque o botão apareceu.

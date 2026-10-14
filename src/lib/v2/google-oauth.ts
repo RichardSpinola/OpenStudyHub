@@ -18,7 +18,11 @@ const tokenSchema = z.object({
   refresh_token: z.string().min(1).optional(),
   scope: z.string().optional(),
 });
-const userSchema = z.object({ sub: z.string().min(1), email: z.email() });
+const userSchema = z.object({
+  sub: z.string().min(1),
+  email: z.email(),
+  email_verified: z.boolean().optional(),
+});
 type GoogleFetch = typeof fetch;
 type Options = {
   config?: GoogleV2Config;
@@ -252,6 +256,29 @@ export async function googleAccessTokenV2(
     );
   }
   return tokenSchema.parse(await response.json()).access_token;
+}
+
+export async function verifiedGoogleEmailV2(
+  db: V2Database,
+  userId: number,
+  options: Options = {},
+): Promise<string> {
+  const row = db
+    .prepare(
+      "SELECT google_subject subject FROM google_connections_v2 WHERE user_id=? AND status='connected'",
+    )
+    .get(userId) as { subject: string } | undefined;
+  if (!row) throw new Error("Conecte sua conta Google primeiro.");
+  const access = await googleAccessTokenV2(db, userId, options);
+  const response = await (options.fetchImpl ?? fetch)(USERINFO_URL, {
+    headers: { authorization: `Bearer ${access}` },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error("Identidade Google indisponível.");
+  const profile = userSchema.parse(await response.json());
+  if (profile.sub !== row.subject || profile.email_verified === false)
+    throw new Error("Identidade Google não confirmada.");
+  return profile.email;
 }
 
 export async function disconnectGoogleV2(

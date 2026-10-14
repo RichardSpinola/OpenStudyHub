@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 
 import { getCurrentSession } from "@/lib/authorization";
 import { downloadDriveFile } from "@/lib/google/drive";
-import { getProjectVersion, getUserProject } from "@/lib/projects";
+import {
+  getProjectDriveStorageUser,
+  getProjectVersion,
+  getUserProject,
+} from "@/lib/projects";
 
 export const runtime = "nodejs";
 
@@ -24,7 +28,7 @@ export async function GET(
       Number(values.version),
     );
     const archive = await downloadDriveFile(
-      session.user.id,
+      getProjectDriveStorageUser(project),
       version.archiveDriveFileId,
     );
     const safeName = project.name.replace(/[^a-zA-Z0-9._-]+/g, "-");

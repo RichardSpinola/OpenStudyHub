@@ -91,7 +91,9 @@ const generationErrors: Record<string, string> = {
   "generation-drive-folder-missing":
     "A pasta Drive desta matéria ainda não foi configurada.",
   "generation-drive-access-pending":
-    "O Admin ainda não autorizou sua conta a usar o Drive central.",
+    "O Drive central ainda não está disponível para sua conta. Conecte seu Google ou peça ao Admin para verificar a conexão central.",
+  "generation-drive-share-failed":
+    "O Drive central não conseguiu conceder acesso ao arquivo para sua Conta Google. Nenhum documento foi salvo; verifique as permissões de compartilhamento.",
   "generation-copy-failed":
     "O Google Drive não conseguiu copiar o documento-base.",
   "generation-merge-failed":
@@ -119,7 +121,9 @@ const generationErrorsEn: Record<string, string> = {
   "generation-drive-folder-missing":
     "The Drive folder for this subject has not been configured yet.",
   "generation-drive-access-pending":
-    "Admin has not authorized your account to use central Drive yet.",
+    "Central Drive is not available for your account yet. Connect Google or ask Admin to check the central connection.",
+  "generation-drive-share-failed":
+    "Central Drive could not grant your Google Account access to the file. No document was saved; check sharing permissions.",
   "generation-copy-failed": "Google Drive could not copy the source document.",
   "generation-merge-failed":
     "The copy was created, but its sections could not be filled in.",
@@ -478,8 +482,8 @@ export default async function DocumentsPage({
                 </ul>
                 <p>
                   <UiCopy
-                    pt="O modelo será importado para seus templates no Drive. Ao criar, os campos da disciplina e do aluno serão preenchidos."
-                    en="The template will be imported to your Drive templates. When you create a document, subject and student fields will be filled in."
+                    pt="O modelo será importado para seus templates no Drive configurado pela instância. Ao criar, os campos da disciplina e do aluno serão preenchidos."
+                    en="The template will be imported to your templates in the instance's configured Drive. Subject and student fields will be filled in when you create the document."
                   />
                 </p>
               </div>

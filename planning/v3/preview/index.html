@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="material">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenStudyHub V3 — direção visual</title>
+    <link rel="stylesheet" href="preview.css" />
+    <script defer src="preview.js"></script>
+  </head>
+  <body>
+    <header class="review-bar">
+      <div>
+        <strong>OSH / V3</strong
+        ><span>Estudo de interface · dados fictícios</span>
+      </div>
+      <div class="review-controls">
+        <label
+          >Tela<select id="screen">
+            <option value="home">Home</option>
+            <option value="library">Biblioteca</option>
+            <option value="subject">Disciplina</option>
+            <option value="admin">Admin</option>
+          </select></label
+        >
+        <label
+          >Tema<select id="theme">
+            <option value="material">Material</option>
+            <option value="legacy">Legacy / TUI</option>
+          </select></label
+        >
+        <label
+          >Largura<select id="width">
+            <option value="auto">Automática</option>
+            <option value="1366">1366 px</option>
+            <option value="1024">1024 px</option>
+            <option value="390">390 px</option>
+          </select></label
+        >
+      </div>
+    </header>
+    <div id="viewport" class="demo-viewport">
+      <div class="app">
+        <header class="app-header">
+          <a class="brand" href="#home" aria-label="Home"
+            ><span class="brand-mark">▥</span><strong>OpenStudyHub</strong
+            ><span class="institution">/ Universidade Exemplo</span></a
+          >
+          <nav aria-label="Navegação principal" id="primary-nav">
+            <a href="#home" data-nav="home">⌂ <span>Home</span></a
+            ><a href="#subject" data-nav="today">▦ <span>Hoje</span></a
+            ><a href="#subject" data-nav="subject">▤ <span>Disciplinas</span></a
+            ><a href="#library">▧ <span>Notas</span></a
+            ><a href="#library" data-nav="library">▱ <span>Documentos</span></a
+            ><a href="#library">◫ <span>Chat</span></a
+            ><a href="#library">⌑ <span>Projetos</span></a
+            ><a href="#library">⊞ <span>Extras</span></a>
+            <button
+              id="nav-more"
+              class="nav-more"
+              type="button"
+              aria-expanded="false"
+            >
+              Mais ⋯
+            </button>
+          </nav>
+          <div class="identity">
+            <button
+              type="button"
+              class="icon-button"
+              data-feedback="Aqui ficam os avisos da conta e do sistema."
+              aria-label="Notificações"
+            >
+              ♧</button
+            ><span class="avatar">AL</span
+            ><span class="identity-name">Alex Lima</span>
+          </div>
+        </header>
+        <main id="content" tabindex="-1"></main>
+        <footer class="demo-caption">
+          Prévia de organização e aparência. Nenhuma ação altera o App, o
+          servidor ou o Google.
+        </footer>
+      </div>
+    </div>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <dialog id="demo-dialog">
+      <form method="dialog">
+        <button class="dialog-close icon-button" aria-label="Fechar">×</button>
+      </form>
+      <h2 id="dialog-title">Criar curso</h2>
+      <p class="muted">
+        Demonstração de campos e hierarquia. Não cadastra dados reais.
+      </p>
+      <form id="demo-form">
+        <label
+          >Nome do curso<input
+            name="name"
+            required
+            placeholder="Ex.: Engenharia de Software"
+        /></label>
+        <label
+          >Sigla<input
+            name="shortName"
+            required
+            maxlength="12"
+            placeholder="Ex.: ES"
+        /></label>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-dialog">Cancelar</button
+          ><button class="primary" type="submit">Conferir cadastro</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

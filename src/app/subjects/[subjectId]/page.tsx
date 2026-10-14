@@ -530,7 +530,8 @@ export default async function SubjectPage({
                     className="subject-integration-actions"
                     key={offering.offeringId}
                   >
-                    {integration.driveFolderId ? (
+                    {integration.driveFolderId &&
+                    (!v2Mode || integration.driveStorageUserId === user.id) ? (
                       <a
                         className="action-button"
                         href={`https://drive.google.com/drive/folders/${encodeURIComponent(integration.driveFolderId)}`}

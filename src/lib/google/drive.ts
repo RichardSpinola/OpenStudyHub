@@ -751,6 +751,42 @@ export async function copyDriveFile(
   return driveFileSchema.parse(await response.json());
 }
 
+export async function grantDriveFileWriter(
+  storageUserId: number,
+  fileId: string,
+  email: string,
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+): Promise<void> {
+  const ownerId = idSchema.parse(storageUserId);
+  const safeFileId = z.string().trim().min(1).max(255).parse(fileId);
+  const safeEmail = z.email().parse(email);
+  const connection = options.connection ?? getDatabase();
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const accessToken = await getGoogleAccessToken(ownerId, {
+    connection,
+    fetchImpl,
+  });
+  const url = new URL(
+    `${DRIVE_FILES_ENDPOINT}/${encodeURIComponent(safeFileId)}/permissions`,
+  );
+  url.searchParams.set("sendNotificationEmail", "false");
+  url.searchParams.set("fields", "id");
+  const response = await driveRequest(
+    accessToken,
+    url,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        type: "user",
+        role: "writer",
+        emailAddress: safeEmail,
+      }),
+    },
+    fetchImpl,
+  );
+  if (!response.ok) throw new Error("Drive file sharing failed.");
+}
+
 export async function trashDriveFile(
   userId: number,
   fileId: string,

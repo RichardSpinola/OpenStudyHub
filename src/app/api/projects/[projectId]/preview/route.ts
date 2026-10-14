@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 
 import { getCurrentSession } from "@/lib/authorization";
 import { downloadDriveFile } from "@/lib/google/drive";
-import { listProjectFiles } from "@/lib/projects";
+import {
+  getProjectDriveStorageUser,
+  getUserProject,
+  listProjectFiles,
+} from "@/lib/projects";
 import {
   canPreviewProjectPath,
   decodeProjectText,
@@ -23,7 +27,8 @@ export async function GET(
   const path = new URL(request.url).searchParams.get("path");
   if (!path) return NextResponse.json({ error: "not-found" }, { status: 404 });
   try {
-    const file = listProjectFiles(session.user.id, Number(rawId)).find(
+    const project = getUserProject(session.user.id, Number(rawId));
+    const file = listProjectFiles(session.user.id, project.id).find(
       (item) => item.path === path,
     );
     if (!file)
@@ -40,9 +45,11 @@ export async function GET(
         { headers: { "cache-control": "private, no-store" } },
       );
     }
-    const bytes = await downloadDriveFile(session.user.id, file.driveFileId, {
-      maxBytes: maxProjectPreviewBytes,
-    });
+    const bytes = await downloadDriveFile(
+      getProjectDriveStorageUser(project),
+      file.driveFileId,
+      { maxBytes: maxProjectPreviewBytes },
+    );
     if (bytes.length > maxProjectPreviewBytes) {
       return NextResponse.json(
         { kind: "too-large" },

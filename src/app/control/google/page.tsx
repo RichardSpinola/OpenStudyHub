@@ -142,10 +142,16 @@ export default async function GoogleOperations({
         <form action={repairDriveRootAction}>
           <button type="submit">
             <UiCopy
-              pt="Reparar diretório Drive após verificar a referência"
-              en="Repair Drive directory after checking its reference"
+              pt="Conferir pasta raiz e corrigir nome"
+              en="Check root folder and correct its name"
             />
           </button>
+          <p>
+            <UiCopy
+              pt="Este botão mantém a referência atual. Se a pasta estiver ausente ou inacessível, nenhuma pasta nova será criada."
+              en="This keeps the current reference. If the folder is missing or inaccessible, no new folder will be created."
+            />
+          </p>
         </form>
       )}
       <h2>

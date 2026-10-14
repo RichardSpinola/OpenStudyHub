@@ -21,6 +21,7 @@ import {
   projectTechnologyLabels,
 } from "@/lib/project-manifest";
 import {
+  getProjectDriveStorageUser,
   getProjectSyncFailureStage,
   getProjectRetryPreview,
   getUserProject,
@@ -53,6 +54,7 @@ export default async function ProjectDetailPage({
     notFound();
   }
   const parameters = await searchParams;
+  const directDriveAccess = getProjectDriveStorageUser(project) === user.id;
   const status = parameters.status;
   const failureStage =
     status === "sync-error" ? getProjectSyncFailureStage(project.id) : null;
@@ -304,7 +306,7 @@ export default async function ProjectDetailPage({
               </button>
             </form>
           </details>
-          {project.driveProjectFolderId ? (
+          {directDriveAccess && project.driveProjectFolderId ? (
             <a
               className="primary-link"
               href={`https://drive.google.com/drive/folders/${encodeURIComponent(project.driveProjectFolderId)}`}
@@ -430,16 +432,27 @@ export default async function ProjectDetailPage({
             <UiCopy pt="COMPARTILHAMENTO" en="SHARING" />
           </p>
           <h2>
-            <UiCopy pt="Compartilhe pelo Drive" en="Share through Drive" />
+            {directDriveAccess ? (
+              <UiCopy pt="Compartilhe pelo Drive" en="Share through Drive" />
+            ) : (
+              <UiCopy pt="Drive da instituição" en="Institution Drive" />
+            )}
           </h2>
           <p>
-            <UiCopy
-              pt="As permissões dos arquivos são controladas no Google Drive. Abra a pasta do projeto para escolher quem pode acessá-la."
-              en="File permissions are controlled in Google Drive. Open the project folder to choose who can access it."
-            />
+            {directDriveAccess ? (
+              <UiCopy
+                pt="As permissões dos arquivos são controladas no Google Drive. Abra a pasta do projeto para escolher quem pode acessá-la."
+                en="File permissions are controlled in Google Drive. Open the project folder to choose who can access it."
+              />
+            ) : (
+              <UiCopy
+                pt="Seus arquivos ficam no Drive da instituição. Você pode visualizar e baixar as versões aqui no OpenStudyHub; o acesso direto à pasta depende do administrador."
+                en="Your files are stored in the institution Drive. View and download versions here in OpenStudyHub; direct folder access depends on the administrator."
+              />
+            )}
           </p>
         </div>
-        {project.driveProjectFolderId ? (
+        {directDriveAccess && project.driveProjectFolderId ? (
           <a
             className="primary-link"
             href={`https://drive.google.com/drive/folders/${encodeURIComponent(project.driveProjectFolderId)}`}
@@ -448,14 +461,14 @@ export default async function ProjectDetailPage({
           >
             <UiCopy pt="Abrir pasta no Drive ↗" en="Open folder in Drive ↗" />
           </a>
-        ) : (
+        ) : !project.driveProjectFolderId ? (
           <span className="project-sharing-pending">
             <UiCopy
               pt="A pasta aparecerá após a primeira sincronização."
               en="The folder will appear after the first sync."
             />
           </span>
-        )}
+        ) : null}
       </section>
     </div>
   );

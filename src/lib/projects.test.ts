@@ -2,12 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DatabaseConnection } from "@/lib/db/client";
 import { createMigratedTestDatabase } from "@/lib/test-database";
+import { resolveDriveStorageUser } from "@/lib/google/storage-owner";
 
 import {
   archiveUserProject,
   cancelProjectUploadPreview,
   confirmProjectUpload,
   createProject,
+  getProjectDriveStorageUser,
   getProjectRetryPreview,
   getProjectSyncFailureStage,
   getUserProject,
@@ -18,6 +20,9 @@ import {
 
 vi.mock("@/lib/google/oauth", () => ({
   getGoogleAccessToken: vi.fn(async () => "access-token"),
+}));
+vi.mock("@/lib/google/storage-owner", () => ({
+  resolveDriveStorageUser: vi.fn(),
 }));
 
 function seed(connection: DatabaseConnection) {
@@ -129,6 +134,52 @@ describe("projects", () => {
         )
         .get(project.id),
     ).toEqual({ driveProjectFolderId: null });
+  });
+
+  it("usa Drive central para novo projeto V2 e preserva o dono de projeto já vinculado", () => {
+    const previous = process.env.OPENSTUDYHUB_V2_ENABLED;
+    process.env.OPENSTUDYHUB_V2_ENABLED = "1";
+    try {
+      const { ownerId, otherId, offeringId } = seed(connection);
+      vi.mocked(resolveDriveStorageUser).mockReturnValue(otherId);
+      const project = createProject(
+        ownerId,
+        {
+          offeringId,
+          name: "Projeto V2",
+          language: "other",
+          ignorePreset: "other",
+        },
+        connection,
+      );
+      expect(getProjectDriveStorageUser(project, connection)).toBe(otherId);
+      expect(resolveDriveStorageUser).toHaveBeenCalledWith(ownerId, null, {
+        connection,
+      });
+
+      connection.sqlite
+        .prepare("INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?)")
+        .run(`project.storage_user.${project.id}`, String(otherId), Date.now());
+      expect(getProjectDriveStorageUser(project, connection)).toBe(otherId);
+
+      connection.sqlite
+        .prepare("DELETE FROM app_settings WHERE key=?")
+        .run(`project.storage_user.${project.id}`);
+      connection.sqlite
+        .prepare(
+          "UPDATE projects SET drive_project_folder_id='existing' WHERE id=?",
+        )
+        .run(project.id);
+      expect(
+        getProjectDriveStorageUser(
+          getUserProject(ownerId, project.id, connection),
+          connection,
+        ),
+      ).toBe(ownerId);
+    } finally {
+      if (previous === undefined) delete process.env.OPENSTUDYHUB_V2_ENABLED;
+      else process.env.OPENSTUDYHUB_V2_ENABLED = previous;
+    }
   });
   it("permite editar stack somente ao dono sem alterar versões", () => {
     const { ownerId, otherId, offeringId } = seed(connection);

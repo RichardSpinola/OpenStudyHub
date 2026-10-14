@@ -75,12 +75,14 @@ export function isDriveStorageAvailableForUser(
   return withV2Db((db) => {
     const owner = storageOwnerStatus(db);
     if (!owner?.connected || !owner.rootReady || !owner.ownerId) return false;
-    const link = db
+    const user = db
       .prepare(
-        "SELECT legacy_user_id id FROM legacy_user_links WHERE user_id=?",
+        `SELECT u.id FROM legacy_user_links l JOIN users u ON u.id=l.user_id
+         JOIN google_connections_v2 g ON g.user_id=u.id AND g.status='connected'
+         WHERE l.legacy_user_id=? AND u.active=1`,
       )
-      .get(owner.ownerId) as { id: number } | undefined;
-    return link?.id === legacyUserId;
+      .get(legacyUserId) as { id: number } | undefined;
+    return Boolean(user);
   });
 }
 
@@ -155,6 +157,20 @@ export function resolveDriveStorageUser(
     return idSchema.parse(resourceStorageUserId);
   }
   if (options.useConfiguredForNew === false) return resourceOwnerId;
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+    const centralOwner = withV2Db((db) => {
+      const owner = storageOwnerStatus(db);
+      if (!owner?.ownerId) return null;
+      const link = db
+        .prepare(
+          "SELECT legacy_user_id id FROM legacy_user_links WHERE user_id=?",
+        )
+        .get(owner.ownerId) as { id: number } | undefined;
+      if (!link) throw new Error("Proprietário do Drive sem vínculo legado.");
+      return link.id;
+    });
+    if (centralOwner !== null) return centralOwner;
+  }
   return (
     getConfiguredDriveStorageOwnerId(options.connection ?? getDatabase()) ??
     resourceOwnerId

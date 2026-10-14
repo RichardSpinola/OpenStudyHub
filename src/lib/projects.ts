@@ -18,6 +18,7 @@ import {
   uploadDriveFile,
 } from "@/lib/google/drive";
 import type { GoogleFetch } from "@/lib/google/oauth";
+import { resolveDriveStorageUser } from "@/lib/google/storage-owner";
 import { createProjectZip, readProjectZip } from "@/lib/project-archive";
 import {
   buildProjectManifest,
@@ -230,6 +231,20 @@ export function getUserProject(
     ProjectRow | undefined;
   if (!project) throw new Error("Project not found.");
   return parseProjectRow(project);
+}
+
+export function getProjectDriveStorageUser(
+  project: ProjectRecord,
+  connection: DatabaseConnection = getDatabase(),
+): number {
+  if (process.env.OPENSTUDYHUB_V2_ENABLED !== "1") return project.ownerUserId;
+  const stored = connection.sqlite
+    .prepare("SELECT value FROM app_settings WHERE key=?")
+    .get(`project.storage_user.${project.id}`) as { value: string } | undefined;
+  if (stored) return idSchema.parse(Number(stored.value));
+  // Existing projects without this setting retain their original Drive owner.
+  if (project.driveProjectFolderId) return project.ownerUserId;
+  return resolveDriveStorageUser(project.ownerUserId, null, { connection });
 }
 
 export function archiveUserProject(
@@ -490,13 +505,14 @@ export function getProjectRetryPreview(
 
 async function ensureProjectDriveStructure(
   project: ProjectRecord,
+  storageUserId: number,
   connection: DatabaseConnection,
   fetchImpl: GoogleFetch,
 ) {
   let projectFolder: { id: string; name: string } | undefined;
   if (project.driveProjectFolderId) {
     const available = await driveFolderExistsForUser(
-      project.ownerUserId,
+      storageUserId,
       project.driveProjectFolderId,
       { connection, fetchImpl },
     );
@@ -526,7 +542,7 @@ async function ensureProjectDriveStructure(
     )?.shortName;
     if (shortName?.trim()) context.program.shortName = shortName.trim();
   }
-  const root = await ensureDriveRootFolder(project.ownerUserId, {
+  const root = await ensureDriveRootFolder(storageUserId, {
     connection,
     fetchImpl,
   });
@@ -537,7 +553,7 @@ async function ensureProjectDriveStructure(
       .digest("hex")
       .slice(0, 40);
     const folder = await ensureDriveFolderForUser(
-      project.ownerUserId,
+      storageUserId,
       { name, parentId, identityKey: `project-path:${identity}` },
       { connection, fetchImpl },
     );
@@ -545,14 +561,14 @@ async function ensureProjectDriveStructure(
   }
   if (project.driveProjectFolderId) {
     await moveDriveFolderForUser(
-      project.ownerUserId,
+      storageUserId,
       project.driveProjectFolderId,
       parentId,
       { connection, fetchImpl },
     );
   } else {
     projectFolder = await ensureDriveFolderForUser(
-      project.ownerUserId,
+      storageUserId,
       {
         name: project.name,
         parentId,
@@ -563,7 +579,7 @@ async function ensureProjectDriveStructure(
   }
   if (!projectFolder) throw new Error("A pasta do projeto não foi localizada.");
   const currentFolder = await ensureDriveFolderForUser(
-    project.ownerUserId,
+    storageUserId,
     {
       name: "Current",
       parentId: projectFolder.id,
@@ -572,7 +588,7 @@ async function ensureProjectDriveStructure(
     { connection, fetchImpl },
   );
   const versionsFolder = await ensureDriveFolderForUser(
-    project.ownerUserId,
+    storageUserId,
     {
       name: "Versions",
       parentId: projectFolder.id,
@@ -585,6 +601,7 @@ async function ensureProjectDriveStructure(
 
 async function ensureProjectDirectory(
   project: ProjectRecord,
+  storageUserId: number,
   relativeDirectory: string,
   currentFolderId: string,
   connection: DatabaseConnection,
@@ -611,7 +628,7 @@ async function ensureProjectDirectory(
       .digest("hex")
       .slice(0, 32);
     const folder = await ensureDriveFolderForUser(
-      project.ownerUserId,
+      storageUserId,
       { name, parentId, identityKey: `project-dir:${identity}` },
       { connection, fetchImpl },
     );
@@ -645,6 +662,7 @@ export async function confirmProjectUpload(
   const fetchImpl = options.fetchImpl ?? fetch;
   const preview = getProjectUploadPreview(userId, token, connection);
   const project = getUserProject(userId, preview.projectId, connection);
+  const storageUserId = getProjectDriveStorageUser(project, connection);
   if (
     (project.currentVersionNumber === 0 &&
       preview.baseVersionNumber !== null) ||
@@ -707,13 +725,14 @@ export async function confirmProjectUpload(
   try {
     const folders = await ensureProjectDriveStructure(
       project,
+      storageUserId,
       connection,
       fetchImpl,
     );
     const versionNumber = project.currentVersionNumber + 1;
     stage = "envio do ZIP da versão ao Drive";
     const archiveFile = await uploadDriveFile(
-      userId,
+      storageUserId,
       {
         name: `v${String(versionNumber).padStart(4, "0")}.zip`,
         parentFolderId: folders.versionsFolder.id,
@@ -750,13 +769,14 @@ export async function confirmProjectUpload(
       {
         const parentId = await ensureProjectDirectory(
           project,
+          storageUserId,
           dirname(source.path),
           folders.currentFolder.id,
           connection,
           fetchImpl,
         );
         const uploaded = await uploadDriveFile(
-          userId,
+          storageUserId,
           {
             name: basename(source.path),
             parentFolderId: parentId,
@@ -776,7 +796,7 @@ export async function confirmProjectUpload(
     for (const path of [...diff.removed, ...diff.modified]) {
       const fileId = existingFiles.get(path);
       if (!fileId) continue;
-      await trashDriveFile(userId, fileId, { connection, fetchImpl });
+      await trashDriveFile(storageUserId, fileId, { connection, fetchImpl });
       trashedRemoteIds.push(fileId);
     }
 
@@ -845,6 +865,12 @@ export async function confirmProjectUpload(
           userId,
         );
       connection.sqlite
+        .prepare(
+          `INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?)
+           ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`,
+        )
+        .run(`project.storage_user.${project.id}`, String(storageUserId), now);
+      connection.sqlite
         .prepare("delete from project_upload_previews where token = ?")
         .run(preview.token);
       connection.sqlite
@@ -871,14 +897,14 @@ export async function confirmProjectUpload(
   } catch (error) {
     for (const fileId of createdRemoteIds.reverse()) {
       try {
-        await trashDriveFile(userId, fileId, { connection, fetchImpl });
+        await trashDriveFile(storageUserId, fileId, { connection, fetchImpl });
       } catch {
         // Remote cleanup is best effort; the project remains failed locally.
       }
     }
     for (const fileId of trashedRemoteIds) {
       try {
-        await setDriveFileTrashed(userId, fileId, false, {
+        await setDriveFileTrashed(storageUserId, fileId, false, {
           connection,
           fetchImpl,
         });

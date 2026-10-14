@@ -310,8 +310,8 @@ export class GoogleDriveStorageProvider implements StorageProvider {
   health(): "ready" | "degraded" {
     return storageOwnerStatus(this.db)?.connected ? "ready" : "degraded";
   }
-  // Explicit repair follows an operator decision after a 404, which can also
-  // mean permission loss at Google. The old reference is never silently erased.
+  // A 404 can mean permission loss as well as deletion. Replacing a referenced
+  // root would strand existing offering folders and stored objects.
   async repairRoot(actor: Actor, desiredName: string): Promise<string> {
     if (!isAdmin(this.db, actor))
       throw new Error("Somente Admin pode reparar Drive.");
@@ -319,45 +319,29 @@ export class GoogleDriveStorageProvider implements StorageProvider {
     if (!safeName) throw new Error("Nome da instituição não configurado.");
     const context = await this.context();
     const old = context.rootRef;
-    if (old) {
-      const check = await this.request(
-        context.access,
-        `${API}/${encodeURIComponent(old)}?fields=id,mimeType,trashed`,
+    if (!old)
+      throw new Error(
+        "Diretório Drive sem referência. Nenhuma nova pasta foi criada; verifique as pastas existentes antes de associar outra raiz.",
       );
-      if (check.ok) {
-        const ref = await this.root(context.access, old, safeName);
-        recordAdminAction(
-          this.db,
-          actor,
-          "storage.root_repair",
-          "storage_backend",
-          this.backendId,
-        );
-        return ref;
-      }
-      if (check.status === 403)
-        throw new Error("Permissão negada ao diretório Drive.");
-      if (check.status !== 404)
-        throw new Error("Drive temporariamente indisponível.");
-    }
-    this.db
-      .prepare("UPDATE storage_backends SET root_ref=NULL WHERE id=?")
-      .run(this.backendId);
-    try {
-      const ref = await this.root(context.access, null, safeName);
-      recordAdminAction(
-        this.db,
-        actor,
-        "storage.root_repair",
-        "storage_backend",
-        this.backendId,
+    const check = await this.request(
+      context.access,
+      `${API}/${encodeURIComponent(old)}?fields=id,mimeType,trashed`,
+    );
+    if (check.status === 403)
+      throw new Error("Permissão negada ao diretório Drive.");
+    if (check.status === 404)
+      throw new Error(
+        "Diretório Drive ausente ou inacessível. A referência foi preservada; restaure o acesso ou a pasta antes de reparar.",
       );
-      return ref;
-    } catch (error) {
-      this.db
-        .prepare("UPDATE storage_backends SET root_ref=? WHERE id=?")
-        .run(old, this.backendId);
-      throw error;
-    }
+    if (!check.ok) throw new Error("Drive temporariamente indisponível.");
+    const ref = await this.root(context.access, old, safeName);
+    recordAdminAction(
+      this.db,
+      actor,
+      "storage.root_repair",
+      "storage_backend",
+      this.backendId,
+    );
+    return ref;
   }
 }

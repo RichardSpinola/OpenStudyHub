@@ -384,8 +384,12 @@ export async function useBundledStarterAction(formData: FormData) {
       error.code === "drive-folder-missing"
         ? "generation-drive-folder-missing"
         : error instanceof DocumentGenerationError &&
-            error.code === "drive-access-pending"
-          ? "generation-drive-access-pending"
+            [
+              "drive-access-pending",
+              "drive-share-failed",
+              "google-not-connected",
+            ].includes(error.code)
+          ? `generation-${error.code}`
           : "starter-error";
     redirect(
       `/documents?view=generate&starterKey=${encodeURIComponent(starterKey)}&offeringId=${offeringId.data}&status=${status}`,

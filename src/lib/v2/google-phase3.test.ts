@@ -11,6 +11,7 @@ import {
   startGoogleV2,
   completeGoogleV2,
   googleAccessTokenV2,
+  verifiedGoogleEmailV2,
   disconnectGoogleV2,
   googleConnectionStatus,
 } from "./google-oauth";
@@ -190,6 +191,12 @@ describe("Google V2 isolated boundaries", () => {
           fetchImpl: fakeFetch as typeof fetch,
         }),
       ).toBe("access-after-refresh");
+      expect(
+        await verifiedGoogleEmailV2(db, 3, {
+          config,
+          fetchImpl: fakeFetch as typeof fetch,
+        }),
+      ).toBe("fake@example.invalid");
       await disconnectGoogleV2(db, 3, {
         config,
         fetchImpl: fakeFetch as typeof fetch,
@@ -446,6 +453,7 @@ describe("Google V2 isolated boundaries", () => {
       let rootMissing = false;
       let permissionDenied = false;
       let createdRootName: string | null = null;
+      let createdRootCount = 0;
       const fakeFetch = async (
         input: string | URL | Request,
         init?: RequestInit,
@@ -463,8 +471,10 @@ describe("Google V2 isolated boundaries", () => {
             name: string;
             mimeType?: string;
           };
-          if (payload.mimeType === "application/vnd.google-apps.folder")
+          if (payload.mimeType === "application/vnd.google-apps.folder") {
             createdRootName = payload.name;
+            createdRootCount += 1;
+          }
           return json({
             id: String(init.body).includes("application/vnd.google-apps.folder")
               ? rootMissing
@@ -510,10 +520,18 @@ describe("Google V2 isolated boundaries", () => {
       rootMissing = true;
       await expect(provider.put(Buffer.from("x"))).rejects.toThrow("reparar");
       expect(storageOwnerStatus(db)?.rootReady).toBe(true);
-      expect(await provider.repairRoot(adminActor(1), "UCSAL - OSH")).toBe(
-        "root-repaired",
+      await expect(
+        provider.repairRoot(adminActor(1), "UCSAL - OSH"),
+      ).rejects.toThrow("referência foi preservada");
+      expect(storageOwnerStatus(db)?.rootReady).toBe(true);
+      expect(createdRootCount).toBe(1);
+      db.prepare("UPDATE storage_backends SET root_ref=NULL WHERE id=?").run(
+        backend,
       );
-      expect(createdRootName).toBe("UCSAL - OSH");
+      await expect(
+        provider.repairRoot(adminActor(1), "UCSAL - OSH"),
+      ).rejects.toThrow("Nenhuma nova pasta foi criada");
+      expect(createdRootCount).toBe(1);
       expect(() => setStorageOwner(db, adminActor(1), null)).toThrow("objetos");
     } finally {
       rmSync(root, { recursive: true, force: true });

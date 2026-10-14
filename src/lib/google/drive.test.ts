@@ -9,6 +9,7 @@ import {
   downloadDriveFile,
   driveFolderExistsForUser,
   getDriveFileMetadata,
+  grantDriveFileWriter,
   listDriveFolderItems,
   trashDriveFile,
 } from "./drive";
@@ -338,6 +339,35 @@ describe("Drive folder foundation", () => {
     });
     expect(JSON.parse(String(fetchImpl.mock.calls[2]?.[1]?.body))).toEqual({
       trashed: true,
+    });
+  });
+
+  it("compartilha somente o documento gerado com o aluno", async () => {
+    const { adminId } = seed(connection);
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      Response.json({ id: "permission-1" }),
+    );
+    await grantDriveFileWriter(
+      adminId,
+      "generated-doc",
+      "student@example.test",
+      {
+        connection,
+        fetchImpl,
+      },
+    );
+    expect(getGoogleAccessToken).toHaveBeenCalledWith(adminId, {
+      connection,
+      fetchImpl,
+    });
+    const [request, init] = fetchImpl.mock.calls[0]!;
+    expect(String(request)).toContain("generated-doc/permissions");
+    expect(String(request)).toContain("sendNotificationEmail=false");
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(String(init?.body))).toEqual({
+      type: "user",
+      role: "writer",
+      emailAddress: "student@example.test",
     });
   });
 });

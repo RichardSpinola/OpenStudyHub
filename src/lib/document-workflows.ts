@@ -14,6 +14,7 @@ import {
   copyDriveFile,
   ensureDriveFolderForUser,
   getDriveFileMetadata,
+  grantDriveFileWriter,
   trashDriveFile,
 } from "@/lib/google/drive";
 import { mergeGoogleDocument } from "@/lib/google/docs";
@@ -21,6 +22,8 @@ import type { GoogleFetch } from "@/lib/google/oauth";
 import { getOfferingGoogleIntegration } from "@/lib/google/offering-integrations";
 import { resolveDriveStorageUser } from "@/lib/google/storage-owner";
 import { getStorageLayout } from "@/lib/storage-layout";
+import { withV2DbAsync } from "@/lib/v2/runtime-database";
+import { verifiedGoogleEmailV2 } from "@/lib/v2/google-oauth";
 
 const GOOGLE_DOC_MIME = "application/vnd.google-apps.document";
 const idSchema = z.number().int().positive();
@@ -44,6 +47,7 @@ export type DocumentGenerationErrorCode =
   | "template-access"
   | "drive-folder-missing"
   | "drive-access-pending"
+  | "drive-share-failed"
   | "copy-failed"
   | "merge-failed";
 
@@ -371,6 +375,7 @@ export function listSharedGeneratedDocuments(
 
 async function ensureDocumentDestinationFolder(
   storageUserId: number,
+  ownerUserId: number,
   offeringId: number,
   offeringFolderId: string,
   categoryKind: "activity" | "notes" | "documents" | "custom",
@@ -378,6 +383,23 @@ async function ensureDocumentDestinationFolder(
   fetchImpl: GoogleFetch,
 ): Promise<string> {
   const layout = getStorageLayout(connection);
+  let parentId = offeringFolderId;
+  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+    const owner = connection.sqlite
+      .prepare("SELECT display_name name FROM users WHERE id=? AND active=1")
+      .get(ownerUserId) as { name: string } | undefined;
+    if (!owner) throw new Error("Usuário indisponível.");
+    const personal = await ensureDriveFolderForUser(
+      storageUserId,
+      {
+        name: `Aluno - ${owner.name}`,
+        parentId: offeringFolderId,
+        identityKey: `offering:${offeringId}:student:${ownerUserId}`,
+      },
+      { connection, fetchImpl },
+    );
+    parentId = personal.id;
+  }
   const targetKind = categoryKind === "custom" ? "documents" : categoryKind;
   const category =
     layout.categories.find(
@@ -386,13 +408,16 @@ async function ensureDocumentDestinationFolder(
     layout.categories.find(
       ({ kind, enabled }) => kind === "documents" && enabled,
     );
-  if (!category) return offeringFolderId;
+  if (!category) return parentId;
   const folder = await ensureDriveFolderForUser(
     storageUserId,
     {
       name: category.label,
-      parentId: offeringFolderId,
-      identityKey: `offering:${offeringId}:category:${category.key}`,
+      parentId,
+      identityKey:
+        process.env.OPENSTUDYHUB_V2_ENABLED === "1"
+          ? `offering:${offeringId}:student:${ownerUserId}:category:${category.key}`
+          : `offering:${offeringId}:category:${category.key}`,
     },
     { connection, fetchImpl },
   );
@@ -434,11 +459,25 @@ export async function generateDocument(
     integration.driveStorageUserId,
     { connection, useConfiguredForNew: false },
   );
+  let ownerGoogleEmail: string | null = null;
   if (
     process.env.OPENSTUDYHUB_V2_ENABLED === "1" &&
     destinationStorageUserId !== ownerId
-  )
-    throw new DocumentGenerationError("drive-access-pending");
+  ) {
+    try {
+      ownerGoogleEmail = await withV2DbAsync(async (db) => {
+        const linked = db
+          .prepare(
+            "SELECT user_id id FROM legacy_user_links WHERE legacy_user_id=?",
+          )
+          .get(ownerId) as { id: number } | undefined;
+        if (!linked) throw new Error("Conta local sem vínculo V2.");
+        return verifiedGoogleEmailV2(db, linked.id, { fetchImpl });
+      });
+    } catch {
+      throw new DocumentGenerationError("google-not-connected");
+    }
+  }
   if (templateStorageUserId !== destinationStorageUserId) {
     throw new DocumentGenerationError("template-access");
   }
@@ -496,6 +535,7 @@ export async function generateDocument(
   try {
     const destinationFolderId = await ensureDocumentDestinationFolder(
       storageUserId,
+      ownerId,
       value.offeringId,
       integration.driveFolderId,
       value.categoryKind ?? template.categoryKind,
@@ -538,6 +578,16 @@ export async function generateDocument(
       }
       throw new DocumentGenerationError("merge-failed");
     }
+    if (ownerGoogleEmail) {
+      try {
+        await grantDriveFileWriter(storageUserId, copied.id, ownerGoogleEmail, {
+          connection,
+          fetchImpl,
+        });
+      } catch {
+        throw new DocumentGenerationError("drive-share-failed");
+      }
+    }
     const now = Date.now();
     const modified = copied.modifiedTime
       ? Date.parse(copied.modifiedTime)
@@ -559,7 +609,11 @@ export async function generateDocument(
         copied.id,
         copied.webViewLink ?? generatedDocumentLink(copied.id),
         name,
-        storageUserId === ownerId ? "not_requested" : "needs_authorization",
+        ownerGoogleEmail
+          ? "granted"
+          : storageUserId === ownerId
+            ? "not_requested"
+            : "needs_authorization",
         Number.isNaN(modified) ? null : modified,
         now,
         now,
