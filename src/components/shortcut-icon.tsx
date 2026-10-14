@@ -24,9 +24,39 @@ import {
   IconSchool,
   IconMusic,
   IconMail,
+  IconStar,
+  IconHeart,
+  IconCloud,
+  IconPhoto,
+  IconVideo,
+  IconFile,
+  IconCalculator,
+  IconMap,
+  IconNews,
+  IconSearch,
+  IconTools,
+  IconCoffee,
+  IconFlask,
+  IconLanguage,
+  IconShield,
 } from "@tabler/icons-react";
 import type { ShortcutIconPreset } from "@/lib/shortcut-icon-catalog";
 const icons = {
+  star: IconStar,
+  heart: IconHeart,
+  cloud: IconCloud,
+  photo: IconPhoto,
+  video: IconVideo,
+  file: IconFile,
+  calc: IconCalculator,
+  map: IconMap,
+  news: IconNews,
+  search: IconSearch,
+  tools: IconTools,
+  coffee: IconCoffee,
+  science: IconFlask,
+  lang: IconLanguage,
+  shield: IconShield,
   cal: IconCalendar,
   spotify: IconBrandSpotify,
   chatgpt: IconBrandOpenai,
@@ -60,6 +90,6 @@ export function ShortcutPresetIcon({
   preset: ShortcutIconPreset;
   size?: number;
 }) {
-  const Icon = icons[preset];
+  const Icon = icons[preset as keyof typeof icons] ?? IconWorld;
   return <Icon size={size} stroke={1.6} aria-hidden="true" />;
 }

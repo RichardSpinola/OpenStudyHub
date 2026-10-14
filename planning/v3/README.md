@@ -35,7 +35,7 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 | 0     | Base consolidada, revisão do produto, cobertura dos pedidos e prévias de direção visual    | Preparação concluída; revisão final disponível            |
 | 1     | Estrutura visual, Home, Biblioteca/Hoje, responsividade, atalhos, busca, wallpaper e setup | Correções validadas localmente; revisão visual do usuário |
 | 2     | Modelo acadêmico consistente, importador, Classroom, fuso e horários                       | Concluída localmente; revisão visual                      |
-| 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                          | Planejada                                                 |
+| 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                          | Implementada localmente; teste visual em andamento        |
 | 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                      | Planejada                                                 |
 | 5     | Notas: workspace, colaboração e bases simples                                              | Planejada                                                 |
 | 6     | Chat, Quadro e cinco jogos                                                                 | Planejada                                                 |
@@ -65,3 +65,7 @@ Publicação, tag e atualização pública não foram realizadas nesta etapa. A 
 
 - [STAGE_2.md](STAGE_2.md): modelo acadêmico, importação, Classroom, calendário e teste de cadastro.
 - [REVIEW_FIXES_2026_10_14.md](REVIEW_FIXES_2026_10_14.md): ajustes adicionais da revisão, incluindo ícones, materiais, compartilhamento de projetos e chat.
+
+## Etapa 3
+
+- [STAGE_3.md](STAGE_3.md): Admin, gestão, preservação do histórico, eventos, modo de prova e revisão dos ícones. Implementação e teste de uso local concluídos; relatório distingue o teste técnico inicial aprovado do reteste final bloqueado pela revisão automática e da conferência Google real futura.

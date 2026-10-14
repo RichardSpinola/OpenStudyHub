@@ -105,6 +105,8 @@ export function grant(
     if (scope.kind === "institution" || scope.kind === "offering")
       throw new Error("Invalid moderation scope");
   }
+  if (!db.prepare("SELECT 1 FROM users WHERE id=? AND active=1").get(userId))
+    throw new Error("Selecione uma conta ativa.");
   return db.transaction(() => {
     const existing = db
       .prepare(

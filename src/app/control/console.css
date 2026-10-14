@@ -739,3 +739,580 @@ body.admin-body {
   margin: 0.3rem 0 0;
   overflow-wrap: anywhere;
 }
+/* V3 administrative workspace: hierarchy and density use the existing themes. */
+.admin-console {
+  max-width: none;
+  width: 100%;
+  padding: clamp(1rem, 2.3vw, 2rem);
+}
+.admin-sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.admin-sidebar {
+  width: 100%;
+}
+.admin-page-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--gray-3);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+.admin-page-heading h1 {
+  margin: 0.4rem 0;
+  font-size: clamp(1.65rem, 3vw, 2.5rem);
+}
+.admin-page-heading > span {
+  font-size: 0.7rem;
+  color: var(--gray-2);
+}
+.admin-portal-grid,
+.admin-service-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1rem;
+  margin: 1.2rem 0;
+}
+.admin-portal-card,
+.admin-service-grid > article {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-width: 0;
+  border: 1px solid var(--gray-3);
+  padding: 1.4rem;
+  background: var(--panel);
+  color: var(--white);
+  text-decoration: none;
+}
+.admin-portal-card > strong,
+.admin-portal-card h2 {
+  font-size: 1.25rem;
+}
+.admin-portal-card p,
+.admin-service-grid p {
+  color: var(--gray-1);
+  font-size: 0.85rem;
+  margin: 0;
+}
+.admin-portal-card h2,
+.admin-portal-card h3,
+.admin-service-grid h2 {
+  margin: 0;
+}
+.admin-portal-card > span:last-child {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+.admin-portal-card:hover,
+.admin-portal-card:focus-visible {
+  border-color: var(--accent);
+  background: var(--panel-raised);
+}
+.admin-service-grid details {
+  width: 100%;
+  margin-top: auto;
+}
+.admin-service-grid small,
+.admin-event-card small {
+  color: var(--gray-2);
+  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+}
+.admin-context-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.admin-event-list {
+  display: grid;
+  gap: 0.8rem;
+}
+.admin-event-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.2rem;
+  border: 1px solid var(--gray-3);
+  background: var(--panel);
+}
+.admin-event-card h3 {
+  margin: 0.5rem 0;
+}
+.admin-event-card p {
+  font-size: 0.85rem;
+}
+.admin-row-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.admin-removal {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--gray-3);
+}
+.admin-removal form {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+}
+.admin-course-details summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.admin-user-search {
+  margin: 1.2rem 0;
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--gray-3);
+}
+.admin-console .v2-row {
+  padding: 1rem;
+}
+.admin-console input,
+.admin-console select,
+.admin-console textarea {
+  max-width: 100%;
+}
+[data-design="material"] .admin-portal-card,
+[data-design="material"] .admin-service-grid > article,
+[data-design="material"] .admin-event-card {
+  border-radius: 8px;
+}
+[data-design="legacy"] .admin-page-heading {
+  border-style: dashed;
+}
+@media (max-width: 900px) {
+  .admin-workspace-body {
+    grid-template-columns: 11.5rem minmax(0, 1fr);
+  }
+  .admin-sidebar {
+    padding: 1rem 0.3rem;
+  }
+  .admin-sidebar a {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  .admin-console {
+    padding: 1rem;
+  }
+  .admin-page-heading > span {
+    display: none;
+  }
+  .admin-event-card {
+    flex-direction: column;
+  }
+}
+@media (max-width: 640px) {
+  .admin-workspace-body {
+    display: block;
+  }
+  .admin-sidebar {
+    display: none;
+  }
+  .admin-mobile-nav {
+    display: block;
+    margin: 1rem;
+  }
+  .admin-event-card {
+    padding: 0.9rem;
+  }
+  .admin-identity {
+    max-width: 6rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .admin-portal-grid,
+  .admin-service-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Dedicated administrative hierarchy, without changing App components. */
+body.admin-body {
+  --black: #141619;
+  --panel: #1b1e22;
+  --panel-raised: #22262b;
+  --gray-4: #242930;
+  --gray-3: #343a42;
+  --gray-2: #89919c;
+  --gray-1: #c3c9d1;
+  --white: #f2f4f7;
+  font-family: var(--font-sans, system-ui), sans-serif;
+}
+.admin-workspace-header {
+  min-height: 4rem;
+  background: #181b1f;
+  padding-inline: 1.25rem;
+}
+.admin-brand strong {
+  border: 1px solid var(--gray-3);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.65rem;
+  color: var(--gray-1);
+}
+.admin-workspace-body {
+  grid-template-columns: 13rem minmax(0, 1fr);
+}
+.admin-sidebar {
+  top: 4rem;
+  background: #181b1f;
+  height: calc(100dvh - 4rem);
+  padding: 1.1rem 0.65rem;
+}
+.admin-sidebar p {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+}
+.admin-sidebar a {
+  border: 0;
+  border-radius: 5px;
+  min-height: 2.55rem;
+  gap: 0.7rem;
+  font-size: 0.83rem;
+  padding: 0.6rem 0.75rem;
+}
+.admin-sidebar a[aria-current] {
+  background: #2b3038;
+  box-shadow: inset 3px 0 var(--accent);
+}
+.admin-sidebar a svg {
+  flex-shrink: 0;
+  color: var(--gray-2);
+}
+.admin-sidebar a[aria-current] svg {
+  color: var(--white);
+}
+.admin-console {
+  padding: 1.3rem 1.6rem;
+  line-height: 1.5;
+}
+.admin-console .v2-kicker {
+  color: var(--gray-2);
+  font-size: 0.63rem;
+  letter-spacing: 0.09em;
+}
+.admin-page-heading {
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+.admin-console h1 {
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+.admin-console h2 {
+  font-size: 1.03rem;
+  margin: 1.25rem 0 0.6rem;
+  letter-spacing: 0;
+}
+.admin-console p {
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+.admin-console .admin-page-description {
+  margin-top: 0;
+  color: var(--gray-1);
+}
+.admin-console button,
+.admin-console .v2-button {
+  min-height: 2.4rem;
+  font-size: 0.78rem;
+  text-transform: none;
+  letter-spacing: 0;
+  border-radius: 5px;
+  background: var(--panel-raised);
+}
+.admin-console button:hover {
+  background: #2d333c;
+  color: var(--white);
+}
+.admin-console input,
+.admin-console select,
+.admin-console textarea {
+  background: #14171b;
+  border-color: var(--gray-3);
+  border-radius: 5px;
+  font-size: 0.86rem;
+}
+.admin-console input:focus,
+.admin-console select:focus,
+.admin-console textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.admin-console label {
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.admin-console input[type="checkbox"],
+.admin-console input[type="radio"] {
+  width: 1rem;
+  min-height: 1rem;
+  margin-right: 0.4rem;
+  accent-color: var(--accent);
+}
+.admin-console label:has(> input[type="checkbox"]) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+.admin-portal-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  margin: 0.6rem 0 1.2rem;
+}
+.admin-portal-card {
+  padding: 1.1rem;
+  gap: 0.55rem;
+  min-height: 9.5rem;
+  border-radius: 6px;
+  background: #1c2025;
+}
+.admin-portal-card > strong,
+.admin-portal-card h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 650;
+}
+.admin-portal-card > span {
+  font-size: 0.8rem;
+  color: var(--gray-1);
+}
+.admin-overview-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1rem 0 0.6rem;
+}
+.admin-overview-facts span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.85rem;
+  border-radius: 5px;
+  font-size: 0.76rem;
+}
+.admin-overview-facts strong {
+  color: var(--white);
+  font-size: 1.25rem;
+}
+.admin-presence-windows {
+  font-size: 0.72rem;
+  color: var(--gray-2);
+}
+.admin-service-grid > article {
+  padding: 1.1rem;
+  border-radius: 6px;
+  gap: 0.6rem;
+}
+.admin-service-grid h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.admin-service-grid details {
+  font-size: 0.8rem;
+  margin-top: 0.75rem;
+}
+.admin-context-summary {
+  border-left: 3px solid var(--accent);
+  padding: 0.8rem 1rem;
+  border-radius: 5px;
+  margin: 0.8rem 0;
+  font-size: 0.8rem;
+}
+.admin-context-nav {
+  margin: 1rem 0;
+  gap: 0.25rem;
+}
+.admin-context-nav a {
+  font-size: 0.8rem;
+  padding: 0.55rem 0.7rem;
+  min-height: 2.4rem;
+}
+.admin-context-links {
+  font-size: 0.78rem;
+}
+.admin-settings-layout {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.4rem;
+  align-items: start;
+}
+.admin-settings-nav {
+  display: grid;
+  gap: 0.25rem;
+  position: sticky;
+  top: 5rem;
+}
+.admin-settings-nav button {
+  justify-content: flex-start;
+  text-align: left;
+  border-color: transparent;
+  background: transparent;
+  padding: 0.6rem 0.7rem;
+}
+.admin-settings-nav button[aria-selected="true"] {
+  background: var(--panel-raised);
+  border-color: var(--gray-3);
+  color: var(--white);
+}
+.admin-settings-panel {
+  min-width: 0;
+  padding: 1.2rem;
+  background: var(--panel);
+  border: 1px solid var(--gray-3);
+  border-radius: 6px;
+}
+.admin-settings-panel[hidden] {
+  display: none;
+}
+.admin-settings-panel h2:first-child,
+.admin-settings-panel section:first-child h2 {
+  margin-top: 0;
+}
+.admin-settings-panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-settings-panel th,
+.admin-settings-panel td {
+  padding: 0.75rem 0.55rem;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-3);
+  font-size: 0.8rem;
+}
+.admin-selected-account,
+.admin-setting-card,
+.admin-console .workflow-panel {
+  border: 1px solid var(--gray-3);
+  border-radius: 6px;
+  padding: 1.2rem;
+  background: var(--panel);
+}
+.admin-console .v2-list {
+  border: 1px solid var(--gray-3);
+  border-radius: 6px;
+  gap: 0;
+  overflow: clip;
+}
+.admin-console .v2-row {
+  border: 0;
+  border-bottom: 1px solid var(--gray-3);
+  background: var(--panel);
+  padding: 0.85rem 1rem;
+}
+.admin-console .v2-row:last-child {
+  border-bottom: 0;
+}
+.admin-action-dialog {
+  max-width: min(100vw, 34rem);
+  background: var(--panel);
+}
+.admin-action-dialog header {
+  background: #20242a;
+  padding: 1.05rem;
+}
+.admin-action-dialog-body {
+  padding: 1.2rem;
+}
+@media (min-width: 641px) and (max-width: 760px) {
+  .admin-workspace-body {
+    display: grid;
+    grid-template-columns: 3.8rem minmax(0, 1fr);
+  }
+  .admin-sidebar {
+    display: block;
+    padding: 0.6rem 0.35rem;
+  }
+  .admin-sidebar p,
+  .admin-sidebar a span {
+    display: none;
+  }
+  .admin-sidebar a {
+    justify-content: center;
+    padding: 0.75rem 0.4rem;
+  }
+  .admin-mobile-nav {
+    display: none;
+  }
+  .admin-console {
+    padding: 1.1rem;
+  }
+  .admin-settings-layout {
+    grid-template-columns: 1fr;
+  }
+  .admin-settings-nav {
+    display: flex;
+    flex-wrap: wrap;
+    position: static;
+    gap: 0.2rem;
+  }
+  .admin-overview-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .admin-console {
+    padding: 1rem;
+  }
+  .admin-overview-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-settings-layout {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+  .admin-settings-nav {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .admin-settings-panel {
+    padding: 0.9rem;
+  }
+  .admin-workspace-header {
+    padding-inline: 1rem;
+  }
+  .admin-portal-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-page-heading h1 {
+    font-size: 1.5rem;
+  }
+}
+
+.admin-prerequisites {
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid var(--gray-3);
+  background: var(--panel-raised);
+  border-radius: 6px;
+  display: grid;
+  gap: 0.5rem;
+}
+.admin-prerequisites p {
+  margin: 0;
+}
+@media (min-width: 761px) and (max-width: 1050px) {
+  .admin-settings-layout {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+  .admin-settings-nav {
+    display: flex;
+    flex-wrap: wrap;
+    position: static;
+  }
+}

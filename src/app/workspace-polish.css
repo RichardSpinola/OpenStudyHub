@@ -712,3 +712,82 @@ html[data-design] .project-overview-art {
     min-height: 5rem;
   }
 }
+.exam-mode-notice {
+  padding: 0.85rem 1rem;
+  margin: 0.8rem;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  font-size: 0.85rem;
+}
+.subject-search {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+.subject-search label {
+  display: grid;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 12rem;
+}
+.subject-search input {
+  min-height: 2.7rem;
+  width: 100%;
+  padding: 0.65rem;
+  background: var(--panel);
+  border: 1px solid var(--gray-3);
+  color: var(--white);
+}
+.shortcut-icon-preview,
+.shortcut-custom-choice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+}
+.shortcut-icon-preview p,
+.shortcut-custom-choice p {
+  width: 100%;
+  font-size: 0.8rem;
+}
+.shortcut-catalog-dialog {
+  width: min(90vw, 38rem);
+  max-height: 80dvh;
+  overflow: auto;
+  padding: 1.1rem;
+  background: var(--panel);
+  color: var(--white);
+  border: 1px solid var(--gray-2);
+}
+.shortcut-catalog-dialog::backdrop {
+  background: rgb(0 0 0/0.6);
+}
+.shortcut-catalog-dialog header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.shortcut-catalog-dialog .shortcut-icon-preset-grid {
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.shortcut-catalog-dialog .shortcut-icon-preset-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 5rem;
+  width: 100%;
+}
+.shortcut-catalog-dialog .shortcut-icon-preset-grid small {
+  font-size: 0.65rem;
+}
+.shortcut-catalog-dialog input {
+  width: 100%;
+}

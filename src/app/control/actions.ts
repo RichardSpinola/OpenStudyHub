@@ -1,4 +1,9 @@
 "use server";
+import {
+  saveAcademicEvent,
+  cancelAcademicEvent,
+} from "@/lib/v2/academic-events";
+import { academicLocalDateTime } from "@/lib/academic-clock";
 import { setInstitutionTimeZone } from "@/lib/v2/academic-timezone";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -220,6 +225,45 @@ export async function controlAction(f: FormData): Promise<void> {
       if (actor.mustChangePassword && intent !== "changeOwnPassword")
         throw new Error("Troque sua senha temporária antes de continuar.");
       switch (intent) {
+        case "eventSave": {
+          const institutionId = num(f, "institutionId");
+          const zone =
+            (
+              db
+                .prepare(
+                  "SELECT time_zone z FROM institution_timezones WHERE institution_id=?",
+                )
+                .get(institutionId) as { z: string } | undefined
+            )?.z ?? "America/Bahia";
+          const audience = str(f, "audience"),
+            [kind, rawId] = audience.split(":");
+          if (
+            !["institution", "program", "cohort", "offering"].includes(kind) ||
+            (kind !== "institution" &&
+              (!Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1))
+          )
+            throw new Error("Público inválido.");
+          saveAcademicEvent(
+            db,
+            actor,
+            {
+              institutionId,
+              programId: kind === "program" ? Number(rawId) : null,
+              cohortId: kind === "cohort" ? Number(rawId) : null,
+              offeringId: kind === "offering" ? Number(rawId) : null,
+              kind: str(f, "kind") as "event" | "class" | "exam",
+              title: str(f, "title"),
+              description: str(f, "description"),
+              startsAt: academicLocalDateTime(str(f, "start"), zone).getTime(),
+              endsAt: academicLocalDateTime(str(f, "end"), zone).getTime(),
+            },
+            id || undefined,
+          );
+          break;
+        }
+        case "eventCancel":
+          cancelAcademicEvent(db, actor, id);
+          break;
         case "institutionTimezone":
           setInstitutionTimeZone(
             db,
@@ -411,6 +455,11 @@ export async function controlAction(f: FormData): Promise<void> {
           );
           break;
         case "lifecycle":
+          if (
+            str(f, "operation") === "delete" &&
+            str(f, "confirmDelete") !== "yes"
+          )
+            throw new Error("Confirme a exclusão definitiva.");
           mutateAcademic(
             db,
             actor,

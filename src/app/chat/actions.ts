@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { requireAuthenticatedUser } from "@/lib/authorization";
+import { requireToolUser } from "@/lib/authorization";
 import {
   createDirectRoom,
   createAudienceRoom,
@@ -51,7 +51,7 @@ async function selectedRoomAvatar(formData: FormData) {
 }
 
 export async function createDirectChatAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const room = createDirectRoom(
     user.id,
     id.parse(formData.get("targetUserId")),
@@ -61,7 +61,7 @@ export async function createDirectChatAction(formData: FormData) {
 }
 
 export async function createGroupAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   let avatar: Awaited<ReturnType<typeof selectedRoomAvatar>>;
   try {
     avatar = await selectedRoomAvatar(formData);
@@ -90,7 +90,7 @@ export async function createGroupAction(formData: FormData) {
 }
 
 export async function createAudienceChatAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   let avatar: Awaited<ReturnType<typeof selectedRoomAvatar>>;
   try {
     avatar = await selectedRoomAvatar(formData);
@@ -115,7 +115,7 @@ export async function createAudienceChatAction(formData: FormData) {
 }
 
 export async function chatRoomAvatarAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const roomId = id.parse(formData.get("roomId"));
   let avatar: Awaited<ReturnType<typeof selectedRoomAvatar>>;
   try {
@@ -133,7 +133,7 @@ export async function chatRoomAvatarAction(formData: FormData) {
 }
 
 export async function addGroupMemberAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   addStudyGroupMember(
     user.id,
     id.parse(formData.get("groupId")),
@@ -143,7 +143,7 @@ export async function addGroupMemberAction(formData: FormData) {
 }
 
 export async function removeGroupMemberAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   removeStudyGroupMember(
     user.id,
     id.parse(formData.get("groupId")),
@@ -153,7 +153,7 @@ export async function removeGroupMemberAction(formData: FormData) {
 }
 
 export async function personalChatAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const roomId = id.parse(formData.get("roomId"));
   const action = z
     .enum(["archive", "restore", "close"])
@@ -174,13 +174,13 @@ export async function personalChatAction(formData: FormData) {
 }
 
 export async function chatWallpaperAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   saveChatWallpaper(user.id, formData.get("preset"));
   redirect(`/chat?room=${id.parse(formData.get("roomId"))}`);
 }
 
 export async function chatWallpaperUploadAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const roomId = id.parse(formData.get("roomId"));
   const file = formData.get("image");
   if (!(file instanceof File) || file.size < 1 || file.size > 10 * 1024 * 1024)
@@ -194,7 +194,7 @@ export async function chatWallpaperUploadAction(formData: FormData) {
 }
 
 export async function leaveGroupAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const groupId = id.parse(formData.get("groupId"));
   const roomId = id.parse(formData.get("roomId"));
   if (!canAccessChatRoom(user.id, roomId)) throw new Error("Sem acesso.");
@@ -203,7 +203,7 @@ export async function leaveGroupAction(formData: FormData) {
 }
 
 export async function closeGroupAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const groupId = id.parse(formData.get("groupId"));
   const roomId = id.parse(formData.get("roomId"));
   if (!canAccessChatRoom(user.id, roomId)) throw new Error("Sem acesso.");

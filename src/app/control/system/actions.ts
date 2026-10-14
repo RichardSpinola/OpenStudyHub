@@ -1,12 +1,21 @@
 "use server";
 
+import {
+  applyShortcutIconForm,
+  shortcutImageFromForm,
+} from "@/lib/shortcut-icons";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getDatabase } from "@/lib/db/client";
 import { listExternalLinks } from "@/lib/external-links";
-import { createShortcut, deleteShortcut, listShortcuts } from "@/lib/shortcuts";
+import {
+  createShortcut,
+  updateShortcut,
+  deleteShortcut,
+  listShortcuts,
+} from "@/lib/shortcuts";
 import { parseExternalDocumentationUrl } from "@/lib/external-documentation";
 import {
   INSTITUTION_NAME_SETTING,
@@ -90,10 +99,27 @@ export async function publishLinkAsShortcutAction(form: FormData) {
 export async function saveDefaultShortcutAction(form: FormData) {
   await requireControlAdmin();
   try {
-    createShortcut({
+    const image = await shortcutImageFromForm(form);
+    if (!form.get("id") && form.get("icon") === "@image" && !image)
+      throw new Error("Escolha uma imagem antes de salvar.");
+    const input = {
       name: z.string().trim().min(1).max(80).parse(form.get("name")),
       url: z.url().parse(form.get("url")),
-    });
+      icon: String(form.get("icon") ?? "@text"),
+    };
+    const shortcut = form.get("id")
+      ? updateShortcut(
+          z.coerce.number().int().positive().parse(form.get("id")),
+          input,
+        )
+      : createShortcut(input);
+    await applyShortcutIconForm(
+      form,
+      "instance",
+      shortcut.id,
+      null,
+      shortcut.url,
+    );
     revalidatePath("/");
   } catch {
     redirect("/control/system?status=shortcut-error");

@@ -96,7 +96,8 @@ export function AdminActionPanel({
         ref={dialog}
         className="admin-action-dialog"
         aria-label={label}
-        onClose={() => {
+        onClose={(event) => {
+          if (event.target !== event.currentTarget) return;
           setOpen(false);
           trigger.current?.focus();
         }}

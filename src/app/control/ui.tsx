@@ -1,3 +1,11 @@
+import {
+  IconDashboard,
+  IconBuilding,
+  IconUsers,
+  IconShield,
+  IconPlug,
+  IconSettings,
+} from "@tabler/icons-react";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -96,16 +104,35 @@ export function ConsoleShell({
       key: "integrations",
     },
     { href: "/control/system", label: tr("Sistema", "System"), key: "system" },
-    { href: "/control/extras", label: "Extras", key: "extras" },
   ];
+  const navIcons: Record<string, typeof IconDashboard> = {
+    overview: IconDashboard,
+    institutions: IconBuilding,
+    users: IconUsers,
+    grants: IconShield,
+    integrations: IconPlug,
+    system: IconSettings,
+  };
   if (admin && name) {
     const links = navigation.map(({ href, label, key }) => (
       <Link
         key={key}
         href={href}
-        aria-current={active === key ? "page" : undefined}
+        aria-current={
+          active === key || (active === "extras" && key === "system")
+            ? "page"
+            : undefined
+        }
       >
-        {label}
+        {(() => {
+          const Icon = navIcons[key];
+          return (
+            <>
+              <Icon size={19} stroke={1.6} aria-hidden="true" />
+              <span>{label}</span>
+            </>
+          );
+        })()}
       </Link>
     ));
     return (
@@ -148,7 +175,12 @@ export function ConsoleShell({
                   <Link
                     key={key}
                     href={href}
-                    aria-current={active === key ? "page" : undefined}
+                    aria-current={
+                      active === key ||
+                      (active === "extras" && key === "system")
+                        ? "page"
+                        : undefined
+                    }
                   >
                     {label}
                   </Link>
@@ -157,7 +189,10 @@ export function ConsoleShell({
             </details>
             <div className="v2-console admin-console">
               <div className="v2-kicker">{heading(kicker)}</div>
-              <h1>{heading(title)}</h1>
+              <div className="admin-page-heading">
+                <h1>{heading(title)}</h1>
+                <span>OpenStudyHub / Admin</span>
+              </div>
               {message ? (
                 <div className="v2-message" data-type="ok" role="status">
                   {localizeFeedback(message)}

@@ -28,10 +28,12 @@ const navigationItems = [
 export function PrimaryNavigation({
   authenticated,
   extrasEnabled,
+  examMode = false,
 }: {
   authenticated: boolean;
   projectsEnabled: boolean;
   extrasEnabled: boolean;
+  examMode?: boolean;
 }) {
   const pathname = usePathname();
   const tr = useUiText();
@@ -40,14 +42,18 @@ export function PrimaryNavigation({
   if (!authenticated) return null;
 
   const links = [
-    ...navigationItems.map((item) => ({
-      href: item.href,
-      label:
-        item.href === "/library"
-          ? tr("Biblioteca", "Library")
-          : navigation[item.labelKey],
-      icon: item.icon,
-    })),
+    ...navigationItems
+      .filter(
+        (item) => !examMode || ["/", "/today", "/subjects"].includes(item.href),
+      )
+      .map((item) => ({
+        href: item.href,
+        label:
+          item.href === "/library"
+            ? tr("Biblioteca", "Library")
+            : navigation[item.labelKey],
+        icon: item.icon,
+      })),
     ...(extrasEnabled
       ? [{ href: "/extras", label: "Extras", icon: IconApps }]
       : []),

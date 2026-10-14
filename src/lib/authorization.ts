@@ -1,4 +1,4 @@
-import {AcademicProjectionError} from "@/lib/v2/academic-projection";
+import { AcademicProjectionError } from "@/lib/v2/academic-projection";
 import { redirect } from "next/navigation";
 
 import { isSetupRequired } from "@/lib/access";
@@ -19,7 +19,7 @@ export async function getCurrentSession(): Promise<SessionRecord | null> {
     const token = await readSessionCookie();
     return token ? getSessionByToken(token) : null;
   } catch (error) {
-    if(error instanceof AcademicProjectionError)throw error;
+    if (error instanceof AcademicProjectionError) throw error;
     return null;
   }
 }
@@ -53,5 +53,12 @@ export async function requireAcademicAdministrator() {
   } catch {
     redirect("/");
   }
+  return user;
+}
+
+export async function requireToolUser() {
+  const user = await requireAuthenticatedUser();
+  const { assertToolAvailable } = await import("@/lib/v2/exam-access");
+  assertToolAvailable(user.id);
   return user;
 }

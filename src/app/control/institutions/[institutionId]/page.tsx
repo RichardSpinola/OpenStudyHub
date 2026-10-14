@@ -1,3 +1,4 @@
+import { RemovalPanel } from "../../removal-panel";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -110,7 +111,7 @@ export default async function Institution({
       shortName: string | null;
       archivedAt: number | null;
     }>;
-    const area = q.area ?? "courses";
+    const area = q.area ?? "overview";
     const base = `/control/institutions/${id}`;
     const returnTo = `${base}?area=${area}`;
     return (
@@ -123,29 +124,6 @@ export default async function Institution({
         message={q.ok}
         error={q.error}
       >
-        <AdminActionPanel title="Fuso da instituição">
-          <form action={controlAction} className="v2-fields">
-            <HiddenContext
-              intent="institutionTimezone"
-              returnTo={`/control/institutions/${id}`}
-              institutionId={id}
-            />
-            <label>
-              Fuso horário
-              <input
-                name="timeZone"
-                required
-                defaultValue={timeZone}
-                placeholder="America/Bahia"
-              />
-            </label>
-            <p>
-              Horários das aulas e o dia da agenda usam este fuso, mesmo quando
-              o servidor está em UTC.
-            </p>
-            <button>Salvar fuso</button>
-          </form>
-        </AdminActionPanel>
         <nav
           className="admin-breadcrumb"
           aria-label={tr("Caminho", "Breadcrumb")}
@@ -156,7 +134,7 @@ export default async function Institution({
           <span aria-hidden="true">/</span>
           <span aria-current="page">{institution.name}</span>
         </nav>
-        <div className="admin-context-summary">
+        <div className="admin-context-summary admin-institution-summary">
           <strong>{institution.name}</strong>
           <span>
             {institution.archivedAt
@@ -171,7 +149,9 @@ export default async function Institution({
           aria-label={tr("Áreas da instituição", "Institution sections")}
         >
           {[
+            { key: "overview", label: "Visão geral" },
             { key: "courses", label: "Cursos" },
+            { key: "settings", label: "Configuração" },
             { key: "subjects", label: "Disciplinas" },
             { key: "academic_periods", label: "Períodos" },
             { key: "shifts", label: "Turnos" },
@@ -197,6 +177,96 @@ export default async function Institution({
             </Link>
           ))}
         </nav>
+        <div className="admin-context-links">
+          <Link href={`${base}/events`}>
+            {tr("Eventos e provas", "Events and exams")} →
+          </Link>
+          <Link href="/control/import">
+            {tr("Importação acadêmica", "Academic import")} →
+          </Link>
+        </div>
+        {area === "settings" ? (
+          <section className="admin-setting-card">
+            <h2>{tr("Configuração da instituição", "Institution settings")}</h2>
+            <p>
+              {tr(
+                "Fuso horário e ciclo de vida do cadastro.",
+                "Time zone and record lifecycle.",
+              )}
+            </p>{" "}
+            <AdminActionPanel title="Fuso da instituição">
+              <form action={controlAction} className="v2-fields">
+                <HiddenContext
+                  intent="institutionTimezone"
+                  returnTo={`/control/institutions/${id}`}
+                  institutionId={id}
+                />
+                <label>
+                  Fuso horário
+                  <input
+                    name="timeZone"
+                    required
+                    defaultValue={timeZone}
+                    placeholder="America/Bahia"
+                  />
+                </label>
+                <p>
+                  Horários das aulas e o dia da agenda usam este fuso, mesmo
+                  quando o servidor está em UTC.
+                </p>
+                <button>Salvar fuso</button>
+              </form>
+            </AdminActionPanel>
+            {RemovalPanel({
+              db: db,
+              actor: actor,
+              entity: "institutions",
+              id: id,
+              returnTo: "/control/institutions",
+              archived: !!institution.archivedAt,
+            })}
+          </section>
+        ) : null}
+        {area === "overview" ? (
+          <section className="admin-portal-grid">
+            {[
+              {
+                key: "courses",
+                label: tr("Cursos", "Courses"),
+                text: tr(
+                  "Turmas, currículo, ofertas e matrículas",
+                  "Cohorts, curriculum, offerings and enrollments",
+                ),
+                count: courses.filter((c) => !c.archivedAt).length,
+              },
+              ...collections.map((c) => ({
+                key: c.entity,
+                label: tr(c.title, collectionTitlesEn[c.entity]),
+                text: tr("Cadastros da instituição", "Institution records"),
+                count: (
+                  db
+                    .prepare(
+                      `SELECT count(*) n FROM ${c.entity} WHERE institution_id=? AND archived_at IS NULL`,
+                    )
+                    .get(id) as { n: number }
+                ).n,
+              })),
+            ].map((c) => (
+              <Link
+                className="admin-portal-card"
+                key={c.key}
+                href={`${base}?area=${c.key}`}
+              >
+                <small>
+                  {c.count} {tr("ativos", "active")}
+                </small>
+                <h2>{c.label}</h2>
+                <p>{c.text}</p>
+                <span>{tr("Abrir área", "Open section")} →</span>
+              </Link>
+            ))}
+          </section>
+        ) : null}
         {area === "courses" ? (
           <section>
             <div className="admin-section-header">
@@ -240,7 +310,7 @@ export default async function Institution({
                 </form>
               </AdminActionPanel>
             </div>
-            <div className="admin-entity-list">
+            <div className="admin-entity-list admin-catalog-list">
               {courses.map((course) => (
                 <Link
                   key={course.id}
@@ -323,7 +393,7 @@ export default async function Institution({
                     </form>
                   </AdminActionPanel>
                 </div>
-                <div className="admin-entity-list">
+                <div className="admin-entity-list admin-catalog-list">
                   {list.map((row) => (
                     <div className="admin-entity-row" key={row.id}>
                       <div>
@@ -373,20 +443,14 @@ export default async function Institution({
                           </button>
                         </form>
                       </AdminActionPanel>
-                      <form action={controlAction}>
-                        <HiddenContext
-                          returnTo={returnTo}
-                          intent="lifecycle"
-                          entity={collection.entity}
-                          id={row.id}
-                          operation={row.archived_at ? "reactivate" : "archive"}
-                        />
-                        <button>
-                          {row.archived_at
-                            ? tr("Reativar", "Reactivate")
-                            : tr("Arquivar", "Archive")}
-                        </button>
-                      </form>
+                      {RemovalPanel({
+                        db: db,
+                        actor: actor,
+                        entity: collection.entity,
+                        id: row.id,
+                        returnTo: returnTo,
+                        archived: !!row.archived_at,
+                      })}
                     </div>
                   ))}
                 </div>

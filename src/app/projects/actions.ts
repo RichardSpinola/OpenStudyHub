@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { requireAuthenticatedUser } from "@/lib/authorization";
+import { requireToolUser } from "@/lib/authorization";
 import { listUserSubjectOfferings } from "@/lib/academic";
 import {
   archiveUserProject,
@@ -28,7 +28,7 @@ import {
 const idSchema = z.coerce.number().int().positive();
 
 export async function createProjectAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const requestedOfferingId = formData.get("offeringId")
     ? Number(formData.get("offeringId"))
     : null;
@@ -59,7 +59,7 @@ export async function createProjectAction(formData: FormData) {
 }
 
 export async function updateProjectTechnologyAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const projectId = idSchema.parse(formData.get("projectId"));
   try {
     updateProjectTechnology(user.id, projectId, {
@@ -78,7 +78,7 @@ export async function updateProjectTechnologyAction(formData: FormData) {
 }
 
 export async function archiveProjectAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const projectId = idSchema.parse(formData.get("projectId"));
   const project = getUserProject(user.id, projectId);
   archiveUserProject(user.id, project.id);
@@ -96,7 +96,7 @@ export async function archiveProjectAction(formData: FormData) {
 }
 
 export async function confirmProjectUploadAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const projectId = idSchema.parse(formData.get("projectId"));
   const token = String(formData.get("token") ?? "");
   const connection = getDatabase();
@@ -144,7 +144,7 @@ export async function confirmProjectUploadAction(formData: FormData) {
 }
 
 export async function cancelProjectUploadAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const projectId = idSchema.parse(formData.get("projectId"));
   try {
     await cancelProjectUploadPreview(
@@ -158,7 +158,7 @@ export async function cancelProjectUploadAction(formData: FormData) {
 }
 
 export async function shareProjectAction(form: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const projectId = Number(form.get("projectId")),
     recipientId = Number(form.get("recipientId"));
   let status = "shared";

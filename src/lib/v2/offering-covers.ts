@@ -4,7 +4,7 @@ import { listSubjectOfferings } from "@/lib/academic";
 import { detectHomeImage, safeHomeAssetPath } from "@/lib/home-background";
 import { getServerEnvironment } from "@/lib/env";
 import type { Actor } from "./actor";
-import { canManage, isAdmin } from "./access";
+import { isAdmin } from "./access";
 import { recordAdminAction } from "./audit";
 import type { V2Database } from "./database";
 
@@ -50,10 +50,7 @@ export async function saveOfferingCover(
   data: Buffer,
 ) {
   if (
-    !canManage(db, actor, "manage_academics", {
-      kind: "offering",
-      id: offeringId,
-    })
+    !isAdmin(db, actor)
   )
     throw new Error("Sem permissão para a capa desta disciplina.");
   if (!data.length || data.length > offeringCoverLimitBytes)
@@ -103,10 +100,7 @@ export async function removeOfferingCover(
   offeringId: number,
 ): Promise<void> {
   if (
-    !canManage(db, actor, "manage_academics", {
-      kind: "offering",
-      id: offeringId,
-    })
+    !isAdmin(db, actor)
   )
     throw new Error("Sem permissão para a capa desta disciplina.");
   const existing = db

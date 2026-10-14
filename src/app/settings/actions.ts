@@ -36,7 +36,11 @@ import {
   setUserShortcutEnabled,
   updateUserShortcut,
 } from "@/lib/user-shortcuts";
-import { discoverShortcutIcon } from "@/lib/shortcut-icons";
+import {
+  applyShortcutIconForm,
+  shortcutImageFromForm,
+  discoverShortcutIcon,
+} from "@/lib/shortcut-icons";
 import { updateNotificationPreferences } from "@/lib/notifications";
 import { setProjectsFeatureEnabled } from "@/lib/feature-flags";
 import { setDriveStorageOwner } from "@/lib/google/storage-owner";
@@ -356,7 +360,13 @@ export async function createShortcutAction(formData: FormData) {
     url: requiredText(formData, "url"),
     icon: optionalText(formData, "icon"),
   });
-  await discoverShortcutIcon("instance", shortcut.id, null, shortcut.url);
+  await applyShortcutIconForm(
+    formData,
+    "instance",
+    shortcut.id,
+    null,
+    shortcut.url,
+  );
   recordAuditEvent({
     actorUserId: actor.id,
     action: "shortcut.create",
@@ -373,12 +383,23 @@ export async function createShortcutFromHomeAction(
 ): Promise<QuickAddState> {
   const actor = await requireAuthenticatedUser();
   try {
+    if (
+      formData.get("icon") === "@image" &&
+      !(await shortcutImageFromForm(formData))
+    )
+      throw new Error("Escolha uma imagem antes de salvar.");
     const shortcut = createUserShortcut(actor.id, {
       name: requiredText(formData, "name"),
       url: requiredText(formData, "url"),
       icon: optionalText(formData, "icon"),
     });
-    await discoverShortcutIcon("user", shortcut.id, actor.id, shortcut.url);
+    await applyShortcutIconForm(
+      formData,
+      "user",
+      shortcut.id,
+      actor.id,
+      shortcut.url,
+    );
     recordAuditEvent({
       actorUserId: actor.id,
       action: "user_shortcut.create",
@@ -401,7 +422,13 @@ export async function updateShortcutAction(formData: FormData) {
     url: requiredText(formData, "url"),
     icon: optionalText(formData, "icon"),
   });
-  await discoverShortcutIcon("instance", shortcut.id, null, shortcut.url);
+  await applyShortcutIconForm(
+    formData,
+    "instance",
+    shortcut.id,
+    null,
+    shortcut.url,
+  );
   recordAuditEvent({
     actorUserId: actor.id,
     action: "shortcut.update",
@@ -458,12 +485,23 @@ export async function reorderShortcutsAction(orderedIds: number[]) {
 
 export async function createPersonalShortcutAction(formData: FormData) {
   const actor = await requireAuthenticatedUser();
+  if (
+    formData.get("icon") === "@image" &&
+    !(await shortcutImageFromForm(formData))
+  )
+    throw new Error("Escolha uma imagem antes de salvar.");
   const shortcut = createUserShortcut(actor.id, {
     name: requiredText(formData, "name"),
     url: requiredText(formData, "url"),
     icon: optionalText(formData, "icon"),
   });
-  await discoverShortcutIcon("user", shortcut.id, actor.id, shortcut.url);
+  await applyShortcutIconForm(
+    formData,
+    "user",
+    shortcut.id,
+    actor.id,
+    shortcut.url,
+  );
   recordAuditEvent({
     actorUserId: actor.id,
     action: "user_shortcut.create",
@@ -478,13 +516,13 @@ export async function updatePersonalShortcutAction(formData: FormData) {
   const actor = await requireAuthenticatedUser();
   const id = shortcutIdSchema.parse(formData.get("id"));
   const shortcutUrl = requiredText(formData, "url");
+  await shortcutImageFromForm(formData);
   updateUserShortcut(actor.id, id, {
     name: requiredText(formData, "name"),
     url: shortcutUrl,
     icon: optionalText(formData, "icon"),
   });
-  if (formData.get("icon") === "@site")
-    await discoverShortcutIcon("user", id, actor.id, shortcutUrl);
+  await applyShortcutIconForm(formData, "user", id, actor.id, shortcutUrl);
   recordAuditEvent({
     actorUserId: actor.id,
     action: "user_shortcut.update",

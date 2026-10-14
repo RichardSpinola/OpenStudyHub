@@ -1,3 +1,7 @@
+import {
+  academicEventsForLegacyUser,
+  exceptionalClassesForLegacyUser,
+} from "./v2/event-display";
 import { academicTimeZoneForUser } from "./v2/academic-timezone";
 import {
   academicClock,
@@ -110,6 +114,16 @@ export function getTodayData(
       }
     }
   }
+  if (v2Context)
+    for (const lesson of exceptionalClassesForLegacyUser(userId)) {
+      if (lesson.date === date) classes.push(lesson);
+      else if (lesson.date > date) upcomingClasses.push(lesson);
+    }
+  classes.sort((a, b) => a.startsAtMinutes - b.startsAtMinutes);
+  upcomingClasses.sort(
+    (a, b) =>
+      a.date.localeCompare(b.date) || a.startsAtMinutes - b.startsAtMinutes,
+  );
   const startOfToday = new Date(academicMidnight(date, timeZone));
   const activities = listUserActivities(userId, connection)
     .flatMap((activity) => {
@@ -144,7 +158,7 @@ export function getTodayData(
         .map((item) => item.subjectId),
     ),
   ];
-  const upcomingEvents = subjectIds
+  const legacyEvents = subjectIds
     .flatMap((subjectId) =>
       listUserSubjectTimeline(userId, subjectId, connection)
         .filter(
@@ -162,6 +176,12 @@ export function getTodayData(
     )
     .sort((a, b) => a.startsAt - b.startsAt)
     .slice(0, 6);
+  const upcomingEvents = [
+    ...legacyEvents,
+    ...(v2Context ? academicEventsForLegacyUser(userId) : []),
+  ]
+    .sort((a, b) => a.startsAt - b.startsAt)
+    .slice(0, 12);
   return {
     date,
     timeZone,

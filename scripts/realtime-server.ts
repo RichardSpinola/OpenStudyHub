@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket, type RawData } from "ws";
 import { z } from "zod";
 import { canAccessChatRoom } from "../src/lib/chat";
 import { getDatabase } from "../src/lib/db/client";
+import { activeExam } from "../src/lib/v2/academic-events";
 import { sessionUserV2 } from "../src/lib/v2/auth";
 import { openV2Database, migrateV2 } from "../src/lib/v2/database";
 import {
@@ -96,7 +97,13 @@ function withDb<T>(fn: (db: ReturnType<typeof openV2Database>) => T): T {
 function principal(token: string) {
   return withDb((db) => {
     const user = sessionUserV2(db, token);
-    if (!user || user.kind !== "user" || user.mustChangePassword) return null;
+    if (
+      !user ||
+      user.kind !== "user" ||
+      user.mustChangePassword ||
+      activeExam(db, user.id)
+    )
+      return null;
     return { canonicalId: user.id, legacyId: legacyChatUserId(db, user.id) };
   });
 }
@@ -108,6 +115,10 @@ function cookieValue(raw: string, key: string): string | null {
   return null;
 }
 function write(peer: Peer, value: unknown) {
+  if (!principal(peer.token)) {
+    peer.socket.close(1008, "Access denied");
+    return;
+  }
   if (peer.socket.readyState === WebSocket.OPEN)
     peer.socket.send(JSON.stringify(value));
 }
@@ -167,12 +178,14 @@ function boardPresence() {
   }));
   const event = JSON.stringify({ type: "presence", participants });
   for (const peer of whiteboardPeers)
-    if (peer.socket.readyState === WebSocket.OPEN) peer.socket.send(event);
+    if (peer.socket.readyState === WebSocket.OPEN && principal(peer.token))
+      peer.socket.send(event);
 }
 function boardPatch(elements: BoardElement[]) {
   const event = JSON.stringify({ type: "patch", elements });
   for (const peer of whiteboardPeers)
-    if (peer.socket.readyState === WebSocket.OPEN) peer.socket.send(event);
+    if (peer.socket.readyState === WebSocket.OPEN && principal(peer.token))
+      peer.socket.send(event);
 }
 http.on("upgrade", (request, socket, head) => {
   try {

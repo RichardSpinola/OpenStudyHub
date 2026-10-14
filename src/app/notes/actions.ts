@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { recordAuditEvent } from "@/lib/audit";
-import { requireAuthenticatedUser } from "@/lib/authorization";
+import { requireToolUser } from "@/lib/authorization";
 import { createNote, deleteNote, updateNote } from "@/lib/notes";
 import { setNoteGroupShare, setNotePersonShare } from "@/lib/collaboration";
 
@@ -44,7 +44,7 @@ function refresh(noteId?: number) {
 }
 
 export async function createNoteAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   let noteId: number;
   try {
     const note = createNote(user.id, noteInput(formData));
@@ -64,7 +64,7 @@ export async function createNoteAction(formData: FormData) {
 }
 
 export async function updateNoteAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const noteId = idSchema.parse(formData.get("noteId"));
   try {
     updateNote(user.id, noteId, noteInput(formData));
@@ -83,7 +83,7 @@ export async function updateNoteAction(formData: FormData) {
 }
 
 export async function deleteNoteAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const noteId = idSchema.parse(formData.get("noteId"));
   try {
     deleteNote(user.id, noteId);
@@ -104,7 +104,7 @@ export async function deleteNoteAction(formData: FormData) {
 export async function autosaveNoteAction(
   input: z.input<typeof autosaveInputSchema>,
 ): Promise<{ ok: boolean }> {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   try {
     const value = autosaveInputSchema.parse(input);
     updateNote(user.id, value.noteId, {
@@ -123,7 +123,7 @@ export async function autosaveNoteAction(
 }
 
 export async function setNoteGroupShareAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const noteId = idSchema.parse(formData.get("noteId"));
   try {
     setNoteGroupShare(
@@ -140,7 +140,7 @@ export async function setNoteGroupShareAction(formData: FormData) {
 }
 
 export async function setNotePersonShareAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const noteId = idSchema.parse(formData.get("noteId"));
   try {
     setNotePersonShare(

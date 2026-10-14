@@ -40,13 +40,30 @@ export const shortcutIconPresets = [
   { id: "web", label: "Web", hosts: [] },
   { id: "book", label: "Estudos", hosts: [] },
   { id: "code", label: "Código", hosts: [] },
+  ...[
+    ["star", "Favorito"],
+    ["heart", "Pessoal"],
+    ["cloud", "Nuvem"],
+    ["photo", "Imagens"],
+    ["video", "Vídeos"],
+    ["file", "Arquivo"],
+    ["calc", "Calculadora"],
+    ["map", "Mapa"],
+    ["news", "Notícias"],
+    ["search", "Pesquisa"],
+    ["tools", "Ferramentas"],
+    ["coffee", "Pausa"],
+    ["science", "Ciência"],
+    ["lang", "Idiomas"],
+    ["shield", "Segurança"],
+  ].map(([id, label]) => ({ id, label, hosts: [] as string[] })),
 ] as const;
 export type ShortcutIconPreset = (typeof shortcutIconPresets)[number]["id"];
 export function shortcutPresetFor(
   url: string,
   icon: string | null,
 ): ShortcutIconPreset | null {
-  if (icon === "@site" || icon === "@text") return null;
+  if (icon === "@site" || icon === "@text" || icon === "@image") return null;
   const selected = shortcutIconPresets.find((p) => `@${p.id}` === icon);
   if (selected) return selected.id;
   try {

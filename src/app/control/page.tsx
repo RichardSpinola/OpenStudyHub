@@ -42,11 +42,32 @@ export default async function ControlHome() {
         .get() as { n: number }
     ).n;
     const presence = presenceSummary(db);
+    const grantCount = (
+      db
+        .prepare(
+          "SELECT count(*) n FROM permission_grants WHERE revoked_at IS NULL",
+        )
+        .get() as { n: number }
+    ).n;
+    const connected = (
+      db
+        .prepare(
+          "SELECT count(*) n FROM google_connections_v2 WHERE status='connected'",
+        )
+        .get() as { n: number }
+    ).n;
+    const eventCount = (
+      db
+        .prepare(
+          "SELECT count(*) n FROM academic_events_v3 WHERE cancelled_at IS NULL AND ends_at>?",
+        )
+        .get(Date.now()) as { n: number }
+    ).n;
     const english = getUiLanguage() === "en";
     const tr = (pt: string, en: string) => (english ? en : pt);
     return (
       <ConsoleShell
-        title={tr("Visão geral", "Overview")}
+        title={tr("Painel administrativo", "Admin dashboard")}
         kicker={tr("ADMINISTRAÇÃO DA INSTÂNCIA", "INSTANCE ADMINISTRATION")}
         name={actor.name}
         admin
@@ -58,6 +79,32 @@ export default async function ControlHome() {
             "Open an institution to manage its courses and records.",
           )}
         </p>
+        <section aria-labelledby="control-institutions-title">
+          <div className="admin-section-header">
+            <h2 id="control-institutions-title">
+              {tr("Instituições", "Institutions")}
+            </h2>
+            <Link href="/control/institutions">
+              {tr("Ver todas", "View all")} →
+            </Link>
+          </div>
+          <div className="admin-portal-grid">
+            {institutions.map((item) => (
+              <Link
+                key={item.id}
+                href={`/control/institutions/${item.id}`}
+                className="admin-portal-card"
+              >
+                <strong>{item.name}</strong>
+                <span>
+                  {item.courses} {tr("curso(s)", "course(s)")}
+                  {item.archivedAt ? tr(" · Arquivada", " · Archived") : ""}
+                </span>
+                <span aria-hidden="true">→</span>
+              </Link>
+            ))}
+          </div>
+        </section>
         <div
           className="admin-overview-facts"
           aria-label={tr("Estado da instância", "Instance status")}
@@ -101,32 +148,6 @@ export default async function ControlHome() {
             <strong>{presence.lastWeek}</strong>
           </span>
         </div>
-        <section aria-labelledby="control-institutions-title">
-          <div className="admin-section-header">
-            <h2 id="control-institutions-title">
-              {tr("Instituições", "Institutions")}
-            </h2>
-            <Link href="/control/institutions">
-              {tr("Ver todas", "View all")} →
-            </Link>
-          </div>
-          <div className="admin-entity-list">
-            {institutions.map((item) => (
-              <Link
-                key={item.id}
-                href={`/control/institutions/${item.id}`}
-                className="admin-entity-link"
-              >
-                <strong>{item.name}</strong>
-                <span>
-                  {item.courses} {tr("curso(s)", "course(s)")}
-                  {item.archivedAt ? tr(" · Arquivada", " · Archived") : ""}
-                </span>
-                <span aria-hidden="true">→</span>
-              </Link>
-            ))}
-          </div>
-        </section>
         <section aria-labelledby="control-attention-title">
           <h2 id="control-attention-title">{tr("Acompanhar", "Follow up")}</h2>
           <p>
@@ -151,6 +172,78 @@ export default async function ControlHome() {
               </Link>
             </p>
           ) : null}
+        </section>
+        <section
+          className="admin-service-grid"
+          aria-label={tr("Gestão da instância", "Instance management")}
+        >
+          <article>
+            <small>{tr("PESSOAS", "PEOPLE")}</small>
+            <h2>
+              {tr(
+                "Contas e responsabilidades",
+                "Accounts and responsibilities",
+              )}
+            </h2>
+            <p>
+              {users} {tr("contas ativas", "active accounts")} · {grantCount}{" "}
+              {tr("concessões ativas", "active grants")}
+            </p>
+            <Link href="/control/users">
+              {tr("Abrir usuários", "Open users")} →
+            </Link>
+            <details>
+              <summary>
+                {tr("Permissões delegadas", "Delegated permissions")}
+              </summary>
+              <p>
+                {tr(
+                  "Gestores atuam somente no escopo concedido. Acesso a conteúdo privado não é concedido por ser gestor.",
+                  "Managers act only within granted scopes. Management does not grant access to private content.",
+                )}
+              </p>
+              <Link href="/control/grants">
+                {tr("Gerenciar responsabilidades", "Manage responsibilities")} →
+              </Link>
+            </details>
+          </article>
+          <article>
+            <small>{tr("INTEGRAÇÕES", "INTEGRATIONS")}</small>
+            <h2>Google / Classroom / Drive</h2>
+            <p>
+              {connected}{" "}
+              {tr("contas Google conectadas", "connected Google accounts")}
+            </p>
+            <Link href="/control/google">
+              {tr("Abrir integrações", "Open integrations")} →
+            </Link>
+            <details>
+              <summary>{tr("Como funciona", "How it works")}</summary>
+              <p>
+                {tr(
+                  "Cada pessoa conecta o próprio Classroom. O destino dos arquivos da instância é configurado separadamente.",
+                  "Each person connects their own Classroom. Instance file storage is configured separately.",
+                )}
+              </p>
+            </details>
+          </article>
+          <article>
+            <small>{tr("SISTEMA", "SYSTEM")}</small>
+            <h2>{tr("Operação da instalação", "Installation operations")}</h2>
+            <p>
+              {eventCount}{" "}
+              {tr("eventos/provas agendados", "scheduled events/exams")}
+            </p>
+            <Link href="/control/system">
+              {tr("Abrir sistema", "Open system")} →
+            </Link>
+            <details>
+              <summary>{tr("Recursos opcionais", "Optional features")}</summary>
+              <Link href="/control/extras">
+                {tr("Configurar Extras", "Configure Extras")} →
+              </Link>
+            </details>
+          </article>
         </section>
         <nav
           className="admin-common-tasks"

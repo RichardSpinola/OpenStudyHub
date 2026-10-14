@@ -1,3 +1,5 @@
+import { RemovalPanel } from "./removal-panel";
+import { EventsPanel } from "./events-panel";
 import { UiCopy } from "@/components/ui-language-provider";
 import type { Actor } from "@/lib/v2/actor";
 import Link from "next/link";
@@ -233,7 +235,12 @@ function List({
                         operation="delete"
                       />
                       <label>
-                        <input type="checkbox" required />
+                        <input
+                          type="checkbox"
+                          name="confirmDelete"
+                          value="yes"
+                          required
+                        />
                         <UiCopy
                           pt="Entendo que é uma exclusão definitiva"
                           en="I understand this deletion is permanent"
@@ -290,6 +297,45 @@ export function ManagementPanel({
 }) {
   const tr = (pt: string, en: string) => uiText(getUiLanguage(), pt, en);
   const programs = visiblePrograms(db, actor);
+  if (contextual && !programs.some((p) => p.id === selected)) {
+    const archived = db
+      .prepare("SELECT name,archived_at FROM programs WHERE id=?")
+      .get(selected) as
+      { name: string; archived_at: number | null } | undefined;
+    return (
+      <ConsoleShell
+        title={archived?.name ?? tr("Curso indisponível", "Course unavailable")}
+        kicker="ADMINISTRAÇÃO / CURSO"
+        name={name}
+        admin={admin}
+        active="institutions"
+        message={message}
+        error={error}
+      >
+        <p>
+          <Link href={base.split("/courses/")[0]}>
+            {tr("← Voltar à instituição", "← Back to institution")}
+          </Link>
+        </p>
+        <p>
+          {tr(
+            "Este curso está arquivado. O histórico foi preservado; reative para retomar os cadastros.",
+            "This course is archived. History is preserved; reactivate to resume management.",
+          )}
+        </p>
+        {admin &&
+          archived &&
+          RemovalPanel({
+            db: db,
+            actor: actor,
+            entity: "programs",
+            id: selected,
+            archived: !!archived.archived_at,
+            returnTo: base,
+          })}
+      </ConsoleShell>
+    );
+  }
   const program = programs.find((p) => p.id === selected) ?? programs[0];
   const pid = program?.id ?? 0;
   const programShortName = pid
@@ -573,8 +619,9 @@ export function ManagementPanel({
       ) : null}
       {programs.length ? (
         <>
-          {contextual && canStructure ? (
-            <section className="v2-card">
+          {contextual && canStructure && section === "structure" ? (
+            <details className="v2-card admin-course-details">
+              <summary>Dados do curso</summary>
               <h2>
                 <UiCopy pt="Dados do curso" en="Course details" />
               </h2>
@@ -601,7 +648,7 @@ export function ManagementPanel({
                   <UiCopy pt="Salvar curso" en="Save course" />
                 </button>
               </form>
-            </section>
+            </details>
           ) : null}
           {!contextual ? (
             <div className="v2-list">
@@ -637,7 +684,17 @@ export function ManagementPanel({
               className="v2-tabs"
               aria-label={tr("Áreas do curso", "Program sections")}
             >
-              {tabs.map((t) => (
+              {[
+                ...tabs,
+                ...(canScheduleScoped
+                  ? [
+                      {
+                        key: "events",
+                        label: tr("Eventos e provas", "Events and exams"),
+                      },
+                    ]
+                  : []),
+              ].map((t) => (
                 <Link
                   key={t.key}
                   href={sectionPath(t.key)}
@@ -648,6 +705,15 @@ export function ManagementPanel({
               ))}
             </nav>
             <div className="admin-course-content">
+              {section === "events"
+                ? EventsPanel({
+                    db: db,
+                    actor: actor,
+                    institutionId: institutionId,
+                    programId: pid,
+                    returnTo: path,
+                  })
+                : null}
               {section === "structure" ? (
                 <section>
                   <h2>
@@ -659,6 +725,40 @@ export function ManagementPanel({
                       en="Open a course area to manage cohorts, curriculum, schedules or students."
                     />
                   </p>
+                  {contextual &&
+                    admin &&
+                    RemovalPanel({
+                      db: db,
+                      actor: actor,
+                      entity: "programs",
+                      id: pid,
+                      returnTo: `/control/institutions/${institutionId}?area=courses`,
+                    })}
+                  <div className="admin-portal-grid">
+                    {tabs
+                      .filter((t) => t.key !== "structure")
+                      .map((t) => (
+                        <Link
+                          key={t.key}
+                          className="admin-portal-card"
+                          href={sectionPath(t.key)}
+                        >
+                          <h3>{t.label}</h3>
+                          <span>{tr("Administrar", "Manage")} →</span>
+                        </Link>
+                      ))}
+                    {canScheduleScoped && (
+                      <Link
+                        className="admin-portal-card"
+                        href={sectionPath("events")}
+                      >
+                        <h3>{tr("Eventos e provas", "Events and exams")}</h3>
+                        <span>
+                          {tr("Agendar por data", "Schedule by date")} →
+                        </span>
+                      </Link>
+                    )}
+                  </div>
                   <div className="admin-overview-facts">
                     <span>
                       <strong>{cohorts.length}</strong>
@@ -701,7 +801,7 @@ export function ManagementPanel({
                       </Link>
                     </p>
                   ) : null}
-                  {canCohort ? (
+                  {canCohort && curricula.length > 0 && shifts.length > 0 ? (
                     <Create title="Adicionar turma" intent="cohort" path={path}>
                       <HiddenContext returnTo={path} programId={pid} />
                       <Field name="code" label="Código" />
@@ -714,6 +814,36 @@ export function ManagementPanel({
                       <Select name="shiftId" label="Turno" items={shifts} />
                     </Create>
                   ) : null}
+                  {canCohort && (!curricula.length || !shifts.length) && (
+                    <div className="admin-prerequisites" role="status">
+                      <p>
+                        {tr(
+                          "Antes de criar a turma:",
+                          "Before creating a cohort:",
+                        )}
+                      </p>
+                      {!curricula.length && (
+                        <Link href={sectionPath("curriculum")}>
+                          {tr("Cadastre um currículo →", "Add a curriculum →")}
+                        </Link>
+                      )}
+                      {!shifts.length && admin && (
+                        <Link
+                          href={`/control/institutions/${institutionId}?area=shifts`}
+                        >
+                          {tr("Cadastre um turno →", "Add a shift →")}
+                        </Link>
+                      )}
+                      {!shifts.length && !admin && (
+                        <p>
+                          {tr(
+                            "Peça ao administrador para cadastrar um turno.",
+                            "Ask the administrator to add a shift.",
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <List
                     title="Turmas"
                     items={cohorts}
@@ -997,10 +1127,7 @@ export function ManagementPanel({
                           {o.name} · {o.period}{" "}
                           {o.archived_at ? "· Arquivada" : ""}
                         </span>
-                        {canManage(db, actor, "manage_academics", {
-                          kind: "offering",
-                          id: o.id,
-                        }) ? (
+                        {admin ? (
                           <AdminActionPanel
                             title={
                               coverIds.has(o.id)

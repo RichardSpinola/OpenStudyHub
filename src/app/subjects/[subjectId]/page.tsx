@@ -1,3 +1,5 @@
+import { examForLegacyUser } from "@/lib/v2/exam-access";
+import { subjectEventFeed } from "@/lib/v2/event-display";
 import { ClassroomMaterialLinks } from "@/components/classroom-material-links";
 import { LocalDocumentCard } from "@/components/local-document-card";
 import {
@@ -142,9 +144,12 @@ export default async function SubjectPage({
   const subjectId = Number(rawSubjectId);
   const v2Mode = process.env.OPENSTUDYHUB_V2_ENABLED === "1";
   const projectsEnabled = isProjectsFeatureEnabled();
-  const views = projectsEnabled
-    ? baseViews
-    : baseViews.filter(([key]) => key !== "projects");
+  const exam = examForLegacyUser(user.id);
+  const views = baseViews.filter(
+    ([key]) =>
+      (projectsEnabled || key !== "projects") &&
+      (!exam || !["notes", "documents", "projects"].includes(key)),
+  );
   const view: SubjectView = views.some(([key]) => key === parameters.view)
     ? (parameters.view as SubjectView)
     : "overview";
@@ -197,7 +202,9 @@ export default async function SubjectPage({
         : listUserAgenda(user.id).filter(
             (slot) => slot.subjectId === subjectId,
           ),
-      feed: v2Academic ? [] : listUserSubjectFeed(user.id, subjectId),
+      feed: v2Academic
+        ? subjectEventFeed(user.id, subjectId)
+        : listUserSubjectFeed(user.id, subjectId),
       activities: listUserActivities(user.id).filter(({ offeringId }) =>
         legacyIds.has(offeringId),
       ),
@@ -333,7 +340,7 @@ export default async function SubjectPage({
     timeStyle: "short",
   });
 
-  const subjectActions = (
+  const subjectActions = exam ? null : (
     <section
       className="subject-actions"
       aria-label={uiText(language, "Ações da disciplina", "Subject actions")}

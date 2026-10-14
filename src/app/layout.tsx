@@ -1,3 +1,5 @@
+import { ExamAccessBridge } from "@/components/exam-access-bridge";
+import { examForLegacyUser } from "@/lib/v2/exam-access";
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -128,6 +130,7 @@ export default async function RootLayout({
     institutionName = "";
   }
 
+  const exam = session ? examForLegacyUser(session.user.id) : null;
   return (
     <html
       lang={language}
@@ -152,8 +155,16 @@ export default async function RootLayout({
         </a>
         <UiLanguageProvider language={language}>
           {session && process.env.OPENSTUDYHUB_V2_ENABLED === "1" ? (
-            <RealtimeBridge />
+            !exam ? (
+              <RealtimeBridge />
+            ) : null
           ) : null}
+          {session && process.env.OPENSTUDYHUB_V2_ENABLED === "1" && (
+            <ExamAccessBridge
+              restricted={!!exam}
+              endsAt={exam?.endsAt ?? null}
+            />
+          )}
           <AvatarShapeBridge />
           <div className="app-frame">
             <header className="app-header">
@@ -177,13 +188,14 @@ export default async function RootLayout({
                 <PrimaryNavigation
                   authenticated={session !== null}
                   projectsEnabled={projectsEnabled}
-                  extrasEnabled={extrasEnabled}
+                  extrasEnabled={extrasEnabled && !exam}
+                  examMode={!!exam}
                 />
               ) : null}
               {session && !classicNavigation ? (
                 <div className="shell-utilities">
                   <ExternalLinksMenu links={externalLinks} />
-                  <NotificationCenter />
+                  {!exam && <NotificationCenter />}
                   <AccountMenu
                     userId={session.user.id}
                     name={session.user.displayName}
@@ -198,6 +210,18 @@ export default async function RootLayout({
               <GoogleConnectionNotice />
             ) : null}
             <main className="app-content" id="main-content">
+              {exam ? (
+                <aside className="exam-mode-notice" role="status">
+                  {language === "en"
+                    ? "Exam mode: study tools are temporarily unavailable until "
+                    : "Modo de prova: ferramentas temporariamente indisponíveis até "}
+                  {new Intl.DateTimeFormat(language, {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  }).format(exam.endsAt)}{" "}
+                  · {exam.title}
+                </aside>
+              ) : null}
               {children}
             </main>
             {classicNavigation ? (
@@ -205,11 +229,12 @@ export default async function RootLayout({
                 <PrimaryNavigation
                   authenticated
                   projectsEnabled={projectsEnabled}
-                  extrasEnabled={extrasEnabled}
+                  extrasEnabled={extrasEnabled && !exam}
+                  examMode={!!exam}
                 />
                 <div className="classic-footer-utilities">
                   <ExternalLinksMenu links={externalLinks} />
-                  <NotificationCenter />
+                  {!exam && <NotificationCenter />}
                   <AccountMenu
                     userId={session.user.id}
                     name={session.user.displayName}

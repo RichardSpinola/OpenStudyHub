@@ -70,13 +70,27 @@ function loadSubjectsData(userId: number): SubjectsData {
   }
 }
 
-export default async function SubjectsPage() {
+export default async function SubjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ query?: string }>;
+}) {
+  const query = ((await searchParams).query ?? "").trim().slice(0, 120);
   const user = await requireAuthenticatedUser();
   const data = loadSubjectsData(user.id);
   const { academic } = getTranslations(data.language);
   const periods = data.available
     ? partitionOfferingsByPeriod(
-        data.offerings,
+        data.offerings.filter(
+          (o) =>
+            !query ||
+            [
+              o.subjectName,
+              o.subjectCode,
+              o.programName,
+              o.instructorName,
+            ].some((v) => v?.toLowerCase().includes(query.toLowerCase())),
+        ),
         data.currentPeriod?.label ?? null,
       )
     : null;
@@ -126,6 +140,43 @@ export default async function SubjectsPage() {
         ) : null}
       </header>
 
+      <form method="get" className="subject-search">
+        <label>
+          <UiCopy pt="Encontrar disciplina" en="Find a subject" />
+          <input
+            type="search"
+            name="query"
+            defaultValue={query}
+            placeholder={uiText(
+              data.language,
+              "Nome, código, curso ou professor",
+              "Name, code, course or instructor",
+            )}
+          />
+        </label>
+        <button>
+          <UiCopy pt="Buscar" en="Search" />
+        </button>
+        {query && (
+          <Link href="/subjects">
+            <UiCopy pt="Limpar busca" en="Clear search" />
+          </Link>
+        )}
+      </form>
+      {data.available &&
+        query &&
+        !data.offerings.some((o) =>
+          [o.subjectName, o.subjectCode, o.programName, o.instructorName].some(
+            (v) => v?.toLowerCase().includes(query.toLowerCase()),
+          ),
+        ) && (
+          <p role="status">
+            <UiCopy
+              pt="Nenhuma disciplina corresponde à busca. Tente outro nome ou limpe a busca."
+              en="No subject matches. Try another name or clear the search."
+            />
+          </p>
+        )}
       {!data.available ? (
         <div className="useful-empty" role="alert">
           <strong>{academic.databaseUnavailable}</strong>

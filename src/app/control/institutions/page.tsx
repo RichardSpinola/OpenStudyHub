@@ -64,12 +64,12 @@ export default async function Institutions({
             </form>
           </AdminActionPanel>
         </div>
-        <div className="admin-entity-list">
+        <div className="admin-portal-grid">
           {institutions.map((item) => (
             <Link
               href={`/control/institutions/${item.id}`}
               key={item.id}
-              className="admin-entity-link"
+              className="admin-portal-card"
             >
               <strong>{item.name}</strong>
               <span>

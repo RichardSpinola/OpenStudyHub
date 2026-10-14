@@ -463,6 +463,21 @@ function writeAcademic(
   targetType: string,
 ): number {
   if (!canManage(db, actor, capability, scope)) throw new Error("Forbidden");
+  const parentQueries = {
+    institution:
+      "SELECT 1 FROM institutions WHERE id=? AND archived_at IS NULL",
+    program:
+      "SELECT 1 FROM programs p JOIN institutions i ON i.id=p.institution_id WHERE p.id=? AND p.archived_at IS NULL AND i.archived_at IS NULL",
+    cohort:
+      "SELECT 1 FROM cohorts c JOIN programs p ON p.id=c.program_id JOIN institutions i ON i.id=p.institution_id WHERE c.id=? AND c.archived_at IS NULL AND p.archived_at IS NULL AND i.archived_at IS NULL",
+    offering:
+      "SELECT 1 FROM offerings o JOIN programs p ON p.id=o.program_id JOIN institutions i ON i.id=p.institution_id WHERE o.id=? AND o.archived_at IS NULL AND p.archived_at IS NULL AND i.archived_at IS NULL",
+    group: "SELECT 1 FROM community_groups WHERE id=? AND archived_at IS NULL",
+  };
+  if (!db.prepare(parentQueries[scope.kind]).get(scope.id))
+    throw new Error(
+      "Reative o contexto arquivado antes de criar novos cadastros.",
+    );
   return db.transaction(() => {
     const id = write();
     recordAdminAction(

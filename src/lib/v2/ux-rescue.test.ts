@@ -72,7 +72,7 @@ describe("UX Rescue: segurança e migração", () => {
     }
   });
 
-  it("exige grant na capa e Admin na ligação manual V1/V2", async () => {
+  it("exige Admin na capa e na ligação manual V1/V2", async () => {
     const folder = mkdtempSync(join(tmpdir(), "osh-covers-fake-"));
     folders.push(folder);
     fake.root = join(folder, "assets");
@@ -99,14 +99,15 @@ describe("UX Rescue: segurança e migração", () => {
           Buffer.alloc(offeringCoverLimitBytes + 1),
         ),
       ).rejects.toThrow("5 MiB");
-      await saveOfferingCover(db, userActor(2), 1, image);
+      await expect(saveOfferingCover(db,userActor(2),1,image)).rejects.toThrow("permissão");
+      await saveOfferingCover(db, adminActor(1), 1, image);
       expect(() => linkLegacyOffering(db, userActor(2), 1, 9001)).toThrow(
         "Admin",
       );
       linkLegacyOffering(db, adminActor(1), 1, 9001);
       expect(coverForLegacyOffering(db, 9001)?.mimeType).toBe("image/png");
       expect(coverForLegacyOffering(db, 1)).toBeUndefined(); // numeric IDs are never matched implicitly.
-      await removeOfferingCover(db, userActor(2), 1);
+      await removeOfferingCover(db, adminActor(1), 1);
       expect(coverForLegacyOffering(db, 9001)).toBeUndefined();
       expect(
         db.prepare("SELECT 1 FROM offerings WHERE id=1").get(),

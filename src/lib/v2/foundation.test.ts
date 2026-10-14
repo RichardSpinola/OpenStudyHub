@@ -59,7 +59,7 @@ describe("V2 structural foundation", () => {
           n: number;
         }
       ).n,
-    ).toBe(29);
+    ).toBe(30);
     expect(db.pragma("foreign_key_check")).toEqual([]);
     expect(db.pragma("integrity_check")).toEqual([{ integrity_check: "ok" }]);
     expect(

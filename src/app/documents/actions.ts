@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { recordAuditEvent } from "@/lib/audit";
-import { requireAuthenticatedUser } from "@/lib/authorization";
+import { requireToolUser } from "@/lib/authorization";
 import {
   addDocumentTemplateSection,
   canonicalDocumentPlaceholders,
@@ -116,7 +116,7 @@ function templateErrorStatus(error: unknown): string {
 }
 
 export async function createDocumentTemplateAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   let templateId: number;
   try {
     const storageUserId = resolveDriveStorageUser(user.id, null);
@@ -154,7 +154,7 @@ export async function createDocumentTemplateAction(formData: FormData) {
 }
 
 export async function updateDocumentTemplateAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const templateId = idSchema.parse(formData.get("templateId"));
   try {
     const existing = getUserDocumentTemplate(user.id, templateId);
@@ -189,7 +189,7 @@ export async function updateDocumentTemplateAction(formData: FormData) {
 }
 
 export async function cloneDocumentTemplateAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const sourceId = idSchema.parse(formData.get("templateId"));
   let cloneId: number;
   try {
@@ -214,7 +214,7 @@ export async function cloneDocumentTemplateAction(formData: FormData) {
 }
 
 export async function deleteDocumentTemplateAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const templateId = idSchema.parse(formData.get("templateId"));
   try {
     deleteDocumentTemplate(user.id, templateId);
@@ -233,7 +233,7 @@ export async function deleteDocumentTemplateAction(formData: FormData) {
 }
 
 export async function addDocumentTemplateSectionAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const templateId = idSchema.parse(formData.get("templateId"));
   try {
     addDocumentTemplateSection(user.id, templateId, sectionInput(formData));
@@ -245,7 +245,7 @@ export async function addDocumentTemplateSectionAction(formData: FormData) {
 }
 
 export async function updateDocumentTemplateSectionAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const templateId = idSchema.parse(formData.get("templateId"));
   try {
     updateDocumentTemplateSection(
@@ -262,7 +262,7 @@ export async function updateDocumentTemplateSectionAction(formData: FormData) {
 }
 
 export async function moveDocumentTemplateSectionAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const templateId = idSchema.parse(formData.get("templateId"));
   try {
     moveDocumentTemplateSection(
@@ -279,7 +279,7 @@ export async function moveDocumentTemplateSectionAction(formData: FormData) {
 }
 
 export async function deleteDocumentTemplateSectionAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const templateId = idSchema.parse(formData.get("templateId"));
   try {
     deleteDocumentTemplateSection(
@@ -295,7 +295,7 @@ export async function deleteDocumentTemplateSectionAction(formData: FormData) {
 }
 
 export async function generateDocumentAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const offeringId = idSchema.parse(formData.get("offeringId"));
   const activityRaw = text(formData, "activityId");
   let documentId: number;
@@ -343,7 +343,7 @@ export async function generateDocumentAction(formData: FormData) {
 }
 
 export async function importStarterDocumentTemplateAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   let templateId: number;
   try {
     templateId = await importStarterDocumentTemplate(
@@ -365,7 +365,7 @@ export async function importStarterDocumentTemplateAction(formData: FormData) {
 }
 
 export async function useBundledStarterAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const starterKey = text(formData, "starterKey");
   const offeringId = idSchema.safeParse(formData.get("offeringId"));
   if (!offeringId.success)
@@ -401,7 +401,7 @@ export async function useBundledStarterAction(formData: FormData) {
 }
 
 export async function importDocxTemplateAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   try {
     const file = formData.get("docx");
     if (
@@ -437,7 +437,7 @@ export async function importDocxTemplateAction(formData: FormData) {
 }
 
 export async function setDocumentGroupShareAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const documentId = idSchema.parse(formData.get("documentId"));
   try {
     setDocumentGroupShare(
@@ -454,7 +454,7 @@ export async function setDocumentGroupShareAction(formData: FormData) {
 }
 
 export async function setDocumentPersonShareAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const documentId = idSchema.parse(formData.get("documentId"));
   try {
     setDocumentPersonShare(
@@ -471,7 +471,7 @@ export async function setDocumentPersonShareAction(formData: FormData) {
 }
 
 export async function deleteGeneratedDocumentAction(formData: FormData) {
-  const user = await requireAuthenticatedUser();
+  const user = await requireToolUser();
   const documentId = idSchema.parse(formData.get("documentId"));
   const mode = z.enum(["hub", "drive"]).parse(formData.get("mode"));
   try {

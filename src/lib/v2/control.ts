@@ -1,3 +1,4 @@
+import { previewAcademicRemoval } from "./academic-removal";
 import type { Actor } from "./actor";
 import type { V2Database } from "./database";
 import { canManage, isAdmin, type Capability, type Scope } from "./access";
@@ -120,8 +121,6 @@ export function mutateAcademic(
       const blockers: Partial<Record<ManagedEntity, string>> = {
         institutions:
           "SELECT 1 FROM programs WHERE institution_id=? AND archived_at IS NULL LIMIT 1",
-        programs:
-          "SELECT 1 FROM cohorts WHERE program_id=? AND archived_at IS NULL LIMIT 1",
         cohorts:
           "SELECT 1 FROM cohort_periods WHERE cohort_id=? AND state='active' LIMIT 1",
         academic_periods:
@@ -136,12 +135,21 @@ export function mutateAcademic(
         );
     }
     if (operation === "delete") {
+      requireInstanceAdmin(db, actor);
+      const preview = previewAcademicRemoval(db, actor, entity, id);
+      if (!preview.canDelete)
+        throw new Error(
+          "Exclusão bloqueada: há vínculos ou histórico. Consulte as dependências e use arquivamento.",
+        );
       const deps = db
         .prepare(`SELECT count(*) n FROM ${entity} WHERE id=?`)
         .get(id) as { n: number };
       if (!deps.n) throw new Error("Registro não encontrado.");
       try {
         db.prepare(`DELETE FROM ${entity} WHERE id=?`).run(id);
+        db.prepare(
+          "DELETE FROM academic_legacy_ids WHERE entity=? AND canonical_id=?",
+        ).run(entity, id);
       } catch {
         throw new Error(
           "Exclusão bloqueada: há histórico ou vínculos. Arquive o registro.",

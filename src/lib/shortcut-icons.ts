@@ -13,6 +13,30 @@ import { getServerEnvironment } from "@/lib/env";
 
 const id = z.number().int().positive();
 const maxIconBytes = 512 * 1024;
+async function boundedBody(
+  response: Response,
+  limit: number,
+): Promise<Buffer | null> {
+  const reader = response.body?.getReader();
+  if (!reader) return null;
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const part = await reader.read();
+      if (part.done) break;
+      size += part.value.length;
+      if (size > limit) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(part.value);
+    }
+    return Buffer.concat(chunks);
+  } finally {
+    reader.releaseLock();
+  }
+}
 export type ShortcutIconScope = "instance" | "user";
 
 function privateAddress(address: string): boolean {
@@ -85,8 +109,8 @@ async function decodeIconResponse(response: Response): Promise<Buffer | null> {
   if (!response.ok) return null;
   const length = Number(response.headers.get("content-length") ?? "0");
   if (length > maxIconBytes) return null;
-  const data = Buffer.from(await response.arrayBuffer());
-  if (!data.length || data.length > maxIconBytes) return null;
+  const data = await boundedBody(response, maxIconBytes);
+  if (!data?.length) return null;
   try {
     return await faviconImage(data);
   } catch {
@@ -106,8 +130,8 @@ async function discoverFromHomepage(
   if (!response.ok) return null;
   const length = Number(response.headers.get("content-length") ?? "0");
   if (length > 256 * 1024) return null;
-  const data = Buffer.from(await response.arrayBuffer());
-  if (!data.length || data.length > 256 * 1024) return null;
+  const data = await boundedBody(response, 256 * 1024);
+  if (!data?.length) return null;
   const html = data.toString("utf8");
   const linkTags = html.match(/<link\b[^>]*>/giu) ?? [];
   for (const tag of linkTags) {
@@ -117,7 +141,7 @@ async function discoverFromHomepage(
     const href = /\bhref\s*=\s*["']([^"']+)["']/iu.exec(tag)?.[1];
     if (!href) continue;
     try {
-      return new URL(href, pageUrl);
+      return new URL(href, response.url || pageUrl);
     } catch {
       continue;
     }
@@ -125,6 +149,18 @@ async function discoverFromHomepage(
   return null;
 }
 
+async function discardUnusedIcon(
+  connection: DatabaseConnection,
+  name: string,
+  assetRoot?: string,
+) {
+  const used = connection.sqlite
+    .prepare(
+      "SELECT 1 FROM shortcuts WHERE icon_storage_name=? UNION ALL SELECT 1 FROM user_shortcuts WHERE icon_storage_name=? LIMIT 1",
+    )
+    .get(name, name);
+  if (!used) await unlink(safePath(name, assetRoot)).catch(() => undefined);
+}
 function iconRoot(root?: string) {
   return resolve(
     root ?? getServerEnvironment().PRIVATE_ASSET_PATH,
@@ -154,28 +190,7 @@ export async function discoverShortcutIcon(
 ): Promise<boolean> {
   try {
     const targetId = id.parse(shortcutId);
-    const pageUrl = new URL(shortcutUrl);
-    const fetchImpl = options.fetchImpl ?? fetch;
-    const faviconUrl = new URL("/favicon.ico", pageUrl);
-    let output = await decodeIconResponse(
-      await safeFetch(
-        faviconUrl,
-        fetchImpl,
-        "image/png,image/jpeg,image/webp,image/x-icon,image/vnd.microsoft.icon,*/*;q=0.1",
-      ),
-    );
-    if (!output) {
-      const discovered = await discoverFromHomepage(pageUrl, fetchImpl);
-      if (discovered) {
-        output = await decodeIconResponse(
-          await safeFetch(
-            discovered,
-            fetchImpl,
-            "image/png,image/jpeg,image/webp,image/x-icon,image/vnd.microsoft.icon,*/*;q=0.1",
-          ),
-        );
-      }
-    }
+    const output = await fetchShortcutIcon(shortcutUrl, options.fetchImpl);
     if (!output) return false;
     const connection = options.connection ?? getDatabase();
     const table = scope === "user" ? "user_shortcuts" : "shortcuts";
@@ -199,8 +214,10 @@ export async function discoverShortcutIcon(
       )
       .run(storageName, Date.now(), ...parameters);
     if (previous.storageName)
-      await unlink(safePath(previous.storageName, options.assetRoot)).catch(
-        () => undefined,
+      await discardUnusedIcon(
+        connection,
+        previous.storageName,
+        options.assetRoot,
       );
     return true;
   } catch {
@@ -237,5 +254,127 @@ export async function readShortcutIcon(
     };
   } catch {
     return null;
+  }
+}
+
+export async function fetchShortcutIcon(
+  shortcutUrl: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Buffer | null> {
+  try {
+    const pageUrl = new URL(shortcutUrl);
+    let output: Buffer | null = null;
+    try {
+      output = await decodeIconResponse(
+        await safeFetch(new URL("/favicon.ico", pageUrl), fetchImpl, "image/*"),
+      );
+    } catch {
+      /* Homepage may provide an icon when /favicon.ico is unavailable. */
+    }
+    if (!output) {
+      const url = await discoverFromHomepage(pageUrl, fetchImpl);
+      if (url)
+        output = await decodeIconResponse(
+          await safeFetch(url, fetchImpl, "image/*"),
+        );
+    }
+    return output;
+  } catch {
+    return null;
+  }
+}
+export const shortcutImageLimit = 2 * 1024 * 1024;
+export async function normalizeShortcutUpload(data: Buffer) {
+  if (!data.length || data.length > shortcutImageLimit)
+    throw new Error("Envie uma imagem de até 2 MB.");
+  const { detectHomeImage } = await import("./home-background");
+  const image = await detectHomeImage(data);
+  if (!image) throw new Error("Envie PNG, JPEG ou WebP válido.");
+  return faviconImage(data);
+}
+export async function saveShortcutImage(
+  scope: ShortcutIconScope,
+  shortcutId: number,
+  ownerUserId: number | null,
+  data: Buffer,
+  options: { connection?: DatabaseConnection; assetRoot?: string } = {},
+) {
+  const output = await normalizeShortcutUpload(data),
+    connection = options.connection ?? getDatabase(),
+    table = scope === "user" ? "user_shortcuts" : "shortcuts",
+    owner = scope === "user" ? " AND user_id=?" : "",
+    args =
+      scope === "user"
+        ? [id.parse(shortcutId), id.parse(ownerUserId)]
+        : [id.parse(shortcutId)];
+  const previous = connection.sqlite
+    .prepare(`SELECT icon_storage_name name FROM ${table} WHERE id=?${owner}`)
+    .get(...args) as { name: string | null } | undefined;
+  if (!previous) throw new Error("Atalho não encontrado.");
+  const name = randomUUID() + ".png",
+    path = safePath(name, options.assetRoot);
+  await mkdir(iconRoot(options.assetRoot), { recursive: true, mode: 0o700 });
+  await writeFile(path, output, { flag: "wx", mode: 0o600 });
+  try {
+    connection.sqlite
+      .prepare(
+        `UPDATE ${table} SET icon='@image',icon_storage_name=?,icon_mime_type='image/png',updated_at=? WHERE id=?${owner}`,
+      )
+      .run(name, Date.now(), ...args);
+  } catch (e) {
+    await unlink(path).catch(() => undefined);
+    throw e;
+  }
+  if (previous.name)
+    await discardUnusedIcon(connection, previous.name, options.assetRoot);
+}
+export async function shortcutImageFromForm(
+  form: FormData,
+): Promise<Buffer | null> {
+  const f = form.get("iconFile");
+  if (f instanceof File && f.size) {
+    if (f.size > shortcutImageLimit)
+      throw new Error("Envie uma imagem de até 2 MB.");
+    return normalizeShortcutUpload(Buffer.from(await f.arrayBuffer()));
+  }
+  const preview =
+    String(form.get("iconPreviewUrl") ?? "") === String(form.get("url") ?? "")
+      ? String(form.get("iconPreview") ?? "")
+      : "";
+  if (preview) {
+    if (
+      preview.length > 64000 ||
+      !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(preview)
+    )
+      throw new Error("Prévia inválida.");
+    return normalizeShortcutUpload(
+      Buffer.from(preview.split(",")[1], "base64"),
+    );
+  }
+  return null;
+}
+export async function applyShortcutIconForm(
+  form: FormData,
+  scope: ShortcutIconScope,
+  shortcutId: number,
+  owner: number | null,
+  url: string,
+) {
+  const choice = String(form.get("icon") ?? "");
+  if (choice === "@image" || choice === "@site") {
+    const data = await shortcutImageFromForm(form);
+    if (data) {
+      await saveShortcutImage(scope, shortcutId, owner, data);
+      if (choice === "@site") {
+        const c = getDatabase(),
+          t = scope === "user" ? "user_shortcuts" : "shortcuts";
+        c.sqlite
+          .prepare(`UPDATE ${t} SET icon='@site' WHERE id=?`)
+          .run(shortcutId);
+      }
+    } else if (choice === "@site")
+      await discoverShortcutIcon(scope, shortcutId, owner, url);
+    else if (!(await readShortcutIcon(scope, shortcutId, owner ?? 1)))
+      throw new Error("Escolha uma imagem antes de salvar.");
   }
 }

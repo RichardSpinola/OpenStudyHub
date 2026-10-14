@@ -117,7 +117,7 @@ export default async function TodayPage() {
             {data.upcomingEvents.length ? (
               <ol className="today-list">
                 {data.upcomingEvents.map((item) => (
-                  <li key={item.id}>
+                  <li key={`${item.id}-${item.offeringId}`}>
                     <time>
                       {new Intl.DateTimeFormat(profile.locale, {
                         timeZone: data.timeZone,
@@ -126,7 +126,13 @@ export default async function TodayPage() {
                       }).format(item.startsAt)}
                     </time>
                     <div>
-                      <Link href={`/subjects/${item.subjectId}`}>
+                      <Link
+                        href={
+                          item.subjectId
+                            ? `/subjects/${item.subjectId}`
+                            : "/today"
+                        }
+                      >
                         <strong>{item.title}</strong>
                       </Link>
                       <span>{item.locationName ?? item.programName}</span>
@@ -156,7 +162,7 @@ export default async function TodayPage() {
             {data.activities.length ? (
               <ol className="today-list">
                 {data.activities.map((item) => (
-                  <li key={item.id}>
+                  <li key={`${item.id}-${item.offeringId}`}>
                     <span className="status-badge">
                       {item.origin === "external" ? "Classroom" : item.status}
                     </span>
@@ -254,7 +260,13 @@ export default async function TodayPage() {
                       }).format(new Date(`${item.date}T12:00:00`))}
                     </time>
                     <div>
-                      <Link href={`/subjects/${item.subjectId}`}>
+                      <Link
+                        href={
+                          item.subjectId
+                            ? `/subjects/${item.subjectId}`
+                            : "/today"
+                        }
+                      >
                         <strong>{item.subjectName}</strong>
                       </Link>
                       <span>

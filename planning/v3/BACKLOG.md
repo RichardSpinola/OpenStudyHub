@@ -89,3 +89,9 @@
 - Backups não prometem capturar conteúdo de links externos sem acesso. Manifesto separa cópia real de referência.
 - A preparação não publica release, imagem ou documentação. Google real e extensão real exigem validação humana apenas quando houver alteração relevante.
 - Ao implementar cada item, registrar evidência, pendência e commit no acompanhamento; não declarar PASS só porque o botão apareceu.
+
+## Revisão de 14/10 — Etapa 3
+
+U05/U06/U07/U08/U09/U24/U26/U29 implementados localmente e conferidos no teste de uso da Etapa 3, registrado em [STAGE_3.md](STAGE_3.md). Painel inteiro recebeu organização administrativa comum; instituições e cursos são portais contextuais. O relatório lista limites de conferência, incluindo Google real futuro e reteste técnico final bloqueado pela revisão automática.
+
+Novo pedido de atalhos: seletor com abreviação/imagem do site/personalizado, catálogo sobreposto e pesquisável, prévia encontrada/indisponível e envio de imagem até 2 MB, no App e Admin. Implementação e testes de limites, posse e preservação de imagens herdadas registrados na Etapa 3. Redesign interno de projeto, modelo Google Docs recolhível e indicador da integração Google permanecem na Etapa 4. Configurações completas permanecem na Etapa 7.

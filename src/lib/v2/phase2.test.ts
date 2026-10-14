@@ -305,9 +305,16 @@ describe("Fase 2: Admin e Gestão", () => {
     expect(() =>
       mutateAcademic(x, adminActor(1), "programs", p, "delete"),
     ).toThrow("Exclusão bloqueada");
-    expect(() =>
-      mutateAcademic(x, adminActor(1), "programs", p, "archive"),
-    ).toThrow("Arquivamento bloqueado");
+    mutateAcademic(x, adminActor(1), "programs", p, "archive");
+    expect(
+      (
+        x.prepare("SELECT archived_at n FROM programs WHERE id=?").get(p) as {
+          n: number;
+        }
+      ).n,
+    ).toBeGreaterThan(0);
+    expect(x.prepare("SELECT 1 FROM cohorts WHERE id=?").get(co)).toBeDefined();
+    mutateAcademic(x, adminActor(1), "programs", p, "reactivate");
     const unused = createSubject(
       x,
       adminActor(1),
