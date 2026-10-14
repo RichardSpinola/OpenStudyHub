@@ -155,3 +155,21 @@
 6. Projeto → prévia → envio → nova versão → reconexão, sem pasta ou versão duplicada.
 
 Os testes da etapa zero verificam fronteiras existentes de dados/serviços. Percursos visuais completos serão conferidos nas etapas responsáveis, em vez de declarados aprovados pela existência de testes unitários.
+
+## Refinamento após avaliação da prévia
+
+A estrutura foi bem recebida, mas não deve substituir indiscriminadamente o layout anterior. Preservar os elementos aprovados e ajustar os pontos indicados:
+
+- Home: lápis de personalização presente e acessível; cursor inicial mantido no desktop.
+- Disciplina: Mural/Timeline na visão geral; seis abas continuam próprias; capa só no Admin, com autorização server-side a implementar.
+- Biblioteca: Documentos/Projetos entram por uma única navegação, com abas, criação/importação específicas e lista/grade. Notas e Chat não são fundidos nesta área.
+- Admin: configuração de Extras em Sistema; escolha de tema também disponível na superfície Admin.
+- Material 3: cores por função, superfícies, hierarquia tipográfica, seleção e formas coerentes. Terminal: bordas retas, monospace e sinais de navegação.
+- Servidor: implantação suspensa; a revisão é local.
+
+Referências oficiais de design:
+
+- [Material 3 — papéis de cor](https://m3.material.io/styles/color/roles)
+- [Material 3 — tipografia](https://m3.material.io/styles/typography/applying-type)
+- [Material 3 — abas](https://m3.material.io/components/tabs/overview)
+- [Material 3 — FAB](https://m3.material.io/components/floating-action-button/overview)

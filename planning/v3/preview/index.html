@@ -46,14 +46,15 @@
             ><span class="institution">/ Universidade Exemplo</span></a
           >
           <nav aria-label="Navegação principal" id="primary-nav">
-            <a href="#home" data-nav="home">⌂ <span>Home</span></a
-            ><a href="#subject" data-nav="today">▦ <span>Hoje</span></a
-            ><a href="#subject" data-nav="subject">▤ <span>Disciplinas</span></a
-            ><a href="#library">▧ <span>Notas</span></a
-            ><a href="#library" data-nav="library">▱ <span>Documentos</span></a
-            ><a href="#library">◫ <span>Chat</span></a
-            ><a href="#library">⌑ <span>Projetos</span></a
-            ><a href="#library">⊞ <span>Extras</span></a>
+            <a href="#home" data-nav="home">⌂ <span>Home</span></a>
+            <a href="#subject" data-nav="today">▦ <span>Hoje</span></a>
+            <a href="#subject" data-nav="subject">▤ <span>Disciplinas</span></a>
+            <a href="#notes" data-preview-only="Notas">▧ <span>Notas</span></a>
+            <a href="#library" data-nav="library">▱ <span>Biblioteca</span></a>
+            <a href="#chat" data-preview-only="Chat">◫ <span>Chat</span></a>
+            <a href="#extras" data-preview-only="Extras"
+              >⊞ <span>Extras</span></a
+            >
             <button
               id="nav-more"
               class="nav-more"
@@ -82,6 +83,42 @@
         </footer>
       </div>
     </div>
+    <dialog id="home-customize-dialog" aria-labelledby="home-customize-title">
+      <form method="dialog">
+        <button
+          class="dialog-close icon-button"
+          aria-label="Fechar personalização"
+        >
+          ×
+        </button>
+      </form>
+      <h2 id="home-customize-title">Personalizar Home</h2>
+      <p class="muted">
+        Prévia do acesso. As opções atuais de personalização serão preservadas.
+      </p>
+      <div class="customize-options">
+        <button
+          data-feedback="Wallpaper mantém escolha de imagem e terá ajuste de enquadramento."
+        >
+          Wallpaper e enquadramento
+        </button>
+        <button
+          data-feedback="Atalhos terão arrastar/soltar, edição e remoção aqui e na Home."
+        >
+          Organizar atalhos
+        </button>
+        <button
+          data-feedback="O título ASCII e suas opções atuais continuam disponíveis."
+        >
+          Título ASCII
+        </button>
+        <button
+          data-feedback="A pesquisa final respeita o buscador escolhido por você."
+        >
+          Mecanismo de busca
+        </button>
+      </div>
+    </dialog>
     <div id="toast" class="toast" role="status" hidden></div>
     <dialog id="demo-dialog">
       <form method="dialog">

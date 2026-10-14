@@ -43,28 +43,35 @@
 
 ## Pedidos de produto confirmados
 
-| ID  | Etapa | Pedido                                                                                                                                                                                        |
-| --- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| U01 | 0–8   | Revisão UX de todas as famílias de telas, profissional e coesa, Material e Legacy, top/classic; uso confortável em monitores pequenos.                                                        |
-| U02 | 1     | Busca pronta para digitar, autocomplete real, arrastar/soltar atalhos, edição/remoção na Home; preservar ASCII.                                                                               |
-| U03 | 1     | Wallpaper com enquadramento ajustável, ícones nas bordas corretas e nenhum corte de viewport.                                                                                                 |
-| U04 | 2     | Hoje organizado, grade pelo intervalo real das aulas e localização sem duplicação; preservar proposta geral.                                                                                  |
-| U05 | 1/3   | Capas de disciplinas acessíveis com ajuste; cards/histórico e abas consistentes; lateral de aulas sem saltos.                                                                                 |
-| U06 | 3     | Admin revitalizado; sequência clara de instituição/curso/período/turma/oferta/contexto/matrícula.                                                                                             |
-| U07 | 3     | Gestores e concessões mantidos, testados e compreensíveis; remoção de curso preserva trabalhos e explicita dependências.                                                                      |
-| U08 | 3     | Eventos acadêmicos pontuais e aula excepcional por data, com público/escopo, integrados a Hoje e disciplina.                                                                                  |
-| U09 | 3     | Provas por turma/curso; negar ferramentas internas em rotas/APIs/realtime, mantendo busca e atalhos externos.                                                                                 |
-| U10 | 4     | Drive compartilhado acadêmico + Pessoais separados sob demanda; curso por sigla; projetos dentro da raiz da instituição.                                                                      |
-| U11 | 4     | Privacidade por recurso e compartilhamento com pessoas/grupos; política Admin App-only ou acesso direto.                                                                                      |
-| U12 | 4     | Documentos redesenhados, modelos importados/mapeados e Google Docs acessíveis ao dono real; não baixar local como único fluxo.                                                                |
-| U13 | 4     | Projects redesenhado; criar/importar distintos; progresso estilo TUI, prévia, versões e recuperação sem pastas duplicadas.                                                                    |
-| U14 | 5     | Notas úteis como workspace: páginas, subpáginas, blocos, busca, grupos, colaboração e bases simples tabela/Kanban.                                                                            |
-| U15 | 6     | Chat integrado a arquivos/projetos/documentos/notas; busca, histórico e fechamento/arquivamento de DMs.                                                                                       |
-| U16 | 6     | Admin configura/modera espaços institucionais com auditoria; DMs privados e denúncia voluntária.                                                                                              |
-| U17 | 6     | Quadro mantido com Excalidraw, mais leve e confiável; cinco jogos adaptáveis, controles bons, confete e som opcional.                                                                         |
-| U18 | 1/7   | Configurações reorganizadas, notificações/integrações/sobre claros, avatar local redondo/quadrado, idioma completo no checkpoint.                                                             |
-| U19 | 7     | Backup completo criptografado no Drive, agendamento/retenção e tutorial de restauração; redução medida de memória.                                                                            |
-| U20 | 0–8   | Nova pasta V3, mesmo histórico/repositório público, commits por etapa, retorno simples, instalação atual autorizada para entregas estáveis, GitHub no final e novas features após checkpoint. |
+| ID  | Etapa | Pedido                                                                                                                                                                                                         |
+| --- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| U01 | 0–8   | Revisão UX de todas as famílias de telas, profissional e coesa, Material e Legacy, top/classic; uso confortável em monitores pequenos.                                                                         |
+| U02 | 1     | Busca pronta para digitar, autocomplete real, arrastar/soltar atalhos, edição/remoção na Home; preservar ASCII.                                                                                                |
+| U03 | 1     | Wallpaper com enquadramento ajustável, ícones nas bordas corretas e nenhum corte de viewport.                                                                                                                  |
+| U04 | 2     | Hoje organizado, grade pelo intervalo real das aulas e localização sem duplicação; preservar proposta geral.                                                                                                   |
+| U05 | 1/3   | Capas de disciplinas exclusivas de Admin, incluindo backend e remoção; cards/histórico e abas consistentes; lateral de aulas sem saltos.                                                                       |
+| U06 | 3     | Admin revitalizado; sequência clara de instituição/curso/período/turma/oferta/contexto/matrícula.                                                                                                              |
+| U07 | 3     | Gestores e concessões mantidos, testados e compreensíveis; remoção de curso preserva trabalhos e explicita dependências.                                                                                       |
+| U08 | 3     | Eventos acadêmicos pontuais e aula excepcional por data, com público/escopo, integrados a Hoje e disciplina.                                                                                                   |
+| U09 | 3     | Provas por turma/curso; negar ferramentas internas em rotas/APIs/realtime, mantendo busca e atalhos externos.                                                                                                  |
+| U10 | 4     | Drive compartilhado acadêmico + Pessoais separados sob demanda; curso por sigla; projetos dentro da raiz da instituição.                                                                                       |
+| U11 | 4     | Privacidade por recurso e compartilhamento com pessoas/grupos; política Admin App-only ou acesso direto.                                                                                                       |
+| U12 | 4     | Documentos redesenhados, modelos importados/mapeados e Google Docs acessíveis ao dono real; não baixar local como único fluxo.                                                                                 |
+| U13 | 4     | Projects redesenhado; criar/importar distintos; progresso estilo TUI, prévia, versões e recuperação sem pastas duplicadas.                                                                                     |
+| U14 | 5     | Notas úteis como workspace: páginas, subpáginas, blocos, busca, grupos, colaboração e bases simples tabela/Kanban.                                                                                             |
+| U15 | 6     | Chat integrado a arquivos/projetos/documentos/notas; busca, histórico e fechamento/arquivamento de DMs.                                                                                                        |
+| U16 | 6     | Admin configura/modera espaços institucionais com auditoria; DMs privados e denúncia voluntária.                                                                                                               |
+| U17 | 6     | Quadro mantido com Excalidraw, mais leve e confiável; cinco jogos adaptáveis, controles bons, confete e som opcional.                                                                                          |
+| U18 | 1/7   | Configurações reorganizadas, notificações/integrações/sobre claros, avatar local redondo/quadrado, idioma completo no checkpoint.                                                                              |
+| U19 | 7     | Backup completo criptografado no Drive, agendamento/retenção e tutorial de restauração; redução medida de memória.                                                                                             |
+| U20 | 0–8   | Nova pasta V3, mesmo histórico/repositório público, commits por etapa, retorno simples, mudanças locais por enquanto e produção suspensa até nova instrução, GitHub no final e novas features após checkpoint. |
+
+## Ajustes confirmados na revisão da prévia
+
+- U21 (etapas 1/4): Biblioteca como entrada principal, com Documentos/Projetos separados por abas; lista/grade selecionáveis. Compatibilidade com `/documents`, `/projects` e links existentes, sem misturar entidades, permissões ou versões. Notas continua área própria.
+- U22 (etapas 1/3): lápis de personalização mantido; Mural/Timeline selecionáveis; seis abas da disciplina preservadas e realinhadas. Validar envio/remoção de capa negados a usuário normal e gestor; somente Admin autorizado.
+- U23 (etapas 1/3): tema Material segue os princípios do Google Material Design 3, incluindo no Admin. Tema Legacy/TUI mais próximo de terminal, sem trocar por um novo sistema de estilos ou perder os fluxos aprovados.
+- U24 (etapas 3/7): controles de Extras em Sistema no Admin; acesso de Extras no App permanece principal. Nenhuma implantação no servidor nesta rodada.
 
 ## Limites já decididos
 

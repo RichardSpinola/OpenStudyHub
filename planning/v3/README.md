@@ -7,6 +7,12 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 ## Decisões confirmadas
 
 - Material e Legacy/TUI com os mesmos recursos; navegação superior e clássica preservadas. Reaproveitar o layout e os componentes originais onde já funcionam bem; as quatro prévias exploram organização, não são uma substituição obrigatória de toda a interface.
+- Material segue a linguagem do Google Material Design 3: papéis de cor/superfícies, tipografia por função, estados de seleção, formas e controles próprios. Legacy/TUI reforça terminal/monospace/bordas, sem alterar as funcionalidades.
+- Home conserva o lápis de personalização e as opções originais. A visão geral da disciplina mantém Mural/Timeline selecionáveis e suas seis abas, realinhadas.
+- Biblioteca substitui somente as entradas principais Documentos/Projetos, com duas abas e opções lista/grade. Criar/importar documento e projeto têm ações distintas; rotas existentes, dados, versões, modelos e permissões permanecem compatíveis.
+- Capas de disciplinas: enviar, enquadrar e remover são ações exclusivas de Admin. O backend precisará negar também gestores com grants acadêmicos; não basta ocultar o botão.
+- Configuração administrativa de Extras fica em Sistema. Extras continua na navegação principal do App e mantém suas feature flags.
+- **Produção pausada:** por instrução mais recente, manter mudanças locais e prévias. Não aplicar nada no servidor até nova instrução do usuário.
 - Workspace de Notas com páginas, blocos, colaboração, bases tabela/Kanban e campos simples. Sem fórmulas/relacionamentos nesta entrega. Base proposta: BlockNote core + Yjs, com licença e créditos conservados; compatibilidade será verificada antes da adoção.
 - Moderação do chat global e grupos institucionais. Conversas diretas privadas, com denúncia voluntária.
 - Drive acadêmico compartilhado e área Pessoais separada sob demanda. Destino e acesso explícitos; nenhuma abertura automática de todos os arquivos aos matriculados.
@@ -34,7 +40,7 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 
 ## Trabalho e validação
 
-Testes dirigidos e verificações proporcionais ao risco. Evitar full suite/build repetidos sem necessidade. Gate integrado nos checkpoints relevantes. QA humano em passos curtos, principalmente visual. Revisão de privacidade antes de cada commit. Implementação no código primeiro; atualização estável da instalação após backup e recuperação preparados.
+Testes dirigidos e verificações proporcionais ao risco. Evitar full suite/build repetidos sem necessidade. Gate integrado nos checkpoints relevantes. QA humano em passos curtos, principalmente visual. Revisão de privacidade antes de cada commit. Implementação no código primeiro. Atualização da instalação está suspensa pela instrução mais recente; quando retomada, exige backup e recuperação preparados.
 
 ## Etapa zero
 

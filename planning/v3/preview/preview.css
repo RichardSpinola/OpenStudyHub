@@ -1,14 +1,19 @@
 :root {
   color-scheme: dark;
-  --bg: #171a1c;
-  --surface: #202426;
-  --raised: #272c2e;
-  --ink: #eceeea;
-  --muted: #a2aaa7;
-  --line: #3b4442;
-  --accent: #b4c8bf;
-  --radius: 8px;
-  --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --bg: #101512;
+  --surface: #1b211d;
+  --raised: #272e28;
+  --ink: #e1e7df;
+  --muted: #bdc9bd;
+  --line: #414b42;
+  --accent: #acd2b5;
+  --primary-ink: #163822;
+  --selection-bg: #304b36;
+  --radius: 16px;
+  --button-radius: 999px;
+  --font:
+    "Roboto", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -98,9 +103,9 @@ small {
   color: var(--muted);
 }
 .primary {
-  background: var(--ink);
-  color: var(--bg);
-  border-color: var(--ink);
+  background: var(--accent);
+  color: var(--primary-ink);
+  border-color: var(--accent);
   font-weight: 600;
 }
 .primary:hover {
@@ -867,6 +872,9 @@ dialog input {
   z-index: 10;
 }
 html[data-theme="legacy"] {
+  --button-radius: 0;
+  --primary-ink: #0e0f0f;
+  --selection-bg: #262b25;
   --bg: #0e0f0f;
   --surface: #141616;
   --raised: #222525;
@@ -1234,5 +1242,250 @@ html[data-theme="legacy"] .home {
   .library-sidebar button {
     max-width: 100%;
     overflow-wrap: anywhere;
+  }
+}
+
+/* Shared preview behavior; themes keep distinct component treatments. */
+button {
+  border-radius: var(--button-radius);
+}
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--button-radius);
+  max-width: 100%;
+}
+.segmented button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 8px 14px;
+}
+.segmented button:first-child {
+  border-radius: var(--button-radius) 0 0 var(--button-radius);
+}
+.segmented button:last-child {
+  border-radius: 0 var(--button-radius) var(--button-radius) 0;
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--selection-bg);
+  color: var(--ink);
+}
+.library-tools .segmented {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 16px;
+}
+.library-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+}
+.library-item h3 {
+  overflow-wrap: anywhere;
+}
+.library-item button {
+  margin-top: auto;
+}
+.home-customize {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: var(--selection-bg);
+  color: var(--accent);
+  box-shadow: 0 3px 8px #0005;
+}
+.home-customize svg {
+  display: block;
+}
+.customize-options {
+  display: grid;
+  gap: 10px;
+}
+.customize-options button {
+  text-align: left;
+}
+.subject-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 20px;
+}
+.subject-timeline li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  column-gap: 18px;
+  position: relative;
+  padding-bottom: 24px;
+}
+.subject-timeline li:last-child {
+  padding-bottom: 0;
+}
+.subject-timeline li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 15px;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+.timeline-point {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  margin-top: 7px;
+}
+.subject-timeline h3 {
+  margin: 5px 0;
+}
+.subject-timeline p {
+  font-size: 12px;
+}
+html[data-theme="material"] .app-header {
+  background: var(--surface);
+}
+html[data-theme="material"] .app-header nav a {
+  border-radius: 12px;
+  min-height: 44px;
+}
+html[data-theme="material"] .app-header nav a[aria-current="page"] {
+  background: var(--selection-bg);
+  color: var(--accent);
+  border-bottom-color: transparent;
+}
+html[data-theme="material"] .panel {
+  background: var(--surface);
+  border-color: transparent;
+}
+html[data-theme="material"] .panel-heading {
+  border-bottom-color: var(--line);
+}
+html[data-theme="material"] h1 {
+  font-weight: 500;
+}
+html[data-theme="material"] h2 {
+  font-size: 20px;
+  font-weight: 500;
+}
+html[data-theme="material"] button {
+  font-weight: 500;
+  min-height: 44px;
+}
+html[data-theme="material"] .primary {
+  padding-inline: 24px;
+}
+html[data-theme="material"] .tabs button {
+  border-radius: 0;
+  font-size: 14px;
+  padding: 12px 18px;
+}
+html[data-theme="material"] .tabs button[aria-selected="true"] {
+  border-bottom-width: 3px;
+  color: var(--accent);
+}
+html[data-theme="material"] .badge {
+  border-radius: 8px;
+}
+html[data-theme="material"] .library-sidebar button {
+  border-radius: 24px;
+  border-left-color: transparent;
+  padding-inline: 16px;
+}
+html[data-theme="material"] .library-sidebar button[aria-pressed="true"] {
+  background: var(--selection-bg);
+  color: var(--accent);
+}
+html[data-theme="material"] .admin-sidebar button {
+  border-radius: 24px;
+  border-left-color: transparent;
+}
+html[data-theme="material"] .admin-sidebar button[aria-current="page"] {
+  background: var(--selection-bg);
+  color: var(--accent);
+}
+html[data-theme="material"] .search-field {
+  border-radius: 28px;
+  overflow: hidden;
+  background: var(--raised);
+  border-color: transparent;
+}
+html[data-theme="material"] .search-field button {
+  background: var(--selection-bg);
+  color: var(--accent);
+  border: 0;
+}
+html[data-theme="material"] .shortcut button:first-child {
+  box-shadow: none;
+  background: var(--raised);
+  border-color: transparent;
+  border-radius: 16px;
+}
+html[data-theme="material"] dialog {
+  border-radius: 28px;
+  border: 0;
+  box-shadow: 0 12px 32px #0008;
+}
+html[data-theme="legacy"] .home-customize {
+  border: 1px solid var(--accent);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: 3px 3px 0 var(--line);
+}
+html[data-theme="legacy"] .timeline-point {
+  border-radius: 0;
+}
+html[data-theme="legacy"] .workspace > .page-heading h1::before,
+html[data-theme="legacy"] .admin-content > .page-heading h1::before {
+  content: "> ";
+  color: var(--accent);
+}
+html[data-theme="legacy"] .action-stack button,
+html[data-theme="legacy"] .heading-actions button {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+html[data-theme="legacy"] .demo-caption::before {
+  content: "[OSH] interface-demo :: ";
+}
+@container (max-width:780px) {
+  .library-tools .segmented {
+    margin-left: 0;
+  }
+}
+@container (max-width:500px) {
+  html[data-theme="material"] .tabs button {
+    font-size: 12px;
+    padding-inline: 10px;
+  }
+  .home-customize {
+    bottom: 12px;
+    right: 12px;
+    width: 48px;
+    height: 48px;
+  }
+  .home {
+    padding-bottom: 78px;
+  }
+  .library-tools {
+    align-items: stretch;
+  }
+  .heading-actions button {
+    white-space: normal;
   }
 }

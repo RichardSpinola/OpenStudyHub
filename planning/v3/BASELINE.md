@@ -54,3 +54,13 @@ Prévia é simulação, não substituição obrigatória do layout. Áreas origi
 ## Para conferir
 
 Abra a prévia, alterne Tela/Tema e compare a largura normal com 390 px. Avalie a biblioteca, o agrupamento do Admin e a posição independente de Ações/Aulas. Esta etapa termina com preparação técnica e proposta visual; a direção ainda pode receber seus ajustes antes da implementação.
+
+## Refinamento da prévia — 13/10/2026
+
+Feedback incorporado somente à simulação e ao acompanhamento: lápis da Home, Mural/Timeline selecionáveis, Biblioteca com Documentos/Projetos e lista/grade, ações de criação/importação distintas, controle de capa apenas na área Admin, configuração de Extras em Sistema e tratamento visual Material 3/terminal.
+
+Biblioteca unifica a entrada visual; não funde dados/permissões nem elimina os fluxos existentes. Capas exclusivas de Admin ainda exigem aplicação da regra no backend na etapa responsável. Nenhuma alteração de código funcional ou implantação nesta revisão.
+
+Verificação: sintaxe JS, ESLint e formatação; controles de personalização, timeline, grade, criação de projeto e seções do Admin exercitados na prévia. Dezesseis composições (quatro telas, dois temas, larguras 390 px e automática entre 1027–1038 px) sem overflow horizontal. Testes de App/typecheck/build não repetidos porque nenhuma fonte funcional foi alterada.
+
+A autorização anterior de implantação está suspensa por instrução mais recente. A instalação real deve continuar intocada até nova instrução.
