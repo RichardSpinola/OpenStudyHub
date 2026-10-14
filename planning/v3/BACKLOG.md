@@ -76,6 +76,10 @@
 - U25 (etapas 1/3/4): lápis abre barra lateral, preservando fundo, atalhos, relógio, resumo Hoje e buscador. Sugestões em sobreposição, sem deslocamento; título ASCII editável apenas pelo Admin, estilo pessoal permitido. Preservar prévias gráficas de notas/documentos e capas de projetos; usar a organização atual das barras e utilitários.
 - U26 (etapa 3): portal acadêmico por instituição, com cartões de entrada e painel contextual. Cursos/períodos/turmas/ofertas/eventos pertencem à instituição selecionada; permissões e autorização devem validar esse contexto no backend, além da navegação.
 
+- U27 (etapas 1/2/4): mesma barra/ícones/botões da V2; única fusão principal é Biblioteca. Lateral conserva presets, imagens pessoais, editar/ocultar atalhos, salvar widgets e buscador; ASCII oferece as nove fontes atuais. Home/Hoje compartilham os destaques; grade semanal é o ajuste pontual do Hoje.
+- U28 (etapas 2/4/5): Notas/Documentos/Projetos da disciplina têm múltiplos cartões organizados, prévias gráficas e contexto. Workspace de Notas mantém associação opcional à oferta e a aba da disciplina; ícones das tecnologias preservam rótulos acessíveis.
+- U29 (etapa 3): instituição com visão geral → cursos → painel do curso; capa dentro da disciplina, sem atalho solto. Pessoas/permissões, integrações e sistema têm resumos inline e detalhes recolhíveis; não copiar links/notificações do App para Admin. Última revisão da direção visual, preservando o que já foi aprovado.
+
 ## Limites já decididos
 
 - Sem IA, vídeo, apresentações ou expansão do quadro para uma plataforma inteira.

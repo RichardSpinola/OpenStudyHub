@@ -6,12 +6,14 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 
 ## Decisões confirmadas
 
-- Material e Legacy/TUI com os mesmos recursos; navegação superior e clássica preservadas. Reaproveitar o layout e os componentes originais onde já funcionam bem; as quatro prévias exploram organização, não são uma substituição obrigatória de toda a interface.
+- Material e Legacy/TUI com os mesmos recursos; navegação superior e clássica preservadas. Reaproveitar o layout e os componentes originais onde já funcionam bem; as prévias exploram organização, não são uma substituição obrigatória de toda a interface.
 - **Material original preservado:** manter a identidade neutra e os componentes aprovados da V2; corrigir alinhamento, adaptação de largura e fluxos indicados. A recoloração verde e as formas novas da prévia foram rejeitadas. Legacy/TUI conserva os ajustes de terminal/monospace/bordas aprovados.
 - Home conserva o lápis e a **barra lateral** original, com fundo, atalhos, relógio, resumo Hoje e buscador. Sugestões sobrepõem o conteúdo abaixo da busca, sem empurrar os widgets. Texto do título ASCII é exclusivo do Admin; estilo pessoal continua permitido. A visão geral da disciplina mantém Mural/Timeline selecionáveis e suas seis abas, realinhadas.
 - Biblioteca substitui somente as entradas principais Documentos/Projetos, com duas abas e opções lista/grade. Criar/importar documento e projeto têm ações distintas; rotas existentes, dados, versões, modelos e permissões permanecem compatíveis.
 - Capas de disciplinas: enviar, enquadrar e remover são ações exclusivas de Admin. O backend precisará negar também gestores com grants acadêmicos; não basta ocultar o botão.
-- Acadêmico começa num portal de instituições: cartão da instituição → painel contextual de cursos, períodos/turmas, disciplinas/ofertas e horários/eventos. Pessoas/permissões, Integrações e Sistema continuam seções globais.
+- Acadêmico começa num portal de instituições: cartão da instituição → visão geral da instituição → curso → painel contextual de períodos/turmas, disciplinas/ofertas e horários/eventos. Pessoas/permissões, Integrações e Sistema continuam seções globais.
+- Admin mostra resumos de pessoas/permissões, integrações e saúde/versão na própria página; controles secundários recolhíveis. Links/notificações do App não são copiados para o Admin. Capa fica nas configurações da disciplina.
+- Home e Hoje usam os mesmos destaques; preservar a página Hoje atual, ajustando a grade pelo intervalo real. Fontes ASCII mantêm as nove opções do projeto; notas seguem associáveis à disciplina.
 - Prévia gráfica de nota, folha de documento e capa de projeto conserva a identidade da V2; biblioteca permite grade/lista sem trocar os fluxos ou confundir os tipos.
 - Configuração administrativa de Extras fica em Sistema. Extras continua na navegação principal do App e mantém suas feature flags.
 - **Produção pausada:** por instrução mais recente, manter mudanças locais e prévias. Não aplicar nada no servidor até nova instrução do usuário.
@@ -28,17 +30,17 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 
 ## Etapas
 
-| Etapa | Entrega                                                                                 | Estado                                             |
-| ----- | --------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| 0     | Base consolidada, revisão do produto, cobertura dos pedidos e prévias de direção visual | Preparação concluída; proposta visual em avaliação |
-| 1     | Estrutura visual, Home, responsividade, atalhos, busca, wallpaper e setup               | Planejada                                          |
-| 2     | Modelo acadêmico consistente, importador, Classroom, fuso e horários                    | Planejada                                          |
-| 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                       | Planejada                                          |
-| 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                   | Planejada                                          |
-| 5     | Notas: workspace, colaboração e bases simples                                           | Planejada                                          |
-| 6     | Chat, Quadro e cinco jogos                                                              | Planejada                                          |
-| 7     | Backup, recuperação, desempenho, diagnóstico, configurações e idioma                    | Planejada                                          |
-| 8     | Checkpoint integrado, documentação, extensão e pacote distribuível                      | Planejada                                          |
+| Etapa | Entrega                                                                                 | Estado                                         |
+| ----- | --------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 0     | Base consolidada, revisão do produto, cobertura dos pedidos e prévias de direção visual | Preparação concluída; revisão final disponível |
+| 1     | Estrutura visual, Home, responsividade, atalhos, busca, wallpaper e setup               | Planejada                                      |
+| 2     | Modelo acadêmico consistente, importador, Classroom, fuso e horários                    | Planejada                                      |
+| 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                       | Planejada                                      |
+| 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                   | Planejada                                      |
+| 5     | Notas: workspace, colaboração e bases simples                                           | Planejada                                      |
+| 6     | Chat, Quadro e cinco jogos                                                              | Planejada                                      |
+| 7     | Backup, recuperação, desempenho, diagnóstico, configurações e idioma                    | Planejada                                      |
+| 8     | Checkpoint integrado, documentação, extensão e pacote distribuível                      | Planejada                                      |
 
 ## Trabalho e validação
 
@@ -48,7 +50,8 @@ Testes dirigidos e verificações proporcionais ao risco. Evitar full suite/buil
 
 - [BASELINE.md](BASELINE.md): origem do código e validações.
 - [SCREENS.md](SCREENS.md): inventário completo das rotas de página e análise por família.
-- [BACKLOG.md](BACKLOG.md): achados técnicos A01–A34 e pedidos de produto U01–U26, sem perder itens nos resumos.
-- [Prévia interativa](preview/index.html): quatro telas fictícias, nos dois temas. É uma proposta de interface, não uma funcionalidade instalada.
+- [BACKLOG.md](BACKLOG.md): achados técnicos A01–A34 e pedidos de produto U01–U29, sem perder itens nos resumos.
+- [Revisão final UX](FINAL_UX_REVIEW.md): elementos protegidos, cobertura real e percurso curto de avaliação.
+- [Prévia interativa](preview/index.html): oito entradas fictícias e subfluxos do Admin, nos dois temas. Inclui mapa de todas as famílias; não simula todos os estados das 48 rotas e não é uma funcionalidade instalada.
 
 Publicação, tag e atualização pública não foram realizadas nesta etapa. A versão de runtime continua 2.0.1 até uma entrega apropriada de versionamento; a branch V3 é uma preparação, não uma release pronta.

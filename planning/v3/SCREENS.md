@@ -177,3 +177,7 @@ Referências oficiais de design:
 ## Correção da direção visual após novo feedback
 
 Preservar a organização das barras atuais e componentes aprovados. Personalização da Home continua numa lateral com todos os grupos originais; sugestões aparecem em sobreposição. Texto do título é exclusivo do Admin, aparência pessoal é separada. Biblioteca mantém Documentos/Projetos separados e suas representações gráficas; Notas continua própria, com prévia de folha. Acadêmico passa por instituição antes das tarefas contextuais. As demais rotas ainda não são simuladas; ausência na prévia não significa remoção no produto.
+
+## Fechamento da revisão visual da etapa zero
+
+A referência final é [FINAL_UX_REVIEW.md](FINAL_UX_REVIEW.md). As amostras foram ampliadas para Hoje, lista de Disciplinas, proposta de Notas e Admin contextual por instituição/curso, além das áreas anteriores. Revisão completa na prévia cobre todas as famílias e identifica o que não foi simulado. Saúde/versão e resumos administrativos ficam visíveis; ajustes de capa pertencem à disciplina. Manter ícones, botões e opções da V2, com apenas os ajustes definidos.

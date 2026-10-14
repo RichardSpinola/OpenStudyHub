@@ -76,3 +76,13 @@ O feedback posterior rejeitou a recoloração Material 3 da simulação. A prév
 - Hoje, Notas globais, Chat e Extras ainda não têm telas próprias na simulação; botões informam essa limitação sem fingir abrir outra área.
 
 Validação dirigida: 12 composições (Home/Biblioteca/painel da instituição, dois temas, canvas de 390 px e largura automática observada de 1348–1359 px) sem overflow horizontal. Lateral conferida também com viewport efetivamente estreito, sem overflow interno horizontal. Sintaxe JS, ESLint e Prettier aprovados. Nenhuma fonte funcional do App alterada; sem novo typecheck/build/full suite, deploy ou publicação.
+
+## Revisão final de preservação — 13/10/2026
+
+A direção visual da etapa zero termina com [FINAL_UX_REVIEW.md](FINAL_UX_REVIEW.md). Não trocar modelos de botão/ícones/barra aprovados; a única fusão de entrada principal é Biblioteca. Prévia ampliada para oito entradas e subfluxos do Admin, acompanhada de mapa completo por famílias e identificação explícita das áreas sem amostra.
+
+Ícones renderizados do mesmo Tabler instalado (MIT com notice completo), marca copiada do próprio projeto e nove fontes geradas pela dependência figlet existente (licença preservada). Nenhuma dependência nova ou recurso externo em runtime da prévia. Fonte pessoal é proposta da V3; texto do título continua reservado ao Admin.
+
+Conferências dirigidas: 32 composições (oito entradas, dois temas, canvas 390 px e automático observado entre 1348–1359 px), mais 8 estados do Admin (Pessoas/permissões, Integrações, Sistema e curso, nos dois tamanhos) sem overflow horizontal. Nove fontes sem transbordamento na largura normal. Fluxo instituição/curso, capa recolhida na disciplina, saúde inline, abertura de outra disciplina, 3 notas/2 documentos/2 projetos nas abas e mesmos destaques Home/Hoje verificados. Console da amostra sem erros. Sintaxe, lint JS e formatação aprovados.
+
+Essas evidências não equivalem a 48 percursos funcionais, aprovação de backend, OAuth real ou colaboração real. Nenhuma fonte do App, banco ou serviço de produção mudou. Sem full suite, typecheck/build do App, push ou publicação nesta revisão.
