@@ -6,12 +6,8 @@ import {
   useUiTranslations,
 } from "@/components/ui-language-provider";
 import type { Shortcut } from "@/lib/shortcuts";
-import {
-  IconBrandGoogleDrive,
-  IconBrandGmail,
-  IconBrandGithub,
-  IconChalkboardTeacher,
-} from "@tabler/icons-react";
+import { shortcutPresetFor } from "@/lib/shortcut-icon-catalog";
+import { ShortcutPresetIcon } from "./shortcut-icon";
 
 import { ShortcutEditDialog } from "./shortcut-edit-dialog";
 import { QuickAddShortcut } from "./quick-add-shortcut";
@@ -22,21 +18,6 @@ function fallbackIcon(name: string): string {
     return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase();
   }
   return (words[0] ?? "WEB").slice(0, 3).toUpperCase();
-}
-
-function knownShortcutIcon(url: string) {
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    if (host === "drive.google.com") return IconBrandGoogleDrive;
-    if (host === "classroom.google.com") return IconChalkboardTeacher;
-    if (host === "mail.google.com" || host === "gmail.com")
-      return IconBrandGmail;
-    if (host === "github.com" || host === "www.github.com")
-      return IconBrandGithub;
-  } catch {
-    /* Invalid URLs are rejected when shortcuts are saved. */
-  }
-  return null;
 }
 
 export function ShortcutGrid({
@@ -70,14 +51,13 @@ export function ShortcutGrid({
         aria-label={labels.listLabel}
       >
         {items.map((shortcut, index) => {
-          const KnownIcon = knownShortcutIcon(shortcut.url);
+          const preset = shortcutPresetFor(shortcut.url, shortcut.icon);
           return (
             <li
               key={shortcut.id}
               data-shortcut-id={shortcut.id}
-              draggable={editing && !orderPending}
+              draggable={!orderPending}
               onDragStart={(event) => {
-                if (!editing) return;
                 if (orderPending) {
                   event.preventDefault();
                   return;
@@ -90,12 +70,12 @@ export function ShortcutGrid({
                 dragId.current = null;
               }}
               onDragOver={(event) => {
-                if (editing && dragId.current !== null && !orderPending)
+                if (dragId.current !== null && !orderPending)
                   event.preventDefault();
               }}
               onDrop={(event) => {
                 event.preventDefault();
-                if (dragId.current !== null)
+                if (dragId.current !== null && !orderPending)
                   onDropShortcut?.(dragId.current, shortcut.id);
                 dragId.current = null;
               }}
@@ -105,10 +85,11 @@ export function ShortcutGrid({
                 href={shortcut.url}
                 target="_blank"
                 rel="noreferrer"
+                draggable={!orderPending}
               >
                 <span className="shortcut-visual" aria-hidden="true">
-                  {KnownIcon ? (
-                    <KnownIcon size={28} stroke={1.6} />
+                  {preset ? (
+                    <ShortcutPresetIcon preset={preset} />
                   ) : shortcut.iconStorageName &&
                     !failedIconIds.has(shortcut.id) ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -124,7 +105,11 @@ export function ShortcutGrid({
                       }
                     />
                   ) : (
-                    <span>{shortcut.icon || fallbackIcon(shortcut.name)}</span>
+                    <span>
+                      {shortcut.icon && !shortcut.icon.startsWith("@")
+                        ? shortcut.icon
+                        : fallbackIcon(shortcut.name)}
+                    </span>
                   )}
                 </span>
                 <span className="shortcut-name">{shortcut.name}</span>

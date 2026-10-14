@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import {
   saveHomePresentation,
+  getHomePresentation,
   homePresentationSchema,
 } from "@/lib/home-presentation";
 import { updateBrandConfig, type BrandFigletFont } from "@/lib/home-settings";
@@ -482,7 +483,8 @@ export async function updatePersonalShortcutAction(formData: FormData) {
     url: shortcutUrl,
     icon: optionalText(formData, "icon"),
   });
-  await discoverShortcutIcon("user", id, actor.id, shortcutUrl);
+  if (formData.get("icon") === "@site")
+    await discoverShortcutIcon("user", id, actor.id, shortcutUrl);
   recordAuditEvent({
     actorUserId: actor.id,
     action: "user_shortcut.update",
@@ -574,11 +576,39 @@ export async function addDemoShortcutsAction() {
 export async function updateHomePresentationAction(formData: FormData) {
   const actor = await requireAuthenticatedUser();
   const value = homePresentationSchema.parse({
+    ...getHomePresentation(actor.id),
     asciiFont: formData.get("asciiFont") || null,
     wallpaperX: formData.get("wallpaperX"),
     wallpaperY: formData.get("wallpaperY"),
     wallpaperFit: formData.get("wallpaperFit"),
+    wallpaperZoom: formData.get("wallpaperZoom") ?? 1,
   });
   saveHomePresentation(actor.id, value);
   revalidatePath("/");
+}
+
+export async function updateHomeControlAction(formData: FormData) {
+  const actor = await requireAuthenticatedUser();
+  const previous = getHomePresentation(actor.id);
+  const update = formData.has("controlEnabled")
+    ? {
+        controlEnabled:
+          z.enum(["true", "false"]).parse(formData.get("controlEnabled")) ===
+          "true",
+      }
+    : {
+        controlX: z.coerce
+          .number()
+          .min(0)
+          .max(100)
+          .parse(formData.get("controlX")),
+        controlY: z.coerce
+          .number()
+          .min(0)
+          .max(100)
+          .parse(formData.get("controlY")),
+      };
+  saveHomePresentation(actor.id, { ...previous, ...update });
+  revalidatePath("/");
+  revalidatePath("/settings");
 }

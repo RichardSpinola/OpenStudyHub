@@ -29,7 +29,7 @@ const fixtureSlot: AgendaSlot = {
 };
 
 describe("AcademicTimeGrid", () => {
-  it("renders all seven days with class time, room, teacher and subject link", () => {
+  it("renders all seven days with accessible class time, room and teacher", () => {
     const html = renderToStaticMarkup(
       <AcademicTimeGrid slots={[fixtureSlot]} today={2} />,
     );
@@ -49,7 +49,7 @@ describe("AcademicTimeGrid", () => {
     expect(html).toContain("12:00");
     expect(html).toContain("Campus Demo / D-101");
     expect(html).toContain("Professor Fictício");
-    expect(html).toContain('href="/subjects/2"');
+    expect(html).toContain('aria-label="Prática Fictícia, 10:00–12:00');
   });
 
   it("shows a useful empty state", () => {
@@ -81,7 +81,7 @@ describe("AcademicTimeGrid", () => {
     );
     expect(html).toContain("06:00");
     expect(html).toContain("23:00");
-    expect(html).toContain("--grid-hours:17");
+    expect(html).toContain("--calendar-hours:17");
   });
 
   it("uses a compact interval around normal class times", () => {
@@ -90,7 +90,7 @@ describe("AcademicTimeGrid", () => {
     );
     expect(html).toContain("10:00");
     expect(html).toContain("12:00");
-    expect(html).toContain("--grid-hours:2");
+    expect(html).toContain("--calendar-hours:2");
     expect(html).not.toContain("09:00");
     expect(html).not.toContain("13:00");
   });

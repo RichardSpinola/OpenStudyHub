@@ -7,7 +7,7 @@ import {
   projectTechnologies,
   projectTechnologyLabels,
   type ProjectTechnology,
-} from "@/lib/project-manifest";
+} from "@/lib/project-options";
 
 export function ProjectTechnologyPicker({
   initial,

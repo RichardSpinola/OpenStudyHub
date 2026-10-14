@@ -17,7 +17,7 @@ vi.mock("@/lib/academic", () => ({
   ],
 }));
 vi.mock("@/app/projects/actions", () => ({ createProjectAction: vi.fn() }));
-import NewProjectPage from "./page";
+import NewProjectPage from "@/components/project-create-workspace";
 describe("library project entry modes", () => {
   it("starts empty through the existing action without routing to file selection", async () => {
     const html = renderToStaticMarkup(

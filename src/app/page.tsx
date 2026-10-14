@@ -167,6 +167,25 @@ export default async function HomePage() {
           : undefined
       }
     >
+      {hasImage ? (
+        <div className="home-wallpaper-layer" aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={
+              customId !== null
+                ? `/api/home-background?wallpaperId=${customId}`
+                : `/api/home-background?v=${backgroundVersion}`
+            }
+            alt=""
+            style={{
+              objectFit: presentation.wallpaperFit,
+              objectPosition: `${presentation.wallpaperX}% ${presentation.wallpaperY}%`,
+              transform: `scale(${presentation.wallpaperZoom})`,
+              transformOrigin: `${presentation.wallpaperX}% ${presentation.wallpaperY}%`,
+            }}
+          />
+        </div>
+      ) : null}
       {clock.enabled ? (
         <HomeClock locale={language} position={clock.position} />
       ) : null}

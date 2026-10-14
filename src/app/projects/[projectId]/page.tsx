@@ -63,11 +63,11 @@ export default async function ProjectDetailPage({
       ? getProjectRetryPreview(user.id, project.id)
       : null;
   const returnHref =
-    parameters.from === "projects"
+    parameters.from === "projects" || project.subjectId === null
       ? "/library?type=projects"
       : `/subjects/${project.subjectId}?view=projects`;
   const returnLabel =
-    parameters.from === "projects"
+    parameters.from === "projects" || project.subjectId === null
       ? tr("← Meus projetos", "← My projects")
       : `← ${project.subjectName}`;
   const dateFormatter = new Intl.DateTimeFormat(language, {

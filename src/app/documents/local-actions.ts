@@ -31,10 +31,11 @@ export async function importLocalDocumentAction(form: FormData) {
       offeringId,
     );
     revalidatePath("/documents");
+    revalidatePath("/library");
   } catch {
-    redirect("/documents?view=library&status=local-import-error#import-local");
+    redirect("/library?type=documents&view=import&status=local-import-error");
   }
-  redirect("/documents?view=library&status=local-imported");
+  redirect("/library?type=documents&status=local-imported");
 }
 
 export async function deleteLocalDocumentAction(form: FormData) {
@@ -44,7 +45,8 @@ export async function deleteLocalDocumentAction(form: FormData) {
     throw new Error("Documento inválido.");
   deleteLocalDocument(user.id, documentId);
   revalidatePath("/documents");
-  redirect("/documents?view=library&status=local-removed");
+  revalidatePath("/library");
+  redirect("/library?type=documents&status=local-removed");
 }
 
 export async function setLocalDocumentShareAction(form: FormData) {
@@ -63,8 +65,9 @@ export async function setLocalDocumentShareAction(form: FormData) {
       form.get("enabled") === "true",
     );
     revalidatePath("/documents");
+    revalidatePath("/library");
   } catch {
-    redirect("/documents?view=library&status=local-share-error");
+    redirect("/library?type=documents&status=local-share-error");
   }
-  redirect("/documents?view=library&status=local-share-saved");
+  redirect("/library?type=documents&status=local-share-saved");
 }

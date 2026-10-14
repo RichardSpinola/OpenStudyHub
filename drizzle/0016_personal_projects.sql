@@ -1,0 +1,1 @@
+ALTER TABLE projects ALTER COLUMN offering_id DROP NOT NULL;

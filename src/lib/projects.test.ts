@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DatabaseConnection } from "@/lib/db/client";
+import { createDatabase } from "@/lib/db/client";
+import { applyMigration, migrationFiles } from "@/lib/test-database";
 import { createMigratedTestDatabase } from "@/lib/test-database";
 import { resolveDriveStorageUser } from "@/lib/google/storage-owner";
 
@@ -136,6 +138,153 @@ describe("projects", () => {
     ).toEqual({ driveProjectFolderId: null });
   });
 
+  it("creates a personal project for an active user without enrollment and isolates uploads", async () => {
+    const { ownerId, otherId } = seed(connection);
+    const project = createProject(
+      otherId,
+      { name: "Pessoal", language: "other", ignorePreset: "other" },
+      connection,
+    );
+    expect(project).toMatchObject({
+      ownerUserId: otherId,
+      offeringId: null,
+      subjectId: null,
+    });
+    expect(() => getUserProject(ownerId, project.id, connection)).toThrow();
+    await expect(
+      prepareProjectUpload(
+        ownerId,
+        project.id,
+        {
+          baseVersionNumber: null,
+          files: [{ path: "demo.txt", data: Buffer.from("demo") }],
+        },
+        connection,
+      ),
+    ).rejects.toThrow();
+    const preview = await prepareProjectUpload(
+      otherId,
+      project.id,
+      {
+        baseVersionNumber: null,
+        files: [{ path: "demo.txt", data: Buffer.from("demo") }],
+      },
+      connection,
+    );
+    await cancelProjectUploadPreview(otherId, preview.token, connection);
+    connection.sqlite
+      .prepare("UPDATE users SET active=0 WHERE id=?")
+      .run(otherId);
+    expect(() =>
+      createProject(
+        otherId,
+        { name: "Inativo", language: "other", ignorePreset: "other" },
+        connection,
+      ),
+    ).toThrow("Active owner");
+  });
+  it("upgrades academic projects without rebuilding their versions or breaking foreign keys", () => {
+    const old = createDatabase(":memory:");
+    try {
+      for (const file of migrationFiles.slice(0, -1)) applyMigration(old, file);
+      const { ownerId, offeringId } = seed(old);
+      const project = createProject(
+        ownerId,
+        {
+          offeringId,
+          name: "Existente",
+          language: "other",
+          ignorePreset: "other",
+        },
+        old,
+      );
+      old.sqlite
+        .prepare(
+          "INSERT INTO project_versions(project_id,version_number,archive_drive_file_id,manifest_json,created_by_user_id) VALUES(?,1,'archive','[]',?)",
+        )
+        .run(project.id, ownerId);
+      old.sqlite
+        .prepare(
+          "INSERT INTO project_files(project_id,relative_path,sha256,size_bytes,drive_file_id) VALUES(?,'main.txt','hash',4,'file')",
+        )
+        .run(project.id);
+      const versions = old.sqlite
+          .prepare("SELECT * FROM project_versions")
+          .all(),
+        files = old.sqlite.prepare("SELECT * FROM project_files").all();
+      applyMigration(old, "0016_personal_projects.sql");
+      expect(getUserProject(ownerId, project.id, old).offeringId).toBe(
+        offeringId,
+      );
+      expect(
+        old.sqlite.prepare("SELECT * FROM project_versions").all(),
+      ).toEqual(versions);
+      expect(old.sqlite.prepare("SELECT * FROM project_files").all()).toEqual(
+        files,
+      );
+      expect(
+        createProject(
+          ownerId,
+          { name: "Novo pessoal", language: "other", ignorePreset: "other" },
+          old,
+        ).offeringId,
+      ).toBeNull();
+      expect(old.sqlite.pragma("foreign_key_check")).toEqual([]);
+      expect(old.sqlite.pragma("integrity_check")).toEqual([
+        { integrity_check: "ok" },
+      ]);
+    } finally {
+      old.close();
+    }
+  });
+  it("stores personal project files under a user-specific path in the institution root", async () => {
+    const { ownerId } = seed(connection);
+    const project = createProject(
+      ownerId,
+      { name: "Meu projeto", language: "other", ignorePreset: "other" },
+      connection,
+    );
+    const preview = await prepareProjectUpload(
+      ownerId,
+      project.id,
+      {
+        baseVersionNumber: null,
+        files: [{ path: "main.txt", data: Buffer.from("demo") }],
+      },
+      connection,
+    );
+    const names: string[] = [];
+    let id = 0;
+    const fetchImpl = vi.fn<typeof fetch>(async (input, init) => {
+      if (init?.method === "GET") return Response.json({ files: [] });
+      if (String(input).includes("/upload/"))
+        return Response.json({ id: `upload-${++id}`, name: "file" });
+      if (init?.method === "POST") {
+        const body = JSON.parse(String(init.body));
+        names.push(body.name);
+        return Response.json({
+          id: `folder-${++id}`,
+          name: body.name,
+          mimeType: "application/vnd.google-apps.folder",
+        });
+      }
+      return Response.json({}, { status: 500 });
+    });
+    await confirmProjectUpload(ownerId, preview.token, null, {
+      connection,
+      fetchImpl,
+    });
+    expect(names.slice(0, 5)).toEqual([
+      "Instituição Teste - OSH",
+      "Pessoais",
+      `Pessoa-${ownerId}`,
+      "Projetos",
+      "Meu projeto",
+    ]);
+    expect(
+      getUserProject(ownerId, project.id, connection).currentVersionNumber,
+    ).toBe(1);
+  });
   it("usa Drive central para novo projeto V2 e preserva o dono de projeto já vinculado", () => {
     const previous = process.env.OPENSTUDYHUB_V2_ENABLED;
     process.env.OPENSTUDYHUB_V2_ENABLED = "1";

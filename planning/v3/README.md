@@ -8,7 +8,7 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 
 - Material e Legacy/TUI com os mesmos recursos; navegação superior e clássica preservadas. Reaproveitar o layout e os componentes originais onde já funcionam bem; as prévias exploram organização, não são uma substituição obrigatória de toda a interface.
 - **Material original preservado:** manter a identidade neutra e os componentes aprovados da V2; corrigir alinhamento, adaptação de largura e fluxos indicados. A recoloração verde e as formas novas da prévia foram rejeitadas. Legacy/TUI conserva os ajustes de terminal/monospace/bordas aprovados.
-- Home conserva o lápis e a **barra lateral** original, com fundo, atalhos, relógio, resumo Hoje e buscador. Sugestões sobrepõem o conteúdo abaixo da busca, sem empurrar os widgets. Texto do título ASCII é exclusivo do Admin; estilo pessoal continua permitido. A visão geral da disciplina mantém Mural/Timeline selecionáveis e suas seis abas, realinhadas.
+- Home conserva o lápis móvel/ocultável e a **barra lateral** original, com fundo, atalhos, relógio, resumo Hoje e buscador. Sugestões sobrepõem o conteúdo abaixo da busca, sem empurrar os widgets. Texto do título ASCII é exclusivo do Admin; estilo pessoal continua permitido. A visão geral da disciplina mantém Mural/Timeline selecionáveis e suas seis abas, realinhadas.
 - Biblioteca substitui somente as entradas principais Documentos/Projetos, com duas abas e opções lista/grade. Criar/importar documento e projeto têm ações distintas; rotas existentes, dados, versões, modelos e permissões permanecem compatíveis.
 - Capas de disciplinas: enviar, enquadrar e remover são ações exclusivas de Admin. O backend precisará negar também gestores com grants acadêmicos; não basta ocultar o botão.
 - Acadêmico começa num portal de instituições: cartão da instituição → visão geral da instituição → curso → painel contextual de períodos/turmas, disciplinas/ofertas e horários/eventos. Pessoas/permissões, Integrações e Sistema continuam seções globais.
@@ -30,17 +30,17 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 
 ## Etapas
 
-| Etapa | Entrega                                                                                    | Estado                                         |
-| ----- | ------------------------------------------------------------------------------------------ | ---------------------------------------------- |
-| 0     | Base consolidada, revisão do produto, cobertura dos pedidos e prévias de direção visual    | Preparação concluída; revisão final disponível |
-| 1     | Estrutura visual, Home, Biblioteca/Hoje, responsividade, atalhos, busca, wallpaper e setup | Implementada localmente; QA visual disponível  |
-| 2     | Modelo acadêmico consistente, importador, Classroom, fuso e horários                       | Planejada                                      |
-| 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                          | Planejada                                      |
-| 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                      | Planejada                                      |
-| 5     | Notas: workspace, colaboração e bases simples                                              | Planejada                                      |
-| 6     | Chat, Quadro e cinco jogos                                                                 | Planejada                                      |
-| 7     | Backup, recuperação, desempenho, diagnóstico, configurações e idioma                       | Planejada                                      |
-| 8     | Checkpoint integrado, documentação, extensão e pacote distribuível                         | Planejada                                      |
+| Etapa | Entrega                                                                                    | Estado                                                    |
+| ----- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| 0     | Base consolidada, revisão do produto, cobertura dos pedidos e prévias de direção visual    | Preparação concluída; revisão final disponível            |
+| 1     | Estrutura visual, Home, Biblioteca/Hoje, responsividade, atalhos, busca, wallpaper e setup | Correções validadas localmente; revisão visual do usuário |
+| 2     | Modelo acadêmico consistente, importador, Classroom, fuso e horários                       | Planejada                                                 |
+| 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                          | Planejada                                                 |
+| 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                      | Planejada                                                 |
+| 5     | Notas: workspace, colaboração e bases simples                                              | Planejada                                                 |
+| 6     | Chat, Quadro e cinco jogos                                                                 | Planejada                                                 |
+| 7     | Backup, recuperação, desempenho, diagnóstico, configurações e idioma                       | Planejada                                                 |
+| 8     | Checkpoint integrado, documentação, extensão e pacote distribuível                         | Planejada                                                 |
 
 ## Trabalho e validação
 

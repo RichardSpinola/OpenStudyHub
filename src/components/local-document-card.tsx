@@ -1,3 +1,4 @@
+import { DocumentOptionsDialog } from "./document-options-dialog";
 import { UiCopy } from "@/components/ui-language-provider";
 import {
   deleteLocalDocumentAction,
@@ -68,9 +69,9 @@ export function LocalDocumentCard({
               <UiCopy pt="· Local" en="· Local" />
             </small>
             <time dateTime={new Date(document.updatedAt).toISOString()}>
-              {new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(
-                document.updatedAt,
-              )}
+              {new Intl.DateTimeFormat(language, {
+                dateStyle: "medium",
+              }).format(document.updatedAt)}
             </time>
           </span>
           <b>
@@ -78,102 +79,112 @@ export function LocalDocumentCard({
           </b>
         </span>
       </a>
-      {!document.shared && ownerUserId ? (
-        <details className="document-card-share">
-          <summary>
-            <UiCopy pt="Compartilhar" en="Share" />
-          </summary>
-          <p>
-            <UiCopy
-              pt="Escolha uma pessoa ou grupo. O arquivo continua privado fora dessas escolhas."
-              en="Choose a person or group. The file remains private outside those choices."
-            />
-          </p>
-          <form action={setLocalDocumentShareAction}>
-            <input type="hidden" name="documentId" value={document.id} />
-            <input type="hidden" name="kind" value="person" />
-            <input type="hidden" name="enabled" value="true" />
-            <label>
-              <UiCopy pt="Pessoa" en="Person" />{" "}
-              <select name="recipientId" required defaultValue="">
-                <option value="" disabled>
-                  <UiCopy pt="Selecione" en="Select" />
-                </option>
-                {people.map((person) => (
-                  <option key={person.id} value={person.id}>
-                    {person.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit" disabled={!people.length}>
-              <UiCopy pt="Compartilhar com pessoa" en="Share with a person" />
-            </button>
-          </form>
-          <form action={setLocalDocumentShareAction}>
-            <input type="hidden" name="documentId" value={document.id} />
-            <input type="hidden" name="kind" value="group" />
-            <input type="hidden" name="enabled" value="true" />
-            <label>
-              <UiCopy pt="Grupo" en="Group" />{" "}
-              <select name="recipientId" required defaultValue="">
-                <option value="" disabled>
-                  <UiCopy pt="Selecione" en="Select" />
-                </option>
-                {groups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit" disabled={!groups.length}>
-              <UiCopy pt="Compartilhar com grupo" en="Share with a group" />
-            </button>
-          </form>
-          {shares.people.map((id) => (
-            <form key={`p-${id}`} action={setLocalDocumentShareAction}>
+      <DocumentOptionsDialog name={document.name}>
+        <dl className="document-metadata">
+          <dt>{tr("Formato", "Format")}</dt>
+          <dd>
+            {type} · {tr("Arquivo local", "Local file")}
+          </dd>
+          <dt>{tr("Disciplina", "Subject")}</dt>
+          <dd>{document.subjectName ?? tr("Sem disciplina", "No subject")}</dd>
+        </dl>
+        {!document.shared && ownerUserId ? (
+          <section className="document-card-share">
+            <h3>
+              <UiCopy pt="Compartilhar" en="Share" />
+            </h3>
+            <p>
+              <UiCopy
+                pt="Escolha uma pessoa ou grupo. O arquivo continua privado fora dessas escolhas."
+                en="Choose a person or group. The file remains private outside those choices."
+              />
+            </p>
+            <form action={setLocalDocumentShareAction}>
               <input type="hidden" name="documentId" value={document.id} />
               <input type="hidden" name="kind" value="person" />
-              <input type="hidden" name="recipientId" value={id} />
-              <input type="hidden" name="enabled" value="false" />
-              <ConfirmSubmitButton confirmation="Remover o acesso desta pessoa?">
-                <UiCopy pt="Remover" en="Remove" />{" "}
-                {people.find((person) => person.id === id)?.displayName ??
-                  "pessoa"}
-              </ConfirmSubmitButton>
+              <input type="hidden" name="enabled" value="true" />
+              <label>
+                <UiCopy pt="Pessoa" en="Person" />{" "}
+                <select name="recipientId" required defaultValue="">
+                  <option value="" disabled>
+                    <UiCopy pt="Selecione" en="Select" />
+                  </option>
+                  {people.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="submit" disabled={!people.length}>
+                <UiCopy pt="Compartilhar com pessoa" en="Share with a person" />
+              </button>
             </form>
-          ))}
-          {shares.groups.map((id) => (
-            <form key={`g-${id}`} action={setLocalDocumentShareAction}>
+            <form action={setLocalDocumentShareAction}>
               <input type="hidden" name="documentId" value={document.id} />
               <input type="hidden" name="kind" value="group" />
-              <input type="hidden" name="recipientId" value={id} />
-              <input type="hidden" name="enabled" value="false" />
-              <ConfirmSubmitButton confirmation="Remover o acesso deste grupo?">
-                <UiCopy pt="Remover" en="Remove" />{" "}
-                {groups.find((group) => group.id === id)?.name ?? "grupo"}
-              </ConfirmSubmitButton>
+              <input type="hidden" name="enabled" value="true" />
+              <label>
+                <UiCopy pt="Grupo" en="Group" />{" "}
+                <select name="recipientId" required defaultValue="">
+                  <option value="" disabled>
+                    <UiCopy pt="Selecione" en="Select" />
+                  </option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="submit" disabled={!groups.length}>
+                <UiCopy pt="Compartilhar com grupo" en="Share with a group" />
+              </button>
             </form>
-          ))}
-        </details>
-      ) : null}
-      {!document.shared ? (
-        <form
-          className="local-document-delete"
-          action={deleteLocalDocumentAction}
-        >
-          <input type="hidden" name="documentId" value={document.id} />
-          <ConfirmSubmitButton
-            confirmation={tr(
-              `Excluir ${document.name} da sua biblioteca? Esta ação não pode ser desfeita.`,
-              `Delete ${document.name} from your library? This cannot be undone.`,
-            )}
+            {shares.people.map((id) => (
+              <form key={`p-${id}`} action={setLocalDocumentShareAction}>
+                <input type="hidden" name="documentId" value={document.id} />
+                <input type="hidden" name="kind" value="person" />
+                <input type="hidden" name="recipientId" value={id} />
+                <input type="hidden" name="enabled" value="false" />
+                <ConfirmSubmitButton confirmation="Remover o acesso desta pessoa?">
+                  <UiCopy pt="Remover" en="Remove" />{" "}
+                  {people.find((person) => person.id === id)?.displayName ??
+                    "pessoa"}
+                </ConfirmSubmitButton>
+              </form>
+            ))}
+            {shares.groups.map((id) => (
+              <form key={`g-${id}`} action={setLocalDocumentShareAction}>
+                <input type="hidden" name="documentId" value={document.id} />
+                <input type="hidden" name="kind" value="group" />
+                <input type="hidden" name="recipientId" value={id} />
+                <input type="hidden" name="enabled" value="false" />
+                <ConfirmSubmitButton confirmation="Remover o acesso deste grupo?">
+                  <UiCopy pt="Remover" en="Remove" />{" "}
+                  {groups.find((group) => group.id === id)?.name ?? "grupo"}
+                </ConfirmSubmitButton>
+              </form>
+            ))}
+          </section>
+        ) : null}
+        {!document.shared ? (
+          <form
+            className="local-document-delete"
+            action={deleteLocalDocumentAction}
           >
-            <UiCopy pt="Excluir arquivo local" en="Delete local file" />
-          </ConfirmSubmitButton>
-        </form>
-      ) : null}
+            <input type="hidden" name="documentId" value={document.id} />
+            <ConfirmSubmitButton
+              confirmation={tr(
+                `Excluir ${document.name} da sua biblioteca? Esta ação não pode ser desfeita.`,
+                `Delete ${document.name} from your library? This cannot be undone.`,
+              )}
+            >
+              <UiCopy pt="Excluir arquivo local" en="Delete local file" />
+            </ConfirmSubmitButton>
+          </form>
+        ) : null}
+      </DocumentOptionsDialog>
     </li>
   );
 }

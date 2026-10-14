@@ -24,12 +24,20 @@ describe("personal Home presentation", () => {
           wallpaperX: 0,
           wallpaperY: 100,
           wallpaperFit: "contain",
+          wallpaperZoom: 1.75,
+          controlEnabled: false,
+          controlX: 20,
+          controlY: 70,
         });
         expect(readHomePresentation(db, 1)).toMatchObject({
           asciiFont: font,
           wallpaperX: 0,
           wallpaperY: 100,
           wallpaperFit: "contain",
+          wallpaperZoom: 1.75,
+          controlEnabled: false,
+          controlX: 20,
+          controlY: 70,
         });
       }
       expect(readHomePresentation(db, 2)).toEqual(defaultHomePresentation);
@@ -48,6 +56,10 @@ describe("personal Home presentation", () => {
       migrateV2(db);
       for (const invalid of [
         { wallpaperX: 101 },
+        { wallpaperZoom: 4 },
+        { controlX: -1 },
+        { controlY: 101 },
+        { controlEnabled: "false" },
         { wallpaperY: -1 },
         { wallpaperFit: "url(example)" },
         { asciiFont: "unknown" },

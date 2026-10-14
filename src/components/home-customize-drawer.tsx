@@ -10,6 +10,7 @@ import { IconPencil } from "@tabler/icons-react";
 
 import {
   updateHomePreferencesAction,
+  updateHomeControlAction,
   togglePersonalShortcutAction,
 } from "@/app/settings/actions";
 import { HomeBackgroundSettings } from "@/components/home-background-settings";
@@ -52,6 +53,48 @@ export function HomeCustomizeDrawer({
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
+  const moved = useRef(false);
+  const drag = useRef<{
+    pointer: number;
+    x: number;
+    y: number;
+    left: number;
+    top: number;
+  } | null>(null);
+  const placement = useRef<{ x: number | null; y: number | null }>({
+    x: presentation.controlX,
+    y: presentation.controlY,
+  });
+  const [positionError, setPositionError] = useState(false);
+  function bounds() {
+    const main = document.querySelector(".app-content"),
+      button = trigger.current;
+    if (!main || !button) return null;
+    const r = main.getBoundingClientRect();
+    return {
+      left: r.left + 16,
+      top: r.top + 16,
+      width: Math.max(0, r.width - button.offsetWidth - 32),
+      height: Math.max(0, r.height - button.offsetHeight - 32),
+    };
+  }
+  function position(x: number, y: number) {
+    const r = bounds();
+    if (!r || !trigger.current) return;
+    trigger.current.style.left = `${r.left + (r.width * x) / 100}px`;
+    trigger.current.style.top = `${r.top + (r.height * y) / 100}px`;
+  }
+  async function persistPosition() {
+    const form = new FormData();
+    form.set("controlX", String(placement.current.x));
+    form.set("controlY", String(placement.current.y));
+    try {
+      await updateHomeControlAction(form);
+      setPositionError(false);
+    } catch {
+      setPositionError(true);
+    }
+  }
   const [selectedClockPosition, setSelectedClockPosition] =
     useState(clockPosition);
   const [clockShown, setClockShown] = useState(clockEnabled);
@@ -69,27 +112,154 @@ export function HomeCustomizeDrawer({
     return () => modal.removeEventListener("close", restore);
   }, []);
 
+  useEffect(() => {
+    const main = document.querySelector(".app-content");
+    if (!main) return;
+    placement.current = { x: presentation.controlX, y: presentation.controlY };
+    const update = () =>
+      position(
+        placement.current.x ??
+          (clockEnabled && clockPosition === "bottom-right" ? 0 : 100),
+        placement.current.y ?? 100,
+      );
+    const observer = new ResizeObserver(update);
+    observer.observe(main);
+    window.addEventListener("resize", update);
+    update();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+    // position reads the current content rectangle and does not capture changing state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    presentation.controlX,
+    presentation.controlY,
+    clockEnabled,
+    clockPosition,
+  ]);
+
   function closeOutside(event: React.MouseEvent<HTMLDialogElement>) {
     if (event.target === dialog.current) dialog.current?.close();
   }
 
   return (
     <>
-      <button
-        ref={trigger}
-        className="home-customize-trigger"
-        data-clock-position={clockEnabled ? clockPosition : "none"}
-        type="button"
-        aria-label="Personalizar Home"
-        onClick={() => {
-          setSelectedClockPosition(clockPosition);
-          setClockShown(clockEnabled);
-          setTodayShown(todayWidgetEnabled);
-          dialog.current?.showModal();
-        }}
-      >
-        <IconPencil size={20} aria-hidden="true" />
-      </button>
+      {presentation.controlEnabled ? (
+        <button
+          ref={trigger}
+          className="home-customize-trigger"
+          data-clock-position={clockEnabled ? clockPosition : "none"}
+          type="button"
+          aria-label={tr("Personalizar Home", "Customize Home")}
+          title={tr(
+            "Clique para personalizar; arraste para mover. Alt + setas também move.",
+            "Click to customize; drag to move. Alt + arrows also moves.",
+          )}
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            const r = e.currentTarget.getBoundingClientRect();
+            drag.current = {
+              pointer: e.pointerId,
+              x: e.clientX,
+              y: e.clientY,
+              left: r.left,
+              top: r.top,
+            };
+            moved.current = false;
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            const d = drag.current,
+              r = bounds();
+            if (!d || !r || d.pointer !== e.pointerId) return;
+            const dx = e.clientX - d.x,
+              dy = e.clientY - d.y;
+            if (Math.hypot(dx, dy) < 5 && !moved.current) return;
+            moved.current = true;
+            const x = r.width
+                ? Math.max(
+                    0,
+                    Math.min(100, ((d.left + dx - r.left) / r.width) * 100),
+                  )
+                : 0,
+              y = r.height
+                ? Math.max(
+                    0,
+                    Math.min(100, ((d.top + dy - r.top) / r.height) * 100),
+                  )
+                : 0;
+            placement.current = { x, y };
+            position(x, y);
+          }}
+          onPointerUp={(e) => {
+            if (!drag.current || drag.current.pointer !== e.pointerId) return;
+            drag.current = null;
+            e.currentTarget.releasePointerCapture(e.pointerId);
+            if (moved.current) void persistPosition();
+          }}
+          onPointerCancel={() => {
+            drag.current = null;
+            moved.current = false;
+          }}
+          onKeyDown={(e) => {
+            if (
+              !e.altKey ||
+              !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+                e.key,
+              )
+            )
+              return;
+            e.preventDefault();
+            const x = Math.max(
+                0,
+                Math.min(
+                  100,
+                  (placement.current.x ??
+                    (clockEnabled && clockPosition === "bottom-right"
+                      ? 0
+                      : 100)) +
+                    (e.key === "ArrowLeft"
+                      ? -5
+                      : e.key === "ArrowRight"
+                        ? 5
+                        : 0),
+                ),
+              ),
+              y = Math.max(
+                0,
+                Math.min(
+                  100,
+                  (placement.current.y ?? 100) +
+                    (e.key === "ArrowUp" ? -5 : e.key === "ArrowDown" ? 5 : 0),
+                ),
+              );
+            placement.current = { x, y };
+            position(x, y);
+            void persistPosition();
+          }}
+          onClick={() => {
+            if (moved.current) {
+              moved.current = false;
+              return;
+            }
+            setSelectedClockPosition(clockPosition);
+            setClockShown(clockEnabled);
+            setTodayShown(todayWidgetEnabled);
+            dialog.current?.showModal();
+          }}
+        >
+          <IconPencil size={20} aria-hidden="true" />
+        </button>
+      ) : null}
+      {positionError ? (
+        <small className="home-control-error" role="status">
+          {tr(
+            "Não foi possível salvar a posição. Tente mover novamente.",
+            "Could not save the position. Try moving again.",
+          )}
+        </small>
+      ) : null}
       <dialog
         ref={dialog}
         className="home-customize-dialog"

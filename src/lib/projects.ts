@@ -39,7 +39,7 @@ import { withV2Db } from "@/lib/v2/runtime-database";
 
 const idSchema = z.number().int().positive();
 const projectInputSchema = z.object({
-  offeringId: idSchema,
+  offeringId: idSchema.nullable().default(null),
   name: z.string().trim().min(1).max(160),
   language: projectLanguageSchema,
   ignorePreset: projectLanguageSchema,
@@ -59,8 +59,8 @@ const TEMP_ROOT = resolve(tmpdir(), "openstudyhub-project-uploads");
 export type ProjectRecord = {
   id: number;
   ownerUserId: number;
-  offeringId: number;
-  subjectId: number;
+  offeringId: number | null;
+  subjectId: number | null;
   subjectName: string;
   subjectCode: string | null;
   name: string;
@@ -102,7 +102,7 @@ export class ProjectConflictError extends Error {
 const projectSelect = `
   select p.id, p.owner_user_id as ownerUserId,
          p.offering_id as offeringId, so.subject_id as subjectId,
-         s.name as subjectName, s.code as subjectCode,
+         coalesce(s.name, 'Projeto pessoal') as subjectName, s.code as subjectCode,
          p.name, p.language, p.ignore_preset as ignorePreset,
          p.technologies_json as technologiesJson,
          p.description, p.drive_project_folder_id as driveProjectFolderId,
@@ -112,8 +112,8 @@ const projectSelect = `
          p.sync_status as syncStatus, p.created_at as createdAt,
          p.updated_at as updatedAt, p.archived_at as archivedAt
   from projects p
-  join subject_offerings so on so.id = p.offering_id
-  join subjects s on s.id = so.subject_id`;
+  left join subject_offerings so on so.id = p.offering_id
+  left join subjects s on s.id = so.subject_id`;
 
 type ProjectRow = Omit<ProjectRecord, "technologies"> & {
   technologiesJson: string;
@@ -144,11 +144,18 @@ export function createProject(
 ): ProjectRecord {
   const ownerId = idSchema.parse(userId);
   const value = projectInputSchema.parse(input);
-  const enrollment = connection.sqlite
-    .prepare(`select 1 from enrollments where user_id = ? and offering_id = ?`)
-    .get(ownerId, value.offeringId);
-  if (!enrollment) {
-    throw new Error("Offering is outside the user's academic context.");
+  if (
+    !connection.sqlite
+      .prepare("SELECT 1 FROM users WHERE id=? AND active=1")
+      .get(ownerId)
+  )
+    throw new Error("Active owner required.");
+  if (value.offeringId !== null) {
+    const enrollment = connection.sqlite
+      .prepare("SELECT 1 FROM enrollments WHERE user_id=? AND offering_id=?")
+      .get(ownerId, value.offeringId);
+    if (!enrollment)
+      throw new Error("Offering is outside the user's academic context.");
   }
   const now = Date.now();
   const result = connection.sqlite
@@ -523,20 +530,20 @@ async function ensureProjectDriveStructure(
     }
     projectFolder = { id: project.driveProjectFolderId, name: project.name };
   }
-  const context = getOfferingStorageContext(
-    project.ownerUserId,
-    project.offeringId,
-    connection,
-  );
-  if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+  const context =
+    project.offeringId === null
+      ? null
+      : getOfferingStorageContext(
+          project.ownerUserId,
+          project.offeringId,
+          connection,
+        );
+  if (context && process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
     const shortName = withV2Db(
       (db) =>
         db
           .prepare(
-            `SELECT p.short_name shortName FROM legacy_offering_links l
-         JOIN offerings o ON o.id=l.offering_id
-         JOIN programs p ON p.id=o.program_id
-         WHERE l.legacy_offering_id=?`,
+            `SELECT p.short_name shortName FROM legacy_offering_links l JOIN offerings o ON o.id=l.offering_id JOIN programs p ON p.id=o.program_id WHERE l.legacy_offering_id=?`,
           )
           .get(project.offeringId) as { shortName: string | null } | undefined,
     )?.shortName;
@@ -547,7 +554,9 @@ async function ensureProjectDriveStructure(
     fetchImpl,
   });
   let parentId = root.id;
-  for (const name of buildProjectStoragePath(context)) {
+  for (const name of context
+    ? buildProjectStoragePath(context)
+    : ["Pessoais", `Pessoa-${project.ownerUserId}`, "Projetos"]) {
     const identity = createHash("sha256")
       .update(`${parentId}\0${name}`)
       .digest("hex")

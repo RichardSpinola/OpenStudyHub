@@ -30,7 +30,18 @@ vi.mock("@/lib/collaboration", () => ({
   listVisibleUsers: () => [],
 }));
 vi.mock("@/lib/projects", () => ({ listUserProjects: mocks.projects }));
-vi.mock("../documents/page", () => ({ default: mocks.documents }));
+vi.mock("@/components/documents-workspace", () => ({
+  default: mocks.documents,
+}));
+vi.mock("@/components/document-template-workspace", () => ({
+  default: () => "template editor",
+}));
+vi.mock("@/components/project-create-workspace", () => ({
+  default: () => "personal project form",
+}));
+vi.mock("@/components/library-import-form", () => ({
+  LibraryImportForm: () => "import form",
+}));
 vi.mock("@/components/document-library-card", () => ({
   DocumentLibraryCard: ({ document }: { document: { name: string } }) => (
     <li>{document.name}</li>
@@ -90,18 +101,34 @@ describe("organized library access", () => {
     expect(html).not.toContain("Meu documento");
     expect(html).toContain("is-list");
     expect(html).toContain("Filtrar pelo nome");
-    expect(html).toContain("Modelos de documento");
+    expect(html).toContain("Modelos");
+    expect(html).not.toContain("library-templates-link");
   });
   it("preserves template creation workflow parameters", async () => {
-    expect(
+    const html = renderToStaticMarkup(
       await LibraryPage({
         searchParams: Promise.resolve({ view: "templates", templateId: "3" }),
       }),
-    ).toBe("docs");
+    );
+    expect(html).toContain("library-workspace");
+    expect(html).toContain("docs");
     expect(await mocks.documents.mock.calls[0][0].searchParams).toEqual({
       view: "templates",
       templateId: "3",
     });
+  });
+  it("renders personal project creation inside the Library shell", async () => {
+    const html = renderToStaticMarkup(
+      await LibraryPage({
+        searchParams: Promise.resolve({
+          type: "projects",
+          view: "create",
+          mode: "empty",
+        }),
+      }),
+    );
+    expect(html).toContain("library-workspace");
+    expect(html).toContain("personal project form");
   });
   it("blocks disabled projects before loading data", async () => {
     mocks.enabled.mockReturnValue(false);

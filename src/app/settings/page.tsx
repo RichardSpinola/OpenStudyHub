@@ -8,6 +8,8 @@ import { ClassroomSyncAll } from "@/components/classroom-sync-all";
 import { ProfileLocaleSelect } from "@/components/profile-locale-select";
 import { ProfileMediaSettings } from "@/components/profile-media-settings";
 import { ThemeSelect } from "@/components/theme-select";
+import { HomeControlSettings } from "@/components/home-control-settings";
+import { getHomePresentation } from "@/lib/home-presentation";
 import { AppearanceControls } from "@/components/appearance-controls";
 import { PushControls } from "@/components/push-controls";
 import {
@@ -347,6 +349,7 @@ export default async function SettingsPage({
   const { settings } = getTranslations(language);
   const v2Mode = process.env.OPENSTUDYHUB_V2_ENABLED === "1";
   const appearance = v2Mode ? getAppearance(user.id) : null;
+  const homePresentation = v2Mode ? getHomePresentation(user.id) : null;
   const googleAvailability = getGoogleIntegrationAvailability();
   const googleConnection =
     !v2Mode && data.available ? getGoogleConnection(user.id) : null;
@@ -759,6 +762,11 @@ export default async function SettingsPage({
                       />
                     ) : null}
                   </div>
+                ) : null}
+                {homePresentation ? (
+                  <HomeControlSettings
+                    enabled={homePresentation.controlEnabled}
+                  />
                 ) : null}
                 <div className="home-background-control">
                   <h3>

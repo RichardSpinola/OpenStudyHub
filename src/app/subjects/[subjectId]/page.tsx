@@ -310,6 +310,130 @@ export default async function SubjectPage({
     timeStyle: "short",
   });
 
+  const subjectActions = (
+    <section
+      className="subject-actions"
+      aria-label={uiText(language, "Ações da disciplina", "Subject actions")}
+    >
+      <h2>
+        <UiCopy pt="Ações" en="Actions" />
+      </h2>
+      <Link
+        className="action-button is-primary"
+        href={
+          primaryLegacyOfferingId
+            ? `/notes?offeringId=${primaryLegacyOfferingId}#nova-nota`
+            : "/notes"
+        }
+      >
+        <UiCopy pt="+ Nova nota" en="+ New note" />
+      </Link>
+      <Link
+        className="action-button"
+        href={
+          primaryLegacyOfferingId
+            ? `/library?type=documents&view=generate&offeringId=${primaryLegacyOfferingId}`
+            : "/library?type=documents&view=generate"
+        }
+      >
+        <UiCopy pt="Gerar documento" en="Create document" />
+      </Link>
+      {projectsEnabled ? (
+        <Link
+          className="action-button"
+          href={
+            primaryLegacyOfferingId
+              ? `/projects/new?offeringId=${primaryLegacyOfferingId}`
+              : "/projects/new"
+          }
+        >
+          <UiCopy pt="Novo projeto" en="New project" />
+        </Link>
+      ) : null}
+      {v2Mode ? (
+        <Link className="action-button" href="/google">
+          {personalClassroom?.connection === "connected"
+            ? tr("Sincronizar Classroom", "Sync Classroom")
+            : tr("Conectar Classroom", "Connect Classroom")}
+        </Link>
+      ) : null}
+      {offerings.map((offering) => {
+        const integration = integrations.get(offering.offeringId);
+        return integration ? (
+          <div
+            className="subject-integration-actions"
+            key={offering.offeringId}
+          >
+            {integration.driveFolderId &&
+            (!v2Mode || integration.driveStorageUserId === user.id) ? (
+              <a
+                className="action-button"
+                href={`https://drive.google.com/drive/folders/${encodeURIComponent(integration.driveFolderId)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <UiCopy pt="Abrir Drive ↗" en="Open Drive ↗" />
+              </a>
+            ) : null}
+            {integration.notebookUrl ? (
+              <a
+                className="action-button"
+                href={integration.notebookUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <UiCopy pt="Abrir Notebook ↗" en="Open Notebook ↗" />
+              </a>
+            ) : null}
+            {!v2Mode && integration.classroomCourseId ? (
+              <div className="classroom-sync-actions">
+                <form action={syncClassroomActivitiesAction}>
+                  <input type="hidden" name="subjectId" value={subjectId} />
+                  <input
+                    type="hidden"
+                    name="offeringId"
+                    value={offering.offeringId}
+                  />
+                  <button
+                    className="action-button"
+                    type="submit"
+                    disabled={!googleConnected}
+                  >
+                    <UiCopy pt="Sincronizar agora" en="Sync now" />
+                  </button>
+                </form>
+                <details className="secondary-action-disclosure">
+                  <summary>
+                    <UiCopy pt="Histórico" en="History" />
+                  </summary>
+                  <form action={syncClassroomActivitiesAction}>
+                    <input type="hidden" name="subjectId" value={subjectId} />
+                    <input
+                      type="hidden"
+                      name="offeringId"
+                      value={offering.offeringId}
+                    />
+                    <input type="hidden" name="includeHistory" value="true" />
+                    <button
+                      className="action-button is-secondary"
+                      type="submit"
+                      disabled={!googleConnected}
+                    >
+                      <UiCopy
+                        pt="Importar histórico anterior"
+                        en="Import previous history"
+                      />
+                    </button>
+                  </form>
+                </details>
+              </div>
+            ) : null}
+          </div>
+        ) : null;
+      })}
+    </section>
+  );
+
   return (
     <div className="academic-shell subject-workspace">
       {googleConnected ? (
@@ -427,743 +551,617 @@ export default async function SubjectPage({
         </p>
       ) : null}
 
-      {view === "overview" ? (
-        <>
-          <section
-            className="subject-next"
-            aria-labelledby="subject-next-title"
-          >
-            <span>
-              <UiCopy pt="PRÓXIMO" en="NEXT" />
-            </span>
-            {nextItem ? (
-              <>
-                <div>
-                  <strong id="subject-next-title">{nextItem.title}</strong>
-                  <small>{nextItem.sourceLabel}</small>
-                </div>
-                <time dateTime={new Date(nextItem.relevantAt).toISOString()}>
-                  {formatAcademicDateTime(nextItem.relevantAt, language)}
-                </time>
-                {nextItem.href ? (
-                  nextItem.external ? (
-                    <a href={nextItem.href} target="_blank" rel="noreferrer">
-                      <UiCopy pt="Abrir ↗" en="Open ↗" />
-                    </a>
-                  ) : (
-                    <Link href={nextItem.href}>
-                      <UiCopy pt="Ver detalhes →" en="View details →" />
-                    </Link>
-                  )
-                ) : null}
-              </>
-            ) : (
-              <div>
-                <strong id="subject-next-title">
-                  <UiCopy pt="Nada urgente por aqui" en="Nothing urgent here" />
-                </strong>
-                <small>
-                  <UiCopy
-                    pt="Novas aulas e prazos aparecerão neste espaço."
-                    en="New classes and deadlines will appear here."
-                  />
-                </small>
-              </div>
-            )}
-          </section>
-
-          <div className="subject-overview-layout">
-            <section
-              className="subject-actions"
-              aria-label={uiText(
-                language,
-                "Ações da disciplina",
-                "Subject actions",
-              )}
-            >
-              <h2>
-                <UiCopy pt="Ações" en="Actions" />
-              </h2>
-              <Link
-                className="action-button is-primary"
-                href={
-                  primaryLegacyOfferingId
-                    ? `/notes?offeringId=${primaryLegacyOfferingId}#nova-nota`
-                    : "/notes"
-                }
-              >
-                <UiCopy pt="+ Nova nota" en="+ New note" />
-              </Link>
-              <Link
-                className="action-button"
-                href={
-                  primaryLegacyOfferingId
-                    ? `/documents?view=generate&offeringId=${primaryLegacyOfferingId}`
-                    : "/documents?view=generate"
-                }
-              >
-                <UiCopy pt="Gerar documento" en="Create document" />
-              </Link>
-              {projectsEnabled ? (
-                <Link
-                  className="action-button"
-                  href={
-                    primaryLegacyOfferingId
-                      ? `/projects/new?offeringId=${primaryLegacyOfferingId}`
-                      : "/projects/new"
-                  }
-                >
-                  <UiCopy pt="Novo projeto" en="New project" />
-                </Link>
-              ) : null}
-              {v2Mode ? (
-                <Link className="action-button" href="/google">
-                  {personalClassroom?.connection === "connected"
-                    ? tr("Sincronizar Classroom", "Sync Classroom")
-                    : tr("Conectar Classroom", "Connect Classroom")}
-                </Link>
-              ) : null}
-              {offerings.map((offering) => {
-                const integration = integrations.get(offering.offeringId);
-                return integration ? (
-                  <div
-                    className="subject-integration-actions"
-                    key={offering.offeringId}
-                  >
-                    {integration.driveFolderId &&
-                    (!v2Mode || integration.driveStorageUserId === user.id) ? (
-                      <a
-                        className="action-button"
-                        href={`https://drive.google.com/drive/folders/${encodeURIComponent(integration.driveFolderId)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <UiCopy pt="Abrir Drive ↗" en="Open Drive ↗" />
-                      </a>
-                    ) : null}
-                    {integration.notebookUrl ? (
-                      <a
-                        className="action-button"
-                        href={integration.notebookUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <UiCopy pt="Abrir Notebook ↗" en="Open Notebook ↗" />
-                      </a>
-                    ) : null}
-                    {!v2Mode && integration.classroomCourseId ? (
-                      <div className="classroom-sync-actions">
-                        <form action={syncClassroomActivitiesAction}>
-                          <input
-                            type="hidden"
-                            name="subjectId"
-                            value={subjectId}
-                          />
-                          <input
-                            type="hidden"
-                            name="offeringId"
-                            value={offering.offeringId}
-                          />
-                          <button
-                            className="action-button"
-                            type="submit"
-                            disabled={!googleConnected}
-                          >
-                            <UiCopy pt="Sincronizar agora" en="Sync now" />
-                          </button>
-                        </form>
-                        <details className="secondary-action-disclosure">
-                          <summary>
-                            <UiCopy pt="Histórico" en="History" />
-                          </summary>
-                          <form action={syncClassroomActivitiesAction}>
-                            <input
-                              type="hidden"
-                              name="subjectId"
-                              value={subjectId}
-                            />
-                            <input
-                              type="hidden"
-                              name="offeringId"
-                              value={offering.offeringId}
-                            />
-                            <input
-                              type="hidden"
-                              name="includeHistory"
-                              value="true"
-                            />
-                            <button
-                              className="action-button is-secondary"
-                              type="submit"
-                              disabled={!googleConnected}
-                            >
-                              <UiCopy
-                                pt="Importar histórico anterior"
-                                en="Import previous history"
-                              />
-                            </button>
-                          </form>
-                        </details>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null;
-              })}
-            </section>
-
-            <div className="subject-workspace-grid">
+      <div className="subject-content-layout">
+        <div className="subject-primary-pane">
+          {view === "overview" ? (
+            <>
               <section
-                className="timeline-panel subject-overview-main"
-                aria-labelledby="subject-overview-main-title"
+                className="subject-next"
+                aria-labelledby="subject-next-title"
               >
-                <div className="section-heading">
+                <span>
+                  <UiCopy pt="PRÓXIMO" en="NEXT" />
+                </span>
+                {nextItem ? (
+                  <>
+                    <div>
+                      <strong id="subject-next-title">{nextItem.title}</strong>
+                      <small>{nextItem.sourceLabel}</small>
+                    </div>
+                    <time
+                      dateTime={new Date(nextItem.relevantAt).toISOString()}
+                    >
+                      {formatAcademicDateTime(nextItem.relevantAt, language)}
+                    </time>
+                    {nextItem.href ? (
+                      nextItem.external ? (
+                        <a
+                          href={nextItem.href}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <UiCopy pt="Abrir ↗" en="Open ↗" />
+                        </a>
+                      ) : (
+                        <Link href={nextItem.href}>
+                          <UiCopy pt="Ver detalhes →" en="View details →" />
+                        </Link>
+                      )
+                    ) : null}
+                  </>
+                ) : (
                   <div>
-                    <span className="page-kicker">
-                      <UiCopy pt="VISÃO GERAL" en="OVERVIEW" />
-                    </span>
-                    <h2 id="subject-overview-main-title">
-                      {overviewFocus === "wall"
-                        ? uiText(language, "Mural recente", "Recent wall")
-                        : "Timeline"}
-                    </h2>
+                    <strong id="subject-next-title">
+                      <UiCopy
+                        pt="Nada urgente por aqui"
+                        en="Nothing urgent here"
+                      />
+                    </strong>
+                    <small>
+                      <UiCopy
+                        pt="Novas aulas e prazos aparecerão neste espaço."
+                        en="New classes and deadlines will appear here."
+                      />
+                    </small>
                   </div>
-                  <form
-                    className="subject-focus-switch"
-                    action={updateOverviewFocusAction}
-                    aria-label={uiText(
-                      language,
-                      "Conteúdo principal da Visão Geral",
-                      "Main overview content",
-                    )}
+                )}
+              </section>
+
+              <div className="subject-overview-content">
+                <div className="subject-workspace-grid">
+                  <section
+                    className="timeline-panel subject-overview-main"
+                    aria-labelledby="subject-overview-main-title"
                   >
-                    <input type="hidden" name="subjectId" value={subjectId} />
-                    <button
-                      type="submit"
-                      name="focus"
-                      value="wall"
-                      aria-pressed={overviewFocus === "wall"}
-                    >
-                      <UiCopy pt="Mural" en="Stream" />
-                    </button>
-                    <button
-                      type="submit"
-                      name="focus"
-                      value="timeline"
-                      aria-pressed={overviewFocus === "timeline"}
-                    >
-                      <UiCopy pt="Timeline" en="Timeline" />
-                    </button>
-                  </form>
-                </div>
-                {overviewFocus === "wall" ? (
-                  <div className="subject-wall-summary">
-                    {recentWall.length ? (
-                      <ol className="classroom-wall">
-                        {recentWall.map((item) => (
-                          <li
-                            key={`${item.offeringId}:${item.type}:${item.id}`}
-                          >
-                            <span className="status-badge">
-                              {classroomTypeLabel[item.type]}
-                            </span>
-                            <div>
-                              <strong>{item.title}</strong>
-                              {item.publishedAt ? (
-                                <time>
-                                  {dateFormatter.format(item.publishedAt)}
-                                </time>
-                              ) : null}
-                              {item.excerpt ? <p>{item.excerpt}</p> : null}
-                            </div>
-                          </li>
-                        ))}
-                      </ol>
-                    ) : (
+                    <div className="section-heading">
+                      <div>
+                        <span className="page-kicker">
+                          <UiCopy pt="VISÃO GERAL" en="OVERVIEW" />
+                        </span>
+                        <h2 id="subject-overview-main-title">
+                          {overviewFocus === "wall"
+                            ? uiText(language, "Mural recente", "Recent wall")
+                            : "Timeline"}
+                        </h2>
+                      </div>
+                      <form
+                        className="subject-focus-switch"
+                        action={updateOverviewFocusAction}
+                        aria-label={uiText(
+                          language,
+                          "Conteúdo principal da Visão Geral",
+                          "Main overview content",
+                        )}
+                      >
+                        <input
+                          type="hidden"
+                          name="subjectId"
+                          value={subjectId}
+                        />
+                        <button
+                          type="submit"
+                          name="focus"
+                          value="wall"
+                          aria-pressed={overviewFocus === "wall"}
+                        >
+                          <UiCopy pt="Mural" en="Stream" />
+                        </button>
+                        <button
+                          type="submit"
+                          name="focus"
+                          value="timeline"
+                          aria-pressed={overviewFocus === "timeline"}
+                        >
+                          <UiCopy pt="Timeline" en="Timeline" />
+                        </button>
+                      </form>
+                    </div>
+                    {overviewFocus === "wall" ? (
+                      <div className="subject-wall-summary">
+                        {recentWall.length ? (
+                          <ol className="classroom-wall">
+                            {recentWall.map((item) => (
+                              <li
+                                key={`${item.offeringId}:${item.type}:${item.id}`}
+                              >
+                                <span className="status-badge">
+                                  {classroomTypeLabel[item.type]}
+                                </span>
+                                <div>
+                                  <strong>{item.title}</strong>
+                                  {item.publishedAt ? (
+                                    <time>
+                                      {dateFormatter.format(item.publishedAt)}
+                                    </time>
+                                  ) : null}
+                                  {item.excerpt ? <p>{item.excerpt}</p> : null}
+                                </div>
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <div className="useful-empty compact">
+                            <strong>
+                              <UiCopy
+                                pt="Nenhum aviso recente nesta disciplina"
+                                en="No recent announcements in this subject"
+                              />
+                            </strong>
+                            <p>
+                              <UiCopy
+                                pt="O Mural completo permanece disponível. O cache local não depende de conexão ativa."
+                                en="The full stream remains available. The local cache does not depend on an active connection."
+                              />
+                            </p>
+                          </div>
+                        )}
+                        <Link
+                          className="subject-all-link"
+                          href={`/subjects/${subjectId}?view=wall`}
+                        >
+                          <UiCopy
+                            pt="Abrir Mural completo →"
+                            en="Open full stream →"
+                          />
+                        </Link>
+                        <div className="subject-overview-support">
+                          <section>
+                            <h3>
+                              <UiCopy
+                                pt="Próximos eventos"
+                                en="Upcoming events"
+                              />
+                            </h3>
+                            {upcomingEvents.length ? (
+                              <ol>
+                                {upcomingEvents.map((item) => (
+                                  <li key={item.key}>
+                                    <strong>{item.title}</strong>
+                                    <time>
+                                      {formatAcademicDateTime(
+                                        item.relevantAt,
+                                        language,
+                                      )}
+                                    </time>
+                                  </li>
+                                ))}
+                              </ol>
+                            ) : (
+                              <p>
+                                <UiCopy
+                                  pt="Nenhum evento próximo."
+                                  en="No upcoming events."
+                                />
+                              </p>
+                            )}
+                          </section>
+                          <section>
+                            <h3>
+                              <UiCopy
+                                pt="Atividades próximas"
+                                en="Upcoming activities"
+                              />
+                            </h3>
+                            {groupedActivities.week.length ? (
+                              <ol>
+                                {groupedActivities.week
+                                  .slice(0, 3)
+                                  .map((item) => (
+                                    <li key={item.id}>
+                                      <strong>{item.title}</strong>
+                                      <Link
+                                        href={`/subjects/${subjectId}?view=activities`}
+                                      >
+                                        <UiCopy
+                                          pt="Ver atividade →"
+                                          en="View activity →"
+                                        />
+                                      </Link>
+                                    </li>
+                                  ))}
+                              </ol>
+                            ) : (
+                              <p>
+                                <UiCopy
+                                  pt="Nenhuma atividade próxima."
+                                  en="No upcoming activities."
+                                />
+                              </p>
+                            )}
+                          </section>
+                        </div>
+                      </div>
+                    ) : feed.length === 0 ? (
                       <div className="useful-empty compact">
                         <strong>
                           <UiCopy
-                            pt="Nenhum aviso recente nesta disciplina"
-                            en="No recent announcements in this subject"
+                            pt="Ainda não há atividade nesta matéria"
+                            en="No activity in this subject yet"
                           />
                         </strong>
                         <p>
                           <UiCopy
-                            pt="O Mural completo permanece disponível. O cache local não depende de conexão ativa."
-                            en="The full stream remains available. The local cache does not depend on an active connection."
+                            pt="Notas, documentos, projetos e eventos aparecerão aqui."
+                            en="Notes, documents, projects and events will appear here."
                           />
                         </p>
                       </div>
+                    ) : (
+                      <ol className="timeline-list">
+                        {feed.map((item) => (
+                          <li
+                            key={item.key}
+                            className={`timeline-kind-${item.kind}`}
+                          >
+                            <div
+                              className="timeline-marker"
+                              aria-hidden="true"
+                            />
+                            <div className="timeline-time">
+                              <span>{item.sourceLabel}</span>
+                              <time
+                                dateTime={new Date(
+                                  item.occurredAt,
+                                ).toISOString()}
+                              >
+                                {formatAcademicDateTime(
+                                  item.occurredAt,
+                                  language,
+                                )}
+                              </time>
+                            </div>
+                            <div className="timeline-content">
+                              <h3>{item.title}</h3>
+                              {item.description ? (
+                                <p>{item.description}</p>
+                              ) : null}
+                              {item.status ? (
+                                <span>{item.status.replaceAll("_", " ")}</span>
+                              ) : null}
+                              {item.href ? (
+                                item.external ? (
+                                  <a
+                                    href={item.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <UiCopy pt="Abrir ↗" en="Open ↗" />
+                                  </a>
+                                ) : (
+                                  <Link href={item.href}>
+                                    <UiCopy pt="Abrir →" en="Open →" />
+                                  </Link>
+                                )
+                              ) : null}
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
                     )}
-                    <Link
-                      className="subject-all-link"
-                      href={`/subjects/${subjectId}?view=wall`}
-                    >
+                  </section>
+                </div>
+              </div>
+            </>
+          ) : null}
+
+          {view === "wall" ? (
+            <section className="utility-panel subject-context-panel">
+              <div className="panel-title">
+                <UiCopy pt="MURAL DO CLASSROOM" en="CLASSROOM STREAM" />
+              </div>
+              {classroomFeed.length === 0 ? (
+                <div className="useful-empty">
+                  <strong>
+                    <UiCopy
+                      pt="Nada no mural local"
+                      en="Nothing in the local stream"
+                    />
+                  </strong>
+                  <p>
+                    <UiCopy
+                      pt="Conecte e mapeie o Classroom ou use Sincronizar agora."
+                      en="Connect and map Classroom or use Sync now."
+                    />
+                  </p>
+                </div>
+              ) : (
+                <ol className="classroom-wall">
+                  {classroomFeed.map((item) => (
+                    <li key={`${item.offeringId}:${item.type}:${item.id}`}>
+                      <span className="status-badge">
+                        {classroomTypeLabel[item.type]}
+                      </span>
+                      <div>
+                        <strong>{item.title}</strong>
+                        {item.publishedAt ? (
+                          <time>{dateFormatter.format(item.publishedAt)}</time>
+                        ) : null}
+                        {item.excerpt ? (
+                          item.excerpt.length > 180 ? (
+                            <details>
+                              <summary>
+                                {item.excerpt.slice(0, 180)}
+                                <UiCopy pt="… Ver mais" en="… See more" />
+                              </summary>
+                              <p>{item.excerpt}</p>
+                            </details>
+                          ) : (
+                            <p>{item.excerpt}</p>
+                          )
+                        ) : null}
+                      </div>
+                      {item.externalUrl ? (
+                        <a
+                          href={item.externalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <UiCopy pt="Classroom ↗" en="Classroom ↗" />
+                        </a>
+                      ) : null}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          ) : null}
+
+          {view === "activities" ? (
+            <section className="utility-panel subject-context-panel">
+              <div className="panel-title">
+                <UiCopy pt="ATIVIDADES" en="ACTIVITIES" />
+              </div>
+              <div className="context-actions">
+                <Link
+                  href={
+                    primaryLegacyOfferingId
+                      ? `/activities?offeringId=${primaryLegacyOfferingId}#nova-atividade`
+                      : "/activities"
+                  }
+                >
+                  <UiCopy
+                    pt="+ Nova atividade manual"
+                    en="+ New manual activity"
+                  />
+                </Link>
+              </div>
+              {(
+                [
+                  ["Esta semana", groupedActivities.week],
+                  ["Próximas · 14 dias", groupedActivities.next],
+                  ["Sem prazo", groupedActivities.noDeadline],
+                  ["Mais tarde", groupedActivities.later],
+                  ["Histórico", groupedActivities.history],
+                ] as const
+              ).map(([label, items]) => (
+                <details
+                  className="activity-time-group"
+                  key={label}
+                  open={label !== "Histórico" && items.length > 0}
+                >
+                  <summary>
+                    {label} <span>{items.length}</span>
+                  </summary>
+                  {items.length ? (
+                    <ol className="subject-context-list">
+                      {items.map((item) => (
+                        <li key={item.id}>
+                          <div>
+                            <strong>{item.title}</strong>
+                            <span>
+                              {item.origin === "external"
+                                ? "Classroom"
+                                : item.status}
+                            </span>
+                            {item.description ? (
+                              item.description.length > 180 ? (
+                                <details className="activity-excerpt">
+                                  <summary>
+                                    {item.description.slice(0, 180)}
+                                    <UiCopy pt="… Ver mais" en="… See more" />
+                                  </summary>
+                                  <p>{item.description}</p>
+                                </details>
+                              ) : (
+                                <p>{item.description}</p>
+                              )
+                            ) : null}
+                          </div>
+                          <time>
+                            {item.dueAt
+                              ? dateFormatter.format(item.dueAt)
+                              : "Sem prazo"}
+                          </time>
+                          <div className="context-actions">
+                            <Link
+                              href={`/notes?offeringId=${item.offeringId}&activityId=${item.id}#nova-nota`}
+                            >
+                              <UiCopy pt="Nota" en="Note" />
+                            </Link>
+                            <Link
+                              href={`/documents?view=generate&offeringId=${item.offeringId}&activityId=${item.id}`}
+                            >
+                              <UiCopy pt="Documento" en="Document" />
+                            </Link>
+                            {item.externalUrl ? (
+                              <a
+                                href={item.externalUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <UiCopy pt="Classroom ↗" en="Classroom ↗" />
+                              </a>
+                            ) : null}
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="panel-help">
                       <UiCopy
-                        pt="Abrir Mural completo →"
-                        en="Open full stream →"
+                        pt="Nenhum item nesta faixa."
+                        en="No items in this range."
                       />
-                    </Link>
-                    <div className="subject-overview-support">
-                      <section>
-                        <h3>
-                          <UiCopy pt="Próximos eventos" en="Upcoming events" />
-                        </h3>
-                        {upcomingEvents.length ? (
-                          <ol>
-                            {upcomingEvents.map((item) => (
-                              <li key={item.key}>
-                                <strong>{item.title}</strong>
-                                <time>
-                                  {formatAcademicDateTime(
-                                    item.relevantAt,
-                                    language,
-                                  )}
-                                </time>
-                              </li>
-                            ))}
-                          </ol>
-                        ) : (
-                          <p>
-                            <UiCopy
-                              pt="Nenhum evento próximo."
-                              en="No upcoming events."
-                            />
-                          </p>
-                        )}
-                      </section>
-                      <section>
-                        <h3>
-                          <UiCopy
-                            pt="Atividades próximas"
-                            en="Upcoming activities"
-                          />
-                        </h3>
-                        {groupedActivities.week.length ? (
-                          <ol>
-                            {groupedActivities.week.slice(0, 3).map((item) => (
-                              <li key={item.id}>
-                                <strong>{item.title}</strong>
-                                <Link
-                                  href={`/subjects/${subjectId}?view=activities`}
-                                >
-                                  <UiCopy
-                                    pt="Ver atividade →"
-                                    en="View activity →"
-                                  />
-                                </Link>
-                              </li>
-                            ))}
-                          </ol>
-                        ) : (
-                          <p>
-                            <UiCopy
-                              pt="Nenhuma atividade próxima."
-                              en="No upcoming activities."
-                            />
-                          </p>
-                        )}
-                      </section>
-                    </div>
+                    </p>
+                  )}
+                </details>
+              ))}
+            </section>
+          ) : null}
+
+          {view === "notes" ? (
+            <section className="resource-collection subject-resource-collection">
+              <div className="resource-collection-header">
+                <div>
+                  <span className="page-kicker">
+                    <UiCopy pt="ESCRITA" en="WRITING" />
+                  </span>
+                  <h2>
+                    <UiCopy
+                      pt="Notas desta disciplina"
+                      en="Notes for this subject"
+                    />{" "}
+                    <small>{notes.length}</small>
+                  </h2>
+                </div>
+              </div>
+              {notes.length ? (
+                <ol className="note-card-grid is-grid">
+                  {notes.map((note) => (
+                    <NoteLibraryCard
+                      key={note.id}
+                      note={note}
+                      href={`/notes/${note.id}`}
+                      language={language}
+                    />
+                  ))}
+                </ol>
+              ) : (
+                <div className="useful-empty resource-empty compact">
+                  <strong>
+                    <UiCopy
+                      pt="Suas notas desta disciplina aparecerão aqui"
+                      en="Your notes for this subject will appear here"
+                    />
+                  </strong>
+                  <p>
+                    <UiCopy
+                      pt="Comece por um resumo, uma dúvida ou um rascunho."
+                      en="Start with a summary, a question or a draft."
+                    />
+                  </p>
+                </div>
+              )}
+            </section>
+          ) : null}
+
+          {view === "documents" ? (
+            <section className="resource-collection subject-resource-collection">
+              <div className="resource-collection-header">
+                <div>
+                  <span className="page-kicker">
+                    <UiCopy pt="ARQUIVOS" en="FILES" />
+                  </span>
+                  <h2>
+                    <UiCopy
+                      pt="Documentos desta disciplina"
+                      en="Documents for this subject"
+                    />{" "}
+                    <small>{documents.length}</small>
+                  </h2>
+                </div>
+              </div>
+              {documents.length ? (
+                <ol className="document-library-grid is-grid">
+                  {documents.map((document) => (
+                    <DocumentLibraryCard
+                      key={document.id}
+                      document={document}
+                      groups={documentGroups}
+                      people={documentPeople}
+                      language={language}
+                    />
+                  ))}
+                </ol>
+              ) : (
+                <div className="useful-empty resource-empty compact">
+                  <strong>
+                    <UiCopy
+                      pt="Seus documentos desta disciplina aparecerão aqui"
+                      en="Your documents for this subject will appear here"
+                    />
+                  </strong>
+                  <p>
+                    <UiCopy
+                      pt="Escolha um modelo e crie um documento para começar."
+                      en="Choose a template and create a document to start."
+                    />
+                  </p>
+                </div>
+              )}
+            </section>
+          ) : null}
+
+          {view === "projects" ? (
+            <div className="subject-projects-layout">
+              <section className="resource-collection subject-resource-collection">
+                <div className="resource-collection-header">
+                  <div>
+                    <span className="page-kicker">
+                      <UiCopy pt="ARQUIVOS E VERSÕES" en="FILES AND VERSIONS" />
+                    </span>
+                    <h2>
+                      <UiCopy
+                        pt="Projetos desta disciplina"
+                        en="Projects for this subject"
+                      />{" "}
+                      <small>{projects.length}</small>
+                    </h2>
                   </div>
-                ) : feed.length === 0 ? (
+                </div>
+                {parameters.status === "archived" ? (
+                  <p className="feedback-banner is-success" role="status">
+                    <UiCopy
+                      pt="Projeto arquivado localmente. O conteúdo no Drive foi mantido."
+                      en="Project archived locally. Drive content was kept."
+                    />
+                  </p>
+                ) : null}
+                {projects.length ? (
+                  <ul className="project-library-grid is-grid">
+                    {projects.map((project) => (
+                      <ProjectLibraryCard
+                        key={project.id}
+                        project={project}
+                        language={language}
+                      />
+                    ))}
+                  </ul>
+                ) : (
                   <div className="useful-empty compact">
                     <strong>
                       <UiCopy
-                        pt="Ainda não há atividade nesta matéria"
-                        en="No activity in this subject yet"
+                        pt="Nenhum projeto nesta disciplina"
+                        en="No projects in this subject"
                       />
                     </strong>
                     <p>
                       <UiCopy
-                        pt="Notas, documentos, projetos e eventos aparecerão aqui."
-                        en="Notes, documents, projects and events will appear here."
+                        pt="Crie o registro e envie sua pasta local ou um ZIP."
+                        en="Create the record and upload a local folder or ZIP."
                       />
                     </p>
                   </div>
-                ) : (
-                  <ol className="timeline-list">
-                    {feed.map((item) => (
-                      <li
-                        key={item.key}
-                        className={`timeline-kind-${item.kind}`}
-                      >
-                        <div className="timeline-marker" aria-hidden="true" />
-                        <div className="timeline-time">
-                          <span>{item.sourceLabel}</span>
-                          <time
-                            dateTime={new Date(item.occurredAt).toISOString()}
-                          >
-                            {formatAcademicDateTime(item.occurredAt, language)}
-                          </time>
-                        </div>
-                        <div className="timeline-content">
-                          <h3>{item.title}</h3>
-                          {item.description ? <p>{item.description}</p> : null}
-                          {item.status ? (
-                            <span>{item.status.replaceAll("_", " ")}</span>
-                          ) : null}
-                          {item.href ? (
-                            item.external ? (
-                              <a
-                                href={item.href}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <UiCopy pt="Abrir ↗" en="Open ↗" />
-                              </a>
-                            ) : (
-                              <Link href={item.href}>
-                                <UiCopy pt="Abrir →" en="Open →" />
-                              </Link>
-                            )
-                          ) : null}
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
                 )}
               </section>
-              <SubjectSidebar slots={slots} weekdayLabels={weekdayLabels} />
             </div>
-          </div>
-        </>
-      ) : null}
-
-      {view === "wall" ? (
-        <section className="utility-panel subject-context-panel">
-          <div className="panel-title">
-            <UiCopy pt="MURAL DO CLASSROOM" en="CLASSROOM STREAM" />
-          </div>
-          {classroomFeed.length === 0 ? (
-            <div className="useful-empty">
-              <strong>
-                <UiCopy
-                  pt="Nada no mural local"
-                  en="Nothing in the local stream"
-                />
-              </strong>
-              <p>
-                <UiCopy
-                  pt="Conecte e mapeie o Classroom ou use Sincronizar agora."
-                  en="Connect and map Classroom or use Sync now."
-                />
-              </p>
-            </div>
-          ) : (
-            <ol className="classroom-wall">
-              {classroomFeed.map((item) => (
-                <li key={`${item.offeringId}:${item.type}:${item.id}`}>
-                  <span className="status-badge">
-                    {classroomTypeLabel[item.type]}
-                  </span>
-                  <div>
-                    <strong>{item.title}</strong>
-                    {item.publishedAt ? (
-                      <time>{dateFormatter.format(item.publishedAt)}</time>
-                    ) : null}
-                    {item.excerpt ? (
-                      item.excerpt.length > 180 ? (
-                        <details>
-                          <summary>
-                            {item.excerpt.slice(0, 180)}
-                            <UiCopy pt="… Ver mais" en="… See more" />
-                          </summary>
-                          <p>{item.excerpt}</p>
-                        </details>
-                      ) : (
-                        <p>{item.excerpt}</p>
-                      )
-                    ) : null}
-                  </div>
-                  {item.externalUrl ? (
-                    <a href={item.externalUrl} target="_blank" rel="noreferrer">
-                      <UiCopy pt="Classroom ↗" en="Classroom ↗" />
-                    </a>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      ) : null}
-
-      {view === "activities" ? (
-        <section className="utility-panel subject-context-panel">
-          <div className="panel-title">
-            <UiCopy pt="ATIVIDADES" en="ACTIVITIES" />
-          </div>
-          <div className="context-actions">
-            <Link
-              href={
-                primaryLegacyOfferingId
-                  ? `/activities?offeringId=${primaryLegacyOfferingId}#nova-atividade`
-                  : "/activities"
-              }
-            >
-              <UiCopy pt="+ Nova atividade manual" en="+ New manual activity" />
-            </Link>
-          </div>
-          {(
-            [
-              ["Esta semana", groupedActivities.week],
-              ["Próximas · 14 dias", groupedActivities.next],
-              ["Sem prazo", groupedActivities.noDeadline],
-              ["Mais tarde", groupedActivities.later],
-              ["Histórico", groupedActivities.history],
-            ] as const
-          ).map(([label, items]) => (
-            <details
-              className="activity-time-group"
-              key={label}
-              open={label !== "Histórico" && items.length > 0}
-            >
-              <summary>
-                {label} <span>{items.length}</span>
-              </summary>
-              {items.length ? (
-                <ol className="subject-context-list">
-                  {items.map((item) => (
-                    <li key={item.id}>
-                      <div>
-                        <strong>{item.title}</strong>
-                        <span>
-                          {item.origin === "external"
-                            ? "Classroom"
-                            : item.status}
-                        </span>
-                        {item.description ? (
-                          item.description.length > 180 ? (
-                            <details className="activity-excerpt">
-                              <summary>
-                                {item.description.slice(0, 180)}
-                                <UiCopy pt="… Ver mais" en="… See more" />
-                              </summary>
-                              <p>{item.description}</p>
-                            </details>
-                          ) : (
-                            <p>{item.description}</p>
-                          )
-                        ) : null}
-                      </div>
-                      <time>
-                        {item.dueAt
-                          ? dateFormatter.format(item.dueAt)
-                          : "Sem prazo"}
-                      </time>
-                      <div className="context-actions">
-                        <Link
-                          href={`/notes?offeringId=${item.offeringId}&activityId=${item.id}#nova-nota`}
-                        >
-                          <UiCopy pt="Nota" en="Note" />
-                        </Link>
-                        <Link
-                          href={`/documents?view=generate&offeringId=${item.offeringId}&activityId=${item.id}`}
-                        >
-                          <UiCopy pt="Documento" en="Document" />
-                        </Link>
-                        {item.externalUrl ? (
-                          <a
-                            href={item.externalUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <UiCopy pt="Classroom ↗" en="Classroom ↗" />
-                          </a>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p className="panel-help">
-                  <UiCopy
-                    pt="Nenhum item nesta faixa."
-                    en="No items in this range."
-                  />
-                </p>
-              )}
-            </details>
-          ))}
-        </section>
-      ) : null}
-
-      {view === "notes" ? (
-        <section className="resource-collection subject-resource-collection">
-          <div className="resource-collection-header">
-            <div>
-              <span className="page-kicker">
-                <UiCopy pt="ESCRITA" en="WRITING" />
-              </span>
-              <h2>
-                <UiCopy
-                  pt="Notas desta disciplina"
-                  en="Notes for this subject"
-                />{" "}
-                <small>{notes.length}</small>
-              </h2>
-            </div>
-            <Link
-              className="primary-link"
-              href={
-                primaryLegacyOfferingId
-                  ? `/notes?offeringId=${primaryLegacyOfferingId}#nova-nota`
-                  : "/notes"
-              }
-            >
-              <UiCopy pt="+ Nova nota" en="+ New note" />
-            </Link>
-          </div>
-          {notes.length ? (
-            <ol className="note-card-grid is-grid">
-              {notes.map((note) => (
-                <NoteLibraryCard
-                  key={note.id}
-                  note={note}
-                  href={`/notes/${note.id}`}
-                  language={language}
-                />
-              ))}
-            </ol>
-          ) : (
-            <div className="useful-empty resource-empty compact">
-              <strong>
-                <UiCopy
-                  pt="Suas notas desta disciplina aparecerão aqui"
-                  en="Your notes for this subject will appear here"
-                />
-              </strong>
-              <p>
-                <UiCopy
-                  pt="Comece por um resumo, uma dúvida ou um rascunho."
-                  en="Start with a summary, a question or a draft."
-                />
-              </p>
-            </div>
-          )}
-        </section>
-      ) : null}
-
-      {view === "documents" ? (
-        <section className="resource-collection subject-resource-collection">
-          <div className="resource-collection-header">
-            <div>
-              <span className="page-kicker">
-                <UiCopy pt="ARQUIVOS" en="FILES" />
-              </span>
-              <h2>
-                <UiCopy
-                  pt="Documentos desta disciplina"
-                  en="Documents for this subject"
-                />{" "}
-                <small>{documents.length}</small>
-              </h2>
-            </div>
-            <Link
-              className="primary-link"
-              href={
-                primaryLegacyOfferingId
-                  ? `/documents?view=generate&offeringId=${primaryLegacyOfferingId}`
-                  : "/documents?view=generate"
-              }
-            >
-              <UiCopy pt="+ Gerar documento" en="+ Create document" />
-            </Link>
-          </div>
-          {documents.length ? (
-            <ol className="document-library-grid is-grid">
-              {documents.map((document) => (
-                <DocumentLibraryCard
-                  key={document.id}
-                  document={document}
-                  groups={documentGroups}
-                  people={documentPeople}
-                  language={language}
-                />
-              ))}
-            </ol>
-          ) : (
-            <div className="useful-empty resource-empty compact">
-              <strong>
-                <UiCopy
-                  pt="Seus documentos desta disciplina aparecerão aqui"
-                  en="Your documents for this subject will appear here"
-                />
-              </strong>
-              <p>
-                <UiCopy
-                  pt="Escolha um modelo e crie um documento para começar."
-                  en="Choose a template and create a document to start."
-                />
-              </p>
-            </div>
-          )}
-        </section>
-      ) : null}
-
-      {view === "projects" ? (
-        <div className="subject-projects-layout">
-          <section className="resource-collection subject-resource-collection">
-            <div className="resource-collection-header">
-              <div>
-                <span className="page-kicker">
-                  <UiCopy pt="ARQUIVOS E VERSÕES" en="FILES AND VERSIONS" />
-                </span>
-                <h2>
-                  <UiCopy
-                    pt="Projetos desta disciplina"
-                    en="Projects for this subject"
-                  />{" "}
-                  <small>{projects.length}</small>
-                </h2>
-              </div>
-              <Link
-                className="primary-link"
-                href={
-                  primaryLegacyOfferingId
-                    ? `/projects/new?offeringId=${primaryLegacyOfferingId}`
-                    : "/projects/new"
-                }
-              >
-                <UiCopy pt="+ Novo projeto" en="+ New project" />
-              </Link>
-            </div>
-            {parameters.status === "archived" ? (
-              <p className="feedback-banner is-success" role="status">
-                <UiCopy
-                  pt="Projeto arquivado localmente. O conteúdo no Drive foi mantido."
-                  en="Project archived locally. Drive content was kept."
-                />
-              </p>
-            ) : null}
-            {projects.length ? (
-              <ul className="project-library-grid is-grid">
-                {projects.map((project) => (
-                  <ProjectLibraryCard
-                    key={project.id}
-                    project={project}
-                    language={language}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <div className="useful-empty compact">
-                <strong>
-                  <UiCopy
-                    pt="Nenhum projeto nesta disciplina"
-                    en="No projects in this subject"
-                  />
-                </strong>
-                <p>
-                  <UiCopy
-                    pt="Crie o registro e envie sua pasta local ou um ZIP."
-                    en="Create the record and upload a local folder or ZIP."
-                  />
-                </p>
-              </div>
-            )}
-          </section>
+          ) : null}
         </div>
-      ) : null}
+        <aside className="subject-secondary-pane">
+          {subjectActions}
+          <SubjectSidebar slots={slots} weekdayLabels={weekdayLabels} />
+        </aside>
+      </div>
     </div>
   );
 }

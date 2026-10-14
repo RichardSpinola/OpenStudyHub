@@ -7,6 +7,7 @@ import {
   deletePersonalShortcutAction,
 } from "@/app/settings/actions";
 import { UiCopy, useUiText } from "./ui-language-provider";
+import { ShortcutIconPicker } from "./shortcut-icon-picker";
 import { ConfirmSubmitButton } from "./confirm-submit-button";
 
 export function ShortcutEditDialog({
@@ -86,13 +87,7 @@ export function ShortcutEditDialog({
             maxLength={2048}
           />
         </label>
-        <label>
-          <UiCopy
-            pt="Sigla (quando não houver ícone)"
-            en="Abbreviation (when no icon is available)"
-          />
-          <input name="icon" defaultValue={shortcut.icon ?? ""} maxLength={8} />
-        </label>
+        <ShortcutIconPicker initial={shortcut.icon} />
         <button type="submit" disabled={pending}>
           <UiCopy pt="Salvar atalho" en="Save shortcut" />
         </button>

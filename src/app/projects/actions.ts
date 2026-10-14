@@ -25,20 +25,23 @@ const idSchema = z.coerce.number().int().positive();
 
 export async function createProjectAction(formData: FormData) {
   const user = await requireAuthenticatedUser();
-  const requestedOfferingId = Number(formData.get("offeringId"));
+  const requestedOfferingId = formData.get("offeringId")
+    ? Number(formData.get("offeringId"))
+    : null;
   const offering = listUserSubjectOfferings(user.id).find(
     (item) => item.offeringId === requestedOfferingId,
   );
   const fromProjects = formData.get("from") === "projects";
-  if (!offering) redirect("/projects/new?error=invalid-offering");
+  if (requestedOfferingId !== null && !offering)
+    redirect("/projects/new?error=invalid-offering");
   try {
     const project = createProject(user.id, {
-      offeringId: offering.offeringId,
+      offeringId: offering?.offeringId ?? null,
       name: String(formData.get("name") ?? ""),
       language: "other",
       ignorePreset: "other",
       technologies: [],
-      description: null,
+      description: String(formData.get("description") ?? "").trim() || null,
     });
     redirect(
       `/projects/${project.id}?status=${formData.get("start") === "empty" ? "empty" : "created"}${fromProjects ? "&from=projects" : ""}`,
@@ -46,7 +49,7 @@ export async function createProjectAction(formData: FormData) {
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
     redirect(
-      `/projects/new?offeringId=${offering.offeringId}&error=create-failed${fromProjects ? "&from=projects" : ""}`,
+      `/projects/new?offeringId=${offering?.offeringId ?? ""}&error=create-failed${fromProjects ? "&from=projects" : ""}`,
     );
   }
 }
@@ -76,7 +79,11 @@ export async function archiveProjectAction(formData: FormData) {
   const project = getUserProject(user.id, projectId);
   archiveUserProject(user.id, project.id);
   revalidatePath("/subjects");
-  redirect(`/subjects/${project.subjectId}?view=projects&status=archived`);
+  redirect(
+    project.subjectId === null
+      ? "/library?type=projects&status=archived"
+      : `/subjects/${project.subjectId}?view=projects&status=archived`,
+  );
 }
 
 export async function confirmProjectUploadAction(formData: FormData) {

@@ -265,3 +265,134 @@ html[data-design] .home-customize-trigger[data-clock-position="bottom-right"] {
     padding-bottom: 4.75rem;
   }
 }
+/* Home customization remains at the viewport corner, outside the hero width. */
+html[data-design] .home-customize-trigger,
+html[data-design] .home-customize-trigger[data-clock-position] {
+  position: fixed;
+  top: auto;
+  bottom: var(--home-control-bottom, 1rem);
+  left: auto;
+  right: 1rem;
+  z-index: 25;
+}
+html[data-design] .home-shell[data-background-preset="grid"] {
+  background-repeat: repeat;
+  background-image:
+    linear-gradient(to right, var(--gray-3) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--gray-3) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+html[data-design] .home-shortcut-options {
+  z-index: 8;
+  top: -0.25rem;
+  right: 0;
+  transform: none;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  background: var(--panel-raised);
+}
+.shortcut-icon-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--gray-3);
+}
+.shortcut-icon-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.shortcut-icon-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(2.8rem, 1fr));
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
+}
+.shortcut-icon-picker button[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--panel-raised);
+}
+.shortcut-icon-preset-grid button {
+  display: grid;
+  place-items: center;
+  padding: 0.4rem;
+  min-width: 0;
+}
+html[data-design] .home-shell[data-has-background="true"] {
+  background-image: none;
+}
+.home-wallpaper-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: -2;
+  pointer-events: none;
+}
+.home-wallpaper-layer img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+html[data-design] .home-framing-stage {
+  height: auto;
+  width: 100%;
+  max-height: 55dvh;
+  aspect-ratio: 16/9;
+}
+.home-framing-guides {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to right,
+      transparent calc(33.333% - 1px),
+      #fff5 33.333%,
+      transparent calc(33.333% + 1px),
+      transparent calc(66.667% - 1px),
+      #fff5 66.667%,
+      transparent calc(66.667% + 1px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(33.333% - 1px),
+      #fff5 33.333%,
+      transparent calc(33.333% + 1px),
+      transparent calc(66.667% - 1px),
+      #fff5 66.667%,
+      transparent calc(66.667% + 1px)
+    );
+}
+/* The movable pencil is bounded to Home, independently of the clock/footer. */
+html[data-design] .home-customize-trigger,
+html[data-design] .home-customize-trigger[data-clock-position] {
+  position: fixed;
+  right: auto;
+  bottom: auto;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+html[data-design] .home-customize-trigger:active {
+  cursor: grabbing;
+}
+.home-control-error {
+  position: fixed;
+  bottom: 4rem;
+  left: 1rem;
+  z-index: 20;
+  background: var(--panel);
+  padding: 0.5rem;
+}
+.home-control-settings input[type="checkbox"] {
+  width: auto;
+}
+
+/* Drag the link itself when grabbing its vector icon or favicon. */
+.shortcut-link .shortcut-visual,
+.shortcut-link .shortcut-visual * {
+  pointer-events: none;
+}

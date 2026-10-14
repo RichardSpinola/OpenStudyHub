@@ -27,6 +27,10 @@ export function ProjectLibraryCard({
   language?: UiLanguage;
 }) {
   const tr = (pt: string, en: string) => uiText(language, pt, en);
+  const subjectName =
+    project.offeringId === null
+      ? tr("Projeto pessoal", "Personal project")
+      : project.subjectName;
   const date = new Intl.DateTimeFormat(language, {
     dateStyle: "medium",
   }).format(project.updatedAt);
@@ -39,7 +43,7 @@ export function ProjectLibraryCard({
     <li className="project-library-card">
       <div className="project-card-visual" aria-hidden="true">
         <span className="project-visual-glyph">{"{ }"}</span>
-        <span>{project.subjectCode ?? project.subjectName}</span>
+        <span>{project.subjectCode ?? subjectName}</span>
         <strong>
           {project.currentVersionNumber
             ? `v${String(project.currentVersionNumber).padStart(4, "0")}`
@@ -47,7 +51,7 @@ export function ProjectLibraryCard({
         </strong>
       </div>
       <div className="project-card-content">
-        <span className="project-card-context">{project.subjectName}</span>
+        <span className="project-card-context">{subjectName}</span>
         <h3>{project.name}</h3>
         <p>
           {project.description ||

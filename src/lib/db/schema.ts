@@ -1151,12 +1151,10 @@ export const projects = sqliteTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
-    offeringId: integer("offering_id")
-      .notNull()
-      .references(() => subjectOfferings.id, {
-        onDelete: "restrict",
-        onUpdate: "cascade",
-      }),
+    offeringId: integer("offering_id").references(() => subjectOfferings.id, {
+      onDelete: "restrict",
+      onUpdate: "cascade",
+    }),
     name: text("name").notNull(),
     language: text("language").notNull(),
     ignorePreset: text("ignore_preset").notNull(),

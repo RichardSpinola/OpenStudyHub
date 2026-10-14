@@ -34,7 +34,7 @@ try {
   seedV2Fake(canonical, hash);
   legacy.sqlite
     .prepare(
-      "INSERT INTO app_settings(key,value,updated_at) VALUES('ui.language','pt-BR',?),('institution.name','Instituto Fictício Aurora',?)",
+      "INSERT INTO app_settings(key,value,updated_at) VALUES('ui.language','pt-BR',?),('institution.display_name','IFA',?)",
     )
     .run(Date.now(), Date.now());
   // Keep a period active now, so the local schedule has useful fictitious content.

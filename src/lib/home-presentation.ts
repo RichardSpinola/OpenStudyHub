@@ -8,7 +8,11 @@ export const homePresentationSchema = z
     asciiFont: z.enum(figletFontOptions).nullable().default(null),
     wallpaperX: z.coerce.number().int().min(0).max(100).default(50),
     wallpaperY: z.coerce.number().int().min(0).max(100).default(50),
+    wallpaperZoom: z.coerce.number().min(1).max(3).default(1),
     wallpaperFit: z.enum(["cover", "contain"]).default("cover"),
+    controlEnabled: z.boolean().default(true),
+    controlX: z.number().min(0).max(100).nullable().default(null),
+    controlY: z.number().min(0).max(100).nullable().default(null),
   })
   .strict();
 export type HomePresentation = z.infer<typeof homePresentationSchema>;
@@ -22,10 +26,19 @@ export function readHomePresentation(
   const row = db
     .prepare(
       `SELECT ascii_font asciiFont, wallpaper_x wallpaperX,
-    wallpaper_y wallpaperY, wallpaper_fit wallpaperFit FROM user_home_presentation WHERE user_id=?`,
+    wallpaper_y wallpaperY, wallpaper_fit wallpaperFit, wallpaper_zoom wallpaperZoom, control_enabled controlEnabled, control_x controlX, control_y controlY FROM user_home_presentation WHERE user_id=?`,
     )
     .get(userId);
-  return homePresentationSchema.catch(defaultHomePresentation).parse(row ?? {});
+  return homePresentationSchema.catch(defaultHomePresentation).parse(
+    row
+      ? {
+          ...row,
+          controlEnabled: Boolean(
+            (row as { controlEnabled: number }).controlEnabled,
+          ),
+        }
+      : {},
+  );
 }
 export function writeHomePresentation(
   db: V2Database,
@@ -34,15 +47,19 @@ export function writeHomePresentation(
 ): HomePresentation {
   const value = homePresentationSchema.parse(input);
   db.prepare(
-    `INSERT INTO user_home_presentation(user_id,ascii_font,wallpaper_x,wallpaper_y,wallpaper_fit,updated_at)
-    VALUES(?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET ascii_font=excluded.ascii_font,
-    wallpaper_x=excluded.wallpaper_x, wallpaper_y=excluded.wallpaper_y, wallpaper_fit=excluded.wallpaper_fit,updated_at=excluded.updated_at`,
+    `INSERT INTO user_home_presentation(user_id,ascii_font,wallpaper_x,wallpaper_y,wallpaper_fit,wallpaper_zoom,control_enabled,control_x,control_y,updated_at)
+    VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET ascii_font=excluded.ascii_font,
+    wallpaper_x=excluded.wallpaper_x, wallpaper_y=excluded.wallpaper_y, wallpaper_fit=excluded.wallpaper_fit,wallpaper_zoom=excluded.wallpaper_zoom,control_enabled=excluded.control_enabled,control_x=excluded.control_x,control_y=excluded.control_y,updated_at=excluded.updated_at`,
   ).run(
     userId,
     value.asciiFont,
     value.wallpaperX,
     value.wallpaperY,
     value.wallpaperFit,
+    value.wallpaperZoom,
+    Number(value.controlEnabled),
+    value.controlX,
+    value.controlY,
     Date.now(),
   );
   return value;

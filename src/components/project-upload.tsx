@@ -11,10 +11,10 @@ import {
   projectLanguageLabels,
   projectLanguages,
   type ProjectLanguage,
-} from "@/lib/project-manifest";
+} from "@/lib/project-options";
 import { ProjectSyncSubmit } from "@/components/project-sync-submit";
 import { ProjectTechnologyPicker } from "@/components/project-technology-picker";
-import type { ProjectTechnology } from "@/lib/project-manifest";
+import type { ProjectTechnology } from "@/lib/project-options";
 
 type Preview = {
   token: string;

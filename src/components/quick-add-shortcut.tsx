@@ -7,6 +7,7 @@ import {
   createShortcutFromHomeAction,
   type QuickAddState,
 } from "@/app/settings/actions";
+import { ShortcutIconPicker } from "./shortcut-icon-picker";
 import { useUiTranslations } from "@/components/ui-language-provider";
 
 const initialState: QuickAddState = { status: "idle" };
@@ -82,10 +83,7 @@ export function QuickAddShortcut() {
               required
             />
           </label>
-          <label>
-            {shortcuts.abbreviation}
-            <input name="icon" type="text" maxLength={8} placeholder="WEB" />
-          </label>
+          <ShortcutIconPicker />
           {state.status === "error" ? (
             <p className="form-error" role="alert">
               {shortcuts.addError}

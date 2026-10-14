@@ -50,246 +50,231 @@ export default async function TodayPage() {
         </div>
         <time dateTime={data.date}>{dateLabel}</time>
       </header>
-      <nav
-        className="section-tabs today-section-links"
-        aria-label={uiText(
-          profile.locale,
-          "Seções da agenda",
-          "Schedule sections",
-        )}
-      >
-        <a href="#today-week">
-          <UiCopy pt="Semana" en="Week" />
-        </a>
-        <a href="#today-deadlines">
-          <UiCopy pt="Atividades" en="Activities" />{" "}
-          <span>{data.activities.length}</span>
-        </a>
-        <a href="#today-updates">
-          <UiCopy pt="Mural" en="Stream" />{" "}
-          <span>{classroom?.updates.length ?? 0}</span>
-        </a>
-        <a href="#today-events">
-          <UiCopy pt="Eventos" en="Events" />{" "}
-          <span>{data.upcomingEvents.length}</span>
-        </a>
-      </nav>
-      <div className="today-priority">
-        {highlights.lesson ? (
-          <section className="today-priority-item">
-            <span className="page-kicker">
-              {highlights.lessonIsToday
-                ? uiText(profile.locale, "AULA DE HOJE", "TODAY'S CLASS")
-                : uiText(profile.locale, "PRÓXIMO ENCONTRO", "NEXT MEETING")}
-            </span>
-            <strong>{highlights.lesson.subjectName}</strong>
-            <span>
-              {"date" in highlights.lesson
-                ? `${new Intl.DateTimeFormat(profile.locale, { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${highlights.lesson.date}T12:00:00`))} · `
-                : ""}
-              {formatMinutes(highlights.lesson.startsAtMinutes)}–
-              {formatMinutes(highlights.lesson.endsAtMinutes)} ·{" "}
-              {joinLocation([
-                highlights.lesson.locationName,
-                highlights.lesson.room,
-              ]) ??
-                uiText(
-                  profile.locale,
-                  "Sala não informada",
-                  "Room not specified",
-                )}
-            </span>
-            <Link href={`/subjects/${highlights.lesson.subjectId}`}>
-              <UiCopy pt="Ver disciplina →" en="View subject →" />
-            </Link>
-          </section>
-        ) : null}
-        {highlights.deadline ? (
-          <section className="today-priority-item">
-            <span className="page-kicker">
-              <UiCopy pt="PRAZO MAIS PRÓXIMO" en="NEAREST DEADLINE" />
-            </span>
-            <strong>{highlights.deadline.title}</strong>
-            <span>
-              {dateTime.format(highlights.deadline.dueAt!)}
-              {highlights.additionalDeadlines
-                ? ` · +${highlights.additionalDeadlines} ${uiText(profile.locale, "outro(s)", "more")}`
-                : ""}
-            </span>
-            <a href="#today-deadlines">
-              <UiCopy pt="Ver atividade ↓" en="View activity ↓" />
-            </a>
-          </section>
-        ) : null}
-      </div>
-      <div id="today-week">
-        <AcademicTimeGrid slots={data.weekSlots} today={weekday} />
-      </div>
-      <div className="today-detail-panels">
-        <section className="workflow-panel" id="today-events">
-          <div className="section-heading">
-            <h2>
-              <UiCopy pt="Eventos acadêmicos" en="Academic events" />
-            </h2>
-            <span>{data.upcomingEvents.length}</span>
-          </div>
-          {data.upcomingEvents.length ? (
-            <ol className="today-list">
-              {data.upcomingEvents.map((item) => (
-                <li key={item.id}>
-                  <time>
-                    {new Intl.DateTimeFormat(profile.locale, {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    }).format(item.startsAt)}
-                  </time>
-                  <div>
-                    <Link href={`/subjects/${item.subjectId}`}>
-                      <strong>{item.title}</strong>
-                    </Link>
-                    <span>{item.locationName ?? item.programName}</span>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="panel-help">
-              <UiCopy
-                pt="Nenhum evento acadêmico previsto nos próximos sete dias."
-                en="No academic events scheduled in the next seven days."
-              />
-            </p>
-          )}
-        </section>
-        <section className="workflow-panel" id="today-deadlines">
-          <div className="section-heading">
-            <h2>
-              <UiCopy pt="Atividades e prazos" en="Activities and deadlines" />
-            </h2>
-            <span>{data.activities.length}</span>
-          </div>
-          {data.activities.length ? (
-            <ol className="today-list">
-              {data.activities.map((item) => (
-                <li key={item.id}>
-                  <span className="status-badge">
-                    {item.origin === "external" ? "Classroom" : item.status}
-                  </span>
-                  <div>
-                    <Link href={`/subjects/${item.subjectId}?view=activities`}>
-                      <strong>{item.title}</strong>
-                    </Link>
-                    <span>{item.subjectName}</span>
-                  </div>
-                  <time>
-                    {item.dueAt
-                      ? new Intl.DateTimeFormat(profile.locale, {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        }).format(item.dueAt)
-                      : uiText(profile.locale, "Sem prazo", "No deadline")}
-                  </time>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <div className="useful-empty compact">
-              <strong>
+      <div className="today-main-layout">
+        <div className="today-priority">
+          {highlights.lesson ? (
+            <section className="today-priority-item">
+              <span className="page-kicker">
+                {highlights.lessonIsToday
+                  ? uiText(profile.locale, "AULA DE HOJE", "TODAY'S CLASS")
+                  : uiText(profile.locale, "PRÓXIMO ENCONTRO", "NEXT MEETING")}
+              </span>
+              <strong>{highlights.lesson.subjectName}</strong>
+              <span>
+                {"date" in highlights.lesson
+                  ? `${new Intl.DateTimeFormat(profile.locale, { weekday: "short", day: "numeric", month: "short" }).format(new Date(`${highlights.lesson.date}T12:00:00`))} · `
+                  : ""}
+                {formatMinutes(highlights.lesson.startsAtMinutes)}–
+                {formatMinutes(highlights.lesson.endsAtMinutes)} ·{" "}
+                {joinLocation([
+                  highlights.lesson.locationName,
+                  highlights.lesson.room,
+                ]) ??
+                  uiText(
+                    profile.locale,
+                    "Sala não informada",
+                    "Room not specified",
+                  )}
+              </span>
+              <Link href={`/subjects/${highlights.lesson.subjectId}`}>
+                <UiCopy pt="Ver disciplina →" en="View subject →" />
+              </Link>
+            </section>
+          ) : null}
+          {highlights.deadline ? (
+            <section className="today-priority-item">
+              <span className="page-kicker">
+                <UiCopy pt="PRAZO MAIS PRÓXIMO" en="NEAREST DEADLINE" />
+              </span>
+              <strong>{highlights.deadline.title}</strong>
+              <span>
+                {dateTime.format(highlights.deadline.dueAt!)}
+                {highlights.additionalDeadlines
+                  ? ` · +${highlights.additionalDeadlines} ${uiText(profile.locale, "outro(s)", "more")}`
+                  : ""}
+              </span>
+              <a href="#today-deadlines">
+                <UiCopy pt="Ver atividade ↓" en="View activity ↓" />
+              </a>
+            </section>
+          ) : null}
+        </div>
+
+        <div id="today-week">
+          <AcademicTimeGrid slots={data.weekSlots} today={weekday} />
+        </div>
+        <div className="today-detail-panels">
+          <section className="workflow-panel" id="today-events">
+            <div className="section-heading">
+              <h2>
+                <UiCopy pt="Eventos acadêmicos" en="Academic events" />
+              </h2>
+              <span>{data.upcomingEvents.length}</span>
+            </div>
+            {data.upcomingEvents.length ? (
+              <ol className="today-list">
+                {data.upcomingEvents.map((item) => (
+                  <li key={item.id}>
+                    <time>
+                      {new Intl.DateTimeFormat(profile.locale, {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      }).format(item.startsAt)}
+                    </time>
+                    <div>
+                      <Link href={`/subjects/${item.subjectId}`}>
+                        <strong>{item.title}</strong>
+                      </Link>
+                      <span>{item.locationName ?? item.programName}</span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="panel-help">
                 <UiCopy
-                  pt="Nenhuma atividade pendente nos próximos dias"
-                  en="No pending activities in the coming days"
-                />
-              </strong>
-              <p>
-                <UiCopy
-                  pt="O que for cadastrado aparecerá aqui."
-                  en="New items will appear here."
+                  pt="Nenhum evento acadêmico previsto nos próximos sete dias."
+                  en="No academic events scheduled in the next seven days."
                 />
               </p>
+            )}
+          </section>
+          <section className="workflow-panel" id="today-deadlines">
+            <div className="section-heading">
+              <h2>
+                <UiCopy
+                  pt="Atividades e prazos"
+                  en="Activities and deadlines"
+                />
+              </h2>
+              <span>{data.activities.length}</span>
             </div>
-          )}
-        </section>
-        <section className="workflow-panel" id="today-updates">
-          <div className="section-heading">
-            <h2>
-              <UiCopy pt="Atualizações do mural" en="Stream updates" />
-            </h2>
-            <Link href="/google">
+            {data.activities.length ? (
+              <ol className="today-list">
+                {data.activities.map((item) => (
+                  <li key={item.id}>
+                    <span className="status-badge">
+                      {item.origin === "external" ? "Classroom" : item.status}
+                    </span>
+                    <div>
+                      <Link
+                        href={`/subjects/${item.subjectId}?view=activities`}
+                      >
+                        <strong>{item.title}</strong>
+                      </Link>
+                      <span>{item.subjectName}</span>
+                    </div>
+                    <time>
+                      {item.dueAt
+                        ? new Intl.DateTimeFormat(profile.locale, {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          }).format(item.dueAt)
+                        : uiText(profile.locale, "Sem prazo", "No deadline")}
+                    </time>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <div className="useful-empty compact">
+                <strong>
+                  <UiCopy
+                    pt="Nenhuma atividade pendente nos próximos dias"
+                    en="No pending activities in the coming days"
+                  />
+                </strong>
+                <p>
+                  <UiCopy
+                    pt="O que for cadastrado aparecerá aqui."
+                    en="New items will appear here."
+                  />
+                </p>
+              </div>
+            )}
+          </section>
+          <section className="workflow-panel" id="today-updates">
+            <div className="section-heading">
+              <h2>
+                <UiCopy pt="Atualizações do mural" en="Stream updates" />
+              </h2>
+              <span>{classroom?.updates.length ?? 0}</span>
+            </div>
+            {classroom?.updates.length ? (
+              <ol className="today-list">
+                {classroom.updates.map((item) => (
+                  <li key={`${item.offeringId}:${item.id}`}>
+                    <span className="status-badge">Classroom</span>
+                    <div>
+                      <strong>{item.title}</strong>
+                      <span>{item.subjectName}</span>
+                    </div>
+                    <time>
+                      {item.publishedAt
+                        ? new Intl.DateTimeFormat(profile.locale, {
+                            dateStyle: "short",
+                          }).format(new Date(item.publishedAt))
+                        : uiText(profile.locale, "Sem data", "No date")}
+                    </time>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="panel-help">
+                <UiCopy
+                  pt="Nenhuma atualização de Classroom no cache local. O Hub funciona sem Google."
+                  en="No Classroom updates in the local cache. The Hub works without Google."
+                />
+              </p>
+            )}
+            <Link className="today-panel-link" href="/google">
               <UiCopy pt="Gerenciar Classroom" en="Manage Classroom" />
             </Link>
-          </div>
-          {classroom?.updates.length ? (
-            <ol className="today-list">
-              {classroom.updates.map((item) => (
-                <li key={`${item.offeringId}:${item.id}`}>
-                  <span className="status-badge">Classroom</span>
-                  <div>
-                    <strong>{item.title}</strong>
-                    <span>{item.subjectName}</span>
-                  </div>
-                  <time>
-                    {item.publishedAt
-                      ? new Intl.DateTimeFormat(profile.locale, {
-                          dateStyle: "short",
-                        }).format(new Date(item.publishedAt))
-                      : uiText(profile.locale, "Sem data", "No date")}
-                  </time>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="panel-help">
-              <UiCopy
-                pt="Nenhuma atualização de Classroom no cache local. O Hub funciona sem Google."
-                en="No Classroom updates in the local cache. The Hub works without Google."
-              />
-            </p>
-          )}
-        </section>
-        <section className="workflow-panel" id="today-meetings">
-          <div className="section-heading">
-            <h2>
-              <UiCopy pt="Próximos encontros" en="Upcoming classes" />
-            </h2>
-            <span>{data.upcomingClasses.length}</span>
-          </div>
-          {data.upcomingClasses.length ? (
-            <ol className="today-list">
-              {data.upcomingClasses.slice(0, 8).map((item) => (
-                <li key={`${item.slotId}:${item.date}`}>
-                  <time dateTime={item.date}>
-                    {new Intl.DateTimeFormat(profile.locale, {
-                      day: "numeric",
-                      month: "short",
-                    }).format(new Date(`${item.date}T12:00:00`))}
-                  </time>
-                  <div>
-                    <Link href={`/subjects/${item.subjectId}`}>
-                      <strong>{item.subjectName}</strong>
-                    </Link>
-                    <span>
-                      {formatMinutes(item.startsAtMinutes)}–
-                      {formatMinutes(item.endsAtMinutes)} ·{" "}
-                      {joinLocation([item.locationName, item.room]) ??
-                        uiText(
-                          profile.locale,
-                          "Sala não informada",
-                          "Room not specified",
-                        )}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="panel-help">
-              <UiCopy
-                pt="Nenhum encontro previsto nos próximos sete dias."
-                en="No classes scheduled in the next seven days."
-              />
-            </p>
-          )}
-        </section>
+          </section>
+          <section className="workflow-panel" id="today-meetings">
+            <div className="section-heading">
+              <h2>
+                <UiCopy pt="Próximos encontros" en="Upcoming classes" />
+              </h2>
+              <span>{data.upcomingClasses.length}</span>
+            </div>
+            {data.upcomingClasses.length ? (
+              <ol className="today-list">
+                {data.upcomingClasses.slice(0, 8).map((item) => (
+                  <li key={`${item.slotId}:${item.date}`}>
+                    <time dateTime={item.date}>
+                      {new Intl.DateTimeFormat(profile.locale, {
+                        day: "numeric",
+                        month: "short",
+                      }).format(new Date(`${item.date}T12:00:00`))}
+                    </time>
+                    <div>
+                      <Link href={`/subjects/${item.subjectId}`}>
+                        <strong>{item.subjectName}</strong>
+                      </Link>
+                      <span>
+                        {formatMinutes(item.startsAtMinutes)}–
+                        {formatMinutes(item.endsAtMinutes)} ·{" "}
+                        {joinLocation([item.locationName, item.room]) ??
+                          uiText(
+                            profile.locale,
+                            "Sala não informada",
+                            "Room not specified",
+                          )}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="panel-help">
+                <UiCopy
+                  pt="Nenhum encontro previsto nos próximos sete dias."
+                  en="No classes scheduled in the next seven days."
+                />
+              </p>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

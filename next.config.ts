@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   agentRules: false,
   devIndicators: false,
   experimental: {
+    ...(process.env.OPENSTUDYHUB_QA_BUILD === "1" ? { cpus: 1 } : {}),
     serverActions: { bodySizeLimit: "12mb" },
   },
   distDir:
