@@ -1,5 +1,11 @@
 import { UiCopy } from "@/components/ui-language-provider";
 import { AsciiLogo } from "@/components/ascii-logo";
+import {
+  getHomePresentation,
+  defaultHomePresentation,
+  type HomePresentation,
+} from "@/lib/home-presentation";
+import { getAutocompletePolicy } from "@/lib/search-suggestions";
 import { HomeClock } from "@/components/home-clock";
 import { HomeInteractions } from "@/components/home-interactions";
 import {
@@ -37,6 +43,8 @@ import type { CSSProperties } from "react";
 export const dynamic = "force-dynamic";
 
 type HomeData = {
+  presentation: HomePresentation;
+  autocompleteAvailable: boolean;
   asciiLogo: string;
   compactAsciiLogo: string;
   brandText: string;
@@ -59,11 +67,17 @@ type HomeData = {
 function loadHomeData(userId: number): HomeData {
   try {
     const brand = getBrandConfig();
+    const presentation = getHomePresentation(userId);
     const profile = getUserProfile(userId);
     const allShortcuts = listUserShortcuts(userId);
     const background = getHomeBackground(userId);
     return {
-      asciiLogo: generateAsciiLogo(brand),
+      presentation,
+      autocompleteAvailable: getAutocompletePolicy().available,
+      asciiLogo: generateAsciiLogo({
+        ...brand,
+        font: presentation.asciiFont ?? brand.font,
+      }),
       compactAsciiLogo: generateAsciiLogo({ ...brand, font: "Three Point" }),
       brandText: brand.text,
       allShortcuts,
@@ -83,6 +97,8 @@ function loadHomeData(userId: number): HomeData {
     };
   } catch {
     return {
+      presentation: defaultHomePresentation,
+      autocompleteAvailable: false,
       asciiLogo: generateAsciiLogo(defaultBrandConfig),
       compactAsciiLogo: generateAsciiLogo({
         ...defaultBrandConfig,
@@ -107,6 +123,8 @@ function loadHomeData(userId: number): HomeData {
 export default async function HomePage() {
   const user = await requireAuthenticatedUser();
   const {
+    presentation,
+    autocompleteAvailable,
     asciiLogo,
     compactAsciiLogo,
     brandText,
@@ -139,6 +157,8 @@ export default async function HomePage() {
       style={
         hasImage
           ? ({
+              "--home-background-position": `${presentation.wallpaperX}% ${presentation.wallpaperY}%`,
+              "--home-background-fit": presentation.wallpaperFit,
               "--home-background-image":
                 customId !== null
                   ? `url(/api/home-background?wallpaperId=${customId})`
@@ -161,6 +181,9 @@ export default async function HomePage() {
           responsive
         />
         <HomeInteractions
+          presentation={presentation}
+          presentationAvailable={process.env.OPENSTUDYHUB_V2_ENABLED === "1"}
+          autocompleteAvailable={autocompleteAvailable}
           shortcuts={allShortcuts}
           available={databaseAvailable}
           unavailableMessage={`${translations.states.unavailable} ${translations.settings.checkMigrations}`}

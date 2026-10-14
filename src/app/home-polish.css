@@ -1,0 +1,267 @@
+/* V3 stage 1: layout and interaction fixes; the V2 theme tokens are unchanged. */
+html[data-design] .app-frame:has(> .google-connection-notice) {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+html[data-design][data-nav-layout="classic"]
+  .app-frame:has(> .google-connection-notice) {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+html[data-design] .app-frame:has(> .google-connection-notice) > .app-content {
+  grid-row: 3;
+}
+html[data-design]
+  .app-frame:has(> .google-connection-notice)
+  > .google-connection-notice {
+  grid-row: 2;
+}
+html[data-design] .app-frame:has(> .google-connection-notice) > .app-footer {
+  grid-row: 4;
+}
+html[data-design] .google-connection-notice {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+html[data-design] .search-control {
+  position: relative;
+  overflow: visible;
+}
+html[data-design] .search-prompt {
+  align-self: center;
+  line-height: 1;
+}
+html[data-design] .home-search-suggestions {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 0.3rem);
+  inset-inline: 0;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  max-height: min(18rem, 45svh);
+  overflow-y: auto;
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius);
+  background: var(--panel);
+  color: var(--white);
+  box-shadow: 0 8px 24px #0004;
+}
+html[data-design] .home-search-suggestions[hidden] {
+  display: none;
+}
+html[data-design] .home-search-suggestions [role="option"] {
+  padding: 0.65rem 0.8rem;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+html[data-design] .home-search-suggestions [role="option"]:hover,
+html[data-design] .home-search-suggestions [aria-selected="true"] {
+  background: var(--panel-raised);
+  outline: 1px solid var(--gray-3);
+}
+.search-suggestions-provider {
+  display: block;
+  text-align: right;
+  font-size: 0.72rem;
+  color: var(--gray-1);
+  margin-top: 0.3rem;
+}
+html[data-design] .home-shell[data-has-background="true"] {
+  background-position: var(--home-background-position, center);
+  background-size: var(--home-background-fit, cover);
+  background-repeat: no-repeat;
+}
+
+.home-presentation-controls form {
+  display: grid;
+  gap: 0.7rem;
+}
+.home-presentation-controls label {
+  display: grid;
+  gap: 0.35rem;
+}
+.home-presentation-controls input[type="range"] {
+  width: 100%;
+  min-width: 0;
+}
+.home-presentation-controls output {
+  font-size: 0.75rem;
+  color: var(--gray-1);
+}
+.home-wallpaper-crop-preview {
+  height: 9rem;
+  background-repeat: no-repeat;
+  border: 1px solid var(--gray-3);
+  background-color: var(--bg);
+}
+.shortcut-grid > li {
+  position: relative;
+}
+html[data-design] .home-shortcut-options {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-height: 1.7rem;
+  width: 1.7rem;
+  padding: 0;
+  opacity: 0;
+}
+.shortcut-grid > li:hover .home-shortcut-options,
+.shortcut-grid > li:focus-within .home-shortcut-options {
+  opacity: 1;
+}
+.shortcut-grid > li[draggable="true"] {
+  cursor: grab;
+}
+.shortcut-drag-handle {
+  touch-action: none;
+  cursor: grab;
+}
+.home-shortcut-dialog {
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius);
+  color: var(--white);
+  background: var(--panel);
+  padding: 1.25rem;
+}
+.home-shortcut-dialog::backdrop {
+  background: #0008;
+}
+.home-shortcut-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.home-shortcut-dialog form {
+  display: grid;
+  gap: 0.75rem;
+}
+.home-shortcut-dialog label {
+  display: grid;
+  gap: 0.3rem;
+}
+.home-shortcut-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+.admin-setup-wizard .v2-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.admin-setup-wizard .v2-actions > button:first-child:not(:last-child) {
+  grid-column: 1;
+  justify-self: start;
+}
+.admin-setup-wizard .v2-actions > button:last-child,
+.admin-setup-wizard .v2-actions > form {
+  grid-column: 2;
+  justify-self: end;
+}
+.onboarding-wizard-actions button.wizard-back {
+  grid-column: 1;
+  justify-self: start;
+}
+.onboarding-wizard-actions button.wizard-next {
+  grid-column: 2;
+  justify-self: end;
+}
+@media (pointer: coarse) {
+  html[data-design] .home-shortcut-options {
+    opacity: 1;
+  }
+}
+@media (max-width: 680px) {
+  html[data-design] .home-customize-dialog {
+    width: min(100vw, 26rem);
+  }
+  .home-shortcut-secondary-actions {
+    display: grid;
+  }
+  .home-shortcut-secondary-actions button {
+    width: 100%;
+  }
+}
+.library-type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--gray-3);
+}
+.library-type-tabs a {
+  padding: 0.7rem 0.9rem;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.library-type-tabs a[aria-current="page"] {
+  border-bottom-color: var(--accent);
+}
+html[data-design] .shortcut-reorder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem;
+}
+.v3-autocomplete-policy {
+  margin-bottom: 1.5rem;
+}
+.v3-autocomplete-policy form {
+  display: grid;
+  gap: 0.7rem;
+}
+.v3-autocomplete-policy input[type="checkbox"] {
+  width: auto;
+}
+
+html[data-avatar-shape="round"] .account-initial,
+html[data-avatar-shape="round"] .account-initial img,
+html[data-avatar-shape="round"] .profile-avatar,
+html[data-avatar-shape="round"] .profile-media-preview.is-avatar {
+  border-radius: 50%;
+}
+html[data-avatar-shape="square"] .account-initial,
+html[data-avatar-shape="square"] .account-initial img,
+html[data-avatar-shape="square"] .profile-avatar,
+html[data-avatar-shape="square"] .profile-media-preview.is-avatar {
+  border-radius: 0;
+}
+
+/* The terminal header sizes itself to its controls instead of clipping them. */
+html[data-design="legacy"] .app-frame:not(:has(> .google-connection-notice)) {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+/* Home corners belong to its content area, including when notices or the
+   classic navigation change the available height. */
+html[data-design] .home-clock,
+html[data-design] .home-customize-trigger {
+  position: absolute;
+}
+html[data-design] .home-clock[data-position="top-left"],
+html[data-design] .home-clock[data-position="top-right"],
+html[data-design] .home-customize-trigger {
+  top: 1rem;
+  bottom: auto;
+}
+html[data-design] .home-clock[data-position="bottom-left"],
+html[data-design] .home-clock[data-position="bottom-right"],
+html[data-design] .home-customize-trigger[data-clock-position="top-left"],
+html[data-design] .home-customize-trigger[data-clock-position="top-right"] {
+  top: auto;
+  bottom: 1rem;
+}
+html[data-design] .home-customize-trigger[data-clock-position="bottom-left"],
+html[data-design] .home-customize-trigger[data-clock-position="bottom-right"] {
+  top: 1rem;
+  bottom: auto;
+}
+@media (max-width: 680px) {
+  html[data-design] .home-hero {
+    padding-bottom: 4.75rem;
+  }
+}

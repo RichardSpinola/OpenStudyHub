@@ -1,0 +1,179 @@
+/* Approved V3 organization using the original V2 surfaces and controls. */
+html[data-design] .library-workspace {
+  max-width: 90rem;
+}
+.library-heading-actions,
+.library-tools,
+.library-results-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+html[data-design] .library-heading-actions > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ds-control-height);
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius);
+  text-decoration: none;
+  font-weight: 650;
+}
+.library-workspace-layout {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+html[data-design] .library-access-sidebar {
+  padding: 1rem;
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius);
+  background: var(--panel);
+}
+.library-access-sidebar h2 {
+  margin: 0 0 0.8rem;
+  font-size: 0.85rem;
+}
+.library-access-sidebar nav {
+  display: grid;
+  gap: 0.4rem;
+}
+html[data-design] .library-access-sidebar nav a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem;
+  color: var(--gray-1);
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+html[data-design] .library-access-sidebar nav a[aria-current="page"] {
+  border-color: var(--gray-3);
+  background: var(--panel-raised);
+  color: var(--white);
+}
+.library-templates-link {
+  display: block;
+  margin-top: 1.25rem;
+  font-size: 0.8rem;
+}
+.library-collection {
+  min-width: 0;
+}
+.library-tools {
+  margin-bottom: 0.8rem;
+}
+.library-tools form {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(9rem, 1fr) minmax(9rem, 0.8fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+.library-tools :is(label, input, select) {
+  min-width: 0;
+  width: 100%;
+}
+.library-results-summary {
+  margin: 0 0 1rem;
+  color: var(--gray-1);
+  font-size: 0.8rem;
+}
+html[data-design] .today-workspace {
+  max-width: 90rem;
+}
+.today-workspace .today-section-links {
+  position: static;
+  margin-block: 0 1.1rem;
+}
+html[data-design] .today-workspace .today-priority {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  margin-bottom: 1.5rem;
+}
+html[data-design] .today-workspace .today-priority-item {
+  padding: 1.2rem;
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius);
+  background: var(--panel);
+  gap: 0.55rem;
+}
+.today-workspace .today-detail-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+  align-items: start;
+}
+.today-workspace .today-detail-panels > section {
+  min-width: 0;
+  margin: 0;
+}
+.today-workspace .today-detail-panels .today-list li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.today-workspace #today-week,
+.today-workspace .today-detail-panels > section {
+  scroll-margin-top: 1rem;
+}
+@media (max-width: 1100px) {
+  .library-workspace-layout {
+    grid-template-columns: 11rem minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .library-tools form {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .library-tools form > label:first-of-type {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 760px) {
+  .library-workspace-layout,
+  .today-workspace .today-detail-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .library-access-sidebar nav {
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  }
+  .library-heading-actions {
+    width: 100%;
+  }
+  .library-heading-actions > a {
+    flex: 1;
+  }
+}
+
+.today-workspace .time-grid-hours,
+.today-workspace .time-grid-day {
+  margin-block: 0.65rem;
+}
+.today-workspace .time-grid-hours span {
+  transform: translateY(-50%);
+}
+.today-workspace .today-detail-panels .section-heading {
+  padding: 0.8rem 1rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.today-workspace .today-detail-panels .section-heading h2 {
+  padding: 0;
+}
+.today-workspace .today-list li > div {
+  display: grid;
+  gap: 0.35rem;
+}
+@media (max-width: 760px) {
+  .today-workspace .today-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .today-workspace .today-list li > time:last-child {
+    grid-column: 2;
+  }
+}

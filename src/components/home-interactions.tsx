@@ -10,11 +10,15 @@ import {
 import { HomeCustomizeDrawer } from "@/components/home-customize-drawer";
 import { SearchForm } from "@/components/search-form";
 import { ShortcutGrid } from "@/components/shortcut-grid";
+import type { HomePresentation } from "@/lib/home-presentation";
 import type { Appearance } from "@/lib/appearance";
 import type { WallpaperCatalog } from "@/lib/home-wallpapers";
 import type { Shortcut } from "@/lib/shortcuts";
 
 export function HomeInteractions({
+  presentation,
+  presentationAvailable,
+  autocompleteAvailable,
   shortcuts,
   available,
   unavailableMessage,
@@ -26,6 +30,9 @@ export function HomeInteractions({
   clockPosition,
   todayWidgetEnabled,
 }: {
+  presentation: HomePresentation;
+  presentationAvailable: boolean;
+  autocompleteAvailable: boolean;
   shortcuts: Shortcut[];
   available: boolean;
   unavailableMessage: string;
@@ -64,14 +71,9 @@ export function HomeInteractions({
       enabled.push(shortcut);
   }
 
-  function moveShortcut(id: number, direction: -1 | 1) {
-    const currentIds = enabled.map((item) => item.id);
-    const index = currentIds.indexOf(id);
-    const nextIndex = index + direction;
-    if (index < 0 || nextIndex < 0 || nextIndex >= currentIds.length) return;
-    const previous = [...currentIds];
-    const [moved] = currentIds.splice(index, 1);
-    currentIds.splice(nextIndex, 0, moved);
+  function saveOrder(currentIds: number[]) {
+    if (orderPending) return;
+    const previous = enabled.map((item) => item.id);
     setOrderState({ sourceKey: shortcutKey, ids: currentIds });
     setOrderError(false);
     startOrderTransition(async () => {
@@ -82,6 +84,25 @@ export function HomeInteractions({
         setOrderError(true);
       }
     });
+  }
+
+  function moveShortcut(id: number, direction: -1 | 1) {
+    const currentIds = enabled.map((item) => item.id);
+    const index = currentIds.indexOf(id);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= currentIds.length) return;
+    const [moved] = currentIds.splice(index, 1);
+    currentIds.splice(nextIndex, 0, moved);
+    saveOrder(currentIds);
+  }
+  function dropShortcut(id: number, targetId: number) {
+    const current = enabled.map((item) => item.id);
+    const from = current.indexOf(id),
+      to = current.indexOf(targetId);
+    if (from < 0 || to < 0 || from === to || orderPending) return;
+    current.splice(from, 1);
+    current.splice(to, 0, id);
+    saveOrder(current);
   }
 
   async function changeEngine(next: Appearance["searchEngine"]) {
@@ -105,6 +126,8 @@ export function HomeInteractions({
     <>
       {available ? (
         <HomeCustomizeDrawer
+          presentation={presentation}
+          presentationAvailable={presentationAvailable}
           catalog={catalog}
           wallpaperLimitMiB={wallpaperLimitMiB}
           shortcuts={shortcuts}
@@ -119,14 +142,17 @@ export function HomeInteractions({
           todayWidgetEnabled={todayWidgetEnabled}
         />
       ) : null}
-      <SearchForm engine={engine} />
+      <SearchForm
+        engine={engine}
+        autocompleteAvailable={autocompleteAvailable}
+      />
       <div className="shortcut-section" data-editing={editing}>
         {editing ? (
           <div className="home-shortcut-edit-header" role="status">
             <span>
               <UiCopy
-                pt="Organize seus atalhos com as setas"
-                en="Arrange your shortcuts with the arrows"
+                pt="Arraste os atalhos ou use as setas"
+                en="Drag shortcuts or use the arrows"
               />
             </span>
             <button type="button" onClick={() => setEditing(false)}>
@@ -149,6 +175,7 @@ export function HomeInteractions({
             editing={editing}
             orderPending={orderPending}
             onMove={moveShortcut}
+            onDropShortcut={dropShortcut}
           />
         ) : (
           <div className="empty-state" role="status">

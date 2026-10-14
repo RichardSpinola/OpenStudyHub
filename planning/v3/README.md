@@ -13,7 +13,7 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 - Capas de disciplinas: enviar, enquadrar e remover são ações exclusivas de Admin. O backend precisará negar também gestores com grants acadêmicos; não basta ocultar o botão.
 - Acadêmico começa num portal de instituições: cartão da instituição → visão geral da instituição → curso → painel contextual de períodos/turmas, disciplinas/ofertas e horários/eventos. Pessoas/permissões, Integrações e Sistema continuam seções globais.
 - Admin mostra resumos de pessoas/permissões, integrações e saúde/versão na própria página; controles secundários recolhíveis. Links/notificações do App não são copiados para o Admin. Capa fica nas configurações da disciplina.
-- Home e Hoje usam os mesmos destaques; preservar a página Hoje atual, ajustando a grade pelo intervalo real. Fontes ASCII mantêm as nove opções do projeto; notas seguem associáveis à disciplina.
+- Home e Hoje usam os mesmos destaques; preservar o conteúdo/acabamento de Hoje, realinhando destaques e painéis e ajustando a grade pelo intervalo real. Fontes ASCII mantêm as nove opções do projeto; notas seguem associáveis à disciplina.
 - Prévia gráfica de nota, folha de documento e capa de projeto conserva a identidade da V2; biblioteca permite grade/lista sem trocar os fluxos ou confundir os tipos.
 - Configuração administrativa de Extras fica em Sistema. Extras continua na navegação principal do App e mantém suas feature flags.
 - **Produção pausada:** por instrução mais recente, manter mudanças locais e prévias. Não aplicar nada no servidor até nova instrução do usuário.
@@ -30,21 +30,26 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 
 ## Etapas
 
-| Etapa | Entrega                                                                                 | Estado                                         |
-| ----- | --------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| 0     | Base consolidada, revisão do produto, cobertura dos pedidos e prévias de direção visual | Preparação concluída; revisão final disponível |
-| 1     | Estrutura visual, Home, responsividade, atalhos, busca, wallpaper e setup               | Planejada                                      |
-| 2     | Modelo acadêmico consistente, importador, Classroom, fuso e horários                    | Planejada                                      |
-| 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                       | Planejada                                      |
-| 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                   | Planejada                                      |
-| 5     | Notas: workspace, colaboração e bases simples                                           | Planejada                                      |
-| 6     | Chat, Quadro e cinco jogos                                                              | Planejada                                      |
-| 7     | Backup, recuperação, desempenho, diagnóstico, configurações e idioma                    | Planejada                                      |
-| 8     | Checkpoint integrado, documentação, extensão e pacote distribuível                      | Planejada                                      |
+| Etapa | Entrega                                                                                    | Estado                                         |
+| ----- | ------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| 0     | Base consolidada, revisão do produto, cobertura dos pedidos e prévias de direção visual    | Preparação concluída; revisão final disponível |
+| 1     | Estrutura visual, Home, Biblioteca/Hoje, responsividade, atalhos, busca, wallpaper e setup | Implementada localmente; QA visual disponível  |
+| 2     | Modelo acadêmico consistente, importador, Classroom, fuso e horários                       | Planejada                                      |
+| 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                          | Planejada                                      |
+| 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                      | Planejada                                      |
+| 5     | Notas: workspace, colaboração e bases simples                                              | Planejada                                      |
+| 6     | Chat, Quadro e cinco jogos                                                                 | Planejada                                      |
+| 7     | Backup, recuperação, desempenho, diagnóstico, configurações e idioma                       | Planejada                                      |
+| 8     | Checkpoint integrado, documentação, extensão e pacote distribuível                         | Planejada                                      |
 
 ## Trabalho e validação
 
 Testes dirigidos e verificações proporcionais ao risco. Evitar full suite/build repetidos sem necessidade. Gate integrado nos checkpoints relevantes. QA humano em passos curtos, principalmente visual. Revisão de privacidade antes de cada commit. Implementação no código primeiro. Atualização da instalação está suspensa pela instrução mais recente; quando retomada, exige backup e recuperação preparados.
+
+## Etapa 1
+
+- [STAGE_1.md](STAGE_1.md): mudanças reais, validações e roteiro curto de QA.
+- A correção solicitada durante a implementação aplica a organização da prévia a Biblioteca/Hoje, usando os componentes V2. Não apenas colocar duas páginas antigas sob novas abas.
 
 ## Etapa zero
 

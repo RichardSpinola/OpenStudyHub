@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveAppearanceSelectionAction } from "@/app/settings/actions";
 import type { Appearance } from "@/lib/appearance";
+import { AvatarShapePreference } from "./avatar-shape-preference";
 import { accessibleAccent } from "@/lib/appearance-color";
 
 export function AppearanceControls({ initial }: { initial: Appearance }) {
@@ -256,6 +257,7 @@ export function AppearanceControls({ initial }: { initial: Appearance }) {
           </label>
         ))}
       </fieldset>
+      <AvatarShapePreference />
       <p role="status" aria-live="polite">
         {status}
       </p>

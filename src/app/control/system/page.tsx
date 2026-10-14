@@ -5,6 +5,7 @@ import { ConsoleShell } from "../ui";
 import { getInstitutionName } from "@/lib/institution";
 import { listExternalLinks } from "@/lib/external-links";
 import {
+  saveAutocompleteAction,
   saveInstitutionalLinkAction,
   removeInstitutionalLinkAction,
   saveInstitutionDisplayAction,
@@ -21,6 +22,7 @@ import { getUiLanguage } from "@/lib/ui-language";
 import { uiText } from "@/lib/translations";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { figletFontOptions, getBrandConfig } from "@/lib/home-settings";
+import { getAutocompletePolicy } from "@/lib/search-suggestions";
 import { getServerEnvironment } from "@/lib/env";
 import { googleOperationalStatus } from "@/lib/v2/google-diagnostics";
 import { listBundledStarterTemplates } from "@/lib/starter-document-templates";
@@ -86,6 +88,7 @@ export default async function SystemPage({
     ).count;
     const google = googleOperationalStatus(db);
     const environment = getServerEnvironment();
+    const autocomplete = getAutocompletePolicy();
     const links = listExternalLinks();
     const defaultShortcuts = listShortcuts();
     const brand = getBrandConfig();
@@ -127,6 +130,42 @@ export default async function SystemPage({
               : undefined
         }
       >
+        <section
+          className="v3-autocomplete-policy"
+          aria-labelledby="home-autocomplete-title"
+        >
+          <h2 id="home-autocomplete-title">
+            {tr("Sugestões da busca da Home", "Home search suggestions")}
+          </h2>
+          <p>
+            {tr(
+              "Opcional: sugestões web reais da Brave. O texto digitado é enviado ao provedor; a pesquisa final continua no buscador escolhido pelo usuário.",
+              "Optional: real web suggestions from Brave. Typed text is sent to the provider; the final search still uses the user's chosen engine.",
+            )}
+          </p>
+          <p>
+            {environment.HOME_AUTOCOMPLETE_BRAVE_API_KEY
+              ? tr("Chave do provedor configurada.", "Provider key configured.")
+              : tr(
+                  "Configure HOME_AUTOCOMPLETE_BRAVE_API_KEY no ambiente do App e do Admin para ativar o serviço. Não há sugestões locais substitutas.",
+                  "Configure HOME_AUTOCOMPLETE_BRAVE_API_KEY in the App and Admin environment to enable the service. There are no local substitute suggestions.",
+                )}
+          </p>
+          <form action={saveAutocompleteAction}>
+            <label>
+              <input
+                type="checkbox"
+                name="enabled"
+                defaultChecked={autocomplete.enabled}
+              />
+              {tr(
+                "Permitir sugestões web na Home",
+                "Allow web suggestions on Home",
+              )}
+            </label>
+            <button type="submit">{tr("Salvar busca", "Save search")}</button>
+          </form>
+        </section>
         <section
           className="admin-system-language"
           aria-labelledby="instance-language-title"

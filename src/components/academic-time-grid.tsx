@@ -36,18 +36,15 @@ export function AcademicTimeGrid({
   const startHour = slots.length
     ? Math.max(
         0,
-        Math.floor(
-          Math.min(...slots.map((slot) => slot.startsAtMinutes)) / 60,
-        ) - 1,
+        Math.floor(Math.min(...slots.map((slot) => slot.startsAtMinutes)) / 60),
       )
     : 8;
   const endHour = slots.length
     ? Math.min(
         24,
         Math.max(
-          startHour + 2,
-          Math.ceil(Math.max(...slots.map((slot) => slot.endsAtMinutes)) / 60) +
-            1,
+          startHour + 1,
+          Math.ceil(Math.max(...slots.map((slot) => slot.endsAtMinutes)) / 60),
         ),
       )
     : 18;
@@ -58,8 +55,10 @@ export function AcademicTimeGrid({
           <UiCopy pt="Grade da semana" en="Weekly schedule" />
         </h2>
         <span>
-          {slots.length}
-          <UiCopy pt="aula(s)" en="class(es)" />
+          {slots.length} <UiCopy pt="aula(s)" en="class(es)" />
+          {slots.length
+            ? ` · ${formatMinutes(startHour * 60)}–${formatMinutes(endHour * 60)}`
+            : ""}
         </span>
       </div>
       <div
@@ -78,92 +77,99 @@ export function AcademicTimeGrid({
           </button>
         ))}
       </div>
-      <div className="time-grid-scroll">
-        <div
-          className="time-grid"
-          style={{ "--grid-hours": endHour - startHour } as React.CSSProperties}
-        >
-          <div className="time-grid-corner" aria-hidden="true">
-            <UiCopy pt="Hora" en="Time" />
-          </div>
-          {weekdays.map((day, index) => (
-            <div
-              key={day}
-              className="time-grid-day-heading"
-              data-selected={selected === index + 1}
-            >
-              {tr(day, weekdaysEn[index])}
+      {slots.length ? (
+        <div className="time-grid-scroll">
+          <div
+            className="time-grid"
+            style={
+              { "--grid-hours": endHour - startHour } as React.CSSProperties
+            }
+          >
+            <div className="time-grid-corner" aria-hidden="true">
+              <UiCopy pt="Hora" en="Time" />
             </div>
-          ))}
-          <div className="time-grid-hours" aria-hidden="true">
-            {Array.from({ length: endHour - startHour + 1 }, (_, index) => (
-              <span key={index} style={{ top: `${index * 60}px` }}>
-                {formatMinutes((startHour + index) * 60)}
-              </span>
+            {weekdays.map((day, index) => (
+              <div
+                key={day}
+                className="time-grid-day-heading"
+                data-selected={selected === index + 1}
+              >
+                {tr(day, weekdaysEn[index])}
+              </div>
+            ))}
+            <div className="time-grid-hours" aria-hidden="true">
+              {Array.from({ length: endHour - startHour + 1 }, (_, index) => (
+                <span key={index} style={{ top: `${index * 60}px` }}>
+                  {formatMinutes((startHour + index) * 60)}
+                </span>
+              ))}
+            </div>
+            {weekdays.map((day, index) => (
+              <div
+                key={day}
+                className="time-grid-day"
+                data-selected={selected === index + 1}
+                data-today={today === index + 1}
+              >
+                {slots
+                  .filter((slot) => slot.weekday === index + 1)
+                  .map((slot) => {
+                    const top = Math.max(
+                      0,
+                      slot.startsAtMinutes - startHour * 60,
+                    );
+                    const height = Math.max(
+                      36,
+                      slot.endsAtMinutes - slot.startsAtMinutes,
+                    );
+                    const location = joinLocation([
+                      slot.locationName,
+                      slot.room,
+                    ]);
+                    return (
+                      <details
+                        key={slot.slotId}
+                        className="time-grid-event"
+                        style={{ top: `${top}px`, minHeight: `${height}px` }}
+                      >
+                        <summary>
+                          <strong>
+                            {slot.subjectShortName ?? slot.subjectName}
+                          </strong>
+                          <time>
+                            {formatMinutes(slot.startsAtMinutes)}–
+                            {formatMinutes(slot.endsAtMinutes)}
+                          </time>
+                          <span>
+                            {location ??
+                              tr("Sala não informada", "Room not specified")}
+                          </span>
+                        </summary>
+                        <div className="time-grid-popover">
+                          <strong>{slot.subjectName}</strong>
+                          <span>
+                            {slot.instructorName ??
+                              tr(
+                                "Professor não informado",
+                                "Instructor not specified",
+                              )}
+                          </span>
+                          <span>
+                            {location ??
+                              tr("Sala não informada", "Room not specified")}
+                          </span>
+                          <Link href={`/subjects/${slot.subjectId}`}>
+                            <UiCopy pt="Abrir disciplina" en="Open subject" />
+                          </Link>
+                        </div>
+                      </details>
+                    );
+                  })}
+              </div>
             ))}
           </div>
-          {weekdays.map((day, index) => (
-            <div
-              key={day}
-              className="time-grid-day"
-              data-selected={selected === index + 1}
-              data-today={today === index + 1}
-            >
-              {slots
-                .filter((slot) => slot.weekday === index + 1)
-                .map((slot) => {
-                  const top = Math.max(
-                    0,
-                    slot.startsAtMinutes - startHour * 60,
-                  );
-                  const height = Math.max(
-                    36,
-                    slot.endsAtMinutes - slot.startsAtMinutes,
-                  );
-                  const location = joinLocation([slot.locationName, slot.room]);
-                  return (
-                    <details
-                      key={slot.slotId}
-                      className="time-grid-event"
-                      style={{ top: `${top}px`, minHeight: `${height}px` }}
-                    >
-                      <summary>
-                        <strong>
-                          {slot.subjectShortName ?? slot.subjectName}
-                        </strong>
-                        <time>
-                          {formatMinutes(slot.startsAtMinutes)}–
-                          {formatMinutes(slot.endsAtMinutes)}
-                        </time>
-                        <span>
-                          {location ??
-                            tr("Sala não informada", "Room not specified")}
-                        </span>
-                      </summary>
-                      <div className="time-grid-popover">
-                        <strong>{slot.subjectName}</strong>
-                        <span>
-                          {slot.instructorName ??
-                            tr(
-                              "Professor não informado",
-                              "Instructor not specified",
-                            )}
-                        </span>
-                        <span>
-                          {location ??
-                            tr("Sala não informada", "Room not specified")}
-                        </span>
-                        <Link href={`/subjects/${slot.subjectId}`}>
-                          <UiCopy pt="Abrir disciplina" en="Open subject" />
-                        </Link>
-                      </div>
-                    </details>
-                  );
-                })}
-            </div>
-          ))}
         </div>
-      </div>
+      ) : null}
       {slots.length === 0 ? (
         <p className="panel-help">
           <UiCopy

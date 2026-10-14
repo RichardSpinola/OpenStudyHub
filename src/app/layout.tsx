@@ -7,6 +7,7 @@ import { PrimaryNavigation } from "@/components/primary-navigation";
 import { NotificationCenter } from "@/components/notification-center";
 import { GoogleConnectionNotice } from "@/components/google-connection-notice";
 import { V2ManagementLink } from "@/components/v2-management-link";
+import { AvatarShapeBridge } from "@/components/avatar-shape-preference";
 import { AccountMenu } from "@/components/account-menu";
 import { ExternalLinksMenu } from "@/components/external-links-menu";
 import { RealtimeBridge } from "@/components/realtime-bridge";
@@ -29,6 +30,8 @@ import "./phase4a.css";
 import "./visual-review.css";
 import "./phase6.css";
 import "./phase10.css";
+import "./home-polish.css";
+import "./workspace-polish.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getServerEnvironment().APP_URL),
@@ -150,6 +153,7 @@ export default async function RootLayout({
           {session && process.env.OPENSTUDYHUB_V2_ENABLED === "1" ? (
             <RealtimeBridge />
           ) : null}
+          <AvatarShapeBridge />
           <div className="app-frame">
             <header className="app-header">
               <Link className="brand" href="/">

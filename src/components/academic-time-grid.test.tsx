@@ -81,15 +81,17 @@ describe("AcademicTimeGrid", () => {
     );
     expect(html).toContain("06:00");
     expect(html).toContain("23:00");
-    expect(html).toContain("--grid-hours:19");
+    expect(html).toContain("--grid-hours:17");
   });
 
   it("uses a compact interval around normal class times", () => {
     const html = renderToStaticMarkup(
       <AcademicTimeGrid slots={[fixtureSlot]} today={2} />,
     );
-    expect(html).toContain("09:00");
-    expect(html).toContain("13:00");
-    expect(html).toContain("--grid-hours:4");
+    expect(html).toContain("10:00");
+    expect(html).toContain("12:00");
+    expect(html).toContain("--grid-hours:2");
+    expect(html).not.toContain("09:00");
+    expect(html).not.toContain("13:00");
   });
 });

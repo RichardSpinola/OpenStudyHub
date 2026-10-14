@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import {
+  saveHomePresentation,
+  homePresentationSchema,
+} from "@/lib/home-presentation";
 import { updateBrandConfig, type BrandFigletFont } from "@/lib/home-settings";
 import { updateInstitutionName } from "@/lib/institution";
 import {
@@ -565,4 +569,16 @@ export async function addDemoShortcutsAction() {
     summary: "generic demo shortcuts created",
   });
   refreshConfiguration();
+}
+
+export async function updateHomePresentationAction(formData: FormData) {
+  const actor = await requireAuthenticatedUser();
+  const value = homePresentationSchema.parse({
+    asciiFont: formData.get("asciiFont") || null,
+    wallpaperX: formData.get("wallpaperX"),
+    wallpaperY: formData.get("wallpaperY"),
+    wallpaperFit: formData.get("wallpaperFit"),
+  });
+  saveHomePresentation(actor.id, value);
+  revalidatePath("/");
 }

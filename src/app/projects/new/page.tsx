@@ -17,6 +17,7 @@ export default async function NewProjectPage({
     offeringId?: string;
     from?: string;
     error?: string;
+    mode?: string;
   }>;
 }) {
   const user = await requireAuthenticatedUser();
@@ -26,11 +27,13 @@ export default async function NewProjectPage({
   const selected = offerings.find(
     ({ offeringId }) => String(offeringId) === query.offeringId,
   );
+  const explicitMode =
+    query.mode === "empty" || query.mode === "import" ? query.mode : null;
   const fromProjects = query.from === "projects";
   const returnHref =
     !fromProjects && selected
       ? `/subjects/${selected.subjectId}?view=projects`
-      : "/projects";
+      : "/library?type=projects";
 
   return (
     <div className="workflow-shell project-create-shell">
@@ -40,7 +43,11 @@ export default async function NewProjectPage({
             <UiCopy pt="PROJETOS" en="PROJECTS" />
           </p>
           <h1>
-            <UiCopy pt="Novo projeto" en="New project" />
+            {explicitMode === "import" ? (
+              <UiCopy pt="Importar projeto" en="Import project" />
+            ) : (
+              <UiCopy pt="Novo projeto" en="New project" />
+            )}
           </h1>
           <p className="page-description">
             <UiCopy
@@ -82,10 +89,17 @@ export default async function NewProjectPage({
               <UiCopy pt="Dados do projeto" en="Project details" />
             </h2>
             <span>
-              <UiCopy
-                pt="1 de 2 · depois, escolha os arquivos"
-                en="1 of 2 · choose files next"
-              />
+              {explicitMode === "empty" ? (
+                <UiCopy
+                  pt="Comece sem arquivos; você pode adicioná-los depois."
+                  en="Start without files; you can add them later."
+                />
+              ) : (
+                <UiCopy
+                  pt="1 de 2 · depois, escolha os arquivos"
+                  en="1 of 2 · choose files next"
+                />
+              )}
             </span>
           </div>
           {query.error ? (
@@ -138,21 +152,33 @@ export default async function NewProjectPage({
               <Link href={returnHref}>
                 <UiCopy pt="Cancelar" en="Cancel" />
               </Link>
+              {explicitMode === "empty" ? (
+                <input type="hidden" name="start" value="empty" />
+              ) : null}
               <PendingSubmitButton
                 pendingLabel={
                   <UiCopy pt="Criando projeto…" en="Creating project…" />
                 }
               >
-                <UiCopy pt="Criar e importar →" en="Create and import →" />
+                {explicitMode === "empty" ? (
+                  <UiCopy
+                    pt="Criar projeto vazio →"
+                    en="Create empty project →"
+                  />
+                ) : (
+                  <UiCopy pt="Criar e importar →" en="Create and import →" />
+                )}
               </PendingSubmitButton>
-              <button
-                type="submit"
-                name="start"
-                value="empty"
-                className="secondary-button"
-              >
-                <UiCopy pt="Começar vazio" en="Start empty" />
-              </button>
+              {!explicitMode ? (
+                <button
+                  type="submit"
+                  name="start"
+                  value="empty"
+                  className="secondary-button"
+                >
+                  <UiCopy pt="Começar vazio" en="Start empty" />
+                </button>
+              ) : null}
             </div>
           </form>
         </section>

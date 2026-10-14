@@ -12,6 +12,7 @@ export const serverEnvironmentSchema = z.object({
   APP_URL: z.url().default("http://localhost:3000"),
   DATABASE_PATH: z.string().trim().min(1).default("./data/openstudyhub.db"),
   PRIVATE_ASSET_PATH: z.string().trim().min(1).default("./data/private-assets"),
+  HOME_AUTOCOMPLETE_BRAVE_API_KEY: optionalEnvironmentText,
   GOOGLE_CLIENT_ID: optionalEnvironmentText,
   GOOGLE_CLIENT_SECRET: optionalEnvironmentText,
   GOOGLE_REDIRECT_URI: optionalEnvironmentText,

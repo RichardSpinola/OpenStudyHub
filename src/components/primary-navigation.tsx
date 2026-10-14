@@ -12,7 +12,6 @@ import {
   IconNotes,
   IconFiles,
   IconMessages,
-  IconFolderCode,
   IconMenu2,
   IconApps,
 } from "@tabler/icons-react";
@@ -22,13 +21,12 @@ const navigationItems = [
   { href: "/today", labelKey: "today", icon: IconCalendarWeek },
   { href: "/subjects", labelKey: "subjects", icon: IconBooks },
   { href: "/notes", labelKey: "notes", icon: IconNotes },
-  { href: "/documents", labelKey: "documents", icon: IconFiles },
+  { href: "/library", labelKey: "documents", icon: IconFiles },
   { href: "/chat", labelKey: "chat", icon: IconMessages },
 ] as const;
 
 export function PrimaryNavigation({
   authenticated,
-  projectsEnabled,
   extrasEnabled,
 }: {
   authenticated: boolean;
@@ -43,12 +41,14 @@ export function PrimaryNavigation({
   const links = [
     ...navigationItems.map((item) => ({
       href: item.href,
-      label: navigation[item.labelKey],
+      label:
+        item.href === "/library" ? (
+          <UiCopy pt="Biblioteca" en="Library" />
+        ) : (
+          navigation[item.labelKey]
+        ),
       icon: item.icon,
     })),
-    ...(projectsEnabled
-      ? [{ href: "/projects", label: "Projects", icon: IconFolderCode }]
-      : []),
     ...(extrasEnabled
       ? [{ href: "/extras", label: "Extras", icon: IconApps }]
       : []),
@@ -56,7 +56,13 @@ export function PrimaryNavigation({
   const renderLinks = () =>
     links.map((item) => {
       const active =
-        item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        item.href === "/"
+          ? pathname === "/"
+          : item.href === "/library"
+            ? ["/library", "/documents", "/projects"].some((prefix) =>
+                pathname.startsWith(prefix),
+              )
+            : pathname.startsWith(item.href);
       return (
         <li key={item.href}>
           <Link href={item.href} aria-current={active ? "page" : undefined}>

@@ -1,6 +1,6 @@
 # Backlog V3 — cobertura dos pedidos e achados
 
-**Estado:** A01 consolidado nesta etapa; demais itens planejados, não implementados. Achados de código não são equivalentes a reprodução em navegador. Nenhum item some por não aparecer no resumo de uma etapa.
+**Estado:** A01 consolidado; entrega local da etapa 1 registrada em [STAGE_1.md](STAGE_1.md). A21/A22 e a interface de A23 foram implementados; teste vivo do provedor requer chave. Biblioteca/Hoje receberam a organização solicitada. Demais itens e partes futuras continuam planejados; A20 mantém reprodução pendente. Achados de código não são equivalentes a reprodução em navegador. Nenhum item some por não aparecer no resumo de uma etapa.
 
 ## Achados técnicos
 

@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useUiTranslations } from "@/components/ui-language-provider";
+import { useRef, useState } from "react";
+import {
+  useUiText,
+  useUiTranslations,
+} from "@/components/ui-language-provider";
 import type { Shortcut } from "@/lib/shortcuts";
 import {
   IconBrandGoogleDrive,
@@ -10,6 +13,7 @@ import {
   IconChalkboardTeacher,
 } from "@tabler/icons-react";
 
+import { ShortcutEditDialog } from "./shortcut-edit-dialog";
 import { QuickAddShortcut } from "./quick-add-shortcut";
 
 function fallbackIcon(name: string): string {
@@ -41,16 +45,23 @@ export function ShortcutGrid({
   editing = false,
   orderPending = false,
   onMove,
+  onDropShortcut,
 }: {
   shortcuts: Shortcut[];
   canManage: boolean;
   editing?: boolean;
   orderPending?: boolean;
   onMove?: (id: number, direction: -1 | 1) => void;
+  onDropShortcut?: (id: number, targetId: number) => void;
 }) {
   const { shortcuts: labels } = useUiTranslations();
+  const tr = useUiText();
   const [failedIconIds, setFailedIconIds] = useState<Set<number>>(new Set());
   const items = shortcuts;
+  const [editingShortcut, setEditingShortcut] = useState<Shortcut | null>(null);
+  const dragId = useRef<number | null>(null);
+  const touch = useRef<{ id: number; x: number; y: number } | null>(null);
+  const editTrigger = useRef<HTMLButtonElement | null>(null);
 
   return (
     <>
@@ -61,7 +72,34 @@ export function ShortcutGrid({
         {items.map((shortcut, index) => {
           const KnownIcon = knownShortcutIcon(shortcut.url);
           return (
-            <li key={shortcut.id} data-shortcut-id={shortcut.id}>
+            <li
+              key={shortcut.id}
+              data-shortcut-id={shortcut.id}
+              draggable={editing && !orderPending}
+              onDragStart={(event) => {
+                if (!editing) return;
+                if (orderPending) {
+                  event.preventDefault();
+                  return;
+                }
+                dragId.current = shortcut.id;
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", String(shortcut.id));
+              }}
+              onDragEnd={() => {
+                dragId.current = null;
+              }}
+              onDragOver={(event) => {
+                if (editing && dragId.current !== null && !orderPending)
+                  event.preventDefault();
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                if (dragId.current !== null)
+                  onDropShortcut?.(dragId.current, shortcut.id);
+                dragId.current = null;
+              }}
+            >
               <a
                 className="shortcut-link"
                 href={shortcut.url}
@@ -91,8 +129,64 @@ export function ShortcutGrid({
                 </span>
                 <span className="shortcut-name">{shortcut.name}</span>
               </a>
+              <button
+                type="button"
+                className="home-shortcut-options"
+                aria-label={tr(
+                  `Opções de ${shortcut.name}`,
+                  `Options for ${shortcut.name}`,
+                )}
+                onClick={(event) => {
+                  editTrigger.current = event.currentTarget;
+                  setEditingShortcut(shortcut);
+                }}
+              >
+                ⋯
+              </button>
               {editing ? (
                 <div className="shortcut-reorder-actions">
+                  <button
+                    type="button"
+                    className="shortcut-drag-handle"
+                    aria-label={tr(
+                      `Arrastar ${shortcut.name}`,
+                      `Drag ${shortcut.name}`,
+                    )}
+                    disabled={orderPending}
+                    onPointerDown={(event) => {
+                      touch.current = {
+                        id: shortcut.id,
+                        x: event.clientX,
+                        y: event.clientY,
+                      };
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                    }}
+                    onPointerCancel={() => {
+                      touch.current = null;
+                    }}
+                    onPointerUp={(event) => {
+                      const origin = touch.current;
+                      touch.current = null;
+                      if (
+                        !origin ||
+                        Math.hypot(
+                          event.clientX - origin.x,
+                          event.clientY - origin.y,
+                        ) < 8
+                      )
+                        return;
+                      const item = document
+                        .elementFromPoint(event.clientX, event.clientY)
+                        ?.closest<HTMLElement>("[data-shortcut-id]");
+                      if (item)
+                        onDropShortcut?.(
+                          origin.id,
+                          Number(item.dataset.shortcutId),
+                        );
+                    }}
+                  >
+                    ⠿
+                  </button>
                   <button
                     type="button"
                     aria-label={`Mover ${shortcut.name} para a esquerda`}
@@ -120,6 +214,15 @@ export function ShortcutGrid({
           </li>
         ) : null}
       </ul>
+      {editingShortcut ? (
+        <ShortcutEditDialog
+          shortcut={editingShortcut}
+          close={() => {
+            setEditingShortcut(null);
+            editTrigger.current?.focus();
+          }}
+        />
+      ) : null}
     </>
   );
 }

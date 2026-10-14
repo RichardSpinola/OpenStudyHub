@@ -8,19 +8,8 @@ const BRAND_FONT_KEY = "home.brand_figlet_font";
 
 figlet.defaults({ fetchFontIfMissing: false });
 
-export const figletFontOptions = [
-  "ANSI Shadow",
-  "Digital",
-  "Future Thin",
-  "Rectangles",
-  "Small",
-  "Small Slant",
-  "Standard",
-  "Thin",
-  "Three Point",
-] as const;
-
-export type BrandFigletFont = (typeof figletFontOptions)[number];
+import { figletFontOptions, type BrandFigletFont } from "./ascii-fonts";
+export { figletFontOptions, type BrandFigletFont } from "./ascii-fonts";
 
 export type BrandConfig = {
   text: string;

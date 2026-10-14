@@ -434,6 +434,7 @@ export function OnboardingWizard({
             <button
               type="button"
               disabled={busy}
+              className="wizard-back"
               onClick={() => void move(step - 1)}
             >
               {tr("Voltar", "Back")}
@@ -443,6 +444,7 @@ export function OnboardingWizard({
             <button
               type="button"
               disabled={busy}
+              className="wizard-next"
               onClick={() => void move(step + 1)}
             >
               {busy

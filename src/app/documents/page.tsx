@@ -1,3 +1,4 @@
+import { LibraryTypeTabs } from "@/components/library-type-tabs";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 
@@ -225,6 +226,7 @@ export default async function DocumentsPage({
 
   return (
     <div className="workflow-shell documents-shell resource-workspace">
+      <LibraryTypeTabs kind="documents" />
       <header className="section-header resource-page-header">
         <div>
           <p className="eyebrow">

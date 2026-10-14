@@ -2,6 +2,8 @@
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import Link from "next/link";
+import { HomePresentationControls } from "./home-presentation-controls";
+import type { HomePresentation } from "@/lib/home-presentation";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { IconPencil } from "@tabler/icons-react";
@@ -16,6 +18,8 @@ import type { Shortcut } from "@/lib/shortcuts";
 import type { Appearance } from "@/lib/appearance";
 
 export function HomeCustomizeDrawer({
+  presentation,
+  presentationAvailable,
   catalog,
   wallpaperLimitMiB,
   shortcuts,
@@ -29,6 +33,8 @@ export function HomeCustomizeDrawer({
   clockPosition,
   todayWidgetEnabled,
 }: {
+  presentation: HomePresentation;
+  presentationAvailable: boolean;
   catalog: WallpaperCatalog;
   wallpaperLimitMiB: 5 | 10;
   shortcuts: Shortcut[];
@@ -270,6 +276,12 @@ export function HomeCustomizeDrawer({
                 </small>
               </div>
             </section>
+            {presentationAvailable ? (
+              <HomePresentationControls
+                initial={presentation}
+                catalog={catalog}
+              />
+            ) : null}
             <Link
               className="home-customize-more"
               href="/settings?section=personalization"

@@ -64,7 +64,7 @@ export default async function ProjectDetailPage({
       : null;
   const returnHref =
     parameters.from === "projects"
-      ? "/projects"
+      ? "/library?type=projects"
       : `/subjects/${project.subjectId}?view=projects`;
   const returnLabel =
     parameters.from === "projects"

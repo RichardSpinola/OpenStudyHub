@@ -195,3 +195,11 @@ export async function createManualBackupAction() {
   }
   redirect(`/control/system?status=backup-created&backup=${id}`);
 }
+
+export async function saveAutocompleteAction(form: FormData) {
+  await requireControlAdmin();
+  const { setAutocompletePolicy } = await import("@/lib/search-suggestions");
+  setAutocompletePolicy(form.get("enabled") === "on");
+  revalidatePath("/");
+  revalidatePath("/control/system");
+}

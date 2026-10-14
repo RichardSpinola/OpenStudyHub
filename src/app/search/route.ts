@@ -2,13 +2,18 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { buildWebSearchUrl } from "@/lib/search";
 import { requireAuthenticatedUser } from "@/lib/authorization";
-import { getAppearance } from "@/lib/appearance";
+import { getAppearance, appearanceSchema } from "@/lib/appearance";
 
 export async function GET(request: NextRequest) {
   const user = await requireAuthenticatedUser();
+  const selectedEngine = appearanceSchema.shape.searchEngine.safeParse(
+    request.nextUrl.searchParams.get("engine"),
+  );
   const destination = buildWebSearchUrl(
     request.nextUrl.searchParams.get("q") ?? "",
-    getAppearance(user.id).searchEngine,
+    selectedEngine.success
+      ? selectedEngine.data
+      : getAppearance(user.id).searchEngine,
   );
 
   if (!destination) {

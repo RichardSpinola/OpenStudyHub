@@ -1,3 +1,4 @@
+import { LibraryTypeTabs } from "@/components/library-type-tabs";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 
@@ -23,6 +24,7 @@ export default async function ProjectsPage({
   } catch {
     return (
       <div className="workflow-shell">
+        <LibraryTypeTabs kind="projects" />
         <p role="alert">
           <UiCopy
             pt="Não foi possível carregar seus projetos agora."
@@ -34,6 +36,7 @@ export default async function ProjectsPage({
   }
   return (
     <div className="workflow-shell projects-index resource-workspace">
+      <LibraryTypeTabs kind="projects" />
       <header className="section-header resource-page-header">
         <div>
           <p className="eyebrow">
