@@ -64,3 +64,15 @@ Biblioteca unifica a entrada visual; não funde dados/permissões nem elimina os
 Verificação: sintaxe JS, ESLint e formatação; controles de personalização, timeline, grade, criação de projeto e seções do Admin exercitados na prévia. Dezesseis composições (quatro telas, dois temas, larguras 390 px e automática entre 1027–1038 px) sem overflow horizontal. Testes de App/typecheck/build não repetidos porque nenhuma fonte funcional foi alterada.
 
 A autorização anterior de implantação está suspensa por instrução mais recente. A instalação real deve continuar intocada até nova instrução.
+
+## Ajuste de preservação da interface — 13/10/2026
+
+O feedback posterior rejeitou a recoloração Material 3 da simulação. A prévia voltou à paleta neutra e às formas anteriores; o Material funcional da V2 não foi alterado. Legacy/TUI mantém os ajustes aprovados. A implementação futura deve reaproveitar os componentes existentes e corrigir somente os pontos definidos.
+
+- Lápis abre lateral com fundo, atalhos, relógio, resumo Hoje e buscador; estilo pessoal do ASCII separado do texto exclusivo do Admin.
+- Sugestões posicionadas sobre o conteúdo; em uma comparação estável, os atalhos mantiveram offset de 395 px antes/depois. Troca demonstrativa para DuckDuckGo e seleção por teclado conferidas; não há autocomplete externo nesta simulação.
+- Biblioteca começa em grade com folhas de documentos/capas de projetos, mantendo abas e lista. Prévia de nota preservada na seção Notas da disciplina.
+- Acadêmico abre cartões de instituições e painel contextual. Cadastro demonstrativo exibe `Criar curso — UE`; não grava dados. Autorização de instituição/capa/título deve ser aplicada no backend durante a implementação funcional.
+- Hoje, Notas globais, Chat e Extras ainda não têm telas próprias na simulação; botões informam essa limitação sem fingir abrir outra área.
+
+Validação dirigida: 12 composições (Home/Biblioteca/painel da instituição, dois temas, canvas de 390 px e largura automática observada de 1348–1359 px) sem overflow horizontal. Lateral conferida também com viewport efetivamente estreito, sem overflow interno horizontal. Sintaxe JS, ESLint e Prettier aprovados. Nenhuma fonte funcional do App alterada; sem novo typecheck/build/full suite, deploy ou publicação.

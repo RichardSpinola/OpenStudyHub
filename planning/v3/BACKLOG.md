@@ -70,8 +70,11 @@
 
 - U21 (etapas 1/4): Biblioteca como entrada principal, com Documentos/Projetos separados por abas; lista/grade selecionáveis. Compatibilidade com `/documents`, `/projects` e links existentes, sem misturar entidades, permissões ou versões. Notas continua área própria.
 - U22 (etapas 1/3): lápis de personalização mantido; Mural/Timeline selecionáveis; seis abas da disciplina preservadas e realinhadas. Validar envio/remoção de capa negados a usuário normal e gestor; somente Admin autorizado.
-- U23 (etapas 1/3): tema Material segue os princípios do Google Material Design 3, incluindo no Admin. Tema Legacy/TUI mais próximo de terminal, sem trocar por um novo sistema de estilos ou perder os fluxos aprovados.
+- U23 (etapas 1/3): preservar o Material original da V2, com ajustes pontuais de UX/alinhamento; recoloração verde e novo tratamento arredondado da prévia rejeitados. Legacy/TUI conserva a direção terminal aprovada, sem perder os fluxos.
 - U24 (etapas 3/7): controles de Extras em Sistema no Admin; acesso de Extras no App permanece principal. Nenhuma implantação no servidor nesta rodada.
+
+- U25 (etapas 1/3/4): lápis abre barra lateral, preservando fundo, atalhos, relógio, resumo Hoje e buscador. Sugestões em sobreposição, sem deslocamento; título ASCII editável apenas pelo Admin, estilo pessoal permitido. Preservar prévias gráficas de notas/documentos e capas de projetos; usar a organização atual das barras e utilitários.
+- U26 (etapa 3): portal acadêmico por instituição, com cartões de entrada e painel contextual. Cursos/períodos/turmas/ofertas/eventos pertencem à instituição selecionada; permissões e autorização devem validar esse contexto no backend, além da navegação.
 
 ## Limites já decididos
 

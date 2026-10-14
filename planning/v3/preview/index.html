@@ -47,7 +47,7 @@
           >
           <nav aria-label="Navegação principal" id="primary-nav">
             <a href="#home" data-nav="home">⌂ <span>Home</span></a>
-            <a href="#subject" data-nav="today">▦ <span>Hoje</span></a>
+            <a href="#today" data-preview-only="Hoje">▦ <span>Hoje</span></a>
             <a href="#subject" data-nav="subject">▤ <span>Disciplinas</span></a>
             <a href="#notes" data-preview-only="Notas">▧ <span>Notas</span></a>
             <a href="#library" data-nav="library">▱ <span>Biblioteca</span></a>
@@ -68,10 +68,41 @@
             <button
               type="button"
               class="icon-button"
+              data-feedback="Os links externos continuam neste acesso, como no App atual."
+              aria-label="Links externos"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <path
+                  d="m9 15 6-6M8 17l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M16 7l1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0"
+                  transform="translate(0 -1)"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="icon-button"
               data-feedback="Aqui ficam os avisos da conta e do sistema."
               aria-label="Notificações"
             >
-              ♧</button
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <path d="M6 9a6 6 0 0 1 12 0v6l2 3H4l2-3zM10 21h4M12 1v2" />
+              </svg></button
             ><span class="avatar">AL</span
             ><span class="identity-name">Alex Lima</span>
           </div>
@@ -84,38 +115,90 @@
       </div>
     </div>
     <dialog id="home-customize-dialog" aria-labelledby="home-customize-title">
-      <form method="dialog">
+      <header class="drawer-heading">
+        <div>
+          <p class="eyebrow">Home</p>
+          <h2 id="home-customize-title">Personalizar</h2>
+        </div>
+        <form method="dialog">
+          <button
+            class="dialog-close icon-button"
+            aria-label="Fechar personalização"
+          >
+            ×
+          </button>
+        </form>
+      </header>
+      <div class="drawer-content">
+        <p class="muted">
+          Demonstração dos controles atuais. Não salva preferências reais.
+        </p>
+        <section>
+          <h3>Fundo da Home</h3>
+          <button
+            data-feedback="A implementação mantém fundos disponíveis, envio de imagem, remoção e ajuste de enquadramento."
+          >
+            Escolher ou enviar wallpaper</button
+          ><button
+            data-feedback="O enquadramento será ajustável, preservando a imagem original."
+          >
+            Ajustar enquadramento
+          </button>
+        </section>
+        <section>
+          <h3>Atalhos</h3>
+          <label>Google Drive<input type="checkbox" checked /></label
+          ><label>Classroom<input type="checkbox" checked /></label
+          ><label>Gmail<input type="checkbox" checked /></label
+          ><label>GitHub<input type="checkbox" checked /></label
+          ><button
+            data-feedback="Preservar adicionar, editar, remover e reordenar; incluir arrastar e soltar sem eliminar as setas."
+          >
+            Organizar ou adicionar atalhos
+          </button>
+        </section>
+        <section>
+          <h3>Relógio e resumo Hoje</h3>
+          <label>Mostrar relógio<input type="checkbox" checked /></label
+          ><label
+            >Posição<select>
+              <option>Superior direito</option>
+              <option>Superior esquerdo</option>
+              <option>Inferior direito</option>
+              <option>Inferior esquerdo</option>
+            </select></label
+          ><label>Mostrar resumo Hoje<input type="checkbox" checked /></label>
+        </section>
+        <section>
+          <h3>Busca da Home</h3>
+          <label
+            >Buscador<select id="demo-search-provider">
+              <option>Google</option>
+              <option>Google Acadêmico</option>
+              <option>DuckDuckGo</option>
+              <option>Startpage</option>
+              <option>Ecosia</option>
+            </select></label
+          >
+        </section>
+        <section>
+          <h3>Estilo do título ASCII</h3>
+          <label
+            >Estilo pessoal<select id="demo-ascii-style">
+              <option>Atual</option>
+              <option>Compacto</option>
+            </select></label
+          >
+          <p class="muted">
+            O texto OpenStudyHub é definido pelo Admin. Aqui você escolhe
+            somente a aparência.
+          </p>
+        </section>
         <button
-          class="dialog-close icon-button"
-          aria-label="Fechar personalização"
+          class="text-link"
+          data-feedback="As configurações completas continuam disponíveis na tela atual."
         >
-          ×
-        </button>
-      </form>
-      <h2 id="home-customize-title">Personalizar Home</h2>
-      <p class="muted">
-        Prévia do acesso. As opções atuais de personalização serão preservadas.
-      </p>
-      <div class="customize-options">
-        <button
-          data-feedback="Wallpaper mantém escolha de imagem e terá ajuste de enquadramento."
-        >
-          Wallpaper e enquadramento
-        </button>
-        <button
-          data-feedback="Atalhos terão arrastar/soltar, edição e remoção aqui e na Home."
-        >
-          Organizar atalhos
-        </button>
-        <button
-          data-feedback="O título ASCII e suas opções atuais continuam disponíveis."
-        >
-          Título ASCII
-        </button>
-        <button
-          data-feedback="A pesquisa final respeita o buscador escolhido por você."
-        >
-          Mecanismo de busca
+          Mais configurações →
         </button>
       </div>
     </dialog>

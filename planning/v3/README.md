@@ -7,10 +7,12 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 ## Decisões confirmadas
 
 - Material e Legacy/TUI com os mesmos recursos; navegação superior e clássica preservadas. Reaproveitar o layout e os componentes originais onde já funcionam bem; as quatro prévias exploram organização, não são uma substituição obrigatória de toda a interface.
-- Material segue a linguagem do Google Material Design 3: papéis de cor/superfícies, tipografia por função, estados de seleção, formas e controles próprios. Legacy/TUI reforça terminal/monospace/bordas, sem alterar as funcionalidades.
-- Home conserva o lápis de personalização e as opções originais. A visão geral da disciplina mantém Mural/Timeline selecionáveis e suas seis abas, realinhadas.
+- **Material original preservado:** manter a identidade neutra e os componentes aprovados da V2; corrigir alinhamento, adaptação de largura e fluxos indicados. A recoloração verde e as formas novas da prévia foram rejeitadas. Legacy/TUI conserva os ajustes de terminal/monospace/bordas aprovados.
+- Home conserva o lápis e a **barra lateral** original, com fundo, atalhos, relógio, resumo Hoje e buscador. Sugestões sobrepõem o conteúdo abaixo da busca, sem empurrar os widgets. Texto do título ASCII é exclusivo do Admin; estilo pessoal continua permitido. A visão geral da disciplina mantém Mural/Timeline selecionáveis e suas seis abas, realinhadas.
 - Biblioteca substitui somente as entradas principais Documentos/Projetos, com duas abas e opções lista/grade. Criar/importar documento e projeto têm ações distintas; rotas existentes, dados, versões, modelos e permissões permanecem compatíveis.
 - Capas de disciplinas: enviar, enquadrar e remover são ações exclusivas de Admin. O backend precisará negar também gestores com grants acadêmicos; não basta ocultar o botão.
+- Acadêmico começa num portal de instituições: cartão da instituição → painel contextual de cursos, períodos/turmas, disciplinas/ofertas e horários/eventos. Pessoas/permissões, Integrações e Sistema continuam seções globais.
+- Prévia gráfica de nota, folha de documento e capa de projeto conserva a identidade da V2; biblioteca permite grade/lista sem trocar os fluxos ou confundir os tipos.
 - Configuração administrativa de Extras fica em Sistema. Extras continua na navegação principal do App e mantém suas feature flags.
 - **Produção pausada:** por instrução mais recente, manter mudanças locais e prévias. Não aplicar nada no servidor até nova instrução do usuário.
 - Workspace de Notas com páginas, blocos, colaboração, bases tabela/Kanban e campos simples. Sem fórmulas/relacionamentos nesta entrega. Base proposta: BlockNote core + Yjs, com licença e créditos conservados; compatibilidade será verificada antes da adoção.
@@ -46,7 +48,7 @@ Testes dirigidos e verificações proporcionais ao risco. Evitar full suite/buil
 
 - [BASELINE.md](BASELINE.md): origem do código e validações.
 - [SCREENS.md](SCREENS.md): inventário completo das rotas de página e análise por família.
-- [BACKLOG.md](BACKLOG.md): achados técnicos A01–A34 e pedidos de produto U01–U20, sem perder itens nos resumos.
+- [BACKLOG.md](BACKLOG.md): achados técnicos A01–A34 e pedidos de produto U01–U26, sem perder itens nos resumos.
 - [Prévia interativa](preview/index.html): quatro telas fictícias, nos dois temas. É uma proposta de interface, não uma funcionalidade instalada.
 
 Publicação, tag e atualização pública não foram realizadas nesta etapa. A versão de runtime continua 2.0.1 até uma entrega apropriada de versionamento; a branch V3 é uma preparação, não uma release pronta.

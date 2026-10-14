@@ -8,7 +8,7 @@ const dialog = document.getElementById("demo-dialog");
 let toastTimer;
 let libraryKind = "documents";
 let libraryScope = "all";
-let libraryView = "list";
+let libraryView = "grid";
 let overviewView = "wall";
 const escapeHtml = (value) =>
   String(value).replace(
@@ -80,7 +80,7 @@ function toast(message) {
   }, 6500);
 }
 function home() {
-  return `<section class="home" aria-label="Home"><div class="home-clock"><strong>10:42</strong><small>TERÇA, 13 DE OUTUBRO</small></div><div class="home-center"><h1 class="home-wordmark" aria-label="OpenStudyHub"><span aria-hidden="true"><pre class="ascii ascii-large">${escapeHtml(logo)}</pre><pre class="ascii ascii-small">${escapeHtml(shortLogo)}</pre></span></h1><form id="search-form" role="search"><div class="search-field"><span class="eyebrow">Busca</span><input id="search-input" type="search" autocomplete="off" placeholder="O que você quer pesquisar?" aria-label="Pesquisar na web" aria-controls="search-suggestions" aria-expanded="false" /><button aria-label="Pesquisar">⌕</button></div><div class="search-hint"><span>/ para focar · Enter para pesquisar</span><span>Busca na web · Google</span></div><ul id="search-suggestions" class="suggestions" hidden aria-label="Sugestões demonstrativas"></ul></form><div class="shortcuts" aria-label="Atalhos">${[
+  return `<section class="home" aria-label="Home"><div class="home-clock"><strong>10:42</strong><small>TERÇA, 13 DE OUTUBRO</small></div><div class="home-center"><h1 class="home-wordmark" aria-label="OpenStudyHub"><span aria-hidden="true"><pre class="ascii ascii-large">${escapeHtml(logo)}</pre><pre class="ascii ascii-small">${escapeHtml(shortLogo)}</pre></span></h1><form id="search-form" role="search"><div class="search-anchor"><div class="search-field"><span class="eyebrow">Busca</span><input id="search-input" type="search" autocomplete="off" placeholder="O que você quer pesquisar?" aria-label="Pesquisar na web" aria-controls="search-suggestions" aria-expanded="false" /><button aria-label="Pesquisar">⌕</button></div><ul id="search-suggestions" class="suggestions" hidden aria-label="Sugestões demonstrativas"></ul></div><div class="search-hint"><span>/ para focar · Enter para pesquisar</span><span id="search-provider-label">Busca na web · ${document.getElementById("demo-search-provider").value}</span></div></form><div class="shortcuts" aria-label="Atalhos">${[
     ["G", "Google Drive"],
     ["▤", "Classroom"],
     ["M", "Gmail"],
@@ -108,6 +108,12 @@ function library() {
       "",
     )}</aside><div><div class="library-tools"><input id="library-search" type="search" aria-label="Filtrar pelo nome" placeholder="Filtrar pelo nome…" /><select id="subject-filter" aria-label="Filtrar disciplina"><option value="all">Todas as disciplinas</option><option>Programação Web</option><option>Fundamentos de Computação</option><option>Algoritmos</option></select><div class="segmented" role="group" aria-label="Visualização da biblioteca"><button data-library-view="list" aria-pressed="${libraryView === "list"}">Lista</button><button data-library-view="grid" aria-pressed="${libraryView === "grid"}">Grade</button></div></div><div class="table-wrap" ${libraryView === "grid" ? "hidden" : ""}><table class="library-table"><thead><tr><th>Nome / contexto</th><th class="column-access">Acesso</th><th class="column-storage">Destino</th><th class="column-updated">Atualizado</th><th><span class="muted">Ações</span></th></tr></thead><tbody id="library-rows"></tbody></table><p id="library-empty" class="library-empty" hidden>Nenhum item corresponde a esses filtros.</p></div><div id="library-grid" class="library-grid" ${libraryView === "list" ? "hidden" : ""}></div><div class="library-summary"><span id="library-count"></span><span>Universidade Exemplo - OSH · destino verificável</span></div></div></div></section>`;
 }
+function cardArtwork(row) {
+  if (row.kind === "projects")
+    return `<div class="content-art project-preview" aria-hidden="true"><span class="project-braces">{ }</span><small>PROJETO</small><strong>${row.title}</strong></div>`;
+  const note = row.kind === "notes";
+  return `<div class="content-art" aria-hidden="true"><div class="paper-preview ${note ? "note-preview" : ""}"><small>${note ? "NOTA · ✦" : "DOCUMENTO"}</small><strong>${row.title}</strong><span>${row.subject}</span>${note ? '<span class="note-text">Estrutura de uma página<br>• Conteúdo e organização<br>• Navegação acessível</span>' : ""}<div class="paper-lines"><i></i><i></i><i></i></div></div></div>`;
+}
 function renderRows() {
   const query = document
     .getElementById("library-search")
@@ -133,7 +139,7 @@ function renderRows() {
     ? filtered
         .map(
           (row) =>
-            `<article class="library-item panel"><span class="file-icon" aria-hidden="true">${row.icon}</span><h3>${row.title}</h3><p class="muted">${row.subject}</p><span class="badge">${row.access}</span><small class="muted">${row.storage} · ${row.updated}</small><button data-feedback="Abre o conteúdo sem mudar sua disciplina ou permissões.">Abrir →</button></article>`,
+            `<article class="library-item panel">${cardArtwork(row)}<div class="library-card-body"><h3>${row.title}</h3><p class="muted">${row.subject}</p><span class="badge">${row.access}</span><small class="muted">${row.storage} · ${row.updated}</small><button data-feedback="Abre o conteúdo sem mudar sua disciplina ou permissões.">Abrir →</button></div></article>`,
         )
         .join("")
     : '<p class="library-empty">Nenhum item corresponde a esses filtros.</p>';
@@ -168,7 +174,7 @@ function subject() {
   return `<section class="workspace"><div class="subject-banner"><span class="eyebrow">WEB101 / 2026.2</span></div><header class="page-heading"><div><p class="eyebrow">Disciplinas / semestre atual</p><h1>Programação Web</h1><div class="subject-meta"><span>ES · Engenharia de Software</span><span>Prof. Ana</span><span>Turma manhã</span></div></div><span class="badge"><span class="dot"></span>Classroom atualizado</span></header><div class="tabs" role="tablist" aria-label="Seções da disciplina">${["Visão geral", "Mural", "Atividades", "Notas", "Documentos", "Projetos"].map((label, i) => `<button role="tab" data-subject-tab="${label}" aria-selected="${i === 0}">${label}</button>`).join("")}</div><div class="subject-columns"><div><section class="panel"><div class="panel-heading"><h2 id="subject-section-title">Mural recente</h2>${overviewSwitch()}</div><div id="subject-feed">${feed()}</div></section><section class="panel" style="margin-top:16px"><div class="inline-event"><div><span class="eyebrow">Próximo evento</span><h3>Aula prática excepcional</h3><p>Sábado, 17 out. · 09:00–10:30 · Laboratório 2</p></div><span class="badge">Evento pontual</span></div></section></div><aside class="subject-aside"><section class="panel"><div class="panel-heading"><h2>Ações</h2></div><div class="action-stack"><button data-feedback="A nova nota já abre com a disciplina associada.">+ Nova nota</button><button data-feedback="Selecione modelo, destino e participantes antes de gerar.">Gerar documento</button><button data-feedback="Criar vazio e importar projeto serão caminhos distintos.">Novo projeto</button><button data-feedback="A conexão e o progresso ficam visíveis; o mural não desaparece.">Sincronizar Classroom</button></div></section><section class="panel"><div class="panel-heading"><h2>Aulas</h2><span class="muted">2 / semana</span></div><div class="schedule-row"><strong>TER<br>11:00</strong><div><strong>até 12:15</strong><span>Sala A204</span></div></div><div class="schedule-row"><strong>QUI<br>11:00</strong><div><strong>até 12:15</strong><span>Sala A204</span></div></div></section></aside></div></section>`;
 }
 function adminDashboard() {
-  return `<header class="page-heading"><div><p class="eyebrow">Control Plane / Universidade Exemplo</p><h1>Visão geral</h1><p class="muted">Estrutura, acesso e operação da sua instituição.</p></div><button class="primary" data-create-course>+ Criar curso</button></header><div class="admin-stats"><div class="stat"><strong>2</strong><span>Cursos ativos</span></div><div class="stat"><strong>32</strong><span>Pessoas</span></div><div class="stat"><strong>12</strong><span>Disciplinas no período</span></div><div class="stat"><strong>3</strong><span>Gestores</span></div></div><div class="admin-columns"><section class="panel"><div class="panel-heading"><h2>Próximas ações</h2><span class="badge">2 pendências fictícias</span></div><div class="task"><div><h3>Conferir as matrículas</h3><p>Dois cadastros ainda não têm contexto acadêmico.</p></div><button data-admin-section="Pessoas e permissões">Conferir →</button></div><div class="task"><div><h3>Preparar a recuperação</h3><p>Escolha a agenda e guarde a chave do backup.</p></div><button data-admin-section="Sistema">Configurar →</button></div><div class="task"><div><h3>Adicionar um evento acadêmico</h3><p>Aula excepcional, prova ou aviso com data e público definidos.</p></div><button data-admin-section="Acadêmico">Adicionar →</button></div></section><section class="panel"><div class="panel-heading"><h2>Operação</h2><button class="icon-button" data-feedback="Diagnóstico tem evidências e ações claras, sem expor segredos." aria-label="Opções da operação">⋯</button></div><div class="service"><strong>App / Admin / realtime</strong><span>Disponíveis</span></div><div class="service"><strong>Drive</strong><span>Última verificação: 10:30</span></div><div class="service"><strong>Classroom</strong><span>Sincronização automática</span></div><div class="service"><strong>Backup</strong><span>Agenda não definida</span></div></section></div><p class="admin-note">Esta tela mostra exemplos. Os indicadores não representam o estado da instalação real.</p>`;
+  return `<header class="page-heading"><div><p class="eyebrow">Control Plane / Universidade Exemplo</p><h1>Visão geral</h1><p class="muted">Estrutura, acesso e operação da sua instituição.</p></div><button class="primary" data-admin-section="Acadêmico">Ver instituições →</button></header><div class="admin-stats"><div class="stat"><strong>2</strong><span>Cursos ativos</span></div><div class="stat"><strong>32</strong><span>Pessoas</span></div><div class="stat"><strong>12</strong><span>Disciplinas no período</span></div><div class="stat"><strong>3</strong><span>Gestores</span></div></div><div class="admin-columns"><section class="panel"><div class="panel-heading"><h2>Próximas ações</h2><span class="badge">2 pendências fictícias</span></div><div class="task"><div><h3>Conferir as matrículas</h3><p>Dois cadastros ainda não têm contexto acadêmico.</p></div><button data-admin-section="Pessoas e permissões">Conferir →</button></div><div class="task"><div><h3>Preparar a recuperação</h3><p>Escolha a agenda e guarde a chave do backup.</p></div><button data-admin-section="Sistema">Configurar →</button></div><div class="task"><div><h3>Adicionar um evento acadêmico</h3><p>Aula excepcional, prova ou aviso com data e público definidos.</p></div><button data-admin-section="Acadêmico">Adicionar →</button></div></section><section class="panel"><div class="panel-heading"><h2>Operação</h2><button class="icon-button" data-feedback="Diagnóstico tem evidências e ações claras, sem expor segredos." aria-label="Opções da operação">⋯</button></div><div class="service"><strong>App / Admin / realtime</strong><span>Disponíveis</span></div><div class="service"><strong>Drive</strong><span>Última verificação: 10:30</span></div><div class="service"><strong>Classroom</strong><span>Sincronização automática</span></div><div class="service"><strong>Backup</strong><span>Agenda não definida</span></div></section></div><p class="admin-note">Esta tela mostra exemplos. Os indicadores não representam o estado da instalação real.</p>`;
 }
 function admin() {
   return `<div class="admin-layout"><aside class="admin-sidebar" aria-label="Seções do Admin"><p class="eyebrow">Administração</p>${["Visão geral", "Acadêmico", "Pessoas e permissões", "Integrações", "Sistema"].map((name, i) => `<button data-admin-section="${name}" ${i === 0 ? 'aria-current="page"' : ""}>${name}</button>`).join("")}</aside><section class="admin-content" id="admin-content">${adminDashboard()}</section></div>`;
@@ -194,12 +200,48 @@ const adminDetails = {
   ],
   Sistema: [
     "Saúde e versão instalada",
+    "Identidade e texto do título ASCII — somente Admin",
     "Extras e minigames",
     "Backup e recuperação",
     "Notificações em segundo plano",
     "Auditoria administrativa",
   ],
 };
+const institutions = [
+  {
+    id: "university",
+    name: "Universidade Exemplo",
+    shortName: "UE",
+    courses: "2 cursos · 12 disciplinas",
+    description: "Ensino superior · período 2026.2",
+  },
+  {
+    id: "institute",
+    name: "Instituto de Tecnologia",
+    shortName: "IT",
+    courses: "1 curso · 6 disciplinas",
+    description: "Ensino técnico · período 2026.2",
+  },
+];
+function academicPortal() {
+  return `<header class="page-heading"><div><p class="eyebrow">Control Plane / Acadêmico</p><h1>Instituições</h1><p class="muted">Escolha uma instituição para administrar sua estrutura acadêmica.</p></div><button data-feedback="Cadastrar instituição inclui nome, sigla e contexto; este é um exemplo de navegação.">+ Criar instituição</button></header><div class="institution-grid">${institutions.map((item) => `<article class="panel institution-card"><span class="institution-mark" aria-hidden="true">${item.shortName}</span><h2>${item.name}</h2><p class="muted">${item.description}</p><span>${item.courses}</span><button class="primary" data-institution="${item.id}">Administrar instituição →</button></article>`).join("")}</div>`;
+}
+function institutionPortal(id) {
+  const item = institutions.find((entry) => entry.id === id);
+  if (!item) return;
+  document.getElementById("admin-content").innerHTML =
+    `<div class="institution-context"><button class="text-link" data-admin-section="Acadêmico">← Instituições</button><span class="muted">/ ${item.shortName}</span></div><header class="page-heading"><div><p class="eyebrow">Acadêmico / ${item.shortName}</p><h1>${item.name}</h1><p class="muted">${item.description} · ${item.courses}</p></div><button data-feedback="Editar nome e sigla mantém os dados vinculados a esta instituição.">Editar instituição</button></header><div class="portal-grid">${[
+      ["Cursos", "Cursos, siglas e remoção com análise dos vínculos."],
+      ["Períodos e turmas", "Organização do semestre e grupos de alunos."],
+      ["Disciplinas e ofertas", "Catálogo, professores, matrículas e capas."],
+      ["Horários e eventos", "Grade regular, provas e aulas excepcionais."],
+    ]
+      .map(
+        ([title, description]) =>
+          `<section class="panel portal-card"><h2>${title}</h2><p class="muted">${description}</p><button ${title === "Cursos" ? `data-create-course data-course-context="${item.shortName}"` : `data-feedback="Abre ${title.toLowerCase()} somente no contexto de ${item.name}."`}>${title === "Cursos" ? "+ Criar curso" : "Abrir →"}</button>${title === "Disciplinas e ofertas" ? '<button data-feedback="Somente Admin poderá alterar a capa; a implementação também precisa autorizar no servidor.">Ajustar capa</button>' : ""}</section>`,
+      )
+      .join("")}</div>`;
+}
 function showAdminSection(name) {
   document.querySelectorAll(".admin-sidebar button").forEach((button) => {
     if (button.dataset.adminSection === name)
@@ -211,9 +253,14 @@ function showAdminSection(name) {
     target.innerHTML = adminDashboard();
     return;
   }
+  if (name === "Acadêmico") {
+    target.innerHTML = academicPortal();
+    return;
+  }
   target.innerHTML = `<header class="page-heading"><div><p class="eyebrow">Control Plane</p><h1>${name}</h1><p class="muted">Uma entrada clara para cada tarefa, com contexto e próximo passo.</p></div>${name === "Acadêmico" ? '<button class="primary" data-create-course>+ Criar curso</button>' : ""}</header><section class="panel">${adminDetails[name].map((label) => `<div class="task"><div><h3>${label}</h3><p>Proposta de agrupamento da navegação. A implementação será feita na etapa responsável.</p></div>${label.startsWith("Capas das disciplinas") ? '<button data-feedback="Somente Admin poderá enviar, enquadrar e remover a capa, com autorização no servidor.">Ajustar capa</button>' : '<button data-feedback="Este fluxo terá revisão, autorização e feedback de conclusão.">Abrir →</button>'}</div>`).join("")}</section>`;
 }
 function render() {
+  document.getElementById("home-customize-dialog").close();
   const screen = ["home", "library", "subject", "admin"].includes(
     window.location.hash.slice(1),
   )
@@ -278,7 +325,7 @@ content.addEventListener("submit", (event) => {
     .getElementById("search-input")
     .setAttribute("aria-expanded", "false");
   toast(
-    "Demonstração: a busca final abriria o Google. Sugestões aqui são exemplos, sem consulta externa.",
+    `Demonstração: a busca final abriria ${document.getElementById("demo-search-provider").value}. Sugestões aqui são exemplos, sem consulta externa.`,
   );
 });
 document.addEventListener("click", (event) => {
@@ -304,12 +351,20 @@ document.addEventListener("click", (event) => {
 
   const target = event.target.closest("button");
   if (target?.dataset.feedback) toast(target.dataset.feedback);
-  if (target?.hasAttribute("data-create-course")) dialog.showModal();
+  if (target?.hasAttribute("data-create-course")) {
+    document.getElementById("dialog-title").textContent = target.dataset
+      .courseContext
+      ? `Criar curso — ${target.dataset.courseContext}`
+      : "Criar curso";
+    dialog.showModal();
+  }
   if (target?.dataset.libraryKind) {
     libraryKind = target.dataset.libraryKind;
     content.innerHTML = library();
     renderRows();
   }
+  if (target?.dataset.institution)
+    institutionPortal(target.dataset.institution);
   if (target?.dataset.scope) {
     libraryScope = target.dataset.scope;
     content.innerHTML = library();
@@ -332,7 +387,9 @@ document.addEventListener("click", (event) => {
       "Mural",
     ].includes(tab)
       ? feed()
-      : `<div class="panel-body"><h3>${tab} desta disciplina</h3><p class="muted" style="margin-top:8px">A mesma hierarquia de biblioteca, com filtros e contexto preservados.</p><button style="margin-top:16px" data-feedback="Cada seção terá sua ação específica, respeitando as permissões.">Abrir ${tab.toLowerCase()} →</button></div>`;
+      : tab === "Notas"
+        ? `<div class="panel-body"><div class="library-grid"><article class="library-item panel">${cardArtwork({ title: "Anotações da aula 04", subject: "Programação Web", kind: "notes", icon: "TXT" })}<div class="library-card-body"><h3>Anotações da aula 04</h3><small class="muted">Programação Web · nota pessoal</small><button data-feedback="A nota mantém sua prévia gráfica e o contexto acadêmico.">Abrir nota →</button></div></article></div></div>`
+        : `<div class="panel-body"><h3>${tab} desta disciplina</h3><p class="muted" style="margin-top:8px">A mesma hierarquia de biblioteca, com filtros e contexto preservados.</p><button style="margin-top:16px" data-feedback="Cada seção terá sua ação específica, respeitando as permissões.">Abrir ${tab.toLowerCase()} →</button></div>`;
   }
   if (target?.dataset.subjectTab === "Visão geral") updateOverview();
   if (target?.dataset.suggestion) {
@@ -396,3 +453,30 @@ document.getElementById("nav-more").addEventListener("click", (event) => {
   event.target.textContent = expanded ? "Menos ⋯" : "Mais ⋯";
 });
 render();
+
+const homeDrawer = document.getElementById("home-customize-dialog");
+homeDrawer.addEventListener("click", (event) => {
+  if (event.target !== homeDrawer) return;
+  const bounds = homeDrawer.getBoundingClientRect();
+  if (event.clientX < bounds.left || event.clientX > bounds.right)
+    homeDrawer.close();
+});
+homeDrawer.addEventListener("close", () => {
+  document
+    .querySelector("[data-home-customize]")
+    ?.focus({ preventScroll: true });
+});
+document
+  .getElementById("demo-search-provider")
+  .addEventListener("change", (event) => {
+    const label = document.getElementById("search-provider-label");
+    if (label) label.textContent = `Busca na web · ${event.target.value}`;
+  });
+
+document
+  .getElementById("demo-ascii-style")
+  .addEventListener("change", (event) => {
+    document
+      .querySelector(".home-wordmark")
+      ?.classList.toggle("prefer-compact", event.target.value === "Compacto");
+  });

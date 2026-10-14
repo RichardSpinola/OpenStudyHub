@@ -164,7 +164,7 @@ A estrutura foi bem recebida, mas não deve substituir indiscriminadamente o lay
 - Disciplina: Mural/Timeline na visão geral; seis abas continuam próprias; capa só no Admin, com autorização server-side a implementar.
 - Biblioteca: Documentos/Projetos entram por uma única navegação, com abas, criação/importação específicas e lista/grade. Notas e Chat não são fundidos nesta área.
 - Admin: configuração de Extras em Sistema; escolha de tema também disponível na superfície Admin.
-- Material 3: cores por função, superfícies, hierarquia tipográfica, seleção e formas coerentes. Terminal: bordas retas, monospace e sinais de navegação.
+- Material: estilo original da V2 preservado; a recoloração da prévia foi rejeitada no feedback posterior. Terminal: bordas retas, monospace e sinais de navegação aprovados.
 - Servidor: implantação suspensa; a revisão é local.
 
 Referências oficiais de design:
@@ -173,3 +173,7 @@ Referências oficiais de design:
 - [Material 3 — tipografia](https://m3.material.io/styles/typography/applying-type)
 - [Material 3 — abas](https://m3.material.io/components/tabs/overview)
 - [Material 3 — FAB](https://m3.material.io/components/floating-action-button/overview)
+
+## Correção da direção visual após novo feedback
+
+Preservar a organização das barras atuais e componentes aprovados. Personalização da Home continua numa lateral com todos os grupos originais; sugestões aparecem em sobreposição. Texto do título é exclusivo do Admin, aparência pessoal é separada. Biblioteca mantém Documentos/Projetos separados e suas representações gráficas; Notas continua própria, com prévia de folha. Acadêmico passa por instituição antes das tarefas contextuais. As demais rotas ainda não são simuladas; ausência na prévia não significa remoção no produto.

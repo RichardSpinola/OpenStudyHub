@@ -1,19 +1,17 @@
 :root {
   color-scheme: dark;
-  --bg: #101512;
-  --surface: #1b211d;
-  --raised: #272e28;
-  --ink: #e1e7df;
-  --muted: #bdc9bd;
-  --line: #414b42;
-  --accent: #acd2b5;
-  --primary-ink: #163822;
-  --selection-bg: #304b36;
-  --radius: 16px;
-  --button-radius: 999px;
-  --font:
-    "Roboto", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  --bg: #171a1c;
+  --surface: #202426;
+  --raised: #272c2e;
+  --ink: #eceeea;
+  --muted: #a2aaa7;
+  --line: #3b4442;
+  --accent: #b4c8bf;
+  --primary-ink: #171a1c;
+  --selection-bg: #303634;
+  --radius: 8px;
+  --button-radius: 8px;
+  --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -103,13 +101,13 @@ small {
   color: var(--muted);
 }
 .primary {
-  background: var(--accent);
-  color: var(--primary-ink);
-  border-color: var(--accent);
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
   font-weight: 600;
 }
 .primary:hover {
-  background: var(--accent);
+  background: var(--ink);
   color: var(--bg);
 }
 .icon-button {
@@ -1356,90 +1354,6 @@ button {
 .subject-timeline p {
   font-size: 12px;
 }
-html[data-theme="material"] .app-header {
-  background: var(--surface);
-}
-html[data-theme="material"] .app-header nav a {
-  border-radius: 12px;
-  min-height: 44px;
-}
-html[data-theme="material"] .app-header nav a[aria-current="page"] {
-  background: var(--selection-bg);
-  color: var(--accent);
-  border-bottom-color: transparent;
-}
-html[data-theme="material"] .panel {
-  background: var(--surface);
-  border-color: transparent;
-}
-html[data-theme="material"] .panel-heading {
-  border-bottom-color: var(--line);
-}
-html[data-theme="material"] h1 {
-  font-weight: 500;
-}
-html[data-theme="material"] h2 {
-  font-size: 20px;
-  font-weight: 500;
-}
-html[data-theme="material"] button {
-  font-weight: 500;
-  min-height: 44px;
-}
-html[data-theme="material"] .primary {
-  padding-inline: 24px;
-}
-html[data-theme="material"] .tabs button {
-  border-radius: 0;
-  font-size: 14px;
-  padding: 12px 18px;
-}
-html[data-theme="material"] .tabs button[aria-selected="true"] {
-  border-bottom-width: 3px;
-  color: var(--accent);
-}
-html[data-theme="material"] .badge {
-  border-radius: 8px;
-}
-html[data-theme="material"] .library-sidebar button {
-  border-radius: 24px;
-  border-left-color: transparent;
-  padding-inline: 16px;
-}
-html[data-theme="material"] .library-sidebar button[aria-pressed="true"] {
-  background: var(--selection-bg);
-  color: var(--accent);
-}
-html[data-theme="material"] .admin-sidebar button {
-  border-radius: 24px;
-  border-left-color: transparent;
-}
-html[data-theme="material"] .admin-sidebar button[aria-current="page"] {
-  background: var(--selection-bg);
-  color: var(--accent);
-}
-html[data-theme="material"] .search-field {
-  border-radius: 28px;
-  overflow: hidden;
-  background: var(--raised);
-  border-color: transparent;
-}
-html[data-theme="material"] .search-field button {
-  background: var(--selection-bg);
-  color: var(--accent);
-  border: 0;
-}
-html[data-theme="material"] .shortcut button:first-child {
-  box-shadow: none;
-  background: var(--raised);
-  border-color: transparent;
-  border-radius: 16px;
-}
-html[data-theme="material"] dialog {
-  border-radius: 28px;
-  border: 0;
-  box-shadow: 0 12px 32px #0008;
-}
 html[data-theme="legacy"] .home-customize {
   border: 1px solid var(--accent);
   border-radius: 0;
@@ -1469,10 +1383,6 @@ html[data-theme="legacy"] .demo-caption::before {
   }
 }
 @container (max-width:500px) {
-  html[data-theme="material"] .tabs button {
-    font-size: 12px;
-    padding-inline: 10px;
-  }
   .home-customize {
     bottom: 12px;
     right: 12px;
@@ -1488,4 +1398,254 @@ html[data-theme="legacy"] .demo-caption::before {
   .heading-actions button {
     white-space: normal;
   }
+}
+
+/* Preserve the original neutral theme; these changes concern layout only. */
+.search-anchor {
+  position: relative;
+}
+.search-field > .eyebrow {
+  flex: 0 0 auto;
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+.search-field input:focus-visible {
+  outline: none;
+}
+.search-field:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  inset-inline: 0;
+  z-index: 20;
+  margin: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: 0 10px 24px #0008;
+}
+.home-customize {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  width: 44px;
+  height: 44px;
+}
+#home-customize-dialog {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: min(440px, 100vw);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  overflow: hidden;
+}
+.drawer-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.drawer-heading h2 {
+  margin: 0;
+}
+.drawer-heading form {
+  margin: 0;
+}
+.drawer-heading .dialog-close {
+  position: static;
+}
+.drawer-content {
+  padding: 20px;
+  height: calc(100% - 83px);
+  overflow-y: auto;
+}
+.drawer-content section {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+}
+.drawer-content section:first-of-type {
+  padding-top: 12px;
+}
+.drawer-content h3 {
+  font-size: 15px;
+}
+.drawer-content label {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.drawer-content input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+}
+.drawer-content select {
+  max-width: 60%;
+}
+.drawer-content p {
+  font-size: 12px;
+  margin: 0;
+}
+.drawer-content .text-link {
+  display: block;
+  margin-top: 18px;
+}
+.library-item {
+  padding: 0;
+  overflow: hidden;
+  gap: 0;
+}
+.library-card-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  width: 100%;
+}
+.library-card-body button {
+  margin-top: auto;
+}
+.content-art {
+  width: 100%;
+  min-height: 220px;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  background: var(--raised);
+  border-bottom: 1px solid var(--line);
+}
+.paper-preview {
+  background: #f2efe6;
+  color: #343e3c;
+  width: min(100%, 170px);
+  aspect-ratio: 0.78;
+  padding: 16px;
+  border-radius: 2px;
+  box-shadow: 0 4px 12px #0003;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.paper-preview small {
+  font:
+    8px/1.3 system-ui,
+    sans-serif;
+  letter-spacing: 0.12em;
+  border-bottom: 1px solid #708880;
+  padding-bottom: 8px;
+}
+.paper-preview strong {
+  font:
+    600 13px/1.3 system-ui,
+    sans-serif;
+  overflow-wrap: anywhere;
+}
+.paper-preview span {
+  font:
+    9px/1.4 system-ui,
+    sans-serif;
+}
+.paper-lines {
+  margin-top: auto;
+  display: grid;
+  gap: 5px;
+}
+.paper-lines i {
+  height: 3px;
+  background: #cbd3cb;
+}
+.paper-lines i:last-child {
+  width: 65%;
+}
+.note-preview {
+  background: #f4ebcb;
+}
+.note-preview .note-text {
+  font:
+    10px/1.7 system-ui,
+    sans-serif;
+  margin-top: 5px;
+}
+.project-preview {
+  place-items: stretch;
+  min-height: 180px;
+  background:
+    repeating-linear-gradient(135deg, #fff0 0 18px, #fff03 18px 36px),
+    var(--raised);
+}
+.project-preview .project-braces {
+  justify-self: end;
+  font: 38px/1 monospace;
+}
+.project-preview strong {
+  align-self: end;
+  font: 600 16px/1.4 monospace;
+}
+.institution-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 20px;
+}
+.institution-card {
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+}
+.institution-mark {
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font: 20px monospace;
+}
+.institution-card button {
+  justify-self: start;
+}
+.institution-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+}
+.portal-card {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+.portal-card button {
+  justify-self: start;
+}
+
+.home-wordmark.prefer-compact .ascii-large {
+  display: none;
+}
+.home-wordmark.prefer-compact .ascii-small {
+  display: inline-block;
+}
+.identity .icon-button {
+  display: grid;
+  place-items: center;
 }
