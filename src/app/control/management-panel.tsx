@@ -1,10 +1,10 @@
+import { GettingStarted } from "./getting-started";
+import { SubjectCoversPanel } from "./subject-covers-panel";
 import { RemovalPanel } from "./removal-panel";
 import { EventsPanel } from "./events-panel";
 import { UiCopy } from "@/components/ui-language-provider";
 import type { Actor } from "@/lib/v2/actor";
 import Link from "next/link";
-import { ImageUploadPreview } from "@/components/image-upload-preview";
-import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import type { V2Database } from "@/lib/v2/database";
 import { canManage, isAdmin } from "@/lib/v2/access";
 import { visiblePrograms } from "@/lib/v2/control";
@@ -80,7 +80,11 @@ function Select({
   return (
     <label>
       <UiCopy pt={label} en={fieldLabelEn[label] ?? label} />
-      <select name={name} required={!optional}>
+      <select
+        name={name}
+        required={!optional}
+        aria-describedby={!items.length ? `missing-${name}` : undefined}
+      >
         <option value="">
           {optional ? (
             <UiCopy pt="Não definido" en="Not set" />
@@ -90,6 +94,13 @@ function Select({
         </option>
         {option(items)}
       </select>
+      {!items.length && (
+        <small id={`missing-${name}`} role="status">
+          {optional
+            ? "Você pode deixar este campo vazio."
+            : `Cadastre ${label.toLowerCase()} antes de usar esta opção. Os cadastros ficam no menu do curso ou da instituição.`}
+        </small>
+      )}
     </label>
   );
 }
@@ -392,7 +403,7 @@ export function ManagementPanel({
   const semesters = pid
     ? rows<{ id: number; name: string }>(
         db,
-        "SELECT cs.id,cs.ordinal || 'º semestre' name FROM curriculum_semesters cs JOIN curricula c ON c.id=cs.curriculum_id WHERE c.program_id=? ORDER BY cs.ordinal",
+        "SELECT cs.id,cs.ordinal || 'º semestre · ' || c.version name FROM curriculum_semesters cs JOIN curricula c ON c.id=cs.curriculum_id WHERE c.program_id=? ORDER BY cs.ordinal",
         pid,
       )
     : [];
@@ -441,7 +452,7 @@ export function ManagementPanel({
   const mappings = pid
     ? rows<{ id: number; name: string }>(
         db,
-        "SELECT m.id,cs.ordinal || 'º · ' || s.name name FROM curriculum_subjects m JOIN curriculum_semesters cs ON cs.id=m.semester_id JOIN curricula c ON c.id=cs.curriculum_id JOIN subjects s ON s.id=m.subject_id WHERE c.program_id=? ORDER BY cs.ordinal,s.name",
+        "SELECT m.id,cs.ordinal || 'º · ' || s.name || ' · ' || c.version name FROM curriculum_subjects m JOIN curriculum_semesters cs ON cs.id=m.semester_id JOIN curricula c ON c.id=cs.curriculum_id JOIN subjects s ON s.id=m.subject_id WHERE c.program_id=? ORDER BY cs.ordinal,s.name",
         pid,
       )
     : [];
@@ -494,19 +505,16 @@ export function ManagementPanel({
         pid,
       )
     : [];
-  const coverIds = new Set(
-    pid
-      ? rows<{ id: number }>(
-          db,
-          "SELECT c.offering_id id FROM offering_covers c JOIN offerings o ON o.id=c.offering_id WHERE o.program_id=?",
-          pid,
-        ).map((row) => row.id)
-      : [],
-  );
   const cohortPeriodsAll = pid
-    ? rows<{ id: number; name: string; state: string; cohortId: number }>(
+    ? rows<{
+        id: number;
+        name: string;
+        state: string;
+        cohortId: number;
+        period: string;
+      }>(
         db,
-        "SELECT cp.id,c.id cohortId,c.name || ' · ' || ap.label || ' · ' || cs.ordinal || 'º' name,cp.state FROM cohort_periods cp JOIN cohorts c ON c.id=cp.cohort_id JOIN academic_periods ap ON ap.id=cp.period_id JOIN curriculum_semesters cs ON cs.id=cp.semester_id WHERE c.program_id=? ORDER BY ap.starts_on DESC",
+        "SELECT cp.id,c.id cohortId,ap.label period,c.name || ' · ' || ap.label || ' · ' || cs.ordinal || 'º' name,cp.state FROM cohort_periods cp JOIN cohorts c ON c.id=cp.cohort_id JOIN academic_periods ap ON ap.id=cp.period_id JOIN curriculum_semesters cs ON cs.id=cp.semester_id WHERE c.program_id=? ORDER BY ap.starts_on DESC",
         pid,
       )
     : [];
@@ -571,16 +579,25 @@ export function ManagementPanel({
       key: "curriculum",
       label: tr("Semestres e currículo", "Semesters and curriculum"),
     },
-    { key: "subjects", label: tr("Disciplinas", "Subjects") },
+    {
+      key: "subjects",
+      label: tr("Catálogo de disciplinas", "Subject catalog"),
+    },
     {
       key: "offerings",
-      label: tr("Turmas da disciplina", "Subject offerings"),
+      label: tr("Disciplinas e capas", "Subjects and covers"),
     },
     { key: "schedule", label: tr("Horários", "Schedules") },
     { key: "enrollments", label: tr("Estudantes", "Students") },
     { key: "managers", label: tr("Gestores", "Managers") },
   ];
-  const activePeriod = cohortPeriodsAll.find((item) => item.state === "active");
+  const activePeriods = [
+    ...new Set(
+      cohortPeriodsAll
+        .filter((item) => item.state === "active")
+        .map((item) => item.period),
+    ),
+  ];
   return (
     <ConsoleShell
       title={
@@ -668,10 +685,10 @@ export function ManagementPanel({
             <strong>
               {institution} / {program.name}
             </strong>
-            {activePeriod ? (
+            {activePeriods.length ? (
               <span>
-                <UiCopy pt="Período das turmas:" en="Cohort period:" />{" "}
-                {activePeriod.name}
+                <UiCopy pt="Períodos ativos:" en="Active periods:" />{" "}
+                {activePeriods.join(" · ")}
               </span>
             ) : null}
             <span>
@@ -716,6 +733,9 @@ export function ManagementPanel({
                 : null}
               {section === "structure" ? (
                 <section>
+                  {admin
+                    ? GettingStarted({ db, institutionId, programId: pid })
+                    : null}
                   <h2>
                     <UiCopy pt="Este curso" en="This course" />
                   </h2>
@@ -867,6 +887,15 @@ export function ManagementPanel({
                       en="A curriculum semester is a position in the course (first, second and so on). An academic period is a calendar window (for example, 2030.1). A cohort links the two without mixing them."
                     />
                   </Help>
+                  <ol className="admin-sequence">
+                    <li>Crie a versão do currículo e seus semestres.</li>
+                    <li>Associe as disciplinas a cada semestre.</li>
+                    <li>
+                      Escolha turma, período letivo e semestre para preparar as
+                      aulas.
+                    </li>
+                    <li>Confira a transição antes de ativar o novo período.</li>
+                  </ol>
                   {canStructure ? (
                     <>
                       <Create
@@ -953,7 +982,12 @@ export function ManagementPanel({
                   <div className="v2-list">
                     {cohortPeriods.map((cp) => (
                       <div key={cp.id} className="v2-row">
-                        {cp.name} · {cp.state}
+                        {cp.name} ·{" "}
+                        {cp.state === "planned"
+                          ? tr("Preparado", "Prepared")
+                          : cp.state === "active"
+                            ? tr("Em andamento", "Active")
+                            : tr("Encerrado", "Closed")}
                       </div>
                     ))}
                   </div>
@@ -1047,6 +1081,14 @@ export function ManagementPanel({
               ) : null}
               {section === "offerings" ? (
                 <>
+                  {admin
+                    ? SubjectCoversPanel({
+                        db,
+                        institutionId,
+                        programId: pid,
+                        returnTo: path,
+                      })
+                    : null}
                   <h2>
                     <UiCopy pt="Turmas da disciplina" en="Subject offerings" />
                   </h2>
@@ -1059,7 +1101,7 @@ export function ManagementPanel({
                   {canStructure ? (
                     <>
                       <Create
-                        title="Criar turma da disciplina"
+                        title="Adicionar disciplina ao período"
                         intent="offering"
                         path={path}
                       >
@@ -1103,7 +1145,7 @@ export function ManagementPanel({
                   {canCohortScoped ? (
                     <>
                       <Create
-                        title="Vincular oferta à turma"
+                        title="Escolher turma de estudantes"
                         intent="offeringCohort"
                         path={path}
                       >
@@ -1127,125 +1169,70 @@ export function ManagementPanel({
                           {o.name} · {o.period}{" "}
                           {o.archived_at ? "· Arquivada" : ""}
                         </span>
-                        {admin ? (
-                          <AdminActionPanel
-                            title={
-                              coverIds.has(o.id)
-                                ? "Trocar capa"
-                                : "Adicionar capa"
-                            }
-                          >
-                            <form action={controlAction} className="v2-fields">
-                              <HiddenContext
-                                returnTo={path}
-                                intent="offeringCover"
-                                offeringId={o.id}
-                              />
+
+                        {admin && contextual ? (
+                          <details className="admin-compatibility-tool">
+                            <summary>Compatibilidade com dados antigos</summary>
+                            <AdminActionPanel title="Vincular à disciplina importada">
                               <p>
                                 <UiCopy
-                                  pt="A imagem aparece no cabeçalho e no cartão da disciplina. A capa do Classroom não é copiada automaticamente."
-                                  en="The image appears in the subject header and card. The Classroom cover is not copied automatically."
+                                  pt="Confirme manualmente a turma do app diário que representa esta oferta. Nenhum vínculo é inferido pelo número do registro."
+                                  en="Manually confirm the daily app class that represents this offering. No link is inferred from the record number."
                                 />
                               </p>
-                              <ImageUploadPreview
-                                name="cover"
-                                label="Imagem PNG, JPEG ou WebP · até 5 MiB"
-                                currentSrc={
-                                  coverIds.has(o.id)
-                                    ? `/control/offering-cover/${o.id}`
-                                    : undefined
-                                }
-                                alt={tr(
-                                  "Capa atual ou prévia da disciplina",
-                                  "Current cover or subject preview",
-                                )}
-                                maxMiB={5}
-                              />
-                              <button>
-                                <UiCopy pt="Salvar capa" en="Save cover" />
-                              </button>
-                            </form>
-                            {coverIds.has(o.id) ? (
                               <form
                                 action={controlAction}
                                 className="v2-fields"
                               >
                                 <HiddenContext
                                   returnTo={path}
-                                  intent="offeringCoverRemove"
+                                  intent="legacyOfferingLink"
                                   offeringId={o.id}
                                 />
-                                <ConfirmSubmitButton
-                                  type="submit"
-                                  className="secondary-button"
-                                  confirmation={tr(
-                                    "Remover a capa desta disciplina e restaurar o visual padrão?",
-                                    "Remove this subject cover and restore the default appearance?",
-                                  )}
-                                >
-                                  <UiCopy pt="Remover capa" en="Remove cover" />
-                                </ConfirmSubmitButton>
-                              </form>
-                            ) : null}
-                          </AdminActionPanel>
-                        ) : null}
-                        {admin && contextual ? (
-                          <AdminActionPanel title="Ligar à turma V1">
-                            <p>
-                              <UiCopy
-                                pt="Confirme manualmente a turma do app diário que representa esta oferta. Nenhum vínculo é inferido pelo número do registro."
-                                en="Manually confirm the daily app class that represents this offering. No link is inferred from the record number."
-                              />
-                            </p>
-                            <form action={controlAction} className="v2-fields">
-                              <HiddenContext
-                                returnTo={path}
-                                intent="legacyOfferingLink"
-                                offeringId={o.id}
-                              />
-                              <label>
-                                <UiCopy
-                                  pt="Turma do app diário"
-                                  en="Class in the daily app"
-                                />
-                                <select
-                                  name="legacyOfferingId"
-                                  defaultValue={
-                                    legacyLinks.find(
-                                      (link) => link.offeringId === o.id,
-                                    )?.legacyOfferingId ?? ""
-                                  }
-                                  required
-                                >
-                                  <option value="">
-                                    <UiCopy
-                                      pt="Selecione pelo nome e período"
-                                      en="Select by name and period"
-                                    />
-                                  </option>
-                                  {legacyOfferings.map((legacy) => (
-                                    <option
-                                      key={legacy.offeringId}
-                                      value={legacy.offeringId}
-                                    >
-                                      {legacy.subjectName} ·{" "}
-                                      {legacy.programName} ·{" "}
-                                      {legacy.periodLabel}
-                                      {legacy.classGroup
-                                        ? ` · ${legacy.classGroup}`
-                                        : ""}
+                                <label>
+                                  <UiCopy
+                                    pt="Turma do app diário"
+                                    en="Class in the daily app"
+                                  />
+                                  <select
+                                    name="legacyOfferingId"
+                                    defaultValue={
+                                      legacyLinks.find(
+                                        (link) => link.offeringId === o.id,
+                                      )?.legacyOfferingId ?? ""
+                                    }
+                                    required
+                                  >
+                                    <option value="">
+                                      <UiCopy
+                                        pt="Selecione pelo nome e período"
+                                        en="Select by name and period"
+                                      />
                                     </option>
-                                  ))}
-                                </select>
-                              </label>
-                              <button>
-                                <UiCopy
-                                  pt="Confirmar ligação"
-                                  en="Confirm link"
-                                />
-                              </button>
-                            </form>
-                          </AdminActionPanel>
+                                    {legacyOfferings.map((legacy) => (
+                                      <option
+                                        key={legacy.offeringId}
+                                        value={legacy.offeringId}
+                                      >
+                                        {legacy.subjectName} ·{" "}
+                                        {legacy.programName} ·{" "}
+                                        {legacy.periodLabel}
+                                        {legacy.classGroup
+                                          ? ` · ${legacy.classGroup}`
+                                          : ""}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <button>
+                                  <UiCopy
+                                    pt="Confirmar ligação"
+                                    en="Confirm link"
+                                  />
+                                </button>
+                              </form>
+                            </AdminActionPanel>
+                          </details>
                         ) : null}
                         {canStructure &&
                         o.state === "planned" &&
@@ -1338,7 +1325,10 @@ export function ManagementPanel({
                   </p>
                   {canScheduleScoped && offerings.length ? (
                     <ScheduleEditor
-                      offerings={offerings}
+                      offerings={offerings.map((o) => ({
+                        id: o.id,
+                        name: o.name + " · " + o.period,
+                      }))}
                       locations={locations}
                       slots={rows<{
                         offering_id: number;

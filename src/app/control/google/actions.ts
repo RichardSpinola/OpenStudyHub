@@ -1,4 +1,5 @@
 "use server";
+import { recordAdminAction } from "@/lib/v2/audit";
 import { redirect } from "next/navigation";
 import { withV2DbAsync, currentAdminV2 } from "@/lib/v2/runtime";
 import {
@@ -12,7 +13,7 @@ import { getDatabase } from "@/lib/db/client";
 import { setGoogleAutomationInterval } from "@/lib/v2/google-automation";
 
 export async function setStorageOwnerAction(form: FormData): Promise<void> {
-  let result = "Storage owner atualizado.";
+  let result = "Conta responsável atualizada.";
   try {
     const value = String(form.get("ownerId") ?? "");
     const ownerId = value === "" ? null : Number(value);
@@ -20,25 +21,35 @@ export async function setStorageOwnerAction(form: FormData): Promise<void> {
       throw new Error("Usuário inválido.");
     await withV2DbAsync(async (db) => {
       const admin = await currentAdminV2(db);
-      if (!admin) throw new Error("Sessão Admin necessária.");
-      setStorageOwner(db, admin, ownerId);
+      if (!admin || admin.mustChangePassword)
+        throw new Error(
+          "Entre com sua conta Admin e conclua a troca da senha temporária antes de continuar.",
+        );
+      setStorageOwner(db, admin, ownerId, getDatabase());
     });
   } catch (error) {
     result =
-      error instanceof Error ? error.message : "Falha ao configurar storage.";
-    redirect("/control/google?error=" + encodeURIComponent(result));
+      error instanceof Error
+        ? error.message
+        : "Não foi possível configurar o armazenamento.";
+    redirect(
+      "/control/google?area=storage&error=" + encodeURIComponent(result),
+    );
   }
-  redirect("/control/google?ok=" + encodeURIComponent(result));
+  redirect("/control/google?area=storage&ok=" + encodeURIComponent(result));
 }
 export async function repairDriveRootAction(): Promise<void> {
   let message = "Diretório Drive reparado.";
   try {
     await withV2DbAsync(async (db) => {
       const admin = await currentAdminV2(db);
-      if (!admin) throw new Error("Sessão Admin necessária.");
+      if (!admin || admin.mustChangePassword)
+        throw new Error(
+          "Entre com sua conta Admin e conclua a troca da senha temporária antes de continuar.",
+        );
       const owner = storageOwnerStatus(db);
       if (!owner?.ownerId || !owner.connected)
-        throw new Error("Storage owner precisa conectar Drive.");
+        throw new Error("A conta responsável precisa conectar o Google Drive.");
       const provider = new GoogleDriveStorageProvider(db, owner.backendId);
       await provider.repairRoot(admin, desiredRootFolderName(getDatabase()));
       db.prepare(
@@ -48,29 +59,36 @@ export async function repairDriveRootAction(): Promise<void> {
   } catch (error) {
     message =
       error instanceof Error ? error.message : "Falha ao reparar Drive.";
-    redirect("/control/google?error=" + encodeURIComponent(message));
+    redirect(
+      "/control/google?area=storage&error=" + encodeURIComponent(message),
+    );
   }
-  redirect("/control/google?ok=" + encodeURIComponent(message));
+  redirect("/control/google?area=storage&ok=" + encodeURIComponent(message));
 }
 
 export async function provisionDriveFoldersAction(): Promise<void> {
   try {
     const created = await withV2DbAsync(async (db) => {
       const admin = await currentAdminV2(db);
-      if (!admin) throw new Error("Sessão Admin necessária.");
+      if (!admin || admin.mustChangePassword)
+        throw new Error(
+          "Entre com sua conta Admin e conclua a troca da senha temporária antes de continuar.",
+        );
       return provisionPendingDriveFolders(db, admin);
     });
     redirect(
-      "/control/google?ok=" +
+      "/control/google?area=storage&ok=" +
         encodeURIComponent(
-          `${created.checked} disciplina(s) conferida(s); ${created.created} pasta(s) criada(s) ou recriada(s).`,
+          `${created.checked} disciplina(s) conferida(s); ${created.created} pasta(s) preparada(s).`,
         ),
     );
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
     const message =
       error instanceof Error ? error.message : "Falha ao criar pastas Drive.";
-    redirect("/control/google?error=" + encodeURIComponent(message));
+    redirect(
+      "/control/google?area=storage&error=" + encodeURIComponent(message),
+    );
   }
 }
 
@@ -79,7 +97,10 @@ export async function setGoogleAutomationAction(form: FormData): Promise<void> {
     const minutes = Number(form.get("intervalMinutes"));
     await withV2DbAsync(async (db) => {
       const admin = await currentAdminV2(db);
-      if (!admin) throw new Error("Sessão Admin necessária.");
+      if (!admin || admin.mustChangePassword)
+        throw new Error(
+          "Entre com sua conta Admin e conclua a troca da senha temporária antes de continuar.",
+        );
       setGoogleAutomationInterval(db, admin, minutes);
     });
   } catch (error) {
@@ -88,4 +109,26 @@ export async function setGoogleAutomationAction(form: FormData): Promise<void> {
     redirect("/control/google?error=" + encodeURIComponent(message));
   }
   redirect("/control/google?ok=Intervalo%20atualizado.");
+}
+
+export async function setDriveAccessPolicyAction(form: FormData) {
+  const value = form.get("policy");
+  if (value !== "app-only" && value !== "direct")
+    redirect(
+      "/control/google?area=storage&error=Escolha%20uma%20forma%20de%20acesso.",
+    );
+  await withV2DbAsync(async (db) => {
+    const admin = await currentAdminV2(db);
+    if (!admin || admin.mustChangePassword)
+      throw new Error(
+        "Entre com sua conta Admin e conclua a troca da senha temporária antes de continuar.",
+      );
+    getDatabase()
+      .sqlite.prepare(
+        "INSERT INTO app_settings(key,value,updated_at) VALUES('storage.drive_access_policy',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
+      )
+      .run(value, Date.now());
+    recordAdminAction(db, admin, "storage.access_policy", "app_setting", 0);
+  });
+  redirect("/control/google?area=storage&ok=Forma%20de%20acesso%20salva.");
 }

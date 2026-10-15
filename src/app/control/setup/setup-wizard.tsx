@@ -1,362 +1,341 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { setupAction } from "../actions";
-
-const copy = {
-  en: {
-    names: [
-      "Admin account",
-      "Institution",
-      "First course",
-      "Period and cohort",
-      "Optional details",
-      "Review",
-    ],
-    back: "Back",
-    next: "Continue",
-    finish: "Complete setup",
-    step: "Step",
-    of: "of",
-    missing: "Complete the required fields for this step.",
-    password: "Use at least 12 characters for the password.",
-    dates: "The end date must follow the start date.",
-    semesters: "Choose 1 to 20 semesters.",
-  },
-  "pt-BR": {
-    names: [
-      "Conta Admin",
-      "Instituição",
-      "Curso inicial",
-      "Período e turma",
-      "Detalhes opcionais",
-      "Revisão",
-    ],
-    back: "Voltar",
-    next: "Continuar",
-    finish: "Concluir setup",
-    step: "Etapa",
-    of: "de",
-    missing: "Preencha os campos obrigatórios desta etapa.",
-    password: "Use pelo menos 12 caracteres na senha.",
-    dates: "A data final deve vir depois da inicial.",
-    semesters: "Escolha entre 1 e 20 semestres.",
-  },
-} as const;
-const requiredByStep = [
-  ["login", "name", "password"],
-  ["institution"],
-  ["program", "code"],
-  ["period", "startsOn", "endsOn", "shift", "cohort", "semesters"],
-  [],
-  [],
+import { validateSetupStep } from "@/lib/v2/setup-validation";
+const draftKey = "openstudyhub-v3-setup-draft";
+const initial = {
+  semesters: "4",
+  language: "pt-BR",
+  timeZone: "America/Sao_Paulo",
+};
+const titles = [
+  "Sua instituição",
+  "Conta do administrador",
+  "Primeiro curso e turma",
+  "Conferir e concluir",
 ];
-const initial = { semesters: "4", language: "en" };
-const draftKey = "openstudyhub-v2-setup-draft";
-const reviewFields = [
-  ["language", "Language", "Idioma"],
-  ["login", "Admin login", "Login do Admin"],
-  ["name", "Admin name", "Nome do Admin"],
-  ["institution", "Institution", "Instituição"],
-  ["program", "Course", "Curso"],
-  ["code", "Course short name", "Sigla do curso"],
-  ["period", "Academic period", "Período letivo"],
-  ["startsOn", "Starts", "Início"],
-  ["endsOn", "Ends", "Fim"],
-  ["shift", "Shift", "Turno"],
-  ["cohort", "Cohort", "Turma"],
-  ["semesters", "Semesters", "Semestres"],
-  ["subject", "Subject", "Disciplina"],
-  ["instructor", "Teacher", "Professor"],
-  ["location", "Room", "Sala"],
-] as const;
-
+function Finish() {
+  const { pending } = useFormStatus();
+  return (
+    <button disabled={pending}>
+      {pending ? "Criando sua instalação…" : "Criar instalação"}
+    </button>
+  );
+}
 export function SetupWizard() {
-  const [step, setStep] = useState(-1);
-  const [values, setValues] = useState<Record<string, string>>(initial);
-  const [problem, setProblem] = useState("");
-  const [hydrated, setHydrated] = useState(false);
-  const language = values.language === "pt-BR" ? "pt-BR" : "en";
-  const t = copy[language];
-  const tr = (en: string, pt: string) => (language === "en" ? en : pt);
+  const [step, setStep] = useState(0),
+    [values, setValues] = useState<Record<string, string>>(initial),
+    [problem, setProblem] = useState(""),
+    [ready, setReady] = useState(false);
+  const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    const timer = setTimeout(() => {
       try {
-        const draft = JSON.parse(
-          sessionStorage.getItem(draftKey) ?? "null",
-        ) as {
-          step?: number;
-          values?: Record<string, string>;
-        } | null;
-        if (!draft?.values) return;
-        const { password: _discard, ...safe } = draft.values;
-        void _discard;
-        setValues({ ...initial, ...safe });
-        setStep(-1); // A senha não é guardada; o Admin a informa novamente ao retomar.
-      } catch {
-        sessionStorage.removeItem(draftKey);
-      } finally {
-        setHydrated(true);
-      }
+        const saved = JSON.parse(sessionStorage.getItem(draftKey) ?? "null");
+        if (saved?.values) {
+          const safe = { ...saved.values };
+          delete safe.password;
+          delete safe.confirmPassword;
+          setValues({ ...initial, ...safe });
+        }
+      } catch {}
+      setReady(true);
     }, 0);
-    return () => window.clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, []);
   useEffect(() => {
-    if (!hydrated) return;
-    const { password: _discard, ...safe } = values;
-    void _discard;
-    sessionStorage.setItem(draftKey, JSON.stringify({ step, values: safe }));
-  }, [step, values, hydrated]);
+    if (!ready) return;
+    const safe = { ...values };
+    delete safe.password;
+    delete safe.confirmPassword;
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({ values: safe }));
+    } catch {}
+  }, [values, ready]);
+  function changeStep(n: number) {
+    setStep(n);
+    setProblem("");
+    requestAnimationFrame(() => title.current?.focus());
+  }
   function field(
     key: string,
     label: string,
-    options: { type?: string; required?: boolean; hint?: string } = {},
+    hint = "",
+    type = "text",
+    required = true,
   ) {
     return (
-      <label key={key}>
+      <label>
         {label}
         <input
           name={key}
-          type={options.type ?? "text"}
+          type={type}
           value={values[key] ?? ""}
-          onChange={(event) =>
-            setValues((current) => ({ ...current, [key]: event.target.value }))
-          }
-          required={options.required ?? true}
-          autoComplete={key === "password" ? "new-password" : undefined}
+          required={required}
+          onChange={(e) => setValues({ ...values, [key]: e.target.value })}
+          autoComplete={type === "password" ? "new-password" : undefined}
+          min={type === "number" ? 1 : undefined}
+          max={type === "number" ? 20 : undefined}
         />
-        {options.hint ? <small>{options.hint}</small> : null}
+        {hint && <small>{hint}</small>}
       </label>
     );
   }
-  const groups = [
-    <div key="admin" className="v2-fields">
-      {field("login", tr("Admin login", "Login do Admin"))}
-      {field("name", tr("Display name", "Nome de exibição"))}
-      {field("password", tr("Initial password", "Senha inicial"), {
-        type: "password",
-        hint: tr(
-          "At least 12 characters. The draft never saves your password.",
-          "Mínimo de 12 caracteres. Não é salva no rascunho.",
-        ),
-      })}
-    </div>,
-    <div key="institution" className="v2-fields">
-      {field("institution", tr("Institution name", "Nome da instituição"))}
-    </div>,
-    <div key="course" className="v2-fields">
-      {field("program", tr("First course name", "Nome do primeiro curso"))}
-      {field("code", tr("Institutional course code", "Código institucional"), {
-        hint: tr(
-          "Short name used by your institution.",
-          "Abreviação usada pela instituição.",
-        ),
-      })}
-      <p>
-        {tr(
-          "You can add more courses under Institutions after setup.",
-          "Outros cursos podem ser adicionados em Instituições depois do setup.",
-        )}
-      </p>
-    </div>,
-    <div key="period-cohort" className="v2-fields">
-      {field("period", tr("Academic period", "Período letivo"), {
-        hint: tr("Example: 2030.1", "Exemplo: 2030.1"),
-      })}
-      {field("startsOn", tr("Start", "Início"), { type: "date" })}
-      {field("endsOn", tr("End", "Fim"), { type: "date" })}
-      <hr />
-      {field("shift", tr("Shift", "Turno"), {
-        hint: tr("Example: Evening", "Exemplo: Noite"),
-      })}
-      {field("cohort", tr("First cohort name", "Nome da primeira turma"))}
-      {field(
-        "semesters",
-        tr(
-          "Number of curriculum semesters",
-          "Quantidade de semestres do currículo",
-        ),
-        {
-          type: "number",
-        },
-      )}
-    </div>,
-    <div key="optional" className="v2-fields">
-      {field("subject", tr("First subject", "Primeira disciplina"), {
-        required: false,
-      })}
-      <p>
-        {tr(
-          "Optional. Add more subjects under the course later.",
-          "Opcional. Cadastre as demais pelo curso após entrar.",
-        )}
-      </p>
-      <hr />
-      {field("instructor", tr("First teacher", "Primeiro professor"), {
-        required: false,
-      })}
-      {field("location", tr("First room", "Primeira sala"), {
-        required: false,
-      })}
-      <p>
-        {tr(
-          "You can add the rest of the team later.",
-          "O restante da equipe pode ser cadastrado depois.",
-        )}
-      </p>
-    </div>,
-    <div key="review">
-      <p>
-        {tr(
-          "Review the initial structure before creating it.",
-          "Confira antes de criar a estrutura inicial.",
-        )}
-      </p>
-      <dl className="admin-setup-review">
-        {reviewFields
-          .filter(([key]) => values[key])
-          .map(([key, en, pt]) => (
-            <div key={key}>
-              <dt>{tr(en, pt)}</dt>
-              <dd>
-                {key === "language"
-                  ? language === "en"
-                    ? "English"
-                    : "Português"
-                  : values[key]}
-              </dd>
-            </div>
-          ))}
-      </dl>
-      <p>
-        {tr(
-          "Your password is applied only when setup is completed.",
-          "A senha será aplicada somente ao concluir.",
-        )}
-      </p>
-    </div>,
-  ];
   function next() {
-    if (step === -1) {
-      setProblem("");
-      setStep(0);
+    const error = validateSetupStep(step, values);
+    if (error) {
+      setProblem(error);
       return;
     }
-    const missing = requiredByStep[step].find((key) => !values[key]?.trim());
-    if (missing) {
-      setProblem(t.missing);
-      return;
-    }
-    if (step === 0 && values.password.length < 12) {
-      setProblem(t.password);
-      return;
-    }
-    if (step === 3 && values.startsOn > values.endsOn) {
-      setProblem(t.dates);
-      return;
-    }
-    if (
-      step === 3 &&
-      (Number(values.semesters) < 1 || Number(values.semesters) > 20)
-    ) {
-      setProblem(t.semesters);
-      return;
-    }
-    setProblem("");
-    setStep(step + 1);
+    changeStep(step + 1);
   }
+  const review = [
+    {
+      title: "Instituição",
+      step: 0,
+      fields: [
+        ["institution", "Nome"],
+        ["language", "Idioma"],
+        ["timeZone", "Fuso horário"],
+      ],
+    },
+    {
+      title: "Administrador",
+      step: 1,
+      fields: [
+        ["name", "Nome"],
+        ["login", "Login"],
+      ],
+    },
+    {
+      title: "Curso e turma",
+      step: 2,
+      fields: [
+        ["program", "Curso"],
+        ["code", "Sigla"],
+        ["shift", "Turno"],
+        ["cohort", "Turma"],
+        ["semesters", "Semestres"],
+        ["period", "Período letivo"],
+        ["startsOn", "Começa em"],
+        ["endsOn", "Termina em"],
+      ],
+    },
+  ];
   return (
-    <div className="admin-setup-wizard">
-      <ol
-        className="admin-setup-progress"
-        aria-label={tr("Setup steps", "Etapas do setup")}
-      >
-        <li aria-current={step === -1 ? "step" : undefined}>
-          0. {tr("Language", "Idioma")}
-        </li>
-        {t.names.map((name, index) => (
-          <li key={name} aria-current={index === step ? "step" : undefined}>
-            {index + 1}. {name}
-          </li>
-        ))}
-      </ol>
-      <h2>
-        {step === -1 ? "Choose language / Escolha o idioma" : t.names[step]}
-      </h2>
-      <p>
-        {t.step} {step + 2} {t.of} {t.names.length + 1}
-      </p>
-      {step === -1 ? (
-        <fieldset className="admin-setup-language">
-          <legend>
-            {tr(
-              "Instance interface language",
-              "Idioma da interface da instância",
-            )}
-          </legend>
-          <label>
-            <input
-              type="radio"
-              name="instance-language"
-              value="en"
-              checked={language === "en"}
-              onChange={() =>
-                setValues((current) => ({ ...current, language: "en" }))
-              }
-            />{" "}
-            English
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="instance-language"
-              value="pt-BR"
-              checked={language === "pt-BR"}
-              onChange={() =>
-                setValues((current) => ({ ...current, language: "pt-BR" }))
-              }
-            />{" "}
-            Português
-          </label>
-          <p>
-            {tr(
-              "This sets the default interface language for the App and Control Plane. Academic content keeps its original wording.",
-              "Essa escolha define o idioma padrão da interface do App e do Control Plane. Conteúdo acadêmico mantém o texto original.",
-            )}
-          </p>
-        </fieldset>
-      ) : (
-        groups[step]
-      )}
-      {problem ? (
-        <p className="v2-message" data-type="error" role="alert">
-          {problem}
+    <div className="admin-setup-wizard admin-first-install">
+      <aside className="setup-outline">
+        <h2>Primeira configuração</h2>
+        <p>
+          Organize o espaço de estudos e crie a conta que vai administrá-lo.
         </p>
-      ) : null}
-      <div className="v2-actions">
-        {step > -1 ? (
+        <ol>
+          {titles.map((t, i) => (
+            <li key={t} aria-current={i === step ? "step" : undefined}>
+              <span>{i < step ? "✓" : i + 1}</span>
+              {t}
+            </li>
+          ))}
+        </ol>
+        <p>
+          A conta Admin administra a instalação. Os estudantes entram pelo App
+          com suas próprias contas.
+        </p>
+      </aside>
+      <div className="setup-main">
+        <header>
+          <span>PASSO {step + 1} DE 4</span>
+          <h2 ref={title} tabIndex={-1}>
+            {titles[step]}
+          </h2>
+        </header>
+        {step === 0 && (
+          <div className="v2-fields">
+            {field(
+              "institution",
+              "Nome da instituição",
+              "Exemplo: Universidade Aurora ou Grupo de Estudos",
+            )}
+            <label>
+              Idioma da interface
+              <select
+                name="language"
+                value={values.language}
+                onChange={(e) =>
+                  setValues({ ...values, language: e.target.value })
+                }
+              >
+                <option value="pt-BR">Português</option>
+                <option value="en">English</option>
+              </select>
+              <small>Você poderá mudar depois, em Sistema → Idioma.</small>
+            </label>
+            <label>
+              Fuso das aulas
+              <select
+                name="timeZone"
+                value={values.timeZone}
+                onChange={(e) =>
+                  setValues({ ...values, timeZone: e.target.value })
+                }
+              >
+                {[
+                  "America/Sao_Paulo",
+                  "America/Bahia",
+                  "America/Manaus",
+                  "America/Rio_Branco",
+                  "Europe/Lisbon",
+                  "UTC",
+                ].map((z) => (
+                  <option key={z} value={z}>
+                    {
+                      (
+                        {
+                          "America/Sao_Paulo": "Brasília / São Paulo — Brasil",
+                          "America/Bahia": "Salvador — Brasil",
+                          "America/Manaus": "Manaus — Brasil",
+                          "America/Rio_Branco": "Rio Branco — Brasil",
+                          "Europe/Lisbon": "Lisboa — Portugal",
+                          UTC: "UTC — horário universal",
+                        } as Record<string, string>
+                      )[z]
+                    }
+                  </option>
+                ))}
+              </select>
+              <small>Os horários das aulas e provas seguem esse fuso.</small>
+            </label>
+          </div>
+        )}
+        {step === 1 && (
+          <div className="v2-fields">
+            {field(
+              "login",
+              "Login do administrador",
+              "Use um nome sem espaços; exemplo: admin.aurora",
+            )}
+            {field("name", "Seu nome")}
+            {field(
+              "password",
+              "Senha",
+              "Pelo menos 12 caracteres. Ela não é salva no rascunho.",
+              "password",
+            )}
+            {field("confirmPassword", "Repetir senha", "", "password")}
+          </div>
+        )}
+        {step === 2 && (
+          <>
+            <div className="setup-field-group">
+              <h3>Curso</h3>
+              <div className="v2-fields">
+                {field(
+                  "program",
+                  "Nome do curso",
+                  "Exemplo: Análise e Desenvolvimento de Sistemas",
+                )}
+                {field("code", "Sigla do curso", "Exemplo: ADS")}
+                {field(
+                  "semesters",
+                  "Duração em semestres",
+                  "Exemplo: 4 semestres = 2 anos.",
+                  "number",
+                )}
+              </div>
+            </div>
+            <div className="setup-field-group">
+              <h3>Turma de estudantes</h3>
+              <p>O grupo de pessoas que estuda junto nesse curso.</p>
+              <div className="v2-fields">
+                {field(
+                  "cohort",
+                  "Nome da turma",
+                  "Exemplo: ADS — manhã — ingresso 2026",
+                )}
+                {field("shift", "Turno", "Exemplo: Manhã, Tarde ou Noite")}
+              </div>
+            </div>
+            <div className="setup-field-group">
+              <h3>Período letivo</h3>
+              <p>O intervalo do calendário em que essa turma terá aulas.</p>
+              <div className="v2-fields">
+                {field("period", "Nome do período", "Exemplo: 2026.2")}
+                {field("startsOn", "Data de início", "", "date")}
+                {field("endsOn", "Data de fim", "", "date")}
+              </div>
+            </div>
+            <details>
+              <summary>
+                Adicionar a primeira disciplina agora (opcional)
+              </summary>
+              <div className="v2-fields">
+                {field("subject", "Disciplina", "", "text", false)}
+                {field("instructor", "Professor", "", "text", false)}
+                {field("location", "Sala", "", "text", false)}
+              </div>
+            </details>
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <p>
+              Confira os dados. Você poderá cadastrar outras instituições,
+              cursos e disciplinas depois.
+            </p>
+            {review.map((g) => (
+              <section className="setup-review-group" key={g.title}>
+                <header>
+                  <h3>{g.title}</h3>
+                  <button type="button" onClick={() => changeStep(g.step)}>
+                    Editar
+                  </button>
+                </header>
+                <dl>
+                  {g.fields.map(([key, label]) => (
+                    <div key={key}>
+                      <dt>{label}</dt>
+                      <dd>
+                        {key === "language"
+                          ? values[key] === "en"
+                            ? "English"
+                            : "Português"
+                          : values[key]}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            ))}
+            <p>Senha confirmada. Ela não é exibida nem gravada no rascunho.</p>
+          </>
+        )}
+        {problem && (
+          <p role="alert" className="v2-message" data-type="error">
+            {problem}
+          </p>
+        )}
+        <footer className="setup-actions">
           <button
             type="button"
-            onClick={() => {
-              setProblem("");
-              setStep(step - 1);
-            }}
+            disabled={step === 0}
+            onClick={() => changeStep(step - 1)}
           >
-            {t.back}
+            ← Voltar
           </button>
-        ) : null}
-        {step < t.names.length - 1 ? (
-          <button type="button" onClick={next}>
-            {t.next}
-          </button>
-        ) : (
-          <form action={setupAction}>
-            {Object.entries(values).map(([key, value]) => (
-              <input type="hidden" name={key} value={value} key={key} />
-            ))}
-            <button type="submit">{t.finish}</button>
-          </form>
-        )}
+          {step < 3 ? (
+            <button type="button" onClick={next}>
+              Continuar →
+            </button>
+          ) : (
+            <form action={setupAction}>
+              {Object.entries(values).map(([key, value]) => (
+                <input key={key} type="hidden" name={key} value={value} />
+              ))}
+              <Finish />
+            </form>
+          )}
+        </footer>
       </div>
     </div>
   );

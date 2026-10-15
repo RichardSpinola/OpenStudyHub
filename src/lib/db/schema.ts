@@ -1159,6 +1159,9 @@ export const projects = sqliteTable(
     language: text("language").notNull(),
     ignorePreset: text("ignore_preset").notNull(),
     technologiesJson: text("technologies_json").notNull().default("[]"),
+    storageBackend: text("storage_backend", { enum: ["local", "google-drive"] })
+      .notNull()
+      .default("google-drive"),
     description: text("description"),
     driveProjectFolderId: text("drive_project_folder_id"),
     driveCurrentFolderId: text("drive_current_folder_id"),
@@ -1762,4 +1765,43 @@ export const notifications = sqliteTable(
       table.id,
     ),
   ],
+);
+
+export const projectUploadClaims = sqliteTable("project_upload_claims", {
+  token: text("token").primaryKey(),
+  claimId: text("claim_id").notNull(),
+  projectId: integer("project_id")
+    .notNull()
+    .unique()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  ownerUserId: integer("owner_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  claimedAt: integer("claimed_at").notNull(),
+  heartbeatAt: integer("heartbeat_at").notNull(),
+});
+export const projectUploadReceipts = sqliteTable("project_upload_receipts", {
+  token: text("token").primaryKey(),
+  projectId: integer("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  ownerUserId: integer("owner_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  versionNumber: integer("version_number").notNull(),
+  resultJson: text("result_json").notNull(),
+  completedAt: integer("completed_at").notNull(),
+});
+
+export const projectGroupShares = sqliteTable(
+  "project_group_shares",
+  {
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => studyGroups.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.groupId] })],
 );

@@ -1,6 +1,6 @@
 # OpenStudyHub V2 — matriz de importação V1
 
-Base: schema V1 atual em `src/lib/db/schema.ts`, com 52 tabelas. `MIGRATE` preserva registros com remapeamento de IDs; `TRANSFORM` exige conversão de modelo/colunas; `SKIP/RUNTIME` recria estado efêmero; `REVIEW` depende de política ou validação humana. Esta matriz orienta o importador V2 e não autoriza importar banco real.
+Base: schema V1 atual em `src/lib/db/schema.ts`, com 55 tabelas (52 da V1 e 3 da V3). `MIGRATE` preserva registros com remapeamento de IDs; `TRANSFORM` exige conversão de modelo/colunas; `SKIP/RUNTIME` recria estado efêmero; `REVIEW` depende de política ou validação humana. Esta matriz orienta o importador V2 e não autoriza importar banco real.
 
 |   # | Tabela V1                      | Ação         | Destino/critério V2                                                                                                                                                                         |
 | --: | ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -56,5 +56,11 @@ Base: schema V1 atual em `src/lib/db/schema.ts`, com 52 tabelas. `MIGRATE` prese
 |  50 | `notifications`                | REVIEW       | Importar somente notificações ainda úteis; descartar links/eventos obsoletos.                                                                                                               |
 |  51 | `note_person_shares`           | TRANSFORM    | Remapear nota, destinatário e autor do compartilhamento; descartar vínculos sem os três registros autorizados.                                                                              |
 |  52 | `document_person_shares`       | TRANSFORM    | Remapear documento, destinatário e autor do compartilhamento; revalidar acesso ao conteúdo e referência de storage.                                                                         |
+
+| 53 | `project_group_shares` | TRANSFORM | Preservar projeto e grupo; revalidar a participação atual e o acesso privado. |
+| 54 | `project_upload_claims` | SKIP/RUNTIME | Reservas de execução são renovadas somente pelo processo que iniciou o envio. Não transferir uma reserva em andamento. |
+| 55 | `project_upload_receipts` | REVIEW | Manter os recibos idempotentes junto dos projetos e versões, no banco associado. Não recriar versões no destino. |
+
+As três tabelas V3 são opcionais ao revisar um banco V1 anterior; tabelas desconhecidas continuam bloqueando a importação.
 
 Ordem do importador: backup consistente + verificação de restore V1; esquema V2 vazio; usuários/configuração segura; acadêmico e currículo; matrículas; conteúdo/asset; shares; Chat opcional; relatório de contagens, referências órfãs, hashes de assets e itens ignorados. IDs são mapeados por tabela em staging, com transações por lote e checkpoint; reexecução começa de DB V2 descartável. O original V1 fica intacto. A prévia exige escolha humana para `REVIEW`, `curriculum_term` ambíguo e conflitos de turma; matching por nome nunca promove integração Google automaticamente.

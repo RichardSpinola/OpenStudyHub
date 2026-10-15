@@ -4,6 +4,7 @@ import {
   cancelAcademicEvent,
 } from "@/lib/v2/academic-events";
 import { academicLocalDateTime } from "@/lib/academic-clock";
+import { validateSetupStep } from "@/lib/v2/setup-validation";
 import { setInstitutionTimeZone } from "@/lib/v2/academic-timezone";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -91,6 +92,8 @@ function path(f: FormData) {
 }
 function messagePath(base: string, type: "ok" | "error", message: string) {
   const url = new URL(base, "http://local.invalid");
+  url.searchParams.delete("ok");
+  url.searchParams.delete("error");
   url.searchParams.set(type, message.slice(0, 220));
   return url.pathname + url.search;
 }
@@ -98,6 +101,15 @@ function messagePath(base: string, type: "ok" | "error", message: string) {
 export async function setupAction(f: FormData): Promise<void> {
   let error = "";
   try {
+    const values = Object.fromEntries(
+      [...f.entries()].filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      ),
+    );
+    for (let step = 0; step < 3; step++) {
+      const issue = validateSetupStep(step, values);
+      if (issue) throw new Error(issue);
+    }
     const language = uiLanguageSchema.parse(str(f, "language"));
     await withV2DbAsync(async (db) => {
       if (!isSetupPending(db)) throw new Error("Setup já concluído.");
@@ -111,6 +123,7 @@ export async function setupAction(f: FormData): Promise<void> {
         shift: str(f, "shift"),
         cohort: str(f, "cohort"),
         period: str(f, "period"),
+        timeZone: str(f, "timeZone"),
         startsOn: str(f, "startsOn"),
         endsOn: str(f, "endsOn"),
         semesters: num(f, "semesters"),
@@ -131,7 +144,7 @@ export async function setupAction(f: FormData): Promise<void> {
           "ok",
           str(f, "language") === "en"
             ? "Setup complete. Sign in with your admin account."
-            : "Setup concluído. Entre com sua conta administrativa.",
+            : "Instalação criada. Entre com seu login de administrador para continuar.",
         ),
   );
 }

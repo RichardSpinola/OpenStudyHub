@@ -15,9 +15,13 @@ type Preview =
 export function ProjectFileBrowser({
   projectId,
   files,
+  directDriveAccess = false,
+  currentVersionNumber,
 }: {
   projectId: number;
   files: ProjectBrowserFile[];
+  directDriveAccess?: boolean;
+  currentVersionNumber: number;
 }) {
   const tr = useUiText();
   const roots = useMemo(() => buildProjectFileTree(files), [files]);
@@ -168,8 +172,8 @@ export function ProjectFileBrowser({
               ) : error ? (
                 <p>
                   <UiCopy
-                    pt="Prévia indisponível. Abra o arquivo no Drive."
-                    en="Preview unavailable. Open the file in Drive."
+                    pt="Prévia indisponível. Você pode baixar o ZIP desta versão."
+                    en="Preview unavailable. You can download this version's ZIP."
                   />
                 </p>
               ) : preview?.kind === "text" ? (
@@ -190,12 +194,22 @@ export function ProjectFileBrowser({
                 </p>
               ) : null}
               <a
-                href={`https://drive.google.com/file/d/${encodeURIComponent(selected.driveFileId)}/view`}
-                target="_blank"
-                rel="noreferrer"
+                href={`/api/projects/${projectId}/versions/${currentVersionNumber}/download`}
               >
-                <UiCopy pt="Abrir no Drive ↗" en="Open in Drive ↗" />
+                <UiCopy
+                  pt="Baixar ZIP desta versão ↓"
+                  en="Download this version's ZIP ↓"
+                />
               </a>
+              {directDriveAccess && (
+                <a
+                  href={`https://drive.google.com/file/d/${encodeURIComponent(selected.driveFileId)}/view`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <UiCopy pt="Abrir no Drive ↗" en="Open in Drive ↗" />
+                </a>
+              )}
             </>
           )}
         </div>

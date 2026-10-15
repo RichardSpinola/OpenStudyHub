@@ -35,7 +35,9 @@ export function ProjectUpload({
   currentVersionNumber,
   currentLanguage,
   currentTechnologies,
+  initialPreview,
 }: {
+  initialPreview?: Preview;
   projectId: number;
   currentVersionNumber: number;
   currentLanguage: ProjectLanguage;
@@ -44,7 +46,9 @@ export function ProjectUpload({
   const tr = useUiText();
   const folderInput = useRef<HTMLInputElement>(null);
   const zipInput = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<Preview | null>(null);
+  const [preview, setPreview] = useState<Preview | null>(
+    initialPreview ?? null,
+  );
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 

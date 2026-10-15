@@ -5,6 +5,7 @@ import {
   IconShield,
   IconPlug,
   IconSettings,
+  IconApps,
 } from "@tabler/icons-react";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
@@ -103,6 +104,7 @@ export function ConsoleShell({
       label: tr("Integrações", "Integrations"),
       key: "integrations",
     },
+    { href: "/control/extras", label: tr("Extras", "Extras"), key: "extras" },
     { href: "/control/system", label: tr("Sistema", "System"), key: "system" },
   ];
   const navIcons: Record<string, typeof IconDashboard> = {
@@ -112,17 +114,16 @@ export function ConsoleShell({
     grants: IconShield,
     integrations: IconPlug,
     system: IconSettings,
+    extras: IconApps,
   };
   if (admin && name) {
     const links = navigation.map(({ href, label, key }) => (
       <Link
         key={key}
         href={href}
-        aria-current={
-          active === key || (active === "extras" && key === "system")
-            ? "page"
-            : undefined
-        }
+        aria-label={label}
+        title={label}
+        aria-current={active === key ? "page" : undefined}
       >
         {(() => {
           const Icon = navIcons[key];
@@ -175,12 +176,7 @@ export function ConsoleShell({
                   <Link
                     key={key}
                     href={href}
-                    aria-current={
-                      active === key ||
-                      (active === "extras" && key === "system")
-                        ? "page"
-                        : undefined
-                    }
+                    aria-current={active === key ? "page" : undefined}
                   >
                     {label}
                   </Link>

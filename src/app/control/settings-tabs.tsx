@@ -1,5 +1,5 @@
 "use client";
-import { useSyncExternalStore, useState, useId, type ReactNode } from "react";
+import { useSyncExternalStore, useId, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 export function AdminSettingsTabs({
   items,
@@ -7,8 +7,7 @@ export function AdminSettingsTabs({
   items: Array<{ id: string; label: string; content: ReactNode }>;
 }) {
   const query = useSearchParams(),
-    id = useId(),
-    [selected, setSelected] = useState<string | null>(null);
+    id = useId();
   const saved = useSyncExternalStore(
     (notify) => {
       window.addEventListener("popstate", notify);
@@ -28,7 +27,6 @@ export function AdminSettingsTabs({
     () => null,
   );
   function choose(value: string) {
-    setSelected(value);
     try {
       sessionStorage.setItem("osh-admin-area:" + location.pathname, value);
     } catch {
@@ -36,9 +34,18 @@ export function AdminSettingsTabs({
     }
     const url = new URL(location.href);
     url.searchParams.set("area", value);
-    history.replaceState(null, "", url);
+    history.pushState(null, "", url);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
-  const candidate = query.get("area") ?? selected ?? saved;
+  const locationQuery = useSyncExternalStore(
+    (notify) => {
+      window.addEventListener("popstate", notify);
+      return () => window.removeEventListener("popstate", notify);
+    },
+    () => new URLSearchParams(location.search).get("area"),
+    () => query.get("area"),
+  );
+  const candidate = locationQuery ?? saved;
   const active = items.some((i) => i.id === candidate)
     ? candidate
     : items[0].id;

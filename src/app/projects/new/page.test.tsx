@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/authorization", () => ({
   requireAuthenticatedUser: () => ({ id: 7 }),
 }));
+vi.mock("@/lib/google/storage-owner", () => ({
+  isDriveStorageAvailableForUser: () => false,
+}));
 vi.mock("@/lib/profile", () => ({
   getUserProfile: () => ({ locale: "pt-BR" }),
 }));
@@ -29,6 +32,8 @@ describe("library project entry modes", () => {
     expect(html).toContain("Criar projeto vazio");
     expect(html).not.toContain("Criar e importar");
     expect(html).toContain("/library?type=projects");
+    expect(html).toContain('value="local" selected=""');
+    expect(html).toContain('value="google-drive" disabled=""');
   });
   it("offers import as a separate guided entry", async () => {
     const html = renderToStaticMarkup(

@@ -51,7 +51,15 @@ export default async function Users({
       active: number;
       temporary: number;
     }>;
-    const selected = users.find((user) => user.id === Number(q.user));
+    const requestedId = Number(q.user);
+    const selected =
+      Number.isSafeInteger(requestedId) && requestedId > 0
+        ? (db
+            .prepare(
+              "SELECT id,login,display_name name,active,must_change_password temporary FROM users WHERE id=?",
+            )
+            .get(requestedId) as (typeof users)[number] | undefined)
+        : undefined;
     const deletion = selected
       ? previewDeleteV2User(db, actor, selected.id)
       : null;
@@ -62,7 +70,7 @@ export default async function Users({
     const returnTo = `/control/users${current.size ? `?${current}` : ""}`;
     return (
       <ConsoleShell
-        title="Usuários"
+        title={selected?.name ?? tr("Usuários", "Users")}
         kicker="ADMINISTRAÇÃO / CONTAS"
         name={actor.name}
         admin
@@ -70,123 +78,70 @@ export default async function Users({
         message={q.ok}
         error={q.error}
       >
-        <div className="admin-section-header">
-          <p>
-            <UiCopy
-              pt="Encontre uma conta e escolha a ação necessária."
-              en="Find an account and choose an action."
-            />
+        {!selected && (
+          <div className="admin-section-header">
+            <p>
+              <UiCopy
+                pt="Encontre uma conta e escolha a ação necessária."
+                en="Find an account and choose an action."
+              />
+            </p>
+            <AdminActionPanel title="Criar usuário">
+              <form action={controlAction} className="v2-fields">
+                <HiddenContext returnTo="/control/users" intent="user" />
+                <label>
+                  Login
+                  <input
+                    name="login"
+                    required
+                    minLength={3}
+                    maxLength={64}
+                    pattern="[a-zA-Z0-9._-]{3,64}"
+                  />
+                  <small>
+                    Use letras, números, ponto, traço ou sublinhado. Sem
+                    espaços.
+                  </small>
+                </label>
+                <label>
+                  <UiCopy pt="Nome" en="Name" />
+                  <input name="name" required />
+                </label>
+                <label>
+                  <UiCopy pt="Senha temporária" en="Temporary password" />
+                  <input
+                    name="password"
+                    type="password"
+                    minLength={12}
+                    required
+                    autoComplete="new-password"
+                  />
+                  <small>
+                    A pessoa deverá trocar a senha no primeiro acesso.
+                  </small>
+                </label>
+                <button>
+                  <UiCopy pt="Criar conta" en="Create account" />
+                </button>
+              </form>
+            </AdminActionPanel>
+          </div>
+        )}
+        {q.user && !selected && (
+          <p role="alert">
+            Conta não encontrada. Escolha uma conta na lista abaixo.
           </p>
-          <AdminActionPanel title="Criar usuário">
-            <form action={controlAction} className="v2-fields">
-              <HiddenContext returnTo="/control/users" intent="user" />
-              <label>
-                Login
-                <input name="login" required />
-              </label>
-              <label>
-                <UiCopy pt="Nome" en="Name" />
-                <input name="name" required />
-              </label>
-              <label>
-                <UiCopy pt="Senha temporária" en="Temporary password" />
-                <input
-                  name="password"
-                  type="password"
-                  minLength={12}
-                  required
-                  autoComplete="new-password"
-                />
-              </label>
-              <button>
-                <UiCopy pt="Criar conta" en="Create account" />
-              </button>
-            </form>
-          </AdminActionPanel>
-        </div>
-        <form
-          action="/control/users"
-          method="get"
-          className="admin-user-search"
-        >
-          <label>
-            <UiCopy
-              pt="Buscar por nome ou login"
-              en="Search by name or login"
-            />
-            <input name="query" defaultValue={query} />
-          </label>
-          <label>
-            <UiCopy pt="Estado" en="Status" />
-            <select name="status" defaultValue={status}>
-              <option value="all">
-                <UiCopy pt="Todos" en="All" />
-              </option>
-              <option value="active">
-                <UiCopy pt="Ativos" en="Active" />
-              </option>
-              <option value="inactive">
-                <UiCopy pt="Desativados" en="Disabled" />
-              </option>
-            </select>
-          </label>
-          <button>
-            <UiCopy pt="Filtrar" en="Filter" />
-          </button>
-        </form>
-        <div className="v2-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  <UiCopy pt="Pessoa" en="Person" />
-                </th>
-                <th>
-                  <UiCopy pt="Estado" en="Status" />
-                </th>
-                <th>
-                  <UiCopy pt="Ação" en="Action" />
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => {
-                const params = new URLSearchParams(current);
-                params.set("user", String(user.id));
-                return (
-                  <tr key={user.id}>
-                    <td>
-                      <strong>{user.name}</strong>
-                      <br />
-                      <span className="v2-muted">{user.login}</span>
-                    </td>
-                    <td>
-                      {user.active
-                        ? tr("Ativa", "Active")
-                        : tr("Desativada", "Disabled")}
-                      {user.temporary
-                        ? tr(" · senha temporária", " · temporary password")
-                        : ""}
-                    </td>
-                    <td>
-                      <Link href={`/control/users?${params}`}>
-                        <UiCopy pt="Gerenciar" en="Manage" />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {!users.length ? (
-          <p>
-            <UiCopy pt="Nenhuma conta encontrada." en="No accounts found." />
-          </p>
-        ) : null}
+        )}
         {selected && deletion ? (
           <section className="admin-selected-account">
-            <h2>{selected.name}</h2>
+            <Link
+              href={`/control/users?query=${encodeURIComponent(query)}&status=${status}`}
+            >
+              ← Voltar à lista de usuários
+            </Link>
+            <h2>
+              {tr("Dados e acesso da conta", "Account details and access")}
+            </h2>
             <p>
               <UiCopy pt="Login:" en="Username:" /> {selected.login} ·{" "}
               {selected.active
@@ -306,7 +261,99 @@ export default async function Users({
             </div>
           </section>
         ) : null}
-        <CsvImport />
+        {!selected && (
+          <>
+            <form
+              action="/control/users"
+              method="get"
+              className="admin-user-search"
+            >
+              <label>
+                <UiCopy
+                  pt="Buscar por nome ou login"
+                  en="Search by name or login"
+                />
+                <input name="query" defaultValue={query} />
+              </label>
+              <label>
+                <UiCopy pt="Estado" en="Status" />
+                <select name="status" defaultValue={status}>
+                  <option value="all">
+                    <UiCopy pt="Todos" en="All" />
+                  </option>
+                  <option value="active">
+                    <UiCopy pt="Ativos" en="Active" />
+                  </option>
+                  <option value="inactive">
+                    <UiCopy pt="Desativados" en="Disabled" />
+                  </option>
+                </select>
+              </label>
+              <button>
+                <UiCopy pt="Filtrar" en="Filter" />
+              </button>
+            </form>
+            <div className="v2-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>
+                      <UiCopy pt="Pessoa" en="Person" />
+                    </th>
+                    <th>
+                      <UiCopy pt="Estado" en="Status" />
+                    </th>
+                    <th>
+                      <UiCopy pt="Ação" en="Action" />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => {
+                    const params = new URLSearchParams(current);
+                    params.set("user", String(user.id));
+                    return (
+                      <tr key={user.id}>
+                        <td>
+                          <strong>{user.name}</strong>
+                          <br />
+                          <span className="v2-muted">{user.login}</span>
+                        </td>
+                        <td>
+                          {user.active
+                            ? tr("Ativa", "Active")
+                            : tr("Desativada", "Disabled")}
+                          {user.temporary
+                            ? tr(" · senha temporária", " · temporary password")
+                            : ""}
+                        </td>
+                        <td>
+                          <Link href={`/control/users?${params}`}>
+                            <UiCopy pt="Gerenciar" en="Manage" />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {!users.length ? (
+              <p>
+                <UiCopy
+                  pt="Nenhuma conta encontrada."
+                  en="No accounts found."
+                />
+              </p>
+            ) : null}
+          </>
+        )}
+        {!selected && (
+          <details className="admin-secondary-tools">
+            <summary>Importar vários usuários de uma vez (CSV)</summary>
+            <CsvImport />
+          </details>
+        )}
       </ConsoleShell>
     );
   });

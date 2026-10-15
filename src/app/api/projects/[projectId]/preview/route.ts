@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentSession } from "@/lib/authorization";
-import { downloadDriveFile } from "@/lib/google/drive";
 import {
-  getProjectDriveStorageUser,
+  readProjectSource,
   getUserProject,
   listProjectFiles,
 } from "@/lib/projects";
@@ -45,9 +44,10 @@ export async function GET(
         { headers: { "cache-control": "private, no-store" } },
       );
     }
-    const bytes = await downloadDriveFile(
-      getProjectDriveStorageUser(project),
-      file.driveFileId,
+    const bytes = await readProjectSource(
+      session.user.id,
+      project.id,
+      file.path,
       { maxBytes: maxProjectPreviewBytes },
     );
     if (bytes.length > maxProjectPreviewBytes) {

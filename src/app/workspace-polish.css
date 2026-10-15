@@ -791,3 +791,30 @@ html[data-design] .project-overview-art {
 .shortcut-catalog-dialog input {
   width: 100%;
 }
+.subjects-catalog-page .academic-heading {
+  margin-bottom: 1.2rem;
+}
+.subjects-catalog-page .subject-period-section {
+  margin-bottom: 1.5rem;
+}
+.subjects-catalog-page .section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+}
+.subjects-catalog-page .subject-list {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  align-items: stretch;
+  gap: 1rem;
+}
+.subjects-catalog-page .subject-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.subjects-catalog-page .subject-card .subject-card-link {
+  margin-top: auto;
+}

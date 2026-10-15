@@ -1,3 +1,4 @@
+import type { DatabaseConnection } from "../db/client";
 import { createHash, randomUUID } from "node:crypto";
 import type { Actor } from "./actor";
 import { isAdmin } from "./access";
@@ -18,7 +19,7 @@ function hasDriveScope(scopes: string) {
 export function storageOwnerStatus(db: V2Database) {
   const row = db
     .prepare(
-      `SELECT b.id,b.owner_user_id ownerId,u.display_name ownerName,b.state,b.root_ref rootRef,
+      `SELECT b.id,b.owner_user_id ownerId,u.display_name ownerName,b.state,b.root_ref rootRef,u.active,
       c.status connectionStatus,c.scopes
      FROM storage_backends b LEFT JOIN users u ON u.id=b.owner_user_id
      LEFT JOIN google_connections_v2 c ON c.user_id=b.owner_user_id
@@ -30,6 +31,7 @@ export function storageOwnerStatus(db: V2Database) {
         ownerId: number | null;
         ownerName: string | null;
         state: string;
+        active: number;
         rootRef: string | null;
         connectionStatus: string | null;
         scopes: string | null;
@@ -43,6 +45,7 @@ export function storageOwnerStatus(db: V2Database) {
         state: row.state,
         rootReady: !!row.rootRef,
         connected:
+          row.active === 1 &&
           row.connectionStatus === "connected" &&
           !!row.scopes &&
           hasDriveScope(row.scopes),
@@ -65,6 +68,7 @@ export function setStorageOwner(
   db: V2Database,
   actor: Actor,
   ownerId: number | null,
+  legacy?: DatabaseConnection,
 ): void {
   if (!isAdmin(db, actor))
     throw new Error("Somente Admin pode configurar o storage owner.");
@@ -74,7 +78,19 @@ export function setStorageOwner(
   )
     throw new Error("Escolha um usuário normal conectado com permissão Drive.");
   const current = storageOwnerStatus(db);
-  if (!current && ownerId === null) return;
+  if ((!current && ownerId === null) || current?.ownerId === ownerId) return;
+  if (
+    current &&
+    legacy &&
+    legacyDriveInventory(legacy).some((i) => i.count > 0)
+  )
+    throw new Error(
+      "Há documentos, modelos, projetos ou pastas vinculados ao Drive atual. Migre essas referências antes de trocar a conta responsável.",
+    );
+  if (current?.rootReady)
+    throw new Error(
+      "A pasta raiz atual já está vinculada. Migre ou desvincule a instalação antiga antes de trocar a conta responsável.",
+    );
   if (
     current?.ownerId !== ownerId &&
     current &&
@@ -344,4 +360,28 @@ export class GoogleDriveStorageProvider implements StorageProvider {
     );
     return ref;
   }
+}
+
+export function legacyDriveInventory(connection: DatabaseConnection) {
+  return [
+    {
+      label: "Documentos gerados",
+      sql: "SELECT count(*) n FROM generated_documents WHERE drive_file_id IS NOT NULL",
+    },
+    {
+      label: "Modelos de documentos",
+      sql: "SELECT count(*) n FROM document_templates",
+    },
+    {
+      label: "Projetos no Drive",
+      sql: "SELECT count(*) n FROM projects WHERE storage_backend='google-drive' AND drive_project_folder_id IS NOT NULL",
+    },
+    {
+      label: "Pastas de disciplinas",
+      sql: "SELECT count(*) n FROM offering_google_integrations WHERE drive_folder_id IS NOT NULL",
+    },
+  ].map(({ label, sql }) => ({
+    label,
+    count: (connection.sqlite.prepare(sql).get() as { n: number }).n,
+  }));
 }

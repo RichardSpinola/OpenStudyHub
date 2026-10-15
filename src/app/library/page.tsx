@@ -257,6 +257,11 @@ export default async function LibraryPage({
           {tr(...message)}
         </p>
       ) : null}
+      {projects && (
+        <Link className="library-archive-link" href="/projects/archived">
+          Projetos arquivados →
+        </Link>
+      )}
       <LibraryTypeTabs kind={projects ? "projects" : "documents"} />
       <div className="library-workspace-layout">
         <aside

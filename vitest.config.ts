@@ -9,6 +9,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Keep local verification usable on notebooks alongside the app and browser.
+    maxWorkers: 2,
     include: ["src/**/*.test.{ts,tsx}"],
     coverage: {
       reporter: ["text", "html"],

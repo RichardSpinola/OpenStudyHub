@@ -10,6 +10,11 @@ export type ImportPlanRow = {
   category: ImportCategory;
   count: number;
 };
+const optionalV3Tables = new Set([
+  "project_group_shares",
+  "project_upload_claims",
+  "project_upload_receipts",
+]);
 const valid = new Set<ImportCategory>([
   "MIGRATE",
   "TRANSFORM",
@@ -32,8 +37,8 @@ export function loadV1ImportMatrix(
       throw new Error("Invalid import matrix");
     map.set(match[1], category);
   }
-  if (map.size !== 52)
-    throw new Error("Import matrix must classify all 52 V1 tables");
+  if (map.size !== 55)
+    throw new Error("Import matrix must classify all 55 app tables");
   return map;
 }
 
@@ -49,17 +54,23 @@ export function previewV1Import(
     .all() as { name: string }[];
   const actual = new Set(tables.map((x) => x.name));
   if (
-    actual.size !== matrix.size ||
+    [...matrix.keys()].some(
+      (name) => !actual.has(name) && !optionalV3Tables.has(name),
+    ) ||
     [...actual].some((name) => !matrix.has(name))
   )
     throw new Error("V1 schema does not match the reviewed matrix");
-  const rows: ImportPlanRow[] = [...matrix].map(([table, category]) => {
-    // Identifier is from the reviewed static matrix, never user input.
-    const count = (
-      source.prepare(`SELECT count(*) n FROM "${table}"`).get() as { n: number }
-    ).n;
-    return { table, category, count };
-  });
+  const rows: ImportPlanRow[] = [...matrix]
+    .filter(([table]) => actual.has(table))
+    .map(([table, category]) => {
+      // Identifier is from the reviewed static matrix, never user input.
+      const count = (
+        source.prepare(`SELECT count(*) n FROM "${table}"`).get() as {
+          n: number;
+        }
+      ).n;
+      return { table, category, count };
+    });
   const fingerprint = v1Fingerprint(source, matrix);
   return target.transaction(() => {
     const runId = Number(
@@ -148,6 +159,13 @@ export function v1Fingerprint(
   const hash = createHash("sha256");
   // Stream every value: a rename or changed enrollment must invalidate the preview.
   for (const table of [...matrix.keys()].sort()) {
+    if (
+      optionalV3Tables.has(table) &&
+      !source
+        .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?")
+        .get(table)
+    )
+      continue;
     hash.update(table);
     for (const row of source
       .prepare(`SELECT * FROM "${table}" ORDER BY rowid`)

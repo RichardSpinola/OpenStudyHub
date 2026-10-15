@@ -1,3 +1,4 @@
+import { EventForm } from "./event-form";
 import Link from "next/link";
 import type { Actor } from "@/lib/v2/actor";
 import type { V2Database } from "@/lib/v2/database";
@@ -52,7 +53,7 @@ export function EventsPanel({
     });
   for (const r of db
     .prepare(
-      "SELECT c.id,c.name FROM cohorts c JOIN programs p ON p.id=c.program_id WHERE p.institution_id=? AND c.archived_at IS NULL AND p.archived_at IS NULL AND (? IS NULL OR p.id=?)",
+      "SELECT c.id,p.name || ' / ' || c.name name FROM cohorts c JOIN programs p ON p.id=c.program_id WHERE p.institution_id=? AND c.archived_at IS NULL AND p.archived_at IS NULL AND (? IS NULL OR p.id=?)",
     )
     .all(institutionId, programId ?? null, programId ?? null) as Array<{
     id: number;
@@ -65,7 +66,7 @@ export function EventsPanel({
     });
   for (const r of db
     .prepare(
-      "SELECT o.id,s.name FROM offerings o JOIN subjects s ON s.id=o.subject_id JOIN programs p ON p.id=o.program_id WHERE p.institution_id=? AND o.archived_at IS NULL AND p.archived_at IS NULL AND (? IS NULL OR p.id=?)",
+      "SELECT o.id,p.name || ' / ' || s.name || ' · ' || ap.label || coalesce(' · ' || nullif(o.class_group,''),'') || coalesce(' · ' || sh.name,'') name FROM offerings o JOIN subjects s ON s.id=o.subject_id JOIN programs p ON p.id=o.program_id JOIN academic_periods ap ON ap.id=o.period_id LEFT JOIN shifts sh ON sh.id=o.shift_id WHERE p.institution_id=? AND o.archived_at IS NULL AND p.archived_at IS NULL AND (? IS NULL OR p.id=?)",
     )
     .all(institutionId, programId ?? null, programId ?? null) as Array<{
     id: number;
@@ -73,7 +74,7 @@ export function EventsPanel({
   }>)
     targets.push({
       value: "offering:" + r.id,
-      name: tr("Disciplina: ", "Subject: ") + r.name + " #" + r.id,
+      name: tr("Disciplina: ", "Subject: ") + r.name,
       scope: { kind: "offering", id: r.id },
     });
   const allowed = targets.filter((t) =>
@@ -97,106 +98,89 @@ export function EventsPanel({
     ),
   );
   const form = (e?: AcademicEvent) => (
-    <form action={controlAction} className="v2-fields">
-      <HiddenContext
-        returnTo={returnTo}
-        intent="eventSave"
-        institutionId={institutionId}
-        id={e?.id ?? ""}
-      />
-      <label>
-        {tr("Título", "Title")}
-        <input name="title" defaultValue={e?.title} required maxLength={180} />
-      </label>
-      <label>
-        {tr("Tipo", "Type")}
-        <select name="kind" defaultValue={e?.kind ?? "event"}>
-          <option value="event">
-            {tr("Evento acadêmico", "Academic event")}
-          </option>
-          <option
-            value="class"
-            disabled={!allowed.some((t) => t.scope.kind === "offering")}
-          >
-            {tr("Aula excepcional", "Exceptional class")}
-          </option>
-          {isAdmin(db, actor) && (
-            <option value="exam">
-              {tr("Prova — restringir ferramentas", "Exam — restrict tools")}
-            </option>
-          )}
-        </select>
-      </label>
-      <label>
-        {tr("Público", "Audience")}
-        <select
-          name="audience"
-          defaultValue={
-            e
-              ? e.offeringId
+    <EventForm
+      targets={allowed.map((t) => ({ value: t.value, name: t.name }))}
+      canExam={isAdmin(db, actor)}
+      institutionId={institutionId}
+      returnTo={returnTo}
+      zone={zone}
+      event={
+        e
+          ? {
+              id: e.id,
+              title: e.title,
+              kind: e.kind,
+              audience: e.offeringId
                 ? "offering:" + e.offeringId
                 : e.cohortId
                   ? "cohort:" + e.cohortId
                   : e.programId
                     ? "program:" + e.programId
-                    : "institution"
-              : ""
-          }
-          required
-        >
-          <option value="">{tr("Selecione", "Select")}</option>
-          {allowed.map((t) => (
-            <option value={t.value} key={t.value}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        {tr("Início", "Start")}
-        <input
-          type="datetime-local"
-          name="start"
-          defaultValue={
-            e ? academicDateTimeInput(new Date(e.startsAt), zone) : undefined
-          }
-          required
-        />
-      </label>
-      <label>
-        {tr("Fim", "End")}
-        <input
-          type="datetime-local"
-          name="end"
-          defaultValue={
-            e ? academicDateTimeInput(new Date(e.endsAt), zone) : undefined
-          }
-          required
-        />
-      </label>
-      <label>
-        {tr("Descrição", "Description")}
-        <textarea
-          name="description"
-          maxLength={4000}
-          defaultValue={e?.description}
-        />
-      </label>
-      <p>
-        {tr("Horário local: ", "Local time: ")}
-        {zone}.{" "}
-        {tr(
-          isAdmin(db, actor)
-            ? "Aula excepcional exige uma disciplina. Prova suspende Chat, Notas, Biblioteca e Extras durante o intervalo, para o público selecionado. Busca e atalhos continuam disponíveis."
-            : "Aula excepcional exige uma disciplina. Apenas eventos no seu escopo de gestão podem ser alterados.",
-          isAdmin(db, actor)
-            ? "Exceptional classes require a subject. Exams suspend Chat, Notes, Library and Extras during the interval for the selected audience. Search and shortcuts remain available."
-            : "Exceptional classes require a subject. Only events in your management scope can be changed.",
-        )}
-      </p>
-      <button>{tr("Salvar evento", "Save event")}</button>
-    </form>
+                    : "institution",
+              start: academicDateTimeInput(new Date(e.startsAt), zone),
+              end: academicDateTimeInput(new Date(e.endsAt), zone),
+              description: e.description ?? "",
+            }
+          : undefined
+      }
+    />
   );
+  const card = (e: AcademicEvent) => (
+    <article className="admin-event-card" key={e.id}>
+      <div>
+        <small>
+          {e.cancelledAt
+            ? tr("Cancelado", "Cancelled")
+            : e.kind === "exam"
+              ? tr("Modo de prova", "Exam mode")
+              : e.kind === "class"
+                ? tr("Aula excepcional", "Exceptional class")
+                : tr("Evento", "Event")}
+        </small>
+        <h3>{e.title}</h3>
+        <p>
+          {academicDateTimeInput(new Date(e.startsAt), zone).replace("T", " ")}{" "}
+          → {academicDateTimeInput(new Date(e.endsAt), zone).replace("T", " ")}
+        </p>
+        <p>
+          {
+            targets.find(
+              (t) =>
+                t.value ===
+                (e.offeringId
+                  ? "offering:" + e.offeringId
+                  : e.cohortId
+                    ? "cohort:" + e.cohortId
+                    : e.programId
+                      ? "program:" + e.programId
+                      : "institution"),
+            )?.name
+          }
+        </p>
+        {e.description && <p>{e.description}</p>}
+      </div>
+      {!e.cancelledAt && (isAdmin(db, actor) || e.kind !== "exam") && (
+        <div className="admin-row-actions">
+          <AdminActionPanel
+            title={tr("Editar evento", "Edit event") + " " + e.title}
+          >
+            {form(e)}
+          </AdminActionPanel>
+          <form action={controlAction}>
+            <HiddenContext returnTo={returnTo} intent="eventCancel" id={e.id} />
+            <button>{tr("Cancelar evento", "Cancel event")}</button>
+          </form>
+        </div>
+      )}
+    </article>
+  );
+  // Server-rendered snapshot of the event list, recomputed on navigation.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
+  const upcoming = events
+    .filter((e) => !e.cancelledAt && e.endsAt > now)
+    .sort((a, b) => a.startsAt - b.startsAt);
+  const historical = events.filter((e) => e.cancelledAt || e.endsAt <= now);
   return (
     <section>
       <div className="admin-section-header">
@@ -213,74 +197,23 @@ export function EventsPanel({
           "Schedule by date; the recurring timetable stays intact.",
         )}
       </p>
-      <div className="admin-event-list">
-        {events.map((e) => (
-          <article className="admin-event-card" key={e.id}>
-            <div>
-              <small>
-                {e.cancelledAt
-                  ? tr("Cancelado", "Cancelled")
-                  : e.kind === "exam"
-                    ? tr("Modo de prova", "Exam mode")
-                    : e.kind === "class"
-                      ? tr("Aula excepcional", "Exceptional class")
-                      : tr("Evento", "Event")}
-              </small>
-              <h3>{e.title}</h3>
-              <p>
-                {academicDateTimeInput(new Date(e.startsAt), zone).replace(
-                  "T",
-                  " ",
-                )}{" "}
-                →{" "}
-                {academicDateTimeInput(new Date(e.endsAt), zone).replace(
-                  "T",
-                  " ",
-                )}
-              </p>
-              <p>
-                {
-                  targets.find(
-                    (t) =>
-                      t.value ===
-                      (e.offeringId
-                        ? "offering:" + e.offeringId
-                        : e.cohortId
-                          ? "cohort:" + e.cohortId
-                          : e.programId
-                            ? "program:" + e.programId
-                            : "institution"),
-                  )?.name
-                }
-              </p>
-              {e.description && <p>{e.description}</p>}
-            </div>
-            {!e.cancelledAt && (isAdmin(db, actor) || e.kind !== "exam") && (
-              <div className="admin-row-actions">
-                <AdminActionPanel
-                  title={tr("Editar evento", "Edit event") + " " + e.title}
-                >
-                  {form(e)}
-                </AdminActionPanel>
-                <form action={controlAction}>
-                  <HiddenContext
-                    returnTo={returnTo}
-                    intent="eventCancel"
-                    id={e.id}
-                  />
-                  <button>{tr("Cancelar evento", "Cancel event")}</button>
-                </form>
-              </div>
-            )}
-          </article>
-        ))}
-      </div>
-      {!events.length && (
+      <div className="admin-event-list">{upcoming.map(card)}</div>
+      {!upcoming.length && (
         <p>
           {tr("Nenhum evento neste contexto.", "No events in this context.")}
         </p>
       )}
-      <Link href={returnTo}>{tr("Atualizar lista", "Refresh list")}</Link>
+      {historical.length > 0 && (
+        <details className="admin-secondary-tool">
+          <summary>
+            Eventos anteriores e cancelados ({historical.length})
+          </summary>
+          <div className="admin-event-list">{historical.map(card)}</div>
+        </details>
+      )}
+      <Link className="admin-refresh-link" href={returnTo}>
+        {tr("Atualizar lista", "Refresh list")}
+      </Link>
     </section>
   );
 }

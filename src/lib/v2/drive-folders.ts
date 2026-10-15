@@ -78,14 +78,18 @@ export async function provisionPendingDriveFolders(
       offeringId,
       connection,
     )?.driveFolderId;
-    if (
-      existingId &&
-      (await driveFolderExistsForUser(ownerLink.id, existingId, {
-        connection,
-        fetchImpl,
-      }))
-    )
-      continue;
+    if (existingId) {
+      if (
+        await driveFolderExistsForUser(ownerLink.id, existingId, {
+          connection,
+          fetchImpl,
+        })
+      )
+        continue;
+      throw new Error(
+        "Uma pasta vinculada está ausente ou foi excluída. Restaure a pasta original antes de continuar. Sua referência foi preservada e nenhuma duplicata foi criada.",
+      );
+    }
     let parentId = root.id;
     let folder = root;
     for (const name of buildOfferingStoragePath(

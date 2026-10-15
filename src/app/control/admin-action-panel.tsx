@@ -47,7 +47,10 @@ export function AdminActionPanel({
     if (!element) return;
     const key = `osh.academic-draft:${location.pathname}:${title}`;
     try {
-      if (search.has("error")) {
+      if (
+        search.has("error") &&
+        sessionStorage.getItem("osh.academic-last-draft") === key
+      ) {
         if (feedback.current)
           feedback.current.textContent = search.get("error");
         const saved = sessionStorage.getItem(key);
@@ -63,17 +66,22 @@ export function AdminActionPanel({
               input.value = values[input.name];
           if (!element.open) element.showModal();
         }
-      } else if (search.has("ok")) sessionStorage.removeItem(key);
+      } else if (search.has("ok")) {
+        sessionStorage.removeItem(key);
+        if (sessionStorage.getItem("osh.academic-last-draft") === key) {
+          sessionStorage.removeItem("osh.academic-last-draft");
+          if (feedback.current) feedback.current.textContent = "";
+          // A successful action can update the same route without remounting
+          // its dialog. Close it so the page's success message is visible.
+          if (element.open) element.close();
+        }
+      }
     } catch {
       /* Storage is optional; registration still works when disabled. */
     }
     const save = (event: Event) => {
       const form = event.target;
-      if (
-        !(form instanceof HTMLFormElement) ||
-        form.querySelector('input[type="password"]')
-      )
-        return;
+      if (!(form instanceof HTMLFormElement)) return;
       const values: Record<string, string> = {};
       for (const input of form.querySelectorAll<
         HTMLInputElement | HTMLSelectElement
@@ -82,6 +90,7 @@ export function AdminActionPanel({
           values[input.name] = input.value;
       try {
         sessionStorage.setItem(key, JSON.stringify(values));
+        sessionStorage.setItem("osh.academic-last-draft", key);
       } catch {}
     };
     element.addEventListener("submit", save);

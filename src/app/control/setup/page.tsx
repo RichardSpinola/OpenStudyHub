@@ -12,7 +12,11 @@ export default async function Setup({
     redirect("/control/login");
   const q = await searchParams;
   return (
-    <ConsoleShell title="OpenStudyHub" kicker="SETUP" error={q.error}>
+    <ConsoleShell
+      title="Configurar OpenStudyHub"
+      kicker="PRIMEIRO ACESSO"
+      error={q.error}
+    >
       <SetupWizard />
     </ConsoleShell>
   );

@@ -43,10 +43,17 @@ export function DocumentLibraryCard({
     <li className="document-library-card">
       <a
         className="document-card-open"
-        href={document.webViewLink}
+        href={
+          shared ||
+          (document.storageUserId !== null &&
+            document.storageUserId !== document.ownerUserId &&
+            document.googlePermissionStatus !== "granted")
+            ? `/api/documents/${document.id}/download`
+            : document.webViewLink
+        }
         target="_blank"
         rel="noreferrer"
-        aria-label={`Abrir ${document.name} no Google Docs`}
+        aria-label={`Abrir ${document.name}`}
       >
         <span className="document-paper-preview" aria-hidden="true">
           <span className="document-paper-topline">
@@ -89,8 +96,8 @@ export function DocumentLibraryCard({
             </h3>
             <p>
               <UiCopy
-                pt="Escolha quem pode ver este documento no Hub. O acesso ao arquivo no Google Drive pode exigir autorização separada."
-                en="Choose who can see this document in the Hub. Access to the Google Drive file may require separate authorization."
+                pt="Escolha quem pode ver este documento no Hub. A leitura e o download ficam disponíveis pelo Hub."
+                en="Choose who can see this document in the Hub. Reading and download are available in the Hub."
               />
             </p>
             {personShares.length || groupShares.length ? (
@@ -100,7 +107,7 @@ export function DocumentLibraryCard({
                     <UiCopy pt="Pessoa:" en="Person:" /> {person.displayName} ·{" "}
                     {person.googlePermissionStatus === "granted"
                       ? "Drive liberado"
-                      : "confira o acesso no Drive"}
+                      : "leitura pelo Hub"}
                     <form action={setDocumentPersonShareAction}>
                       <input
                         type="hidden"

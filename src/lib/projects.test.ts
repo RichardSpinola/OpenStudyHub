@@ -186,18 +186,17 @@ describe("projects", () => {
   it("upgrades academic projects without rebuilding their versions or breaking foreign keys", () => {
     const old = createDatabase(":memory:");
     try {
-      for (const file of migrationFiles.slice(0, -1)) applyMigration(old, file);
+      for (const file of migrationFiles.slice(0, -2)) applyMigration(old, file);
       const { ownerId, offeringId } = seed(old);
-      const project = createProject(
-        ownerId,
-        {
-          offeringId,
-          name: "Existente",
-          language: "other",
-          ignorePreset: "other",
-        },
-        old,
-      );
+      const project = {
+        id: Number(
+          old.sqlite
+            .prepare(
+              "INSERT INTO projects(owner_user_id,offering_id,name,language,ignore_preset) VALUES(?,?,'Existente','other','other')",
+            )
+            .run(ownerId, offeringId).lastInsertRowid,
+        ),
+      };
       old.sqlite
         .prepare(
           "INSERT INTO project_versions(project_id,version_number,archive_drive_file_id,manifest_json,created_by_user_id) VALUES(?,1,'archive','[]',?)",
@@ -213,6 +212,7 @@ describe("projects", () => {
           .all(),
         files = old.sqlite.prepare("SELECT * FROM project_files").all();
       applyMigration(old, "0016_personal_projects.sql");
+      applyMigration(old, "0017_project_storage.sql");
       expect(getUserProject(ownerId, project.id, old).offeringId).toBe(
         offeringId,
       );
@@ -609,11 +609,12 @@ describe("projects", () => {
       syncStatus: "complete",
       driveProjectFolderId: originalProjectFolderId,
     });
-    expect(createdFolderNames.slice(0, 5)).toEqual([
+    expect(createdFolderNames.slice(0, 6)).toEqual([
       "Instituição Teste - OSH",
-      "Projetos - ADS",
+      "ADS",
       "2030.1",
       "Subject",
+      "Projetos",
       "Projeto incremental",
     ]);
     expect(folderParents.get("folder-2")).toBe("folder-1");
@@ -625,7 +626,7 @@ describe("projects", () => {
         ({ method, url }) =>
           method === "PATCH" && new URL(url).searchParams.has("addParents"),
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       connection.sqlite
         .prepare(

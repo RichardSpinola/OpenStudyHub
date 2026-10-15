@@ -1,3 +1,5 @@
+import { GettingStarted } from "../../getting-started";
+import { SubjectCoversPanel } from "../../subject-covers-panel";
 import { RemovalPanel } from "../../removal-panel";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
@@ -152,22 +154,35 @@ export default async function Institution({
             { key: "overview", label: "Visão geral" },
             { key: "courses", label: "Cursos" },
             { key: "settings", label: "Configuração" },
-            { key: "subjects", label: "Disciplinas" },
-            { key: "academic_periods", label: "Períodos" },
-            { key: "shifts", label: "Turnos" },
-            { key: "instructors", label: "Professores" },
-            { key: "locations", label: "Salas" },
+            { key: "subjects", label: "Cadastros básicos" },
+            { key: "covers", label: "Disciplinas e capas" },
+            { key: "events", label: "Eventos e provas" },
           ].map((item) => (
             <Link
               key={item.key}
-              href={`${base}?area=${item.key}`}
-              aria-current={area === item.key ? "page" : undefined}
+              href={
+                item.key === "events"
+                  ? `${base}/events`
+                  : `${base}?area=${item.key}`
+              }
+              aria-current={
+                area === item.key ||
+                (item.key === "subjects" &&
+                  [
+                    "academic_periods",
+                    "shifts",
+                    "instructors",
+                    "locations",
+                  ].includes(area))
+                  ? "page"
+                  : undefined
+              }
             >
               {tr(
                 item.label,
                 {
                   courses: "Courses",
-                  subjects: "Subjects",
+                  subjects: "Basic records",
                   academic_periods: "Periods",
                   shifts: "Shifts",
                   instructors: "Instructors",
@@ -177,17 +192,53 @@ export default async function Institution({
             </Link>
           ))}
         </nav>
-        <div className="admin-context-links">
-          <Link href={`${base}/events`}>
-            {tr("Eventos e provas", "Events and exams")} →
-          </Link>
-          <Link href="/control/import">
-            {tr("Importação acadêmica", "Academic import")} →
-          </Link>
-        </div>
+
+        {[
+          "subjects",
+          "academic_periods",
+          "shifts",
+          "instructors",
+          "locations",
+        ].includes(area) && (
+          <section className="admin-catalog-context">
+            <h2>Cadastros básicos da instituição</h2>
+            <p>
+              Esses cadastros podem ser usados pelos cursos desta instituição.
+              Para organizar aulas e alterar a capa, use Disciplinas e capas.
+            </p>
+            <nav className="admin-context-nav" aria-label="Tipos de cadastro">
+              {[
+                { key: "subjects", label: "Disciplinas" },
+                { key: "academic_periods", label: "Períodos letivos" },
+                { key: "shifts", label: "Turnos" },
+                { key: "instructors", label: "Professores" },
+                { key: "locations", label: "Salas" },
+              ].map((item) => (
+                <Link
+                  key={item.key}
+                  href={`${base}?area=${item.key}`}
+                  aria-current={area === item.key ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </section>
+        )}
+
+        {area === "covers"
+          ? SubjectCoversPanel({
+              db,
+              institutionId: id,
+              returnTo: `${base}?area=covers`,
+            })
+          : null}
         {area === "settings" ? (
           <section className="admin-setting-card">
             <h2>{tr("Configuração da instituição", "Institution settings")}</h2>
+            <Link className="admin-entity-link" href="/control/import">
+              Importar dados de uma instalação anterior →
+            </Link>
             <p>
               {tr(
                 "Fuso horário e ciclo de vida do cadastro.",
@@ -228,44 +279,81 @@ export default async function Institution({
           </section>
         ) : null}
         {area === "overview" ? (
-          <section className="admin-portal-grid">
-            {[
-              {
-                key: "courses",
-                label: tr("Cursos", "Courses"),
-                text: tr(
-                  "Turmas, currículo, ofertas e matrículas",
-                  "Cohorts, curriculum, offerings and enrollments",
-                ),
-                count: courses.filter((c) => !c.archivedAt).length,
-              },
-              ...collections.map((c) => ({
-                key: c.entity,
-                label: tr(c.title, collectionTitlesEn[c.entity]),
-                text: tr("Cadastros da instituição", "Institution records"),
-                count: (
-                  db
-                    .prepare(
-                      `SELECT count(*) n FROM ${c.entity} WHERE institution_id=? AND archived_at IS NULL`,
-                    )
-                    .get(id) as { n: number }
-                ).n,
-              })),
-            ].map((c) => (
-              <Link
-                className="admin-portal-card"
-                key={c.key}
-                href={`${base}?area=${c.key}`}
-              >
-                <small>
-                  {c.count} {tr("ativos", "active")}
-                </small>
-                <h2>{c.label}</h2>
-                <p>{c.text}</p>
-                <span>{tr("Abrir área", "Open section")} →</span>
-              </Link>
-            ))}
-          </section>
+          <>
+            {GettingStarted({ db, institutionId: id })}
+            <section className="admin-portal-grid">
+              {[
+                {
+                  key: "courses",
+                  label: tr("Cursos", "Courses"),
+                  text: tr(
+                    "Turmas, currículo, ofertas e matrículas",
+                    "Cohorts, curriculum, offerings and enrollments",
+                  ),
+                  count: courses.filter((c) => !c.archivedAt).length,
+                },
+                {
+                  key: "covers",
+                  label: tr("Disciplinas e capas", "Subjects and covers"),
+                  text: tr(
+                    "Personalizar a capa e conferir as disciplinas do período",
+                    "Customize covers and review subjects for the period",
+                  ),
+                  count: (
+                    db
+                      .prepare(
+                        "SELECT count(*) n FROM offerings o JOIN programs p ON p.id=o.program_id WHERE p.institution_id=? AND o.archived_at IS NULL",
+                      )
+                      .get(id) as { n: number }
+                  ).n,
+                },
+                {
+                  key: "events",
+                  label: tr("Eventos e provas", "Events and exams"),
+                  text: tr(
+                    "Criar evento, aula especial ou período de prova",
+                    "Create events, exceptional classes or an exam period",
+                  ),
+                  count: (
+                    db
+                      .prepare(
+                        "SELECT count(*) n FROM academic_events_v3 WHERE institution_id=? AND cancelled_at IS NULL AND ends_at>?",
+                      )
+                      .get(id, Date.now()) as { n: number }
+                  ).n,
+                },
+                ...collections.map((c) => ({
+                  key: c.entity,
+                  label: tr(c.title, collectionTitlesEn[c.entity]),
+                  text: tr("Cadastros da instituição", "Institution records"),
+                  count: (
+                    db
+                      .prepare(
+                        `SELECT count(*) n FROM ${c.entity} WHERE institution_id=? AND archived_at IS NULL`,
+                      )
+                      .get(id) as { n: number }
+                  ).n,
+                })),
+              ].map((c) => (
+                <Link
+                  className="admin-portal-card"
+                  key={c.key}
+                  href={
+                    c.key === "events"
+                      ? `${base}/events`
+                      : `${base}?area=${c.key}`
+                  }
+                >
+                  <small>
+                    {c.count} {tr("ativos", "active")}
+                  </small>
+                  <h2>{c.label}</h2>
+                  <p>{c.text}</p>
+                  <span>{tr("Abrir área", "Open section")} →</span>
+                </Link>
+              ))}
+            </section>
+          </>
         ) : null}
         {area === "courses" ? (
           <section>
@@ -289,18 +377,18 @@ export default async function Institution({
                     <input name="code" required />
                     <small>
                       <UiCopy
-                        pt="Identificador interno do curso."
-                        en="Internal course identifier."
+                        pt="Ex.: ADS. Este código precisa ser único nesta instituição."
+                        en="E.g. ADS. This code must be unique in this institution."
                       />
                     </small>
                   </label>
                   <label>
-                    <UiCopy pt="Nome curto" en="Short name" />
+                    <UiCopy pt="Sigla nas pastas" en="Folder abbreviation" />
                     <input name="shortName" required placeholder="ADS" />
                     <small>
                       <UiCopy
-                        pt="Usado no nome da pasta de projetos."
-                        en="Used in the project folder name."
+                        pt="Ex.: ADS. Usada para organizar as pastas do curso."
+                        en="E.g. ADS. Used to organize this course’s folders."
                       />
                     </small>
                   </label>
@@ -363,7 +451,7 @@ export default async function Institution({
                   </h2>
                   <AdminActionPanel
                     title={tr(
-                      `Adicionar ${collection.title.toLowerCase()}`,
+                      `Adicionar ${{ subjects: "disciplina", academic_periods: "período letivo", shifts: "turno", instructors: "professor", locations: "sala" }[collection.entity]}`,
                       `Add ${collectionTitlesEn[collection.entity].toLowerCase()}`,
                     )}
                   >

@@ -1,3 +1,4 @@
+import { GrantForm } from "./grant-form";
 import { UiCopy } from "@/components/ui-language-provider";
 import { redirect } from "next/navigation";
 import { withV2DbAsync, currentAdminV2 } from "@/lib/v2/runtime";
@@ -32,7 +33,7 @@ export default async function Grants({
       .all() as Array<{ id: number; name: string }>;
     const programs = db
       .prepare(
-        "SELECT id,name FROM programs WHERE archived_at IS NULL ORDER BY name",
+        "SELECT p.id,i.name || ' / ' || p.name name FROM programs p JOIN institutions i ON i.id=p.institution_id WHERE p.archived_at IS NULL AND i.archived_at IS NULL ORDER BY i.name,p.name",
       )
       .all() as Array<{ id: number; name: string }>;
     const institutions = db
@@ -42,12 +43,12 @@ export default async function Grants({
       .all() as Array<{ id: number; name: string }>;
     const cohorts = db
       .prepare(
-        "SELECT c.id,p.name || ' / ' || c.name name FROM cohorts c JOIN programs p ON p.id=c.program_id WHERE c.archived_at IS NULL ORDER BY p.name,c.name",
+        "SELECT c.id,i.name || ' / ' || p.name || ' / ' || c.name name FROM cohorts c JOIN programs p ON p.id=c.program_id JOIN institutions i ON i.id=p.institution_id WHERE c.archived_at IS NULL AND p.archived_at IS NULL AND i.archived_at IS NULL ORDER BY i.name,p.name,c.name",
       )
       .all() as Array<{ id: number; name: string }>;
     const offerings = db
       .prepare(
-        "SELECT o.id,p.name || ' / ' || s.name || ' / ' || ap.label name FROM offerings o JOIN programs p ON p.id=o.program_id JOIN subjects s ON s.id=o.subject_id JOIN academic_periods ap ON ap.id=o.period_id WHERE o.archived_at IS NULL ORDER BY p.name,s.name",
+        "SELECT o.id,i.name || ' / ' || p.name || ' / ' || s.name || ' · ' || ap.label || coalesce(' · ' || nullif(o.class_group,''),'') || coalesce(' · ' || sh.name,'') name FROM offerings o JOIN programs p ON p.id=o.program_id JOIN institutions i ON i.id=p.institution_id JOIN subjects s ON s.id=o.subject_id JOIN academic_periods ap ON ap.id=o.period_id LEFT JOIN shifts sh ON sh.id=o.shift_id WHERE o.archived_at IS NULL AND p.archived_at IS NULL AND i.archived_at IS NULL ORDER BY i.name,p.name,s.name",
       )
       .all() as Array<{ id: number; name: string }>;
     const grants = db
@@ -78,116 +79,19 @@ export default async function Grants({
         </p>
         <Help>
           <UiCopy
-            pt="Gestor é uma pessoa com uma ou mais capacidades reais, como editar horários ou matrículas. Não há promoção automática a partir de roles antigos. Revogar um grant tem efeito imediato."
+            pt="Gestor é uma pessoa com uma ou mais capacidades reais, como editar horários ou matrículas. Cargos da instalação antiga não concedem acesso automaticamente. Remover uma responsabilidade retira esse acesso imediatamente."
             en="A manager has one or more specific capabilities, such as editing schedules or enrollments. Old roles do not grant automatic promotion. Revoking a grant takes effect immediately."
           />
         </Help>
-        {[
-          {
-            kind: "institution",
-            label: tr("Instituição", "Institution"),
-            items: institutions,
-            caps: [
-              [
-                "manage_academics",
-                tr("Estrutura acadêmica", "Academic structure"),
-              ],
-              ["manage_cohort", tr("Turmas e períodos", "Cohorts and periods")],
-              ["manage_schedule", tr("Horários", "Schedules")],
-              ["manage_enrollments", tr("Matrículas", "Enrollments")],
-            ],
-          },
-          {
-            kind: "program",
-            label: tr("Curso", "Program"),
-            items: programs,
-            caps: [
-              [
-                "manage_academics",
-                tr("Estrutura acadêmica", "Academic structure"),
-              ],
-              ["manage_cohort", tr("Turmas e períodos", "Cohorts and periods")],
-              ["manage_schedule", tr("Horários", "Schedules")],
-              ["manage_enrollments", tr("Matrículas", "Enrollments")],
-            ],
-          },
-          {
-            kind: "cohort",
-            label: tr("Turma", "Cohort"),
-            items: cohorts,
-            caps: [
-              ["manage_cohort", tr("Turmas e períodos", "Cohorts and periods")],
-              ["manage_enrollments", tr("Matrículas", "Enrollments")],
-            ],
-          },
-          {
-            kind: "offering",
-            label: tr("Turma da disciplina", "Subject offering"),
-            items: offerings,
-            caps: [
-              ["manage_academics", tr("Editar oferta", "Edit offering")],
-              ["manage_schedule", tr("Horários", "Schedules")],
-              ["manage_enrollments", tr("Matrículas", "Enrollments")],
-            ],
-          },
-        ].map((group) => (
-          <AdminActionPanel
-            key={group.kind}
-            title={
-              tr("Conceder em", "Grant for") + ` ${group.label.toLowerCase()}`
-            }
-          >
-            <form action={controlAction} className="v2-fields">
-              <HiddenContext
-                returnTo="/control/grants"
-                intent="grant"
-                scopeKind={group.kind}
-              />
-              <label>
-                <UiCopy pt="Pessoa" en="Person" />
-                <select name="userId" required>
-                  <option value="">
-                    <UiCopy pt="Selecione" en="Select" />
-                  </option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <UiCopy pt="Responsabilidade" en="Responsibility" />
-                <select name="capability">
-                  {group.caps.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                {group.label}
-                <select name="scopeId" required>
-                  <option value="">
-                    <UiCopy pt="Selecione" en="Select" />
-                  </option>
-                  {group.items.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button>
-                <UiCopy
-                  pt="Conceder responsabilidade"
-                  en="Grant responsibility"
-                />
-              </button>
-            </form>
-          </AdminActionPanel>
-        ))}
+        <AdminActionPanel title="Adicionar gestor">
+          <GrantForm
+            users={users}
+            institutions={institutions}
+            programs={programs}
+            cohorts={cohorts}
+            offerings={offerings}
+          />
+        </AdminActionPanel>
         <h2>
           <UiCopy pt="Responsabilidades ativas" en="Active responsibilities" />
         </h2>
@@ -208,7 +112,7 @@ export default async function Grants({
                   id={g.id}
                 />
                 <button>
-                  <UiCopy pt="Revogar" en="Revoke" />
+                  <UiCopy pt="Remover acesso" en="Revoke" />
                 </button>
               </form>
             </div>

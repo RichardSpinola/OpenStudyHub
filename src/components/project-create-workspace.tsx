@@ -1,3 +1,4 @@
+import { isDriveStorageAvailableForUser } from "@/lib/google/storage-owner";
 import { subjectResourceHref } from "@/lib/v2/academic-links";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
@@ -22,6 +23,7 @@ export default async function ProjectCreateWorkspace({
   const user = await requireAuthenticatedUser();
   const language = getUserProfile(user.id).locale;
   const query = await searchParams;
+  const driveAvailable = isDriveStorageAvailableForUser(user.id);
   const offerings = listUserSubjectOfferings(user.id);
   const selected = offerings.find(
     ({ offeringId }) => String(offeringId) === query.offeringId,
@@ -134,6 +136,25 @@ export default async function ProjectCreateWorkspace({
               required
               autoFocus
             />
+          </label>
+          <label>
+            <UiCopy pt="Onde salvar os arquivos" en="Where to save files" />
+            <select name="storageBackend" defaultValue="local">
+              <option value="local">Nesta instância · sem Google</option>
+              <option value="google-drive" disabled={!driveAvailable}>
+                Google Drive da instância
+              </option>
+            </select>
+            {!driveAvailable && (
+              <small>
+                O Drive precisa ser preparado em Integrações. Você já pode criar
+                um projeto nesta instância.
+              </small>
+            )}
+            <small>
+              O projeto começa privado. Você pode compartilhar a leitura com
+              colegas depois.
+            </small>
           </label>
           <label>
             <UiCopy pt="Descrição (opcional)" en="Description (optional)" />

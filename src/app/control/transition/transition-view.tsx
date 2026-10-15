@@ -84,6 +84,14 @@ export function TransitionView({
       message={message}
       error={error || previewError}
     >
+      {contextual && (
+        <Link
+          className="admin-back-link"
+          href={base.replace(/\/transition$/, "?section=curriculum")}
+        >
+          ← {tr("Voltar ao curso", "Back to course")}
+        </Link>
+      )}
       <p>
         <UiCopy
           pt="Prepare as turmas da disciplina no período seguinte, confira o impacto e confirme a ativação. O histórico anterior permanece consultável."
@@ -121,7 +129,12 @@ export function TransitionView({
               <div className="v2-row" key={t.id}>
                 <span>
                   {t.cohort} · {t.period} · {t.semester}
-                  <UiCopy pt="º semestre" en=" semester" /> · {t.state}
+                  <UiCopy pt="º semestre" en=" semester" /> ·{" "}
+                  {t.state === "planned"
+                    ? tr("Preparado", "Prepared")
+                    : t.state === "active"
+                      ? tr("Em andamento", "Active")
+                      : tr("Encerrado", "Closed")}
                 </span>
                 {t.state === "planned" ? (
                   <Link href={targetPath(t.id)}>

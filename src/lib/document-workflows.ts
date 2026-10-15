@@ -1,3 +1,4 @@
+import { getDriveAccessPolicy } from "./drive-access-policy";
 import { z } from "zod";
 
 import { recordAuditEvent } from "@/lib/audit";
@@ -352,6 +353,7 @@ export function listSharedGeneratedDocuments(
                  where dps.document_id=d.id and dps.recipient_user_id=?),
                 (select dgs.google_permission_status from document_group_shares dgs
                  join study_group_members gm on gm.group_id=dgs.group_id
+                 join study_groups current_group on current_group.id=gm.group_id AND current_group.archived_at IS NULL
                  where dgs.document_id=d.id and gm.user_id=? limit 1),
                 'needs_authorization'
               ) as googlePermissionStatus
@@ -360,10 +362,11 @@ export function listSharedGeneratedDocuments(
        join subject_offerings so on so.id = d.offering_id
        join subjects s on s.id = so.subject_id
        left join activities a on a.id = d.activity_id
-       where d.owner_user_id != ? and (
+       where d.owner_user_id != ? AND EXISTS(SELECT 1 FROM users owner WHERE owner.id=d.owner_user_id AND owner.active=1) and (
          exists(select 1 from document_person_shares dps where dps.document_id=d.id and dps.recipient_user_id=?)
          or exists(select 1 from document_group_shares dgs
            join study_group_members gm on gm.group_id=dgs.group_id
+                 join study_groups current_group on current_group.id=gm.group_id AND current_group.archived_at IS NULL
            where dgs.document_id=d.id and gm.user_id=?)
        )
        order by d.updated_at desc, d.id desc`,
@@ -462,7 +465,8 @@ export async function generateDocument(
   let ownerGoogleEmail: string | null = null;
   if (
     process.env.OPENSTUDYHUB_V2_ENABLED === "1" &&
-    destinationStorageUserId !== ownerId
+    destinationStorageUserId !== ownerId &&
+    getDriveAccessPolicy(connection) === "direct"
   ) {
     try {
       ownerGoogleEmail = await withV2DbAsync(async (db) => {
@@ -643,4 +647,33 @@ export async function generateDocument(
     }
     throw error;
   }
+}
+
+export async function downloadGeneratedDocument(
+  userId: number,
+  documentId: number,
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+) {
+  const connection = options.connection ?? getDatabase();
+  if (
+    !connection.sqlite
+      .prepare("SELECT 1 FROM users WHERE id=? AND active=1")
+      .get(idSchema.parse(userId))
+  )
+    throw new Error("Documento não encontrado.");
+  const doc = [
+    ...listUserGeneratedDocuments(userId, connection),
+    ...listSharedGeneratedDocuments(userId, connection),
+  ].find((d) => d.id === idSchema.parse(documentId));
+  if (!doc) throw new Error("Documento não encontrado.");
+  const { exportGoogleDocument } = await import("./google/drive");
+  return {
+    name: doc.name,
+    bytes: await exportGoogleDocument(
+      doc.storageUserId ?? doc.ownerUserId,
+      doc.driveFileId,
+      "application/pdf",
+      options,
+    ),
+  };
 }

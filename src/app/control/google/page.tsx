@@ -1,3 +1,7 @@
+import { getDriveAccessPolicy } from "@/lib/drive-access-policy";
+import { setDriveAccessPolicyAction } from "./actions";
+import { legacyDriveInventory } from "@/lib/v2/drive-storage";
+import { getDatabase } from "@/lib/db/client";
 import { AdminSettingsTabs } from "../settings-tabs";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
@@ -103,6 +107,46 @@ export default async function GoogleOperations({
             content: (
               <>
                 <h2>Armazenamento no Drive</h2>
+                <section className="admin-storage-policy">
+                  <h3>Como abrir novos documentos</h3>
+                  <form action={setDriveAccessPolicyAction}>
+                    <label>
+                      Forma de acesso
+                      <select
+                        name="policy"
+                        defaultValue={getDriveAccessPolicy()}
+                      >
+                        <option value="direct">
+                          Editar diretamente no Google Docs
+                        </option>
+                        <option value="app-only">
+                          Visualizar e baixar somente pelo App
+                        </option>
+                      </select>
+                    </label>
+                    <p>
+                      O modo App mantém a cópia no Drive central e permite
+                      visualizar ou baixar um PDF no Hub, sem conceder nova
+                      permissão no Google. O modo Google Docs autoriza o dono do
+                      novo documento a editá-lo. Esta escolha vale para novos
+                      documentos e não revoga acessos Google que já existiam.
+                    </p>
+                    <button>Salvar forma de acesso</button>
+                  </form>
+                </section>
+                <p>
+                  O App também aceita arquivos e projetos locais. Conecte uma
+                  conta Google de usuário no App e escolha essa conta abaixo
+                  para preparar o Drive central.
+                </p>
+                <dl className="admin-inventory">
+                  {legacyDriveInventory(getDatabase()).map((i) => (
+                    <div key={i.label}>
+                      <dt>{i.label}</dt>
+                      <dd>{i.count}</dd>
+                    </div>
+                  ))}
+                </dl>
                 <p>
                   {tr("Conta responsável:", "Storage account:")}{" "}
                   {status.storage?.ownerName ?? tr("nenhum", "none")} ·{" "}

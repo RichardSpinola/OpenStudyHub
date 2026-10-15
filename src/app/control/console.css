@@ -1316,3 +1316,338 @@ body.admin-body {
     position: static;
   }
 }
+/* Workspaces use explicit paths, primary actions and compact secondary tools. */
+.admin-cover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+.admin-cover-card {
+  border: 1px solid var(--gray-3);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.admin-cover-image {
+  height: 110px;
+  display: grid;
+  place-items: center;
+  background: var(--panel-raised);
+  font: 700 1.2rem monospace;
+}
+.admin-cover-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.admin-cover-card-body {
+  padding: 1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.admin-cover-card-body h3,
+.admin-cover-card-body p {
+  margin: 0;
+}
+.admin-cover-card-body p {
+  color: var(--gray-1);
+  font-size: 0.8rem;
+}
+.admin-cover-card-body button {
+  width: 100%;
+}
+.admin-subject-covers {
+  margin-bottom: 1.5rem;
+}
+.admin-start-guide {
+  border: 1px solid var(--gray-3);
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1.3rem 0;
+  background: var(--panel);
+}
+.admin-start-guide h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.admin-start-guide p {
+  font-size: 0.85rem;
+  color: var(--gray-1);
+  margin: 0.5rem 0;
+}
+.admin-start-guide ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  list-style: none;
+  padding: 0;
+  gap: 0.7rem;
+}
+.admin-start-guide a {
+  display: grid;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--white);
+  height: 100%;
+  padding: 0.85rem;
+  background: var(--panel-raised);
+  border: 1px solid var(--gray-3);
+}
+.admin-start-guide a span {
+  font-size: 0.8rem;
+  color: var(--gray-1);
+}
+.admin-secondary-tool {
+  padding: 1rem;
+  border: 1px solid var(--gray-3);
+  border-radius: 6px;
+  margin-top: 1.4rem;
+}
+.admin-first-install {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  border: 1px solid var(--gray-3);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--panel);
+  max-width: 64rem;
+  margin: auto;
+}
+.setup-outline {
+  padding: 1.5rem;
+  border-right: 1px solid var(--gray-3);
+  background: var(--panel-raised);
+  font-size: 0.85rem;
+}
+.setup-outline h2 {
+  font-size: 1.1rem;
+}
+.setup-outline p {
+  color: var(--gray-1);
+}
+.setup-outline ol {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+  margin: 2rem 0;
+}
+.setup-outline li {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.7rem 0.5rem;
+  border-left: 2px solid transparent;
+  color: var(--gray-1);
+}
+.setup-outline li[aria-current] {
+  color: var(--white);
+  border-color: var(--accent);
+  background: var(--panel);
+}
+.setup-main {
+  min-width: 0;
+  padding: 1.6rem;
+}
+.setup-main h2 {
+  margin: 0.4rem 0 1.3rem;
+  font-size: 1.5rem;
+}
+.setup-main header > span {
+  color: var(--gray-1);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+}
+.setup-field-group {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--gray-3);
+}
+.setup-field-group h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.setup-field-group p {
+  font-size: 0.85rem;
+  color: var(--gray-1);
+}
+.setup-actions {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 2rem;
+  border-top: 1px solid var(--gray-3);
+  padding-top: 1rem;
+}
+.setup-actions > button:last-child,
+.setup-actions form {
+  justify-self: end;
+}
+.setup-actions form {
+  margin: 0;
+}
+.setup-review-group {
+  border: 1px solid var(--gray-3);
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.setup-review-group header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.setup-review-group h3 {
+  margin: 0;
+}
+.setup-review-group dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+.setup-review-group dt {
+  font-size: 0.75rem;
+  color: var(--gray-1);
+}
+.setup-review-group dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 1100px) {
+  .admin-course-workspace {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .admin-course-workspace > .v2-tabs {
+    display: grid;
+    border: 0;
+    position: sticky;
+    top: 5rem;
+    gap: 0.2rem;
+  }
+  .admin-course-workspace > .v2-tabs a {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    white-space: normal;
+  }
+  .admin-course-workspace > .v2-tabs a[aria-current] {
+    border-color: var(--gray-3);
+    background: var(--panel-raised);
+  }
+}
+@media (max-width: 760px) {
+  .admin-first-install {
+    grid-template-columns: 1fr;
+  }
+  .setup-outline {
+    border-right: 0;
+    border-bottom: 1px solid var(--gray-3);
+    padding: 1rem;
+  }
+  .setup-outline > p:last-child {
+    display: none;
+  }
+  .setup-outline ol {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.2rem;
+    margin: 0.7rem 0;
+  }
+  .setup-outline li {
+    display: grid;
+    padding: 0.4rem;
+    font-size: 0.7rem;
+    gap: 0.25rem;
+  }
+  .setup-main {
+    padding: 1.1rem;
+  }
+}
+
+.admin-inventory {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+.admin-inventory > div {
+  border: 1px solid var(--gray-4);
+  padding: 1rem;
+}
+.admin-inventory dd {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.3rem 0 0;
+}
+.admin-sequence {
+  padding: 1rem 1rem 1rem 2.5rem;
+  background: var(--panel-raised);
+  line-height: 1.8;
+}
+.admin-secondary-tools {
+  margin-top: 1rem;
+}
+.admin-course-workspace .v2-row {
+  align-items: start;
+}
+.admin-field-help {
+  grid-column: 1/-1;
+}
+.admin-event-card p {
+  overflow-wrap: anywhere;
+}
+.admin-settings-panel > form,
+.admin-settings-panel > section {
+  margin-bottom: 1.5rem;
+}
+.admin-schedule-editor > label {
+  display: block;
+  max-width: 36rem;
+}
+.admin-schedule-editor form {
+  margin-top: 1rem;
+}
+.admin-back-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+}
+
+.admin-pending-guide {
+  margin: 0 0 1.2rem;
+  border: 1px solid var(--gray-4);
+  padding: 1rem;
+}
+.admin-pending-guide > summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.admin-pending-guide .admin-start-guide {
+  margin-top: 1rem;
+}
+.admin-guide-context {
+  display: block;
+  font-size: 0.95rem;
+  margin: 0.3rem 0;
+}
+.admin-catalog-context {
+  border-bottom: 1px solid var(--gray-4);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+.admin-catalog-context h2 {
+  font-size: 1.1rem;
+}
+
+.admin-first-install .setup-main .v2-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.admin-first-install .setup-main label:has(input[name="institution"]) {
+  grid-column: 1/-1;
+}
+@media (max-width: 700px) {
+  .admin-first-install .setup-main .v2-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

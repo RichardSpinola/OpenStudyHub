@@ -1,5 +1,6 @@
 "use server";
 
+import { copyGoogleTemplateSource } from "@/lib/google-template-import";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -122,7 +123,14 @@ export async function createDocumentTemplateAction(formData: FormData) {
     const storageUserId = resolveDriveStorageUser(user.id, null);
     const sourceInput = text(formData, "sourceFile");
     const sourceFileId = sourceInput
-      ? parseGoogleDocumentId(sourceInput)
+      ? (
+          await copyGoogleTemplateSource(
+            user.id,
+            parseGoogleDocumentId(sourceInput),
+            text(formData, "name"),
+            { storageUserId },
+          )
+        ).sourceFileId
       : (
           await createGoogleTemplateDocument(
             storageUserId,
@@ -163,7 +171,18 @@ export async function updateDocumentTemplateAction(formData: FormData) {
       existing.storageUserId,
       { useConfiguredForNew: false },
     );
-    const sourceFileId = parseGoogleDocumentId(text(formData, "sourceFile"));
+    const requested = parseGoogleDocumentId(text(formData, "sourceFile"));
+    const sourceFileId =
+      requested === existing.sourceFileId
+        ? requested
+        : (
+            await copyGoogleTemplateSource(
+              user.id,
+              requested,
+              text(formData, "name"),
+              { storageUserId },
+            )
+          ).sourceFileId;
     await validateDocumentTemplateSource(storageUserId, sourceFileId);
     updateDocumentTemplate(
       user.id,
@@ -483,4 +502,22 @@ export async function deleteGeneratedDocumentAction(formData: FormData) {
   redirect(
     `/documents?view=library&status=${mode === "drive" ? "document-deleted-drive" : "document-removed-hub"}`,
   );
+}
+
+export async function openTemplateSourceAction(form: FormData) {
+  const user = await requireToolUser(),
+    id = idSchema.parse(form.get("templateId"));
+  let destination: string;
+  try {
+    const { openOwnedTemplateSource } =
+      await import("@/lib/template-source-access");
+    const result = await openOwnedTemplateSource(user.id, id);
+    destination =
+      result.kind === "app-only"
+        ? `/api/document-template/${id}/download`
+        : `https://docs.google.com/document/d/${encodeURIComponent(result.template.sourceFileId)}/edit`;
+  } catch {
+    redirect(`/documents/templates/${id}?status=template-template-access`);
+  }
+  redirect(destination);
 }

@@ -298,7 +298,7 @@ describe("V2 structural foundation", () => {
   });
   it("classifies all V1 tables, blocks ambiguous curriculum and global Classroom mapping", () => {
     const matrix = loadV1ImportMatrix();
-    expect(matrix.size).toBe(52);
+    expect(matrix.size).toBe(55);
     expect(matrix.get("instructors")).toBe("MIGRATE");
     expect(matrix.get("subject_offerings")).toBe("TRANSFORM");
     expect(matrix.get("google_connections")).toBe("REVIEW");
@@ -333,7 +333,7 @@ describe("V2 structural foundation", () => {
         .run();
       const target = fixture();
       const preview = previewV1Import(v1.sqlite, target, matrix);
-      expect(preview.rows).toHaveLength(52);
+      expect(preview.rows).toHaveLength(55);
       const reasons = (
         target
           .prepare("SELECT reason_code FROM import_review_items WHERE run_id=?")
@@ -380,4 +380,19 @@ describe("V2 structural foundation", () => {
       v1.close();
     }
   });
+});
+
+it("accepts the reviewed older app schema without the three V3 project tables", () => {
+  const source = createMigratedTestDatabase(),
+    target = openV2Database(":memory:");
+  try {
+    migrateV2(target);
+    source.sqlite.exec(
+      "DROP TABLE project_group_shares;DROP TABLE project_upload_claims;DROP TABLE project_upload_receipts",
+    );
+    expect(previewV1Import(source.sqlite, target).rows).toHaveLength(52);
+  } finally {
+    source.close();
+    target.close();
+  }
 });

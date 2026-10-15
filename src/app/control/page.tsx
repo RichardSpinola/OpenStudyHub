@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { withV2DbAsync, currentAdminV2 } from "@/lib/v2/runtime";
 import { isSetupPending } from "@/lib/v2/auth";
+import { GettingStarted } from "./getting-started";
 import { ConsoleShell } from "./ui";
 import { presenceSummary } from "@/lib/v2/presence";
 import { getUiLanguage } from "@/lib/ui-language";
@@ -65,6 +66,13 @@ export default async function ControlHome() {
     ).n;
     const english = getUiLanguage() === "en";
     const tr = (pt: string, en: string) => (english ? en : pt);
+    const guides = institutions
+      .filter((i) => !i.archivedAt)
+      .map((i) => ({
+        id: i.id,
+        content: GettingStarted({ db, institutionId: i.id }),
+      }))
+      .filter((i) => i.content !== null);
     return (
       <ConsoleShell
         title={tr("Painel administrativo", "Admin dashboard")}
@@ -79,6 +87,16 @@ export default async function ControlHome() {
             "Open an institution to manage its courses and records.",
           )}
         </p>
+        {guides.length === 1 ? (
+          guides[0].content
+        ) : guides.length > 1 ? (
+          <details className="admin-pending-guide">
+            <summary>Continuar a configuração das instituições</summary>
+            {guides.map((i) => (
+              <div key={i.id}>{i.content}</div>
+            ))}
+          </details>
+        ) : null}
         <section aria-labelledby="control-institutions-title">
           <div className="admin-section-header">
             <h2 id="control-institutions-title">

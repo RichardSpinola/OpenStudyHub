@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentSession } from "@/lib/authorization";
-import { downloadDriveFile } from "@/lib/google/drive";
 import {
-  getProjectDriveStorageUser,
+  downloadProjectVersion,
   getProjectVersion,
   getUserProject,
 } from "@/lib/projects";
@@ -27,9 +26,10 @@ export async function GET(
       project.id,
       Number(values.version),
     );
-    const archive = await downloadDriveFile(
-      getProjectDriveStorageUser(project),
-      version.archiveDriveFileId,
+    const archive = await downloadProjectVersion(
+      session.user.id,
+      project.id,
+      version.versionNumber,
     );
     const safeName = project.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
     return new NextResponse(archive as unknown as BodyInit, {

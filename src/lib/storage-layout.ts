@@ -182,14 +182,9 @@ export function buildStoragePath(
 
 export function buildProjectStoragePath(
   context: StorageLayoutContext,
+  layout: StorageLayout = defaultStorageLayout,
 ): string[] {
-  return [
-    cleanSegment(
-      `Projetos - ${context.program.shortName?.trim() || context.program.name}`,
-    ),
-    cleanSegment(context.period.label),
-    cleanSegment(context.subject.name),
-  ];
+  return buildStoragePath(layout, context, "projects");
 }
 
 export function getOfferingStorageContext(

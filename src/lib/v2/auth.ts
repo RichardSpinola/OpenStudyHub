@@ -7,6 +7,7 @@ import {
 import type { V2Database } from "./database";
 import type { Actor } from "./actor";
 import { isAdmin } from "./access";
+import { setInstitutionTimeZone } from "./academic-timezone";
 import { recordAdminAction } from "./audit";
 
 const SESSION_LIFETIME = 7 * 24 * 60 * 60 * 1000;
@@ -25,6 +26,7 @@ export async function bootstrapV2(
     shift: string;
     cohort: string;
     period: string;
+    timeZone?: string;
     startsOn: string;
     endsOn: string;
     semesters: number;
@@ -49,11 +51,25 @@ export async function bootstrapV2(
     !input.cohort.trim() ||
     !/^\d{4}-\d{2}-\d{2}$/.test(input.startsOn) ||
     !/^\d{4}-\d{2}-\d{2}$/.test(input.endsOn) ||
-    input.startsOn > input.endsOn ||
+    input.startsOn >= input.endsOn ||
+    Number.isNaN(Date.parse(input.startsOn + "T12:00:00Z")) ||
+    Number.isNaN(Date.parse(input.endsOn + "T12:00:00Z")) ||
+    new Date(input.startsOn + "T12:00:00Z").toISOString().slice(0, 10) !==
+      input.startsOn ||
+    new Date(input.endsOn + "T12:00:00Z").toISOString().slice(0, 10) !==
+      input.endsOn ||
+    !Number.isInteger(input.semesters) ||
+    !input.period.trim() ||
     input.semesters < 1 ||
     input.semesters > 20
   )
     throw new Error("Confira os dados da estrutura acadêmica.");
+  const timeZone = input.timeZone ?? "America/Sao_Paulo";
+  try {
+    new Intl.DateTimeFormat("pt-BR", { timeZone });
+  } catch {
+    throw new Error("Escolha um fuso horário válido.");
+  }
   const passwordHash = await hashPassword(input.password);
   return db.transaction(() => {
     if (
@@ -76,6 +92,12 @@ export async function bootstrapV2(
       db
         .prepare("INSERT INTO institutions(name) VALUES(?)")
         .run(input.institution.trim()).lastInsertRowid,
+    );
+    setInstitutionTimeZone(
+      db,
+      { kind: "admin", id: adminId },
+      institutionId,
+      timeZone,
     );
     const programId = Number(
       db

@@ -62,3 +62,7 @@ Novas contas/senhas serão cobertas no backend; nenhuma credencial nova é digit
 ## Conferência final futura
 
 A Etapa 8 será dividida em instalação nova, Google real/Drive/Classroom/documentos/projetos, atualização/backup/restauração e distribuição/publicação. Reutilização de credenciais da instalação real exige confirmação do usuário naquele momento; nenhuma credencial foi copiada nesta etapa.
+
+## Revisão ampliada solicitada pelo usuário
+
+A organização de todos os menus e da primeira instalação foi revista novamente na etapa 4. [STAGE_4.md](STAGE_4.md) registra as correções e a verificação atual; Extras passou a ter entrada própria no menu administrativo.

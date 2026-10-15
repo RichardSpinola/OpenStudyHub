@@ -1,7 +1,9 @@
 "use client";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { controlAction } from "./actions";
 import { HiddenContext } from "./hidden-context";
 const days = [
@@ -60,19 +62,90 @@ export function ScheduleEditor({
       ]),
     ),
   );
+  const draftKey = "osh-admin-schedule:" + returnTo;
+  const [dirty, setDirty] = useState(false);
+  const search = useSearchParams();
+  const successful = search.has("ok"),
+    rejected = search.has("error");
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const parsed = JSON.parse(
+          sessionStorage.getItem(draftKey) ?? "{}",
+        ) as Record<number, Slot[]>;
+        const submitted = Number(
+          sessionStorage.getItem(draftKey + ":submitted"),
+        );
+        if (successful && submitted) {
+          delete parsed[submitted];
+          sessionStorage.removeItem(draftKey + ":submitted");
+          sessionStorage.setItem(draftKey, JSON.stringify(parsed));
+        }
+        const safe = Object.fromEntries(
+          offerings
+            .filter((o) => Array.isArray(parsed[o.id]))
+            .map((o) => [o.id, parsed[o.id]]),
+        );
+        const initial = Object.fromEntries(
+          offerings.map((o) => [
+            o.id,
+            slots
+              .filter((s) => s.offering_id === o.id)
+              .map((s) => ({
+                weekday: s.weekday,
+                start: s.starts_at_minutes,
+                end: s.ends_at_minutes,
+                locationId: s.location_id,
+              })),
+          ]),
+        );
+        setBlocks({ ...initial, ...safe });
+        setDirty(Object.keys(safe).length > 0);
+        const selected = Number(sessionStorage.getItem(draftKey + ":selected"));
+        if (offerings.some((o) => o.id === selected)) setOffering(selected);
+      } catch {
+        /* Draft storage is optional. */
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [draftKey, offerings, slots, successful, rejected]);
   const current = blocks[offering] ?? [];
+  function keep(next: Record<number, Slot[]>) {
+    setBlocks(next);
+    setDirty(true);
+    try {
+      const pending = JSON.parse(sessionStorage.getItem(draftKey) ?? "{}");
+      pending[offering] = next[offering];
+      sessionStorage.setItem(draftKey, JSON.stringify(pending));
+      sessionStorage.setItem(draftKey + ":selected", String(offering));
+    } catch {
+      /* optional draft */
+    }
+  }
+
   const update = (index: number, patch: Partial<Slot>) =>
-    setBlocks({
+    keep({
       ...blocks,
       [offering]: current.map((s, i) => (i === index ? { ...s, ...patch } : s)),
     });
   return (
-    <>
+    <div className="admin-schedule-editor">
+      <p>
+        Escolha a disciplina, organize seus horários de aula e salve. Esses
+        horários se repetem toda semana; uma aula em uma data específica deve
+        ser criada em Eventos e provas.
+      </p>
       <label>
-        <UiCopy pt="Turma da disciplina" en="Subject offering" />
+        <UiCopy pt="Disciplina e período" en="Subject offering" />
         <select
           value={offering}
-          onChange={(e) => setOffering(Number(e.target.value))}
+          onChange={(e) => {
+            setOffering(Number(e.target.value));
+            setError("");
+            try {
+              sessionStorage.setItem(draftKey + ":selected", e.target.value);
+            } catch {}
+          }}
         >
           {offerings.map((o) => (
             <option key={o.id} value={o.id}>
@@ -85,7 +158,7 @@ export function ScheduleEditor({
         {current.map((s, i) => (
           <fieldset key={i}>
             <legend>
-              <UiCopy pt="Bloco" en="Block" /> {i + 1}
+              <UiCopy pt="Aula" en="Block" /> {i + 1}
             </legend>
             <div className="v2-fields">
               <label>
@@ -146,7 +219,7 @@ export function ScheduleEditor({
               <button
                 type="button"
                 onClick={() =>
-                  setBlocks({
+                  keep({
                     ...blocks,
                     [offering]: current.filter((_, j) => i !== j),
                   })
@@ -161,7 +234,7 @@ export function ScheduleEditor({
       <button
         type="button"
         onClick={() =>
-          setBlocks({
+          keep({
             ...blocks,
             [offering]: [
               ...current,
@@ -170,8 +243,14 @@ export function ScheduleEditor({
           })
         }
       >
-        <UiCopy pt="Adicionar bloco" en="Add slot" />
+        <UiCopy pt="Adicionar horário de aula" en="Add slot" />
       </button>
+      {dirty && (
+        <p role="status">
+          Alterações ainda não salvas. O botão abaixo salva somente a disciplina
+          selecionada.
+        </p>
+      )}
       {error ? <p role="alert">{error}</p> : null}
       <form
         action={controlAction}
@@ -216,6 +295,12 @@ export function ScheduleEditor({
             return;
           }
           setError("");
+          try {
+            sessionStorage.setItem(draftKey + ":submitted", String(offering));
+            sessionStorage.setItem(draftKey + ":selected", String(offering));
+          } catch {
+            /* optional draft */
+          }
         }}
       >
         <HiddenContext
@@ -224,10 +309,12 @@ export function ScheduleEditor({
           offeringId={offering}
         />
         <input type="hidden" name="slots" value={JSON.stringify(current)} />
-        <button type="submit">
-          <UiCopy pt="Salvar conjunto de horários" en="Save schedule" />
-        </button>
+        <PendingSubmitButton
+          pendingLabel={tr("Salvando horários…", "Saving schedule…")}
+        >
+          <UiCopy pt="Salvar horários desta disciplina" en="Save schedule" />
+        </PendingSubmitButton>
       </form>
-    </>
+    </div>
   );
 }

@@ -797,3 +797,65 @@ export async function trashDriveFile(
 ): Promise<void> {
   await setDriveFileTrashed(userId, fileId, true, options);
 }
+
+export async function exportGoogleDocument(
+  userId: number,
+  fileId: string,
+  mimeType:
+    | "application/pdf"
+    | "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+) {
+  const connection = options.connection ?? getDatabase(),
+    fetchImpl = options.fetchImpl ?? fetch,
+    token = await getGoogleAccessToken(idSchema.parse(userId), {
+      connection,
+      fetchImpl,
+    });
+  const response = await driveRequest(
+    token,
+    `${DRIVE_FILES_ENDPOINT}/${encodeURIComponent(
+      z
+        .string()
+        .regex(/^[A-Za-z0-9_-]{10,255}$/)
+        .parse(fileId),
+    )}/export?mimeType=${encodeURIComponent(mimeType)}`,
+    { method: "GET" },
+    fetchImpl,
+  );
+  if (!response.ok)
+    throw new Error(
+      "Não foi possível exportar o documento da sua conta Google. Confira a permissão e o tamanho do arquivo.",
+    );
+  const max = 10 * 1024 * 1024;
+  if (Number(response.headers.get("content-length")) > max)
+    throw new Error("O modelo excede 10 MiB.");
+  if (!response.body) throw new Error("O documento exportado está vazio.");
+  const reader = response.body.getReader(),
+    chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const part = await reader.read();
+    if (part.done) break;
+    size += part.value.length;
+    if (size > max) {
+      await reader.cancel();
+      throw new Error("O modelo excede 10 MiB.");
+    }
+    chunks.push(part.value);
+  }
+  return Buffer.concat(chunks, size);
+}
+
+export async function exportGoogleDocumentAsDocx(
+  userId: number,
+  fileId: string,
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+) {
+  return exportGoogleDocument(
+    userId,
+    fileId,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    options,
+  );
+}

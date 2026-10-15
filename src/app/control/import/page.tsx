@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { withV2DbAsync, currentAdminV2 } from "@/lib/v2/runtime";
 import { ConsoleShell } from "../ui";
@@ -35,8 +36,11 @@ export default async function ImportPage({
         message={q.ok}
         error={q.error}
       >
+        <Link className="admin-back-link" href="/control/institutions">
+          ← Voltar às instituições
+        </Link>
         <section className="workflow-panel">
-          <h2>Atualização do banco desta instalação</h2>
+          <h2>Trazer a estrutura da instalação antiga</h2>
           <p>
             A prévia verifica o banco legado já associado a esta instância.
             Notas, documentos, projetos e arquivos permanecem no banco e nos
@@ -56,12 +60,23 @@ export default async function ImportPage({
         {run ? (
           <section className="workflow-panel">
             <h2>
-              Prévia #{run.id} · {run.status}
+              Prévia #{run.id} ·{" "}
+              {run.status === "completed" ? "Concluída" : "Aguardando revisão"}
             </h2>
             <ul>
               {reviews.map((item, i) => (
                 <li key={i}>
-                  {item.source_table}: {item.reason_code}
+                  {(
+                    {
+                      legacy_role_not_control_admin:
+                        "Uma conta Admin antiga não recebe permissões automaticamente.",
+                      policy_required:
+                        "Este conteúdo precisa de uma decisão de importação.",
+                      ambiguous_curriculum_term:
+                        "Há um semestre antigo que precisa de conferência.",
+                    } as Record<string, string>
+                  )[item.reason_code] ??
+                    `Confira os registros de ${item.source_table.replaceAll("_", " ")}.`}
                 </li>
               ))}
             </ul>

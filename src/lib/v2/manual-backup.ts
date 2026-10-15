@@ -50,7 +50,8 @@ function safeFiles(
           prefix === "assets/private"
             ? /^(?:(?:chat|profiles|shortcut-icons|offering-covers)\/)?[0-9a-f-]{36}\.(?:png|jpg|webp)$/.test(
                 name,
-              )
+              ) ||
+              /^projects\/(versions|staging)\/[0-9a-f-]{36}\.zip$/.test(name)
             : /^[0-9a-f-]{36}$/.test(name);
         if (!accepted)
           throw new Error(

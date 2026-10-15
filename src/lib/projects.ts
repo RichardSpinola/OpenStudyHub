@@ -1,3 +1,10 @@
+import {
+  projectStagingRoot,
+  saveLocalProjectArchive,
+  readLocalProjectArchive,
+  readLocalProjectSource,
+  removeLocalProjectArchive,
+} from "./project-local-storage";
 import { sharedProjectIds } from "./v2/project-sharing";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
@@ -13,7 +20,6 @@ import {
   driveFolderExistsForUser,
   ensureDriveFolderForUser,
   ensureDriveRootFolder,
-  moveDriveFolderForUser,
   setDriveFileTrashed,
   trashDriveFile,
   uploadDriveFile,
@@ -34,12 +40,14 @@ import {
 } from "@/lib/project-manifest";
 import {
   buildProjectStoragePath,
+  getStorageLayout,
   getOfferingStorageContext,
 } from "@/lib/storage-layout";
 import { withV2Db } from "@/lib/v2/runtime-database";
 
 const idSchema = z.number().int().positive();
 const projectInputSchema = z.object({
+  storageBackend: z.enum(["local", "google-drive"]).default("google-drive"),
   offeringId: idSchema.nullable().default(null),
   name: z.string().trim().min(1).max(160),
   language: projectLanguageSchema,
@@ -69,6 +77,7 @@ export type ProjectRecord = {
   ignorePreset: ProjectLanguage;
   technologies: ProjectTechnology[];
   description: string | null;
+  storageBackend: "local" | "google-drive";
   driveProjectFolderId: string | null;
   driveCurrentFolderId: string | null;
   driveVersionsFolderId: string | null;
@@ -106,7 +115,7 @@ const projectSelect = `
          coalesce(s.name, 'Projeto pessoal') as subjectName, s.code as subjectCode,
          p.name, p.language, p.ignore_preset as ignorePreset,
          p.technologies_json as technologiesJson,
-         p.description, p.drive_project_folder_id as driveProjectFolderId,
+         p.description, p.storage_backend as storageBackend, p.drive_project_folder_id as driveProjectFolderId,
          p.drive_current_folder_id as driveCurrentFolderId,
          p.drive_versions_folder_id as driveVersionsFolderId,
          p.current_version_number as currentVersionNumber,
@@ -163,8 +172,8 @@ export function createProject(
     .prepare(
       `insert into projects
        (owner_user_id, offering_id, name, language, ignore_preset,
-        technologies_json, description, sync_status, created_at, updated_at)
-       values (?, ?, ?, ?, ?, ?, ?, 'prepared', ?, ?)`,
+        technologies_json, description, storage_backend, sync_status, created_at, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?, 'prepared', ?, ?)`,
     )
     .run(
       ownerId,
@@ -174,6 +183,7 @@ export function createProject(
       value.ignorePreset,
       JSON.stringify([...new Set(value.technologies)]),
       value.description,
+      value.storageBackend,
       now,
       now,
     );
@@ -216,7 +226,10 @@ export function listUserProjects(
 ): ProjectRecord[] {
   const ownerId = idSchema.parse(userId);
   const targetId = offeringId === undefined ? null : idSchema.parse(offeringId);
-  const shared = sharedProjectIds(ownerId);
+  const shared = [
+    ...sharedProjectIds(ownerId),
+    ...groupSharedProjectIds(ownerId, connection),
+  ];
   const rows = connection.sqlite
     .prepare(
       `${projectSelect}
@@ -239,7 +252,8 @@ export function getUserProject(
   if (
     !project ||
     (project.ownerUserId !== idSchema.parse(userId) &&
-      !sharedProjectIds(userId).includes(project.id))
+      !sharedProjectIds(userId).includes(project.id) &&
+      !groupSharedProjectIds(userId, connection).includes(project.id))
   )
     throw new Error("Project not found.");
   return parseProjectRow(project);
@@ -370,24 +384,32 @@ function currentManifest(
   return files.length ? { schemaVersion: 1, files } : null;
 }
 
-function assertTempArchivePath(path: string): string {
-  const safe = resolve(path);
-  if (!safe.startsWith(`${TEMP_ROOT}/`)) {
-    throw new Error("Invalid temporary archive path.");
-  }
-  return safe;
+function assertTempArchivePath(
+  path: string,
+  connection: DatabaseConnection,
+): string {
+  const absolute = resolve(path);
+  if (
+    ![TEMP_ROOT, projectStagingRoot(connection)].includes(dirname(absolute)) ||
+    !/^[0-9a-f-]{36}\.zip$/.test(basename(absolute))
+  )
+    throw new Error("Invalid project staging path.");
+  return absolute;
 }
 
-async function cleanupExpiredPreviews(connection: DatabaseConnection) {
+export async function cleanupExpiredPreviews(connection: DatabaseConnection) {
+  connection.sqlite
+    .prepare("DELETE FROM project_upload_claims WHERE heartbeat_at<=?")
+    .run(Date.now() - 120000);
   const expired = connection.sqlite
     .prepare(
       `select token, temp_archive_path as tempArchivePath
-       from project_upload_previews where expires_at < ?`,
+       from project_upload_previews where expires_at < ? AND token NOT IN (SELECT token FROM project_upload_claims)`,
     )
     .all(Date.now()) as Array<{ token: string; tempArchivePath: string }>;
   for (const preview of expired) {
     try {
-      await unlink(assertTempArchivePath(preview.tempArchivePath));
+      await unlink(assertTempArchivePath(preview.tempArchivePath, connection));
     } catch {
       // Expired temp files may already have been removed by the host.
     }
@@ -425,9 +447,10 @@ export async function prepareProjectUpload(
     prepared.manifest,
   );
   const archive = await createProjectZip(prepared.accepted);
-  await mkdir(TEMP_ROOT, { recursive: true, mode: 0o700 });
+  const stagingRoot = projectStagingRoot(connection);
+  await mkdir(stagingRoot, { recursive: true, mode: 0o700 });
   const token = randomUUID();
-  const tempArchivePath = join(TEMP_ROOT, `${token}.zip`);
+  const tempArchivePath = join(stagingRoot, `${token}.zip`);
   await writeFile(tempArchivePath, archive, { mode: 0o600, flag: "wx" });
   const now = Date.now();
   connection.sqlite
@@ -510,9 +533,18 @@ export function getProjectRetryPreview(
     .prepare("SELECT value FROM app_settings WHERE key = ?")
     .get(`project.retry.${userId}.${projectId}`) as
     { value: string } | undefined;
-  if (!setting) return null;
+  const pending = connection.sqlite
+    .prepare(
+      "SELECT token value FROM project_upload_previews WHERE project_id=? AND owner_user_id=? AND expires_at>=? ORDER BY created_at DESC LIMIT 1",
+    )
+    .get(projectId, userId, Date.now()) as { value: string } | undefined;
+  if (!setting && !pending) return null;
   try {
-    const preview = getProjectUploadPreview(userId, setting.value, connection);
+    const preview = getProjectUploadPreview(
+      userId,
+      (setting ?? pending)!.value,
+      connection,
+    );
     return preview.projectId === projectId ? preview : null;
   } catch {
     return null;
@@ -558,40 +590,29 @@ async function ensureProjectDriveStructure(
     )?.shortName;
     if (shortName?.trim()) context.program.shortName = shortName.trim();
   }
-  const root = await ensureDriveRootFolder(storageUserId, {
-    connection,
-    fetchImpl,
-  });
-  let parentId = root.id;
-  for (const name of context
-    ? buildProjectStoragePath(context)
-    : ["Pessoais", `Pessoa-${project.ownerUserId}`, "Projetos"]) {
-    const identity = createHash("sha256")
-      .update(`${parentId}\0${name}`)
-      .digest("hex")
-      .slice(0, 40);
-    const folder = await ensureDriveFolderForUser(
-      storageUserId,
-      { name, parentId, identityKey: `project-path:${identity}` },
-      { connection, fetchImpl },
-    );
-    parentId = folder.id;
-  }
-  if (project.driveProjectFolderId) {
-    await moveDriveFolderForUser(
-      storageUserId,
-      project.driveProjectFolderId,
-      parentId,
-      { connection, fetchImpl },
-    );
-  } else {
+  if (!projectFolder) {
+    const root = await ensureDriveRootFolder(storageUserId, {
+      connection,
+      fetchImpl,
+    });
+    let parentId = root.id;
+    for (const name of context
+      ? buildProjectStoragePath(context, getStorageLayout(connection))
+      : ["Pessoais", `Pessoa-${project.ownerUserId}`, "Projetos"]) {
+      const identity = createHash("sha256")
+        .update(`${parentId}\0${name}`)
+        .digest("hex")
+        .slice(0, 40);
+      const folder = await ensureDriveFolderForUser(
+        storageUserId,
+        { name, parentId, identityKey: `project-path:${identity}` },
+        { connection, fetchImpl },
+      );
+      parentId = folder.id;
+    }
     projectFolder = await ensureDriveFolderForUser(
       storageUserId,
-      {
-        name: project.name,
-        parentId,
-        identityKey: `project:${project.id}`,
-      },
+      { name: project.name, parentId, identityKey: `project:${project.id}` },
       { connection, fetchImpl },
     );
   }
@@ -665,16 +686,17 @@ async function ensureProjectDirectory(
   return parentId;
 }
 
-export async function confirmProjectUpload(
+async function performProjectUpload(
   userId: number,
   token: string,
   messageInput: string | null,
   options: {
+    claimId: string;
     connection?: DatabaseConnection;
     fetchImpl?: GoogleFetch;
     language?: ProjectLanguage;
     technologies?: ProjectTechnology[];
-  } = {},
+  },
 ) {
   const connection = options.connection ?? getDatabase();
   const fetchImpl = options.fetchImpl ?? fetch;
@@ -682,7 +704,10 @@ export async function confirmProjectUpload(
   const project = getUserProject(userId, preview.projectId, connection);
   if (project.ownerUserId !== userId)
     throw new Error("Este projeto foi compartilhado somente para leitura.");
-  const storageUserId = getProjectDriveStorageUser(project, connection);
+  const storageUserId =
+    project.storageBackend === "google-drive"
+      ? getProjectDriveStorageUser(project, connection)
+      : userId;
   if (
     (project.currentVersionNumber === 0 &&
       preview.baseVersionNumber !== null) ||
@@ -700,7 +725,7 @@ export async function confirmProjectUpload(
     .transform((value) => value || null)
     .parse(messageInput);
   const archive = await readFile(
-    assertTempArchivePath(preview.tempArchivePath),
+    assertTempArchivePath(preview.tempArchivePath, connection),
   );
   const sources = await readProjectZip(archive);
   const prepared = buildProjectManifest(sources, project.ignorePreset);
@@ -732,6 +757,98 @@ export async function confirmProjectUpload(
     throw new ProjectConflictError();
   }
 
+  if (project.storageBackend === "local") {
+    const ref = await saveLocalProjectArchive(connection, archive);
+    const versionNumber = project.currentVersionNumber + 1,
+      now = Date.now();
+    try {
+      connection.sqlite.transaction(() => {
+        assertUploadClaim(
+          connection,
+          project.id,
+          preview.token,
+          options.claimId,
+        );
+        const saved = connection.sqlite
+          .prepare(
+            "UPDATE projects SET current_version_number=?,sync_status='complete',language=?,technologies_json=?,updated_at=? WHERE id=? AND owner_user_id=? AND current_version_number=? AND archived_at IS NULL",
+          )
+          .run(
+            versionNumber,
+            chosenLanguage,
+            JSON.stringify(options.technologies ?? project.technologies),
+            now,
+            project.id,
+            userId,
+            project.currentVersionNumber,
+          );
+        if (saved.changes !== 1) throw new ProjectConflictError();
+        connection.sqlite
+          .prepare("DELETE FROM project_files WHERE project_id=?")
+          .run(project.id);
+        const insert = connection.sqlite.prepare(
+          "INSERT INTO project_files(project_id,relative_path,sha256,size_bytes,drive_file_id,mime_type,updated_at) VALUES(?,?,?,?,?,?,?)",
+        );
+        for (const file of prepared.manifest.files)
+          insert.run(
+            project.id,
+            file.path,
+            file.sha256,
+            file.sizeBytes,
+            ref,
+            file.mimeType,
+            now,
+          );
+        connection.sqlite
+          .prepare(
+            "INSERT INTO project_versions(project_id,version_number,base_version_number,message,archive_drive_file_id,manifest_json,added_count,modified_count,removed_count,created_by_user_id,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+          )
+          .run(
+            project.id,
+            versionNumber,
+            preview.baseVersionNumber,
+            message,
+            ref,
+            preview.manifestJson,
+            diff.added.length,
+            diff.modified.length,
+            diff.removed.length,
+            userId,
+            now,
+          );
+        recordUploadReceipt(connection, preview.token, userId, project.id, {
+          versionNumber,
+          diff,
+        });
+        connection.sqlite
+          .prepare("DELETE FROM project_upload_previews WHERE token=?")
+          .run(preview.token);
+        connection.sqlite
+          .prepare("DELETE FROM app_settings WHERE key IN (?,?)")
+          .run(
+            `project.sync_error.${project.id}`,
+            `project.retry.${userId}.${project.id}`,
+          );
+        recordAuditEvent(
+          {
+            actorUserId: userId,
+            action: "project.version_create",
+            targetType: "project",
+            targetId: String(project.id),
+            summary: `Local project version ${versionNumber} created`,
+          },
+          connection,
+        );
+      })();
+    } catch (error) {
+      await removeLocalProjectArchive(connection, ref).catch(() => undefined);
+      throw error;
+    }
+    await unlink(
+      assertTempArchivePath(preview.tempArchivePath, connection),
+    ).catch(() => undefined);
+    return { versionNumber, diff };
+  }
   connection.sqlite
     .prepare(
       "update projects set sync_status = 'syncing', updated_at = ? where id = ? and owner_user_id = ?",
@@ -823,6 +940,7 @@ export async function confirmProjectUpload(
     stage = "gravação dos metadados e da versão local";
     const now = Date.now();
     connection.sqlite.transaction(() => {
+      assertUploadClaim(connection, project.id, preview.token, options.claimId);
       connection.sqlite
         .prepare("delete from project_files where project_id = ?")
         .run(project.id);
@@ -890,6 +1008,10 @@ export async function confirmProjectUpload(
            ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`,
         )
         .run(`project.storage_user.${project.id}`, String(storageUserId), now);
+      recordUploadReceipt(connection, preview.token, userId, project.id, {
+        versionNumber,
+        diff,
+      });
       connection.sqlite
         .prepare("delete from project_upload_previews where token = ?")
         .run(preview.token);
@@ -910,11 +1032,13 @@ export async function confirmProjectUpload(
         connection,
       );
     })();
-    await unlink(assertTempArchivePath(preview.tempArchivePath)).catch(
-      () => undefined,
-    );
+    await unlink(
+      assertTempArchivePath(preview.tempArchivePath, connection),
+    ).catch(() => undefined);
     return { versionNumber, diff };
   } catch (error) {
+    // A superseded attempt must not alter files or overwrite the replacement attempt status.
+    assertUploadClaim(connection, project.id, preview.token, options.claimId);
     for (const fileId of createdRemoteIds.reverse()) {
       try {
         await trashDriveFile(storageUserId, fileId, { connection, fetchImpl });
@@ -976,14 +1100,332 @@ export async function cancelProjectUploadPreview(
   connection: DatabaseConnection = getDatabase(),
 ): Promise<void> {
   const preview = getProjectUploadPreview(userId, token, connection);
+  if (
+    connection.sqlite
+      .prepare(
+        "SELECT 1 FROM project_upload_claims WHERE token=? AND heartbeat_at>?",
+      )
+      .get(token, Date.now() - 120000)
+  )
+    throw new Error("Um envio está em andamento. Aguarde antes de cancelar.");
   connection.sqlite
     .prepare(
       "delete from project_upload_previews where token = ? and owner_user_id = ?",
     )
     .run(preview.token, userId);
   try {
-    await unlink(assertTempArchivePath(preview.tempArchivePath));
+    await unlink(assertTempArchivePath(preview.tempArchivePath, connection));
   } catch {
     // Temp cleanup remains idempotent.
   }
+}
+
+function assertUploadClaim(
+  connection: DatabaseConnection,
+  projectId: number,
+  token: string,
+  claimId: string,
+) {
+  if (
+    !connection.sqlite
+      .prepare(
+        "SELECT 1 FROM project_upload_claims WHERE project_id=? AND token=? AND claim_id=?",
+      )
+      .get(projectId, token, claimId)
+  )
+    throw new ProjectConflictError();
+}
+function recordUploadReceipt(
+  connection: DatabaseConnection,
+  token: string,
+  userId: number,
+  projectId: number,
+  result: {
+    versionNumber: number;
+    diff: ReturnType<typeof diffProjectManifests>;
+  },
+) {
+  connection.sqlite
+    .prepare(
+      "INSERT INTO project_upload_receipts(token,project_id,owner_user_id,version_number,result_json,completed_at) VALUES(?,?,?,?,?,?)",
+    )
+    .run(
+      token,
+      projectId,
+      userId,
+      result.versionNumber,
+      JSON.stringify(result),
+      Date.now(),
+    );
+}
+export async function confirmProjectUpload(
+  userId: number,
+  token: string,
+  messageInput: string | null,
+  options: {
+    expectedProjectId?: number;
+    connection?: DatabaseConnection;
+    fetchImpl?: GoogleFetch;
+    language?: ProjectLanguage;
+    technologies?: ProjectTechnology[];
+  } = {},
+) {
+  const connection = options.connection ?? getDatabase();
+  previewTokenSchema.parse(token);
+  idSchema.parse(userId);
+  const receipt = connection.sqlite
+    .prepare(
+      "SELECT project_id id,result_json result FROM project_upload_receipts WHERE token=? AND owner_user_id=?",
+    )
+    .get(token, userId) as { id: number; result: string } | undefined;
+  if (receipt) {
+    if (
+      options.expectedProjectId !== undefined &&
+      receipt.id !== options.expectedProjectId
+    )
+      throw new ProjectConflictError();
+    getUserProject(userId, receipt.id, connection);
+    return JSON.parse(receipt.result) as {
+      versionNumber: number;
+      diff: ReturnType<typeof diffProjectManifests>;
+    };
+  }
+  const preview = getProjectUploadPreview(userId, token, connection),
+    project = getUserProject(userId, preview.projectId, connection);
+  if (
+    options.expectedProjectId !== undefined &&
+    project.id !== options.expectedProjectId
+  )
+    throw new ProjectConflictError();
+  if (project.ownerUserId !== userId)
+    throw new Error("Somente o proprietário pode enviar versões.");
+  const claimId = randomUUID(),
+    now = Date.now();
+  connection.sqlite.transaction(() => {
+    const claim = connection.sqlite
+      .prepare(
+        "SELECT heartbeat_at heartbeat FROM project_upload_claims WHERE project_id=?",
+      )
+      .get(project.id) as { heartbeat: number } | undefined;
+    if (claim && claim.heartbeat > now - 120000)
+      throw new Error(
+        "Este projeto já tem um envio em andamento. Aguarde antes de confirmar novamente.",
+      );
+    connection.sqlite
+      .prepare(
+        "DELETE FROM project_upload_claims WHERE project_id=? AND heartbeat_at<=?",
+      )
+      .run(project.id, now - 120000);
+    connection.sqlite
+      .prepare(
+        "INSERT INTO project_upload_claims(token,claim_id,project_id,owner_user_id,claimed_at,heartbeat_at) VALUES(?,?,?,?,?,?)",
+      )
+      .run(token, claimId, project.id, userId, now, now);
+  })();
+  connection.sqlite
+    .prepare(
+      "INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
+    )
+    .run(
+      `project.sync_error.${project.id}`,
+      "validação da prévia e conferência do pacote",
+      Date.now(),
+    );
+  const heartbeat = setInterval(() => {
+    connection.sqlite
+      .prepare(
+        "UPDATE project_upload_claims SET heartbeat_at=? WHERE token=? AND claim_id=?",
+      )
+      .run(Date.now(), token, claimId);
+  }, 15000);
+  heartbeat.unref();
+  const baseFetch = options.fetchImpl ?? fetch;
+  const guardedFetch: GoogleFetch = async (input, init) => {
+    assertUploadClaim(connection, project.id, token, claimId);
+    const response = await baseFetch(input, init);
+    assertUploadClaim(connection, project.id, token, claimId);
+    return response;
+  };
+  try {
+    return await performProjectUpload(userId, token, messageInput, {
+      ...options,
+      claimId,
+      connection,
+      fetchImpl: guardedFetch,
+    });
+  } finally {
+    clearInterval(heartbeat);
+    connection.sqlite
+      .prepare("DELETE FROM project_upload_claims WHERE token=? AND claim_id=?")
+      .run(token, claimId);
+  }
+}
+export async function downloadProjectVersion(
+  userId: number,
+  projectId: number,
+  versionNumber: number,
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+) {
+  const connection = options.connection ?? getDatabase();
+  const project = getUserProject(userId, projectId, connection),
+    version = getProjectVersion(userId, projectId, versionNumber, connection);
+  if (project.storageBackend === "local")
+    return readLocalProjectArchive(connection, version.archiveDriveFileId);
+  const { downloadDriveFile } = await import("./google/drive");
+  return downloadDriveFile(
+    getProjectDriveStorageUser(project, connection),
+    version.archiveDriveFileId,
+    options,
+  );
+}
+export async function readProjectSource(
+  userId: number,
+  projectId: number,
+  path: string,
+  options: {
+    connection?: DatabaseConnection;
+    fetchImpl?: GoogleFetch;
+    maxBytes?: number;
+  } = {},
+) {
+  const connection = options.connection ?? getDatabase(),
+    project = getUserProject(userId, projectId, connection);
+  const file = listProjectFiles(userId, projectId, connection).find(
+    (f) => f.path === path,
+  );
+  if (!file) throw new Error("Arquivo não encontrado.");
+  if (options.maxBytes && file.sizeBytes > options.maxBytes)
+    throw new Error("Drive file exceeds preview limit.");
+  if (project.storageBackend === "local") {
+    const bytes = await readLocalProjectSource(
+      connection,
+      file.driveFileId,
+      path,
+    );
+    if (
+      bytes.length !== file.sizeBytes ||
+      createHash("sha256").update(bytes).digest("hex") !==
+        (
+          connection.sqlite
+            .prepare(
+              "SELECT sha256 FROM project_files WHERE project_id=? AND relative_path=?",
+            )
+            .get(projectId, path) as { sha256: string }
+        ).sha256
+    )
+      throw new Error("O arquivo não passou na verificação de integridade.");
+    return bytes;
+  }
+  const { downloadDriveFile } = await import("./google/drive");
+  return downloadDriveFile(
+    getProjectDriveStorageUser(project, connection),
+    file.driveFileId,
+    options,
+  );
+}
+
+export function listArchivedProjects(
+  userId: number,
+  connection: DatabaseConnection = getDatabase(),
+) {
+  return (
+    connection.sqlite
+      .prepare(
+        projectSelect +
+          " WHERE p.owner_user_id=? AND p.archived_at IS NOT NULL ORDER BY p.updated_at DESC",
+      )
+      .all(idSchema.parse(userId)) as ProjectRow[]
+  ).map(parseProjectRow);
+}
+export function restoreUserProject(
+  userId: number,
+  projectId: number,
+  connection: DatabaseConnection = getDatabase(),
+) {
+  if (
+    !connection.sqlite
+      .prepare("SELECT 1 FROM users WHERE id=? AND active=1")
+      .get(idSchema.parse(userId))
+  )
+    throw new Error("Conta inativa.");
+  const result = connection.sqlite
+    .prepare(
+      "UPDATE projects SET archived_at=NULL,updated_at=? WHERE id=? AND owner_user_id=? AND archived_at IS NOT NULL",
+    )
+    .run(Date.now(), idSchema.parse(projectId), userId);
+  if (!result.changes) throw new Error("Projeto arquivado não encontrado.");
+  return getUserProject(userId, projectId, connection);
+}
+
+export function projectPreviewDiff(
+  userId: number,
+  token: string,
+  connection: DatabaseConnection = getDatabase(),
+) {
+  const preview = getProjectUploadPreview(userId, token, connection);
+  getUserProject(userId, preview.projectId, connection);
+  return diffProjectManifests(
+    currentManifest(preview.projectId, connection),
+    JSON.parse(preview.manifestJson) as ProjectManifest,
+  );
+}
+
+export function groupSharedProjectIds(
+  userId: number,
+  connection: DatabaseConnection = getDatabase(),
+) {
+  return (
+    connection.sqlite
+      .prepare(
+        "SELECT DISTINCT ps.project_id id FROM project_group_shares ps JOIN study_groups g ON g.id=ps.group_id AND g.archived_at IS NULL JOIN study_group_members m ON m.group_id=g.id AND m.user_id=? JOIN projects p ON p.id=ps.project_id AND p.archived_at IS NULL JOIN users owner ON owner.id=p.owner_user_id AND owner.active=1 JOIN users recipient ON recipient.id=m.user_id AND recipient.active=1",
+      )
+      .all(idSchema.parse(userId)) as { id: number }[]
+  ).map((r) => r.id);
+}
+export function setProjectGroupShare(
+  userId: number,
+  projectId: number,
+  groupId: number,
+  enabled: boolean,
+  connection: DatabaseConnection = getDatabase(),
+) {
+  const project = getUserProject(userId, projectId, connection);
+  if (project.ownerUserId !== userId)
+    throw new Error("Somente o proprietário pode compartilhar.");
+  idSchema.parse(groupId);
+  if (
+    enabled &&
+    !connection.sqlite
+      .prepare(
+        "SELECT 1 FROM study_groups g JOIN study_group_members m ON m.group_id=g.id AND m.user_id=? WHERE g.id=? AND g.archived_at IS NULL",
+      )
+      .get(userId, groupId)
+  )
+    throw new Error("Escolha um grupo do qual você participa.");
+  if (enabled)
+    connection.sqlite
+      .prepare(
+        "INSERT INTO project_group_shares VALUES(?,?) ON CONFLICT DO NOTHING",
+      )
+      .run(projectId, groupId);
+  else
+    connection.sqlite
+      .prepare(
+        "DELETE FROM project_group_shares WHERE project_id=? AND group_id=?",
+      )
+      .run(projectId, groupId);
+}
+export function listProjectGroupShares(
+  userId: number,
+  projectId: number,
+  connection: DatabaseConnection = getDatabase(),
+) {
+  const p = getUserProject(userId, projectId, connection);
+  if (p.ownerUserId !== userId)
+    throw new Error("Somente o proprietário pode ver o compartilhamento.");
+  return connection.sqlite
+    .prepare(
+      "SELECT g.id,g.name FROM project_group_shares ps JOIN study_groups g ON g.id=ps.group_id WHERE ps.project_id=?",
+    )
+    .all(projectId) as { id: number; name: string }[];
 }

@@ -38,9 +38,6 @@ export default async function Institutions({
         message={q.ok}
         error={q.error}
       >
-        <Link href="/control/import">
-          Importar estrutura V1 desta instalação →
-        </Link>
         <div className="admin-section-header">
           <p>
             <UiCopy
@@ -73,14 +70,27 @@ export default async function Institutions({
             >
               <strong>{item.name}</strong>
               <span>
-                {item.courses}
-                <UiCopy pt="curso(s)" en="course(s)" />
+                {item.courses}{" "}
+                <UiCopy
+                  pt={item.courses === 1 ? "curso" : "cursos"}
+                  en={item.courses === 1 ? "course" : "courses"}
+                />
                 {item.archivedAt ? " · Arquivada" : ""}
               </span>
               <span aria-hidden="true">→</span>
             </Link>
           ))}
         </div>
+        <details className="admin-secondary-tools">
+          <summary>Trazer dados de uma instalação antiga</summary>
+          <p>
+            Use esta opção somente para atualizar uma instalação com dados V1.
+            Uma instalação nova não precisa de importação.
+          </p>
+          <Link href="/control/import">
+            Revisar importação de estrutura V1 →
+          </Link>
+        </details>
       </ConsoleShell>
     );
   });

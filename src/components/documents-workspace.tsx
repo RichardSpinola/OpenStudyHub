@@ -300,11 +300,17 @@ export default async function DocumentsWorkspace({
           </div>
           <a
             className="primary-link"
-            href={generatedDocument.webViewLink}
+            href={
+              generatedDocument.storageUserId !== null &&
+              generatedDocument.storageUserId !== user.id &&
+              generatedDocument.googlePermissionStatus !== "granted"
+                ? `/api/documents/${generatedDocument.id}/download`
+                : generatedDocument.webViewLink
+            }
             target="_blank"
             rel="noreferrer"
           >
-            <UiCopy pt="Abrir no Google Docs" en="Open in Google Docs" />
+            <UiCopy pt="Abrir documento" en="Open document" />
           </a>
           {parameters.status === "generated-share-warning" ? (
             <small>
@@ -934,10 +940,11 @@ export default async function DocumentsWorkspace({
                 </div>
               ))}
             </div>
-            <section
+            <details
               className="template-import-panel library-template-create"
               id="importar-modelo"
             >
+              <summary>Importar arquivo DOCX</summary>
               <h3>
                 <UiCopy pt="Importar modelo DOCX" en="Import DOCX template" />
               </h3>
@@ -1002,7 +1009,7 @@ export default async function DocumentsWorkspace({
                   />
                 </PendingSubmitButton>
               </form>
-            </section>
+            </details>
           </section>
 
           <section className="resource-collection template-catalog">
@@ -1017,10 +1024,12 @@ export default async function DocumentsWorkspace({
                 </h2>
               </div>
             </div>
-            <section
+            <details
               className="template-import-panel library-template-create"
               id="modelo-drive"
+              open={parameters.action === "drive"}
             >
+              <summary>Criar modelo ou importar do Google Docs</summary>
               <h3>
                 <UiCopy
                   pt="Criar modelo pessoal"
@@ -1108,7 +1117,7 @@ export default async function DocumentsWorkspace({
                   <UiCopy pt="Criar modelo" en="Create template" />
                 </PendingSubmitButton>
               </form>
-            </section>
+            </details>
             {templates.length === 0 ? (
               <div className="useful-empty resource-empty compact">
                 <strong>

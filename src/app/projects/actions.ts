@@ -1,5 +1,7 @@
 "use server";
 
+import { isDriveStorageAvailableForUser } from "@/lib/google/storage-owner";
+
 import { subjectResourceHref } from "@/lib/v2/academic-links";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -9,6 +11,8 @@ import { requireToolUser } from "@/lib/authorization";
 import { listUserSubjectOfferings } from "@/lib/academic";
 import {
   archiveUserProject,
+  restoreUserProject,
+  setProjectGroupShare,
   cancelProjectUploadPreview,
   confirmProjectUpload,
   createProject,
@@ -39,8 +43,16 @@ export async function createProjectAction(formData: FormData) {
   if (requestedOfferingId !== null && !offering)
     redirect("/projects/new?error=invalid-offering");
   try {
+    if (
+      formData.get("storageBackend") === "google-drive" &&
+      !isDriveStorageAvailableForUser(user.id)
+    )
+      throw new Error("Drive indisponível.");
     const project = createProject(user.id, {
       offeringId: offering?.offeringId ?? null,
+      storageBackend: z
+        .enum(["local", "google-drive"])
+        .parse(formData.get("storageBackend") ?? "local"),
       name: String(formData.get("name") ?? ""),
       language: "other",
       ignorePreset: "other",
@@ -101,22 +113,13 @@ export async function confirmProjectUploadAction(formData: FormData) {
   const token = String(formData.get("token") ?? "");
   const connection = getDatabase();
   getUserProject(user.id, projectId, connection);
-  connection.sqlite
-    .prepare(
-      `INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?)
-     ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`,
-    )
-    .run(
-      `project.sync_error.${projectId}`,
-      "validação da prévia e leitura do ZIP temporário",
-      Date.now(),
-    );
   try {
     await confirmProjectUpload(
       user.id,
       token,
       String(formData.get("message") ?? ""),
       {
+        expectedProjectId: projectId,
         language:
           projectLanguageSchema.safeParse(formData.get("language")).data ??
           getUserProject(user.id, projectId).language,
@@ -183,5 +186,34 @@ export async function shareProjectAction(form: FormData) {
   }
   revalidatePath("/library");
   revalidatePath(`/projects/${projectId}`);
-  redirect(`/projects/${projectId}?from=projects&status=${status}`);
+  redirect(
+    `/projects/${projectId}?from=projects&area=sharing&status=${status}`,
+  );
+}
+
+export async function restoreProjectAction(form: FormData) {
+  const user = await requireToolUser();
+  const id = idSchema.parse(form.get("projectId"));
+  restoreUserProject(user.id, id);
+  revalidatePath("/library");
+  redirect(`/projects/${id}?status=restored`);
+}
+
+export async function shareProjectGroupAction(form: FormData) {
+  const user = await requireToolUser(),
+    projectId = idSchema.parse(form.get("projectId"));
+  let status = "shared";
+  try {
+    setProjectGroupShare(
+      user.id,
+      projectId,
+      idSchema.parse(form.get("groupId")),
+      form.get("enabled") === "1",
+    );
+  } catch {
+    status = "share-error";
+  }
+  revalidatePath("/library");
+  revalidatePath(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}?area=sharing&status=${status}`);
 }

@@ -1,3 +1,4 @@
+import { getDriveAccessPolicy } from "@/lib/drive-access-policy";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -5,6 +6,7 @@ import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { DismissibleDetails } from "@/components/dismissible-details";
 
 import {
+  openTemplateSourceAction,
   addDocumentTemplateSectionAction,
   cloneDocumentTemplateAction,
   deleteDocumentTemplateAction,
@@ -270,14 +272,17 @@ export default async function DocumentTemplateWorkspace({
             </button>
           </form>
           <div className="panel-actions">
-            <a
-              className="text-link"
-              href={`https://docs.google.com/document/d/${encodeURIComponent(template.sourceFileId)}/edit`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <UiCopy pt="Abrir documento base ↗" en="Open base document ↗" />
-            </a>
+            <form action={openTemplateSourceAction} target="_blank">
+              <input type="hidden" name="templateId" value={template.id} />
+              <button type="submit">
+                {getDriveAccessPolicy() === "app-only"
+                  ? tr("Visualizar base em PDF ↗", "Preview source PDF ↗")
+                  : tr(
+                      "Editar documento base no Google Docs ↗",
+                      "Edit source in Google Docs ↗",
+                    )}
+              </button>
+            </form>
           </div>
           <form className="clone-form" action={cloneDocumentTemplateAction}>
             <input type="hidden" name="templateId" value={template.id} />

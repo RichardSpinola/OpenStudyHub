@@ -10,23 +10,20 @@ export function ProjectSyncSubmit({ retry = false }: { retry?: boolean }) {
     <div className="project-sync-submit">
       <button type="submit" disabled={pending} aria-busy={pending}>
         {pending
-          ? tr("Sincronizando no Drive…", "Syncing to Drive…")
+          ? tr("Salvando versão…", "Saving version…")
           : retry
             ? tr(
-                "Tentar sincronizar esta prévia novamente",
-                "Retry syncing this preview",
+                "Tentar salvar esta prévia novamente",
+                "Retry saving this preview",
               )
-            : tr(
-                "Confirmar e sincronizar no Drive",
-                "Confirm and sync to Drive",
-              )}
+            : tr("Confirmar e salvar versão", "Confirm and save version")}
       </button>
       {pending ? (
         <div className="project-sync-progress" role="status" aria-live="polite">
           <span>
             <UiCopy
-              pt="Criando ou verificando as pastas no Drive e enviando os arquivos…"
-              en="Creating or checking Drive folders and uploading files…"
+              pt="Verificando o pacote e salvando os arquivos no armazenamento escolhido…"
+              en="Checking the package and saving files in the chosen storage…"
             />
           </span>
           <div className="project-sync-progress-track" aria-hidden="true">

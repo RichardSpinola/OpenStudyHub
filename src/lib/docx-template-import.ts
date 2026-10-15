@@ -108,12 +108,21 @@ export async function importDocxTemplate(
     connection,
     fetchImpl,
   });
+  const personFolder = await ensureDriveFolderForUser(
+    storageUserId,
+    {
+      name: `Pessoa-${ownerUserId}`,
+      parentId: root.id,
+      identityKey: `private-templates-owner:${ownerUserId}`,
+    },
+    { connection, fetchImpl },
+  );
   const templatesFolder = await ensureDriveFolderForUser(
     storageUserId,
     {
-      name: "_Templates",
-      parentId: root.id,
-      identityKey: "document-templates",
+      name: "Modelos",
+      parentId: personFolder.id,
+      identityKey: `private-templates:${ownerUserId}`,
     },
     { connection, fetchImpl },
   );

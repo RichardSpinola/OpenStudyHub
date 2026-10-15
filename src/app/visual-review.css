@@ -2032,3 +2032,35 @@ html[data-design] .google-journey > a:last-child {
     flex-direction: column;
   }
 }
+
+/* A completed Google step is not the current step. */
+html[data-design]
+  .google-steps
+  li[data-done="true"]:not([aria-current="step"]) {
+  color: var(--gray-1);
+  border-color: var(--gray-4);
+  background: var(--panel);
+}
+html[data-design] .project-detail-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+html[data-design] .project-context-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.5rem;
+  color: var(--gray-1);
+  padding: 0 0 1rem;
+}
+html[data-design] .project-settings-workspace {
+  max-width: 65rem;
+}
+html[data-design] .library-template-create > summary {
+  padding: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+html[data-design] .library-archive-link {
+  display: block;
+  width: fit-content;
+  margin: 0 0 1rem auto;
+}
