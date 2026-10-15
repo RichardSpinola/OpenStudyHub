@@ -633,6 +633,7 @@ export function setNoteGroupShare(
   groupId: number,
   shared: boolean,
   connection: DatabaseConnection = getDatabase(),
+  canEdit = false,
 ): void {
   const ownerId = idSchema.parse(ownerUserId);
   const note = connection.sqlite
@@ -642,15 +643,14 @@ export function setNoteGroupShare(
     .get(noteId, ownerId) as
     { offeringId: number | null; title: string } | undefined;
   if (!note) throw new Error("Note not found.");
-  if (!note.offeringId) throw new Error("Private Notes cannot be shared.");
   assertOwnerGroupMember(ownerId, groupId, connection);
   if (shared) {
     connection.sqlite
       .prepare(
-        `insert into note_group_shares (note_id, group_id, shared_by_user_id)
-         values (?, ?, ?) on conflict(note_id, group_id) do nothing`,
+        `insert into note_group_shares (note_id, group_id, shared_by_user_id, can_edit)
+         values (?, ?, ?, ?) on conflict(note_id, group_id) do update set can_edit=excluded.can_edit`,
       )
-      .run(noteId, groupId, ownerId);
+      .run(noteId, groupId, ownerId, canEdit ? 1 : 0);
     notifyGroupShare(
       ownerId,
       groupId,
@@ -692,7 +692,7 @@ export function canReadNote(
           n.owner_user_id = ? or exists (
             select 1 from note_person_shares nps
             where nps.note_id = n.id and nps.recipient_user_id = ?
-          ) or (n.offering_id is not null and exists (
+          ) or (exists (
             select 1 from note_group_shares ngs
             join study_group_members gm on gm.group_id = ngs.group_id
             where ngs.note_id = n.id and gm.user_id = ?
@@ -797,10 +797,10 @@ export function listNoteGroupShares(
   ownerUserId: number,
   noteId: number,
   connection: DatabaseConnection = getDatabase(),
-): Array<{ groupId: number; groupName: string }> {
+): Array<{ groupId: number; groupName: string; canEdit: number }> {
   return connection.sqlite
     .prepare(
-      `select g.id groupId,g.name groupName from note_group_shares s
+      `select g.id groupId,g.name groupName,s.can_edit canEdit from note_group_shares s
        join notes n on n.id=s.note_id and n.owner_user_id=?
        join study_groups g on g.id=s.group_id where s.note_id=?
        order by g.name collate nocase`,
@@ -808,6 +808,7 @@ export function listNoteGroupShares(
     .all(idSchema.parse(ownerUserId), idSchema.parse(noteId)) as Array<{
     groupId: number;
     groupName: string;
+    canEdit: number;
   }>;
 }
 
@@ -831,6 +832,7 @@ export function setNotePersonShare(
   recipientUserId: number,
   shared: boolean,
   connection: DatabaseConnection = getDatabase(),
+  canEdit = false,
 ): void {
   const ownerId = idSchema.parse(ownerUserId);
   const recipientId = idSchema.parse(recipientUserId);
@@ -842,9 +844,9 @@ export function setNotePersonShare(
     assertShareRecipient(ownerId, recipientId, connection);
     const inserted = connection.sqlite
       .prepare(
-        "INSERT INTO note_person_shares(note_id,recipient_user_id,shared_by_user_id) VALUES(?,?,?) ON CONFLICT DO NOTHING",
+        "INSERT INTO note_person_shares(note_id,recipient_user_id,shared_by_user_id,can_edit) VALUES(?,?,?,?) ON CONFLICT(note_id,recipient_user_id) DO UPDATE SET can_edit=excluded.can_edit",
       )
-      .run(noteId, recipientId, ownerId);
+      .run(noteId, recipientId, ownerId, canEdit ? 1 : 0);
     if (inserted.changes)
       createNotification(
         recipientId,
@@ -880,10 +882,10 @@ export function listNotePersonShares(
   ownerUserId: number,
   noteId: number,
   connection: DatabaseConnection = getDatabase(),
-): Array<{ userId: number; displayName: string }> {
+): Array<{ userId: number; displayName: string; canEdit: number }> {
   return connection.sqlite
     .prepare(
-      `SELECT u.id userId,u.display_name displayName FROM note_person_shares s
+      `SELECT u.id userId,u.display_name displayName,s.can_edit canEdit FROM note_person_shares s
      JOIN notes n ON n.id=s.note_id AND n.owner_user_id=?
      JOIN users u ON u.id=s.recipient_user_id WHERE s.note_id=?
      ORDER BY u.display_name COLLATE NOCASE`,
@@ -891,6 +893,7 @@ export function listNotePersonShares(
     .all(idSchema.parse(ownerUserId), idSchema.parse(noteId)) as Array<{
     userId: number;
     displayName: string;
+    canEdit: number;
   }>;
 }
 

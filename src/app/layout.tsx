@@ -35,6 +35,7 @@ import "./phase10.css";
 import "./home-polish.css";
 import "./workspace-polish.css";
 import "./weekly-schedule.css";
+import "./note-workspace.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getServerEnvironment().APP_URL),

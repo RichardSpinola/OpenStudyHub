@@ -22,6 +22,7 @@ export const migrationFiles = [
   "0015_person_shares.sql",
   "0016_personal_projects.sql",
   "0017_project_storage.sql",
+  "0018_note_workspaces.sql",
 ] as const;
 
 export function applyMigration(

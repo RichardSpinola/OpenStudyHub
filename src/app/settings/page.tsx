@@ -1274,6 +1274,18 @@ export default async function SettingsPage({
                   </a>
                 </p>
               </details>
+              <p>
+                <UiCopy
+                  pt="Notas usa BlockNote (MPL-2.0) e Yjs (MIT)."
+                  en="Notes uses BlockNote (MPL-2.0) and Yjs (MIT)."
+                />{" "}
+                <Link href="/credits">
+                  <UiCopy
+                    pt="Licenças e créditos ↗"
+                    en="Licenses and credits ↗"
+                  />
+                </Link>
+              </p>
               <div className="settings-about-links">
                 <a
                   href="https://github.com/RichardSpinola/OpenStudyHub"

@@ -17,7 +17,7 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 - Prévia gráfica de nota, folha de documento e capa de projeto conserva a identidade da V2; biblioteca permite grade/lista sem trocar os fluxos ou confundir os tipos.
 - Configuração administrativa de Extras tem entrada própria no menu do Admin. Extras continua na navegação principal do App e mantém suas feature flags.
 - **Produção pausada:** por instrução mais recente, manter mudanças locais e prévias. Não aplicar nada no servidor até nova instrução do usuário.
-- Workspace de Notas com páginas, blocos, colaboração, bases tabela/Kanban e campos simples. Sem fórmulas/relacionamentos nesta entrega. Base proposta: BlockNote core + Yjs, com licença e créditos conservados; compatibilidade será verificada antes da adoção.
+- Workspace de Notas com páginas, blocos, colaboração, bases tabela/Kanban e campos simples. Sem fórmulas/relacionamentos nesta entrega. Base adotada na etapa 5: BlockNote core + Yjs, com licença e créditos conservados; sem incorporar código do AppFlowy/Notion.
 - Moderação do chat global e grupos institucionais. Conversas diretas privadas, com denúncia voluntária.
 - Drive acadêmico compartilhado e área Pessoais separada sob demanda. Destino e acesso explícitos; nenhuma abertura automática de todos os arquivos aos matriculados.
 - Admin escolhe acesso pelo App ou compartilhamento direto no Drive. Cada conta conecta o próprio Google para Classroom.
@@ -37,7 +37,7 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 | 2     | Modelo acadêmico consistente, importador, Classroom, fuso e horários                       | Concluída localmente; revisão visual                       |
 | 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                          | Revisada na etapa 4; teste local concluído                 |
 | 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                      | Implementada; 400 testes; limites da revisão em STAGE_4.md |
-| 5     | Notas: workspace, colaboração e bases simples                                              | Planejada                                                  |
+| 5     | Notas: workspace, colaboração e bases simples                                              | Implementada localmente; validação em STAGE_5.md           |
 | 6     | Chat, Quadro e cinco jogos                                                                 | Planejada                                                  |
 | 7     | Backup, recuperação, desempenho, diagnóstico, configurações e idioma                       | Planejada                                                  |
 | 8     | Checkpoint integrado, documentação, extensão e pacote distribuível                         | Planejada                                                  |
@@ -77,3 +77,8 @@ Publicação, tag e atualização pública não foram realizadas nesta etapa. A 
 - A prévia local ficou pausada em 15/10/2026 para liberar memória após o relato de travamento do notebook. Não reiniciar builds/testes pesados junto do navegador. Há três ajustes pequenos e o ciclo de arquivamento/restauração a retestar visualmente; a compilação e os testes automáticos passaram.
 
 - [Revisão de 15/10/2026](REVIEW_FIXES_2026_10_15.md): grade compacta, projetos, exclusão definitiva, enquadramento e wallpaper. Prévia local reaberta após conferência.
+
+## Etapa 5
+
+- [STAGE_5.md](STAGE_5.md): páginas/subpáginas, edição por blocos, Tabela/Quadro, leitura/edição compartilhada, rascunhos e versões. Guia do usuário em [Notas](../../docs/notas.md).
+- 30 testes dirigidos aprovados e percurso no navegador com duas contas fictícias. Notas ficam no banco da instância; não há espelho automático de notas no Drive. Backup completo continua nas etapas 7/8.

@@ -99,3 +99,7 @@ Novo pedido de atalhos: seletor com abreviação/imagem do site/personalizado, c
 ## Revisão de 15/10/2026 — etapa 4
 
 Implementação e limites de A07–A11, A14 e U10–U13 em [STAGE_4.md](STAGE_4.md). A validação Google com contas reais continua na etapa 8. Política de acesso não revoga permissões externas preexistentes. Notas, Chat, jogos, configurações gerais do App e backup automático continuam em suas etapas próprias.
+
+## Revisão de 15/10/2026 — etapa 5
+
+U14 e a parte de Notas de U28 implementados localmente. Páginas/subpáginas, blocos, busca, associação acadêmica opcional, pessoas/grupos com leitura/edição, bases Tabela/Quadro, histórico e recuperação. Créditos e limites em [STAGE_5.md](STAGE_5.md). Integração de referências no Chat continua na etapa 6; backup completo e teste integrado nas etapas 7/8.

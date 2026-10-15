@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { assertToolAvailable } from "@/lib/v2/exam-access";
 import { getCurrentSession } from "@/lib/authorization";
 import {
   exportNoteAsHtml,
   exportNoteAsMarkdown,
   noteExportFilename,
 } from "@/lib/note-export";
-import { getUserNote } from "@/lib/notes";
+import { getReadableNote } from "@/lib/notes";
 
 export async function GET(
   request: NextRequest,
@@ -19,9 +20,14 @@ export async function GET(
     return new NextResponse("Not found", { status: 404 });
   }
 
+  try {
+    assertToolAvailable(session.user.id);
+  } catch {
+    return new NextResponse("Unavailable", { status: 403 });
+  }
   let note;
   try {
-    note = getUserNote(session.user.id, Number(rawId));
+    note = getReadableNote(session.user.id, Number(rawId));
   } catch {
     return new NextResponse("Not found", { status: 404 });
   }
@@ -40,6 +46,7 @@ export async function GET(
           : "text/html; charset=utf-8",
       "content-disposition": `attachment; filename="${filename}"`,
       "x-content-type-options": "nosniff",
+      "cache-control": "no-store",
     },
   });
 }

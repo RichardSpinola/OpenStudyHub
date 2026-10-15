@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   agentRules: false,
   devIndicators: false,
+  serverExternalPackages: ["@blocknote/core", "@blocknote/react", "@blocknote/server-util", "yjs"],
   experimental: {
     ...(process.env.OPENSTUDYHUB_QA_BUILD === "1"
       ? { cpus: 1, webpackMemoryOptimizations: true }

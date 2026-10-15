@@ -11,12 +11,14 @@ const noteInputSchema = z.object({
   content: z.string().max(100_000).default(""),
   offeringId: optionalIdSchema,
   activityId: optionalIdSchema,
+  parentNoteId: optionalIdSchema,
 });
 
 export type NoteInput = z.input<typeof noteInputSchema>;
 export type NoteRecord = {
   id: number;
   ownerUserId: number;
+  parentNoteId: number | null;
   offeringId: number | null;
   activityId: number | null;
   title: string;
@@ -34,7 +36,7 @@ export type SharedNoteRecord = NoteRecord & {
 };
 
 const noteSelect = `
-  select n.id, n.owner_user_id as ownerUserId,
+  select n.id, n.owner_user_id as ownerUserId, n.parent_note_id as parentNoteId,
          n.offering_id as offeringId, n.activity_id as activityId,
          n.title, n.content, s.name as subjectName,
          a.title as activityTitle, n.created_at as createdAt,
@@ -116,7 +118,7 @@ export function listSharedNotes(
   const actorId = idSchema.parse(userId);
   return connection.sqlite
     .prepare(
-      `select distinct n.id, n.owner_user_id as ownerUserId,
+      `select distinct n.id, n.owner_user_id as ownerUserId, n.parent_note_id as parentNoteId,
               n.offering_id as offeringId, n.activity_id as activityId,
               n.title, n.content, s.name as subjectName,
               a.title as activityTitle, owner.display_name as ownerName,
@@ -128,7 +130,7 @@ export function listSharedNotes(
        left join activities a on a.id = n.activity_id
        where n.owner_user_id != ? and (
          exists(select 1 from note_person_shares nps where nps.note_id=n.id and nps.recipient_user_id=?)
-         or (n.offering_id is not null and exists(
+         or (exists(
            select 1 from note_group_shares ngs join study_group_members gm on gm.group_id=ngs.group_id
            where ngs.note_id=n.id and gm.user_id=?
          ))
@@ -159,12 +161,17 @@ export function getReadableNote(
   const actorId = idSchema.parse(userId);
   const row = connection.sqlite
     .prepare(
-      `select n.id, n.owner_user_id as ownerUserId,
+      `select n.id, n.owner_user_id as ownerUserId, n.parent_note_id as parentNoteId,
          n.offering_id as offeringId, n.activity_id as activityId,
          n.title, n.content, s.name as subjectName,
          a.title as activityTitle, n.created_at as createdAt,
          n.updated_at as updatedAt,
-         case when n.owner_user_id = ? then 1 else 0 end as editable
+         case when n.owner_user_id = ? or exists (
+           select 1 from note_person_shares ps where ps.note_id=n.id and ps.recipient_user_id=? and ps.can_edit=1
+         ) or exists (
+           select 1 from note_group_shares gs join study_group_members gm on gm.group_id=gs.group_id
+           where gs.note_id=n.id and gm.user_id=? and gs.can_edit=1
+         ) then 1 else 0 end as editable
        from notes n
        left join subject_offerings so on so.id = n.offering_id
        left join subjects s on s.id = so.subject_id
@@ -173,15 +180,22 @@ export function getReadableNote(
          n.owner_user_id = ? or exists (
            select 1 from note_person_shares nps
            where nps.note_id = n.id and nps.recipient_user_id = ?
-         ) or (n.offering_id is not null and exists (
+         ) or (exists (
            select 1 from note_group_shares ngs
            join study_group_members gm on gm.group_id = ngs.group_id
            where ngs.note_id = n.id and gm.user_id = ?
          ))
        )`,
     )
-    .get(actorId, idSchema.parse(noteId), actorId, actorId, actorId) as
-    (NoteRecord & { editable: number }) | undefined;
+    .get(
+      actorId,
+      actorId,
+      actorId,
+      idSchema.parse(noteId),
+      actorId,
+      actorId,
+      actorId,
+    ) as (NoteRecord & { editable: number }) | undefined;
   if (!row) throw new Error("Note not found.");
   return { ...row, editable: Boolean(row.editable) };
 }
@@ -199,17 +213,19 @@ export function createNote(
     value.activityId,
     connection,
   );
+  if (value.parentNoteId) getUserNote(ownerId, value.parentNoteId, connection);
   const now = Date.now();
   const result = connection.sqlite
     .prepare(
       `insert into notes
-       (owner_user_id, offering_id, activity_id, title, content, created_at, updated_at)
-       values (?, ?, ?, ?, ?, ?, ?)`,
+       (owner_user_id, offering_id, activity_id, parent_note_id, title, content, created_at, updated_at)
+       values (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       ownerId,
       associations.offeringId,
       associations.activityId,
+      value.parentNoteId ?? null,
       value.title,
       value.content,
       now,
@@ -226,6 +242,13 @@ export function updateNote(
 ): NoteRecord {
   const ownerId = idSchema.parse(ownerUserId);
   const id = idSchema.parse(noteId);
+  if (
+    connection.sqlite
+      .prepare("select 1 from note_workspaces where note_id=?")
+      .get(id)
+  ) {
+    throw new Error("Open this page in the workspace editor.");
+  }
   const value = noteInputSchema.parse(input);
   const associations = resolveAssociations(
     ownerId,
@@ -261,4 +284,48 @@ export function deleteNote(
     .prepare("delete from notes where id = ? and owner_user_id = ?")
     .run(idSchema.parse(noteId), idSchema.parse(ownerUserId));
   if (result.changes !== 1) throw new Error("Note not found.");
+}
+
+export function moveNote(
+  ownerId: number,
+  noteId: number,
+  parentNoteId: number | null,
+  connection: DatabaseConnection = getDatabase(),
+): void {
+  getUserNote(ownerId, noteId, connection);
+  if (parentNoteId !== null) {
+    let parent = getUserNote(ownerId, idSchema.parse(parentNoteId), connection);
+    const seen = new Set<number>([noteId]);
+    while (true) {
+      if (seen.has(parent.id))
+        throw new Error("Uma página não pode ficar dentro dela mesma.");
+      seen.add(parent.id);
+      if (!parent.parentNoteId) break;
+      parent = getUserNote(ownerId, parent.parentNoteId, connection);
+    }
+  }
+  connection.sqlite
+    .prepare("update notes set parent_note_id=? where id=? and owner_user_id=?")
+    .run(parentNoteId, noteId, ownerId);
+}
+
+export function updateNoteContext(
+  ownerId: number,
+  noteId: number,
+  offeringId: number | null,
+  activityId: number | null,
+  connection: DatabaseConnection = getDatabase(),
+): void {
+  getUserNote(ownerId, noteId, connection);
+  const associations = resolveAssociations(
+    ownerId,
+    offeringId,
+    activityId,
+    connection,
+  );
+  connection.sqlite
+    .prepare(
+      "update notes set offering_id=?, activity_id=? where id=? and owner_user_id=?",
+    )
+    .run(associations.offeringId, associations.activityId, noteId, ownerId);
 }

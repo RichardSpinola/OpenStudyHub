@@ -15,3 +15,5 @@ Este texto é apenas um resumo informativo. Em caso de divergência, prevalece o
 ## Componentes de terceiros
 
 O Quadro Branco usa Excalidraw; os textos de licença e de fontes estão em [Excalidraw MIT](licenses/EXCALIDRAW-MIT.txt) e [fontes do Excalidraw](licenses/EXCALIDRAW-FONTS.md). Esta documentação é gerada com [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/), distribuído sob MIT. Os créditos e licenças continuam disponíveis mesmo com o aviso visual do gerador oculto no rodapé.
+
+O editor de Notas usa BlockNote 0.56.0 (MPL-2.0), Yjs e seus adaptadores (MIT). Os avisos completos estão em `public/licenses/`, na página `/credits` da aplicação e em `THIRD_PARTY_NOTICES.md` na raiz do repositório. Os pacotes são consumidos sem modificar seus arquivos originais.

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnySQLiteColumn,
+  blob,
   check,
   index,
   integer,
@@ -744,6 +745,10 @@ export const notes = sqliteTable(
       onDelete: "set null",
       onUpdate: "cascade",
     }),
+    parentNoteId: integer("parent_note_id").references(
+      (): AnySQLiteColumn => notes.id,
+      { onDelete: "set null" },
+    ),
     title: text("title").notNull(),
     content: text("content").notNull().default(""),
     driveFileId: text("drive_file_id"),
@@ -1465,6 +1470,7 @@ export const userProfileTags = sqliteTable(
 export const noteGroupShares = sqliteTable(
   "note_group_shares",
   {
+    canEdit: integer("can_edit", { mode: "boolean" }).notNull().default(false),
     noteId: integer("note_id")
       .notNull()
       .references(() => notes.id, {
@@ -1526,6 +1532,7 @@ export const documentGroupShares = sqliteTable(
 export const notePersonShares = sqliteTable(
   "note_person_shares",
   {
+    canEdit: integer("can_edit", { mode: "boolean" }).notNull().default(false),
     noteId: integer("note_id")
       .notNull()
       .references(() => notes.id, { onDelete: "cascade" }),
@@ -1804,4 +1811,31 @@ export const projectGroupShares = sqliteTable(
       .references(() => studyGroups.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.groupId] })],
+);
+
+export const noteWorkspaces = sqliteTable("note_workspaces", {
+  noteId: integer("note_id")
+    .primaryKey()
+    .references(() => notes.id, { onDelete: "cascade" }),
+  state: blob("state", { mode: "buffer" }).notNull(),
+  revision: integer("revision").notNull().default(0),
+  updatedAt: integer("updated_at").notNull(),
+});
+export const noteWorkspaceVersions = sqliteTable(
+  "note_workspace_versions",
+  {
+    noteId: integer("note_id")
+      .notNull()
+      .references(() => notes.id, { onDelete: "cascade" }),
+    revision: integer("revision").notNull(),
+    state: blob("state", { mode: "buffer" }).notNull(),
+    actorUserId: integer("actor_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.noteId, table.revision] }),
+    index("note_workspace_versions_recent").on(table.noteId, table.createdAt),
+  ],
 );

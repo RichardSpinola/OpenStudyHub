@@ -142,9 +142,8 @@ describe("Phase 7 collaboration authorization", () => {
       { title: "Private", content: "", offeringId: null },
       connection,
     );
-    expect(() =>
-      setNoteGroupShare(ownerId, privateNote.id, group.id, true, connection),
-    ).toThrow("Private Notes cannot be shared");
+    setNoteGroupShare(ownerId, privateNote.id, group.id, true, connection);
+    expect(canReadNote(memberId, privateNote.id, connection)).toBe(false);
   });
 
   it("keeps visual tags separate from authorization", () => {

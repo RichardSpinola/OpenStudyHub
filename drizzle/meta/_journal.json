@@ -127,6 +127,13 @@
       "when": 1792024439802,
       "tag": "0017_project_storage",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1792074000000,
+      "tag": "0018_note_workspaces",
+      "breakpoints": true
     }
   ]
 }
