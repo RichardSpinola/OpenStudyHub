@@ -69,6 +69,17 @@ describe("stage 5 note workspace", () => {
     expect(getUserNote(a, note.id, db).content).toContain("Conceitos");
     expect(getUserNote(a, note.id, db).content).toContain("Tarefa");
   });
+  it("opens legacy pages with relative links without rewriting their Markdown", async () => {
+    const { a } = seed(db);
+    const content = "[Revisão](#revisao) e [Página](/notes)";
+    const note = createNote(a, { title: "Legada", content }, db);
+    const state = await initializeNoteWorkspace(a, note.id, db);
+    expect(state.state).toBeTruthy();
+    expect(getUserNote(a, note.id, db).content).toBe(content);
+    expect((await initializeNoteWorkspace(a, note.id, db)).state).toBe(
+      state.state,
+    );
+  });
   it("merges two users editing the same title concurrently, retries idempotently and survives reload", async () => {
     const { a, b } = seed(db);
     const note = createNote(a, { title: "Aula" }, db);

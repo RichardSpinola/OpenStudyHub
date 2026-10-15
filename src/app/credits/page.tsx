@@ -7,7 +7,7 @@ export default function CreditsPage() {
         <div>
           <p className="eyebrow">OpenStudyHub</p>
           <h1>
-            <UiCopy pt="Licenças e créditos" en="Licenses and credits" />
+            <UiCopy pt="Créditos" en="Credits" />
           </h1>
         </div>
         <Link href="/settings?section=about">

@@ -2,9 +2,9 @@ import Link from "next/link";
 import { UiCopy } from "@/components/ui-language-provider";
 import { NoteNavigation } from "@/components/note-navigation";
 import { NoteLibraryCard } from "@/components/note-library-card";
-import { PendingSubmitButton } from "@/components/pending-submit-button";
+import { NoteCreate } from "@/components/note-create";
 import { NoteImport } from "@/components/note-import";
-import { createNoteAction } from "@/app/notes/actions";
+
 import { requireToolUser } from "@/lib/authorization";
 import { listUserNotes, listSharedNotes } from "@/lib/notes";
 import { listUserSubjectOfferings } from "@/lib/academic";
@@ -43,7 +43,18 @@ export default async function NotesPage({
   );
   return (
     <div className="notes-workspace-shell notes-workspace-index">
-      <NoteNavigation notes={all.map(({id,title,parentNoteId})=>({id,title,parentNoteId}))} shared={shared.map(({id,title,parentNoteId})=>({id,title,parentNoteId}))} />
+      <NoteNavigation
+        notes={all.map(({ id, title, parentNoteId }) => ({
+          id,
+          title,
+          parentNoteId,
+        }))}
+        shared={shared.map(({ id, title, parentNoteId }) => ({
+          id,
+          title,
+          parentNoteId,
+        }))}
+      />
       <main className="notes-workspace-main">
         <header className="note-collection-heading">
           <div>
@@ -85,40 +96,21 @@ export default async function NotesPage({
           id="nova-nota"
           aria-label={tr("Criar página", "Create page")}
         >
-          <form action={createNoteAction}>
-            <label>
-              {tr("Nova página", "New page")}
-              <input
-                name="title"
-                placeholder={tr("Dê um nome à sua ideia…", "Name your idea…")}
-                required
-                maxLength={180}
-              />
-            </label>
-            <label>
-              {tr("Disciplina · opcional", "Subject · optional")}
-              <select
-                name="offeringId"
-                defaultValue={parameters.offeringId ?? ""}
-              >
-                <option value="">{tr("Sem disciplina", "No subject")}</option>
-                {offerings.map((o) => (
-                  <option key={o.offeringId} value={o.offeringId}>
-                    {o.subjectName} · {o.periodLabel}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <input
-              name="activityId"
-              type="hidden"
-              value={parameters.activityId ?? ""}
-            />
-            <input name="content" type="hidden" value="" />
-            <PendingSubmitButton pendingLabel={tr("Criando…", "Creating…")}>
-              {tr("Criar e escrever →", "Create and write →")}
-            </PendingSubmitButton>
-          </form>
+          <div>
+            <strong>{tr("Uma ideia, uma página", "One idea, one page")}</strong>
+            <p className="note-muted">
+              {tr(
+                "Comece em branco ou escolha um modelo para organizar suas anotações.",
+                "Start blank or choose a template to organize your notes.",
+              )}
+            </p>
+          </div>
+          <NoteCreate
+            parents={all.map((n) => ({ id: n.id, title: n.title }))}
+            offerings={offerings}
+            offeringId={parameters.offeringId}
+            activityId={parameters.activityId}
+          />
         </section>
         <section className="resource-collection notes-library">
           <header className="resource-collection-header">

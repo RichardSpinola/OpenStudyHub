@@ -9,6 +9,8 @@ import * as Y from "yjs";
 import { noteBlockSchema } from "@/lib/note-block-schema";
 import { NoteSync, noteBase64 } from "@/lib/note-sync-client";
 import type { NoteWorkspaceState } from "@/lib/note-workspace";
+import { NoteImagePicker } from "@/components/note-image-picker";
+import { noteImageMaxBytes, validNoteImageUrl } from "@/lib/note-image-url";
 import { NoteDatabases } from "@/components/note-databases";
 import { useUiLanguage, useUiText } from "@/components/ui-language-provider";
 import "@blocknote/core/style.css";
@@ -55,10 +57,51 @@ export default function NoteBlockEditor({
     document.documentElement.dataset.theme === "light" ? "light" : "dark",
   );
   const [notice, setNotice] = useState("");
+
+  async function uploadImage(file: File) {
+    if (!file.size || file.size > noteImageMaxBytes)
+      throw new Error(
+        tr("Escolha uma imagem de até 5 MB.", "Choose an image up to 5 MB."),
+      );
+    const response = await fetch(`/api/notes/${note.id}/images`, {
+      method: "POST",
+      body: file,
+      credentials: "same-origin",
+    });
+    const result = (await response.json()) as { url?: string; error?: string };
+    if (!response.ok || !result.url)
+      throw new Error(
+        result.error ||
+          tr(
+            "Não foi possível enviar a imagem.",
+            "Could not upload the image.",
+          ),
+      );
+    return result.url;
+  }
   const editor = useCreateBlockNote(
     withCollaboration({
       schema: noteBlockSchema,
       dictionary: language === "en" ? en : pt,
+      uploadFile: async (file: File) => {
+        try {
+          const url = await uploadImage(file);
+          setNotice("");
+          return url;
+        } catch (error) {
+          setNotice(
+            error instanceof Error
+              ? error.message
+              : tr(
+                  "Não foi possível enviar a imagem.",
+                  "Could not upload the image.",
+                ),
+          );
+          throw error;
+        }
+      },
+      resolveFileUrl: async (url: string) =>
+        validNoteImageUrl(url) ? url : "",
       collaboration: {
         fragment: sync.doc.getXmlFragment("document-store"),
         user: { name: userName, color: "#6b8bb6" },
@@ -295,6 +338,26 @@ export default function NoteBlockEditor({
           >
             + {tr("Bloco", "Block")}
           </button>
+          <NoteImagePicker
+            onInsert={async (file, caption) => {
+              const url = await uploadImage(file);
+              const block = editor.getTextCursorPosition().block;
+              const added = editor.insertBlocks(
+                [
+                  {
+                    type: "image",
+                    props: { url, name: file.name, caption, previewWidth: 640 },
+                  },
+                  { type: "paragraph" },
+                ],
+                block,
+                "after",
+              );
+              editor.setTextCursorPosition(added[1], "start");
+              setNotice("");
+              requestAnimationFrame(() => editor.focus());
+            }}
+          />
           <button
             type="button"
             aria-label={tr("Negrito", "Bold")}

@@ -43,9 +43,13 @@ Percurso no navegador, exclusivamente com dados e contas fictícios:
 
 O percurso encontrou e corrigiu a comparação de origem com o endereço interno do Next. Também foram ajustadas variáveis de superfície/texto dos temas. Conferência não equivale a testes Google reais nem ao checkpoint integrado de todas as áreas. Exclusão definitiva foi coberta em banco descartável nos testes técnicos; não foi acionada no navegador.
 
+## Refinamento após a revisão
+
+[STAGE_5_REFINEMENT.md](STAGE_5_REFINEMENT.md): modelos de páginas, fluxo das bases, imagens com enquadramento e créditos reunidos em Configurações.
+
 ## Limites
 
-Notas permanecem locais no banco da instância. Não há espelho automático de cada nota no Google Drive. Bases sem fórmulas/relacionamentos; anexos continuam na Biblioteca. A edição sem rede cobre páginas já abertas; abrir o App inteiro sem servidor não é um modo offline completo.
+Notas permanecem locais no banco da instância. Não há espelho automático de cada nota no Google Drive. Bases sem fórmulas/relacionamentos; imagens embutidas foram adicionadas no refinamento, e os demais anexos continuam na Biblioteca. A edição sem rede cobre páginas já abertas; abrir o App inteiro sem servidor não é um modo offline completo.
 
 A integração de backup/restore completo segue nas etapas 7/8.
 

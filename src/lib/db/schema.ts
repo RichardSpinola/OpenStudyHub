@@ -1839,3 +1839,27 @@ export const noteWorkspaceVersions = sqliteTable(
     index("note_workspace_versions_recent").on(table.noteId, table.createdAt),
   ],
 );
+
+export const noteImages = sqliteTable("note_images", {
+  id: text("id").primaryKey(),
+  data: blob("data", { mode: "buffer" }).notNull(),
+  mimeType: text("mime_type").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+export const noteImageRefs = sqliteTable(
+  "note_image_refs",
+  {
+    noteId: integer("note_id")
+      .notNull()
+      .references(() => notes.id, { onDelete: "cascade" }),
+    imageId: text("image_id")
+      .notNull()
+      .references(() => noteImages.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.noteId, t.imageId] }),
+    index("note_image_refs_image").on(t.imageId),
+  ],
+);

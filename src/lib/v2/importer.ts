@@ -11,6 +11,8 @@ export type ImportPlanRow = {
   count: number;
 };
 const optionalV3Tables = new Set([
+  "note_images",
+  "note_image_refs",
   "project_group_shares",
   "note_workspaces",
   "note_workspace_versions",
@@ -39,8 +41,8 @@ export function loadV1ImportMatrix(
       throw new Error("Invalid import matrix");
     map.set(match[1], category);
   }
-  if (map.size !== 57)
-    throw new Error("Import matrix must classify all 57 app tables");
+  if (map.size !== 59)
+    throw new Error("Import matrix must classify all 59 app tables");
   return map;
 }
 

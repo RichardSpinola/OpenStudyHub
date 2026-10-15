@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { notePageTemplateContent } from "@/lib/note-page-templates";
+import { getUserProfile } from "@/lib/profile";
 import { copyNoteWorkspace } from "@/lib/note-workspace";
 import { recordAuditEvent } from "@/lib/audit";
 import { requireToolUser } from "@/lib/authorization";
@@ -69,6 +71,37 @@ export async function createNoteAction(formData: FormData) {
     redirect("/notes?status=error");
   }
   redirect(`/notes/${noteId}`);
+}
+
+export async function createWorkspacePageAction(
+  formData: FormData,
+): Promise<{ id?: number; error?: string }> {
+  const user = await requireToolUser();
+  try {
+    const input = noteInput(formData);
+    const title = input.title.trim();
+    if (!title || title.length > 180)
+      return { error: "Dê um nome à página, com até 180 caracteres." };
+    const content = notePageTemplateContent(
+      text(formData, "template") || "blank",
+      getUserProfile(user.id).locale,
+    );
+    const note = createNote(user.id, { ...input, title, content });
+    recordAuditEvent({
+      actorUserId: user.id,
+      action: "note.create",
+      targetType: "note",
+      targetId: String(note.id),
+      summary: "private page created",
+    });
+    refresh(note.id);
+    return { id: note.id };
+  } catch {
+    return {
+      error:
+        "Não foi possível criar. Confira a página principal e a disciplina e tente novamente.",
+    };
+  }
 }
 
 export async function updateNoteAction(formData: FormData) {

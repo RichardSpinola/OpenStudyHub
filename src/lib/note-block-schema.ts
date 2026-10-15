@@ -1,6 +1,6 @@
 import { BlockNoteSchema, defaultBlockSpecs } from "@blocknote/core";
 
-// Deliberately text-first: pasted remote media cannot start third-party requests.
+// Shared by browser and server so persisted documents use the same block types.
 export const noteBlockSchema = BlockNoteSchema.create({
   blockSpecs: {
     paragraph: defaultBlockSpecs.paragraph,
@@ -12,5 +12,6 @@ export const noteBlockSchema = BlockNoteSchema.create({
     codeBlock: defaultBlockSpecs.codeBlock,
     divider: defaultBlockSpecs.divider,
     table: defaultBlockSpecs.table,
+    image: defaultBlockSpecs.image,
   },
 });

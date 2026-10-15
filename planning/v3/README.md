@@ -82,3 +82,5 @@ Publicação, tag e atualização pública não foram realizadas nesta etapa. A 
 
 - [STAGE_5.md](STAGE_5.md): páginas/subpáginas, edição por blocos, Tabela/Quadro, leitura/edição compartilhada, rascunhos e versões. Guia do usuário em [Notas](../../docs/notas.md).
 - 30 testes dirigidos aprovados e percurso no navegador com duas contas fictícias. Notas ficam no banco da instância; não há espelho automático de notas no Drive. Backup completo continua nas etapas 7/8.
+
+- [Refinamento das Notas](STAGE_5_REFINEMENT.md): páginas/modelos, bases, imagens locais com enquadramento e seção Créditos.

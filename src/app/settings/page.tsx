@@ -1241,10 +1241,7 @@ export default async function SettingsPage({
               </dl>
               <details>
                 <summary>
-                  <UiCopy
-                    pt="Software de terceiros"
-                    en="Third-party software"
-                  />
+                  <UiCopy pt="Créditos" en="Credits" />
                 </summary>
                 <p>
                   <UiCopy
@@ -1273,19 +1270,19 @@ export default async function SettingsPage({
                     />
                   </a>
                 </p>
-              </details>
-              <p>
-                <UiCopy
-                  pt="Notas usa BlockNote (MPL-2.0) e Yjs (MIT)."
-                  en="Notes uses BlockNote (MPL-2.0) and Yjs (MIT)."
-                />{" "}
-                <Link href="/credits">
+                <p>
                   <UiCopy
-                    pt="Licenças e créditos ↗"
-                    en="Licenses and credits ↗"
-                  />
-                </Link>
-              </p>
+                    pt="Notas usa BlockNote (MPL-2.0) e Yjs (MIT)."
+                    en="Notes uses BlockNote (MPL-2.0) and Yjs (MIT)."
+                  />{" "}
+                  <Link href="/credits">
+                    <UiCopy
+                      pt="Licenças e créditos ↗"
+                      en="Licenses and credits ↗"
+                    />
+                  </Link>
+                </p>
+              </details>
               <div className="settings-about-links">
                 <a
                   href="https://github.com/RichardSpinola/OpenStudyHub"

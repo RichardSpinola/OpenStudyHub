@@ -1,3 +1,5 @@
+import { attachNoteImages } from "@/lib/note-images";
+import { validNoteImageUrl } from "@/lib/note-image-url";
 import { ServerBlockNoteEditor } from "@blocknote/server-util";
 import * as Y from "yjs";
 import type { DatabaseConnection } from "@/lib/db/client";
@@ -91,11 +93,28 @@ export async function initializeNoteWorkspace(
     const doc = serverEditor().blocksToYDoc(blocks, fragment);
     try {
       doc.getText("title").insert(0, note.title);
-      db.sqlite
-        .prepare(
-          "insert into note_workspaces(note_id,state,revision,updated_at) values(?,?,0,?) on conflict(note_id) do nothing",
-        )
-        .run(noteId, Buffer.from(Y.encodeStateAsUpdate(doc)), Date.now());
+      const images = new Set<string>();
+      function collectImages(values: typeof blocks) {
+        for (const block of values) {
+          if (block.type === "image") {
+            const url = block.props?.url ?? "";
+            if (!validNoteImageUrl(url))
+              throw new Error("Use um link HTTP ou HTTPS para a imagem.");
+            if (url) images.add(url);
+          }
+          if ("children" in block && block.children?.length)
+            collectImages(block.children);
+        }
+      }
+      collectImages(blocks);
+      db.sqlite.transaction(() => {
+        attachNoteImages(userId, noteId, images, db);
+        db.sqlite
+          .prepare(
+            "insert into note_workspaces(note_id,state,revision,updated_at) values(?,?,0,?) on conflict(note_id) do nothing",
+          )
+          .run(noteId, Buffer.from(Y.encodeStateAsUpdate(doc)), Date.now());
+      })();
     } finally {
       doc.destroy();
     }
@@ -105,7 +124,7 @@ export async function initializeNoteWorkspace(
   return packet(row, getReadableNote(userId, noteId, db), userId);
 }
 
-function markdownFor(doc: Y.Doc): string {
+function markdownFor(doc: Y.Doc, images = new Set<string>()): string {
   const blocks = serverEditor().yDocToBlocks(doc, fragment);
   let count = 0;
   function inline(value: unknown): string {
@@ -135,7 +154,15 @@ function markdownFor(doc: Y.Doc): string {
     if (++count > 2500)
       throw new Error("Esta página atingiu o limite de blocos.");
     let text = "";
-    if (value.type === "table") {
+    if (value.type === "image") {
+      const url = value.props.url;
+      if (!validNoteImageUrl(url))
+        throw new Error("Use um link HTTP ou HTTPS para a imagem.");
+      if (url) {
+        images.add(url);
+        text = `![${(value.props.caption || value.props.name || "Imagem").replace(/[\[\]\\]/g, " ")}](<${url.replaceAll(">", "%3E").replaceAll("<", "%3C")}>)`;
+      }
+    } else if (value.type === "table") {
       const rows = value.content.rows.map(
         (r) =>
           `| ${r.cells.map((c) => inline(c).replaceAll("|", "\\|").replaceAll("\n", " ")).join(" | ")} |`,
@@ -204,7 +231,9 @@ export function mergeNoteWorkspace(
       const title = doc.getText("title").toString().trim() || "Sem título";
       if (title.length > 180)
         throw new Error("Use até 180 caracteres no título.");
-      const content = markdownFor(doc);
+      const images = new Set<string>();
+      const content = markdownFor(doc, images);
+      attachNoteImages(userId, noteId, images, db);
       const now = Date.now();
       const latest = db.sqlite
         .prepare(
@@ -300,9 +329,12 @@ export function copyNoteWorkspace(
             "insert into note_workspaces(note_id,state,revision,updated_at) values(?,?,0,?)",
           )
           .run(copy.id, state, Date.now());
+        const images = new Set<string>();
+        const content = markdownFor(doc, images);
+        attachNoteImages(ownerId, copy.id, images, db);
         db.sqlite
           .prepare("update notes set content=? where id=?")
-          .run(markdownFor(doc), copy.id);
+          .run(content, copy.id);
       } finally {
         doc.destroy();
       }
@@ -331,12 +363,14 @@ export function importNoteWorkspace(
       const doc = readDoc(decodeNoteUpdate(value.state));
       try {
         const importedTitle = doc.getText("title").toString().trim() || title;
-        const markdown = markdownFor(doc);
+        const images = new Set<string>();
+        const markdown = markdownFor(doc, images);
         const note = createNote(
           ownerId,
           { title: importedTitle, content: markdown },
           db,
         );
+        attachNoteImages(ownerId, note.id, images, db);
         db.sqlite
           .prepare(
             "insert into note_workspaces(note_id,state,revision,updated_at) values(?,?,0,?)",

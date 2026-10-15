@@ -16,12 +16,12 @@ html[data-design] .note-page-navigation {
   background: var(--panel);
   overflow-wrap: anywhere;
 }
-html[data-design] .note-page-navigation form {
+html[data-design] .note-page-navigation > form {
   display: flex;
   gap: 5px;
   margin: 12px 0;
 }
-html[data-design] .note-page-navigation form > button {
+html[data-design] .note-page-navigation > form > button {
   width: 100%;
   min-width: 0;
 }
@@ -739,4 +739,174 @@ html[data-design] .note-field-options input {
 html[data-design] .note-field-options button {
   font-size: 0.72rem;
   white-space: nowrap;
+}
+
+/* Page creation and database setup share a compact, focused dialog. */
+html[data-design] .note-create-form {
+  display: grid;
+  gap: 18px;
+  padding: 10px 0 18px;
+}
+html[data-design] .note-create-form label {
+  display: grid;
+  gap: 7px;
+}
+html[data-design] .note-template-picker {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+html[data-design] .note-template-picker legend,
+html[data-design] .note-view-choice legend {
+  margin-bottom: 9px;
+}
+html[data-design] .note-template-picker label {
+  position: relative;
+  padding: 12px;
+  border: 1px solid var(--gray-3);
+  cursor: pointer;
+  border-radius: 8px;
+}
+html[data-design] .note-template-picker label.is-selected {
+  border-color: var(--white);
+  background: var(--panel-raised);
+}
+html[data-design] .note-template-picker label input {
+  width: auto;
+  justify-self: start;
+}
+html[data-design] .note-template-picker small {
+  color: var(--gray-1);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+html[data-design] .note-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+html[data-design] .note-dialog-actions button:last-child {
+  background: var(--white);
+  color: var(--black);
+}
+html[data-design] .note-view-choice {
+  border: 0;
+  padding: 0;
+  display: flex;
+  gap: 20px;
+}
+html[data-design] .note-view-choice label {
+  display: flex;
+  align-items: center;
+}
+html[data-design] .note-view-choice input {
+  width: auto;
+}
+html[data-design] .note-quick-create {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+html[data-design] .note-quick-create p {
+  margin-bottom: 0;
+}
+html[data-design] .note-add-database {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  text-align: left;
+  border: 1px dashed var(--gray-3);
+  margin-top: 18px;
+}
+html[data-design] .note-add-database p {
+  margin: 6px 0 0;
+  max-width: 55ch;
+  font-size: 0.85rem;
+}
+html[data-design] .note-add-database button {
+  flex-shrink: 0;
+}
+html[data-design] .note-db-count {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+html[data-design] .note-board-add {
+  width: 100%;
+  margin-top: 8px;
+  text-align: left;
+}
+html[data-design] .note-image-preview {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  max-height: 250px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+html[data-design] .note-image-crop-tools {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+html[data-design] .osh-note-blocks .bn-visual-media {
+  max-width: 100%;
+}
+html[data-design="legacy"] .note-template-picker label {
+  border-radius: 0;
+}
+@media (max-width: 640px) {
+  html[data-design] .note-template-picker {
+    grid-template-columns: 1fr;
+  }
+  html[data-design] .note-template-picker label {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
+  html[data-design] .note-template-picker small {
+    grid-column: 2;
+  }
+  html[data-design] .note-quick-create,
+  html[data-design] .note-add-database {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  html[data-design] .note-database > header {
+    flex-wrap: wrap;
+  }
+}
+
+html[data-design] .note-page-navigation > button {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  text-align: left;
+}
+html[data-design] .note-mobile-pages {
+  display: none;
+}
+html[data-design] .note-mobile-page-links {
+  display: grid;
+  gap: 8px;
+  padding: 10px 0;
+}
+html[data-design] .note-mobile-page-links a {
+  display: block;
+  padding: 10px;
+  border: 1px solid var(--gray-3);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  html[data-design] .note-mobile-pages {
+    display: block;
+  }
 }

@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { createNoteAction } from "@/app/notes/actions";
+import { NotePanel } from "@/components/note-panel";
+import { NoteCreate } from "@/components/note-create";
 import { UiCopy } from "@/components/ui-language-provider";
-import { PendingSubmitButton } from "@/components/pending-submit-button";
+
 export type NoteNavigationItem = {
   id: number;
   title: string;
@@ -90,13 +91,25 @@ export function NoteNavigation({
       <Link className="note-nav-title" href="/notes">
         <UiCopy pt="Notas" en="Notes" />
       </Link>
-      <form action={createNoteAction}>
-        <input name="title" type="hidden" value="Sem título" />
-        <input name="content" type="hidden" value="" />
-        <PendingSubmitButton pendingLabel="…">
-          <UiCopy pt="+ Nova página" en="+ New page" />
-        </PendingSubmitButton>
-      </form>
+      <NoteCreate parents={notes} />
+      <div className="note-mobile-pages">
+        <NotePanel label="Páginas">
+          <nav className="note-mobile-page-links" aria-label="Páginas">
+            {[...notes, ...shared].map((n) => (
+              <Link
+                key={n.id}
+                href={`/notes/${n.id}`}
+                aria-current={n.id === activeId ? "page" : undefined}
+              >
+                {n.title}
+              </Link>
+            ))}
+            <Link href="/notes">
+              <UiCopy pt="Ver todas as páginas →" en="View all pages →" />
+            </Link>
+          </nav>
+        </NotePanel>
+      </div>
       <form method="get" action="/notes" className="note-nav-search">
         <input
           name="q"

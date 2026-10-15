@@ -1,6 +1,6 @@
 # OpenStudyHub V2 — matriz de importação V1
 
-Base: schema V1 atual em `src/lib/db/schema.ts`, com 57 tabelas (52 da V1 e 5 da V3). `MIGRATE` preserva registros com remapeamento de IDs; `TRANSFORM` exige conversão de modelo/colunas; `SKIP/RUNTIME` recria estado efêmero; `REVIEW` depende de política ou validação humana. Esta matriz orienta o importador V2 e não autoriza importar banco real.
+Base: schema V1 atual em `src/lib/db/schema.ts`, com 59 tabelas (52 da V1 e 7 da V3). `MIGRATE` preserva registros com remapeamento de IDs; `TRANSFORM` exige conversão de modelo/colunas; `SKIP/RUNTIME` recria estado efêmero; `REVIEW` depende de política ou validação humana. Esta matriz orienta o importador V2 e não autoriza importar banco real.
 
 |   # | Tabela V1                      | Ação         | Destino/critério V2                                                                                                                                                                         |
 | --: | ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -64,6 +64,9 @@ Base: schema V1 atual em `src/lib/db/schema.ts`, com 57 tabelas (52 da V1 e 5 da
 | 56 | `note_workspaces` | TRANSFORM | Preservar o estado colaborativo Yjs e remapear a página; nunca substituir por uma captura antiga de Markdown. |
 | 57 | `note_workspace_versions` | TRANSFORM | Preservar as versões recuperáveis e remapear nota e autor. |
 
-As cinco tabelas V3 são opcionais ao revisar um banco V1 anterior; tabelas desconhecidas continuam bloqueando a importação.
+As sete tabelas V3 são opcionais ao revisar um banco V1 anterior; tabelas desconhecidas continuam bloqueando a importação.
 
 Ordem do importador: backup consistente + verificação de restore V1; esquema V2 vazio; usuários/configuração segura; acadêmico e currículo; matrículas; conteúdo/asset; shares; Chat opcional; relatório de contagens, referências órfãs, hashes de assets e itens ignorados. IDs são mapeados por tabela em staging, com transações por lote e checkpoint; reexecução começa de DB V2 descartável. O original V1 fica intacto. A prévia exige escolha humana para `REVIEW`, `curriculum_term` ambíguo e conflitos de turma; matching por nome nunca promove integração Google automaticamente.
+
+| 58 | `note_images` | MIGRATE | Imagens privadas das notas (V3, opcional na origem V1). |
+| 59 | `note_image_refs` | MIGRATE | Vínculos e permissões das imagens nas páginas (V3). |

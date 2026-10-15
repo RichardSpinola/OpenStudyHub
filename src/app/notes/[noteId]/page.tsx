@@ -4,6 +4,7 @@ import { UiCopy } from "@/components/ui-language-provider";
 import { NoteEditor } from "@/components/note-editor";
 import { NoteNavigation } from "@/components/note-navigation";
 import { NoteLiveTitle } from "@/components/note-live-title";
+import { NoteCreate } from "@/components/note-create";
 import { NotePanel } from "@/components/note-panel";
 import { PendingSubmitButton } from "@/components/pending-submit-button";
 import { requireToolUser } from "@/lib/authorization";
@@ -23,7 +24,6 @@ import {
   listVisibleUsers,
 } from "@/lib/collaboration";
 import {
-  createNoteAction,
   deleteNoteAction,
   setNoteGroupShareAction,
   setNotePersonShareAction,
@@ -465,23 +465,12 @@ export default async function NotePage({
               </Link>
             ))}
           {owner ? (
-            <form action={createNoteAction}>
-              <input
-                name="title"
-                type="hidden"
-                value={tr("Sem título", "Untitled")}
-              />
-              <input type="hidden" name="content" value="" />
-              <input type="hidden" name="parentNoteId" value={id} />
-              <input
-                type="hidden"
-                name="offeringId"
-                value={note.offeringId ?? ""}
-              />
-              <PendingSubmitButton pendingLabel="…">
-                + {tr("Nova subpágina", "New subpage")}
-              </PendingSubmitButton>
-            </form>
+            <NoteCreate
+              subpage
+              parents={notes.map((n) => ({ id: n.id, title: n.title }))}
+              parentId={id}
+              offeringId={note.offeringId}
+            />
           ) : (
             <p className="note-muted">
               {tr(
