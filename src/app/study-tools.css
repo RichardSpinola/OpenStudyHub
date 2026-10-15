@@ -1,0 +1,362 @@
+.focus-chip > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 2.4rem;
+  padding: 0.35rem 0.6rem;
+  white-space: nowrap;
+}
+.focus-chip > button > span {
+  font-size: 1.35rem;
+}
+.focus-chip small {
+  font-variant-numeric: tabular-nums;
+}
+.focus-dialog {
+  width: min(28rem, calc(100vw - 1.5rem));
+  max-height: calc(100dvh - 3rem);
+  overflow: auto;
+  padding: 1.25rem;
+  background: var(--panel);
+  color: var(--white);
+  border: 1px solid var(--gray-3);
+  border-radius: 1rem;
+}
+.focus-dialog::backdrop {
+  background: #0008;
+}
+.focus-dialog > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.focus-dialog h2 {
+  margin: 0;
+}
+.focus-dialog > a {
+  display: block;
+  margin-top: 1rem;
+}
+.focus-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1.25rem;
+}
+.focus-controls > section,
+.tool-panel {
+  padding: clamp(1rem, 3vw, 2rem);
+  background: var(--panel);
+  border: 1px solid var(--gray-3);
+  border-radius: 1rem;
+  min-width: 0;
+}
+.focus-dialog .focus-controls > section {
+  padding: 0;
+  border: 0;
+}
+.focus-time {
+  display: block;
+  font-size: clamp(2.5rem, 10vw, 5rem);
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.tool-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-block: 0.9rem;
+}
+.tool-form {
+  display: grid;
+  gap: 0.9rem;
+  margin-block: 1rem;
+  max-width: 44rem;
+}
+.tool-form label {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.tool-form :is(input, textarea, select) {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.tool-form textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+.tool-form fieldset {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.tool-muted {
+  font-size: 0.85rem;
+  color: var(--gray-2);
+  line-height: 1.6;
+}
+.focus-laps {
+  max-height: 15rem;
+  overflow: auto;
+  font-variant-numeric: tabular-nums;
+}
+.study-feature-symbol {
+  display: grid;
+  place-items: center;
+  min-height: 10rem;
+  font-size: 4rem;
+  background: color-mix(in srgb, var(--accent), var(--panel) 90%);
+  color: var(--accent);
+}
+.flashcard-layout {
+  display: grid;
+  grid-template-columns: 13.5rem minmax(0, 1fr);
+  gap: 1.5rem;
+}
+.flashcard-sidebar {
+  align-self: start;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--gray-3);
+  border-radius: 1rem;
+}
+.flashcard-sidebar nav {
+  display: grid;
+  gap: 0.35rem;
+}
+.flashcard-sidebar button {
+  width: 100%;
+  text-align: left;
+}
+.flashcard-sidebar button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent), var(--panel) 90%);
+}
+.flashcard-main {
+  min-width: 0;
+}
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+}
+.deck-card {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  text-align: left;
+  gap: 0.7rem;
+  min-height: 12rem;
+  padding: 1.25rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.deck-card > span {
+  font-size: 2rem;
+  color: var(--accent);
+}
+.deck-card small {
+  color: var(--gray-2);
+}
+.deck-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--gray-3);
+  padding-bottom: 1rem;
+}
+.deck-heading h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.deck-heading p {
+  white-space: pre-wrap;
+}
+.flashcard-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.flashcard-list article,
+.tool-empty,
+.review-session {
+  border: 1px solid var(--gray-3);
+  background: var(--panel);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  min-width: 0;
+}
+.flashcard-list :is(strong, p) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.flashcard-face {
+  display: grid;
+  align-content: center;
+  min-height: 15rem;
+  padding: clamp(1rem, 4vw, 2rem);
+  font-size: clamp(1.1rem, 3vw, 1.6rem);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--panel-raised);
+  border: 1px solid var(--gray-3);
+  border-radius: 0.75rem;
+  margin-block: 1rem;
+}
+.tool-panel ul {
+  padding: 0;
+  list-style: none;
+}
+.tool-panel li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+html[data-design] .chat-room {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 0;
+}
+html[data-design] .chat-room > .chat-message-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+html[data-design] .chat-composer {
+  flex: none;
+}
+html[data-design] .chat-message-list > li {
+  position: relative;
+  max-width: 88%;
+  border-radius: 0.9rem;
+  overflow: visible;
+  margin-block: 0.65rem;
+  padding: 1rem;
+}
+html[data-design] .chat-message-list > li:has(.chat-inline-edit) {
+  max-width: 96%;
+}
+html[data-design] .chat-history-tools {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: none;
+  background: var(--panel);
+  z-index: 2;
+}
+html[data-design] .chat-history-tools:has(button) {
+  padding: 0.35rem;
+  border-bottom: 1px solid var(--gray-3);
+}
+html[data-design] .chat-history-tools button {
+  font-size: 0.75rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.6rem;
+}
+html[data-design] .chat-actions-disclosure {
+  position: relative;
+  margin-left: auto;
+  width: max-content;
+  align-self: end;
+}
+html[data-design] .chat-actions-disclosure summary {
+  list-style: none;
+  cursor: pointer;
+  min-width: 2.5rem;
+  min-height: 2rem;
+  text-align: center;
+  font-weight: 700;
+}
+html[data-design] .chat-actions-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+html[data-design] .chat-actions-disclosure .chat-message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background: var(--panel-raised);
+  border: 1px solid var(--gray-3);
+  border-radius: 0.5rem;
+  max-width: min(30rem, calc(100vw - 4rem));
+}
+html[data-design] .chat-actions-disclosure:not([open]) .chat-message-actions {
+  display: none;
+}
+html[data-design] .chat-actions-disclosure[open] {
+  z-index: 4;
+}
+html[data-design] .chat-actions-disclosure[open] .chat-message-actions {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  width: max-content;
+  max-height: 14rem;
+  overflow: auto;
+}
+html[data-design] .chat-inline-edit textarea {
+  max-width: 100%;
+  width: 100%;
+}
+@media (max-width: 700px) {
+  .flashcard-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .flashcard-sidebar nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .flashcard-sidebar .tool-muted {
+    display: none;
+  }
+  .flashcard-sidebar button {
+    font-size: 0.8rem;
+  }
+  .flashcard-face {
+    min-height: 12rem;
+  }
+  .focus-chip > button {
+    padding: 0.3rem;
+    gap: 0.15rem;
+    min-width: 2rem;
+  }
+  .focus-chip small {
+    font-size: 0.65rem;
+  }
+  html[data-design] .chat-message-list > li {
+    max-width: 94%;
+    padding: 0.65rem;
+  }
+  html[data-design] .chat-composer .chat-format-toolbar {
+    flex-wrap: wrap;
+  }
+}
+html[data-design="legacy"]
+  :is(
+    .focus-dialog,
+    .focus-controls > section,
+    .tool-panel,
+    .flashcard-sidebar,
+    .flashcard-face,
+    .flashcard-list article,
+    .review-session,
+    .tool-empty
+  ) {
+  border-radius: 0;
+}

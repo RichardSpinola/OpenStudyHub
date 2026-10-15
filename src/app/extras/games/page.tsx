@@ -5,43 +5,8 @@ import { extraAccessible, getExtrasFlags } from "@/lib/v2/extras";
 import { withV2Db } from "@/lib/v2/runtime";
 import { ExtrasPreview } from "@/components/extras-preview";
 
-const games = [
-  {
-    id: "snake",
-    label: "Snake",
-    detail: "Colete pontos sem encostar no próprio corpo.",
-    labelEn: "Snake",
-    detailEn: "Collect points without hitting your own body.",
-  },
-  {
-    id: "2048",
-    label: "2048",
-    detail: "Junte números iguais até chegar a 2048.",
-    labelEn: "2048",
-    detailEn: "Join equal numbers until you reach 2048.",
-  },
-  {
-    id: "minesweeper",
-    label: "Campo Minado",
-    detail: "Abra casas sem encontrar minas.",
-    labelEn: "Minesweeper",
-    detailEn: "Open cells without hitting mines.",
-  },
-  {
-    id: "solitaire",
-    label: "Paciência",
-    detail: "Organize as cartas no Klondike.",
-    labelEn: "Solitaire",
-    detailEn: "Arrange the cards in Klondike.",
-  },
-  {
-    id: "domino",
-    label: "Dominó",
-    detail: "Convide alguém para uma partida privada.",
-    labelEn: "Domino",
-    detailEn: "Invite someone to a private match.",
-  },
-] as const;
+import { gameCatalog } from "@/lib/game-catalog";
+const games = gameCatalog.map((g) => ({ ...g, label: g.pt, labelEn: g.en }));
 
 export default function GamesPage() {
   const flags = withV2Db(getExtrasFlags);
@@ -72,7 +37,33 @@ export default function GamesPage() {
               className="game-catalog-card"
               data-game={game.id}
             >
-              <ExtrasPreview kind={game.id} />
+              {["memory", "sudoku", "connect4", "tictactoe"].includes(
+                game.id,
+              ) ? (
+                <div
+                  className="new-game-preview"
+                  data-game={game.id}
+                  aria-hidden="true"
+                >
+                  {(game.id === "memory"
+                    ? ["★", "?", "?", "★"]
+                    : game.id === "sudoku"
+                      ? ["1", "·", "3", "·", "5", "·", "7", "·", "9"]
+                      : game.id === "connect4"
+                        ? ["●", "○", "●", "○", "●", "○", "●", "○", "●"]
+                        : ["X", "O", "·", "·", "X", "·", "O", "·", "X"]
+                  ).map((v, i) => (
+                    <span key={i}>{v}</span>
+                  ))}
+                </div>
+              ) : (
+                <ExtrasPreview
+                  kind={
+                    game.id as
+                      "snake" | "2048" | "minesweeper" | "solitaire" | "domino"
+                  }
+                />
+              )}
               <span className="extras-card-copy">
                 <strong>
                   <UiCopy pt={game.label} en={game.labelEn} />

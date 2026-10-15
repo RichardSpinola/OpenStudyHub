@@ -1,4 +1,5 @@
 "use client";
+import { useGameWin } from "@/components/game-experience";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useEffect, useRef, useState } from "react";
@@ -13,13 +14,13 @@ import {
 type Game = "snake" | "2048" | "minesweeper";
 type Direction = "left" | "right" | "up" | "down";
 
-export function LocalGame({ game }: { game: Game }) {
-  if (game === "snake") return <Snake />;
-  if (game === "2048") return <TwentyFortyEight />;
+export function LocalGame({ game, userId }: { game: Game; userId: number }) {
+  if (game === "snake") return <Snake userId={userId} />;
+  if (game === "2048") return <TwentyFortyEight userId={userId} />;
   return <Minesweeper />;
 }
 
-function TwentyFortyEight() {
+function TwentyFortyEight({ userId }: { userId: number }) {
   const tr = useUiText();
   const [state, setState] = useState(() => ({
     grid: spawn2048(
@@ -50,13 +51,15 @@ function TwentyFortyEight() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        setBest(Number(localStorage.getItem("osh-game-2048-best") || 0));
+        setBest(
+          Number(localStorage.getItem(`osh-game-${userId}-2048-best`) || 0),
+        );
       } catch {
         /* local storage is optional */
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [userId]);
   function move(direction: Direction) {
     const result = slide2048(state.grid, direction);
     if (!result.moved) return;
@@ -71,11 +74,11 @@ function TwentyFortyEight() {
   useEffect(() => {
     if (state.score <= best) return;
     try {
-      localStorage.setItem("osh-game-2048-best", String(state.score));
+      localStorage.setItem(`osh-game-${userId}-2048-best`, String(state.score));
     } catch {
       /* local storage is optional */
     }
-  }, [state.score, best]);
+  }, [state.score, best, userId]);
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       const direction = (
@@ -88,6 +91,9 @@ function TwentyFortyEight() {
       )[event.key];
       if (
         !direction ||
+        (event.target instanceof HTMLElement &&
+          (event.target.isContentEditable ||
+            !!event.target.closest("input,textarea,select,dialog"))) ||
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement
       )
@@ -98,6 +104,7 @@ function TwentyFortyEight() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
+  useGameWin(state.grid.some((v) => v >= 2048));
   const over =
     !state.grid.includes(0) &&
     (["left", "right", "up", "down"] as Direction[]).every(
@@ -261,7 +268,7 @@ function initialSnake(): SnakeState {
     over: false,
   };
 }
-function Snake() {
+function Snake({ userId }: { userId: number }) {
   const tr = useUiText();
   const [state, setState] = useState(initialSnake);
   const [speed, setSpeed] = useState(170);
@@ -270,22 +277,27 @@ function Snake() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        setBest(Number(localStorage.getItem("osh-game-snake-best") || 0));
+        setBest(
+          Number(localStorage.getItem(`osh-game-${userId}-snake-best`) || 0),
+        );
       } catch {
         /* optional */
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [userId]);
   useEffect(() => {
     if (state.score > best) {
       try {
-        localStorage.setItem("osh-game-snake-best", String(state.score));
+        localStorage.setItem(
+          `osh-game-${userId}-snake-best`,
+          String(state.score),
+        );
       } catch {
         /* optional */
       }
     }
-  }, [state.score, best]);
+  }, [state.score, best, userId]);
   function turn(direction: Direction) {
     setState((current) => {
       if (delta[direction] === -delta[current.direction]) return current;
@@ -304,6 +316,9 @@ function Snake() {
       )[event.key];
       if (
         !direction ||
+        (event.target instanceof HTMLElement &&
+          (event.target.isContentEditable ||
+            !!event.target.closest("input,textarea,select,dialog"))) ||
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement
       )
@@ -319,7 +334,7 @@ function Snake() {
     const timer = window.setInterval(
       () =>
         setState((current) => {
-          if (!current.running) return current;
+          if (document.hidden || !current.running) return current;
           const head = current.body[0];
           const direction = current.next;
           let next = head + delta[direction];
@@ -373,6 +388,14 @@ function Snake() {
     );
     return () => window.clearInterval(timer);
   }, [state.running, speed, wrap]);
+  useGameWin(state.body.length === snakeWidth * snakeWidth);
+  useEffect(() => {
+    const pause = () => {
+      if (document.hidden) setState((s) => ({ ...s, running: false }));
+    };
+    document.addEventListener("visibilitychange", pause);
+    return () => document.removeEventListener("visibilitychange", pause);
+  }, []);
   return (
     <section className="local-game game-snake">
       <div className="game-dashboard">
@@ -509,6 +532,7 @@ function Minesweeper() {
   const lastChord = useRef<number | null>(null);
   const won =
     state.mines !== null && state.opened.size === width * width - mineCount;
+  useGameWin(won);
   useEffect(() => {
     if (!state.startedAt || state.lost || won) return;
     const timer = window.setInterval(
@@ -643,83 +667,96 @@ function Minesweeper() {
         />
       </p>
       <div
-        className="mines-grid"
-        role="grid"
-        aria-label={tr("Campo Minado", "Minesweeper")}
-        style={{ gridTemplateColumns: `repeat(${width}, 1fr)` }}
+        className="mines-board-scroll"
+        tabIndex={0}
+        role="region"
+        aria-label={tr(
+          "Tabuleiro com rolagem horizontal quando necessário",
+          "Board with horizontal scroll when needed",
+        )}
       >
-        {Array.from({ length: width * width }, (_, index) => {
-          const visible =
-            state.opened.has(index) ||
-            (state.lost && state.mines?.includes(index));
-          const count = state.mines
-            ? mineNeighbors(index, width).filter((neighbor) =>
-                state.mines!.includes(neighbor),
-              ).length
-            : 0;
-          return (
-            <button
-              key={index}
-              type="button"
-              role="gridcell"
-              aria-label={tr(
-                `Casa ${index + 1}${state.flags.has(index) ? ", marcada" : ""}`,
-                `Cell ${index + 1}${state.flags.has(index) ? ", flagged" : ""}`,
-              )}
-              disabled={state.lost || won}
-              data-open={visible}
-              data-number={
-                visible && !state.mines?.includes(index) ? count : undefined
-              }
-              data-mine={visible && !!state.mines?.includes(index)}
-              data-flag={state.flags.has(index)}
-              onMouseDown={(event) => {
-                if (event.button === 1 || event.buttons === 3) {
-                  event.preventDefault();
-                  suppressChordClick(index);
-                  chord(index, Date.now());
+        <div
+          className="mines-grid"
+          role="grid"
+          aria-label={tr("Campo Minado", "Minesweeper")}
+          style={{
+            gridTemplateColumns: `repeat(${width}, 1fr)`,
+            minWidth: width * 28,
+          }}
+        >
+          {Array.from({ length: width * width }, (_, index) => {
+            const visible =
+              state.opened.has(index) ||
+              (state.lost && state.mines?.includes(index));
+            const count = state.mines
+              ? mineNeighbors(index, width).filter((neighbor) =>
+                  state.mines!.includes(neighbor),
+                ).length
+              : 0;
+            return (
+              <button
+                key={index}
+                type="button"
+                role="gridcell"
+                aria-label={tr(
+                  `Casa ${index + 1}${state.flags.has(index) ? ", marcada" : ""}`,
+                  `Cell ${index + 1}${state.flags.has(index) ? ", flagged" : ""}`,
+                )}
+                disabled={state.lost || won}
+                data-open={visible}
+                data-number={
+                  visible && !state.mines?.includes(index) ? count : undefined
                 }
-              }}
-              onAuxClick={(event) => {
-                if (event.button === 1) event.preventDefault();
-              }}
-              onClick={() => {
-                if (lastChord.current === index) return;
-                if (holdTriggered.current) {
+                data-mine={visible && !!state.mines?.includes(index)}
+                data-flag={state.flags.has(index)}
+                onMouseDown={(event) => {
+                  if (event.button === 1 || event.buttons === 3) {
+                    event.preventDefault();
+                    suppressChordClick(index);
+                    chord(index, Date.now());
+                  }
+                }}
+                onAuxClick={(event) => {
+                  if (event.button === 1) event.preventDefault();
+                }}
+                onClick={() => {
+                  if (lastChord.current === index) return;
+                  if (holdTriggered.current) {
+                    holdTriggered.current = false;
+                    return;
+                  }
+                  if (flagMode) flag(index);
+                  else open(index, Date.now());
+                }}
+                onTouchStart={() => {
                   holdTriggered.current = false;
-                  return;
-                }
-                if (flagMode) flag(index);
-                else open(index, Date.now());
-              }}
-              onTouchStart={() => {
-                holdTriggered.current = false;
-                holdTimer.current = window.setTimeout(() => {
-                  holdTriggered.current = true;
-                  flag(index);
-                }, 550);
-              }}
-              onTouchEnd={() => {
-                if (holdTimer.current) window.clearTimeout(holdTimer.current);
-              }}
-              onTouchMove={() => {
-                if (holdTimer.current) window.clearTimeout(holdTimer.current);
-              }}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                if (lastChord.current !== index) flag(index);
-              }}
-            >
-              {visible
-                ? state.mines?.includes(index)
-                  ? "✹"
-                  : count || ""
-                : state.flags.has(index)
-                  ? "⚑"
-                  : ""}
-            </button>
-          );
-        })}
+                  holdTimer.current = window.setTimeout(() => {
+                    holdTriggered.current = true;
+                    flag(index);
+                  }, 550);
+                }}
+                onTouchEnd={() => {
+                  if (holdTimer.current) window.clearTimeout(holdTimer.current);
+                }}
+                onTouchMove={() => {
+                  if (holdTimer.current) window.clearTimeout(holdTimer.current);
+                }}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  if (lastChord.current !== index) flag(index);
+                }}
+              >
+                {visible
+                  ? state.mines?.includes(index)
+                    ? "✹"
+                    : count || ""
+                  : state.flags.has(index)
+                    ? "⚑"
+                    : ""}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <p role="status" className="game-result">
         {state.lost

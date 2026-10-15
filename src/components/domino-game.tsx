@@ -1,4 +1,5 @@
 "use client";
+import { useGameWin } from "@/components/game-experience";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useCallback, useEffect, useState } from "react";
@@ -95,6 +96,7 @@ export function DominoGame({
   const [id, setId] = useState(initialMatch || "");
   const [invite, setInvite] = useState(initialInvite || "");
   const [match, setMatch] = useState<Match | null>(null);
+  useGameWin(match?.phase === "finished" && match.winner === match.seat);
   const [list, setList] = useState<Summary[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -136,10 +138,9 @@ export function DominoGame({
     }
     sendRealtime({ type: "domino-subscribe", matchId: id });
     window.addEventListener("openstudyhub:realtime", onRealtime);
-    const interval = window.setInterval(
-      () => void load(id).catch(() => undefined),
-      8000,
-    );
+    const interval = window.setInterval(() => {
+      if (!document.hidden) void load(id).catch(() => undefined);
+    }, 8000);
     return () => {
       sendRealtime({ type: "domino-unsubscribe", matchId: id });
       window.removeEventListener("openstudyhub:realtime", onRealtime);
@@ -298,154 +299,164 @@ export function DominoGame({
               </button>
             </div>
           ) : null}
-          <div className="game-dashboard">
-            <span>
-              <small>
-                <UiCopy pt="PLACAR" en="SCORE" />
-              </small>
-              <strong>
-                {match.names[0]} {match.scores[0]} × {match.scores[1]}{" "}
-                {match.names[1]}
-              </strong>
-            </span>
-            <span>
-              <small>
-                <UiCopy pt="PARTIDA" en="MATCH" />
-              </small>
-              <strong>
-                {match.phase === "finished"
-                  ? `Venceu: ${match.names[match.winner ?? 0]}`
-                  : `Rodada ${match.round} · ${match.phase === "playing" ? `vez de ${match.names[match.turn]}` : "aguardando"}`}
-              </strong>
-            </span>
-          </div>
-          {match.lastRound ? (
-            <p role="status">
-              <UiCopy pt="Última rodada:" en="Last round:" />{" "}
-              {match.lastRound.winner === null
-                ? "empate"
-                : `${match.names[match.lastRound.winner]} +${match.lastRound.points} pontos`}
-              .
-            </p>
-          ) : null}
-          <div className="domino-table">
-            <div className="domino-opponent">
-              <strong>{match.names[match.seat === 0 ? 1 : 0]}</strong>
-              <span>
-                {Array.from(
-                  { length: Math.min(match.opponentCount, 14) },
-                  (_, index) => (
-                    <i key={index} className="domino-back" />
-                  ),
-                )}
+          {match.phase !== "waiting" ? (
+            <>
+              <div className="game-dashboard">
+                <span>
+                  <small>
+                    <UiCopy pt="PLACAR" en="SCORE" />
+                  </small>
+                  <strong>
+                    {match.names[0]} {match.scores[0]} × {match.scores[1]}{" "}
+                    {match.names[1]}
+                  </strong>
+                </span>
+                <span>
+                  <small>
+                    <UiCopy pt="PARTIDA" en="MATCH" />
+                  </small>
+                  <strong>
+                    {match.phase === "finished"
+                      ? `Venceu: ${match.names[match.winner ?? 0]}`
+                      : `Rodada ${match.round} · ${match.phase === "playing" ? `vez de ${match.names[match.turn]}` : "aguardando"}`}
+                  </strong>
+                </span>
+              </div>
+              {match.lastRound ? (
+                <p role="status">
+                  <UiCopy pt="Última rodada:" en="Last round:" />{" "}
+                  {match.lastRound.winner === null
+                    ? "empate"
+                    : `${match.names[match.lastRound.winner]} +${match.lastRound.points} pontos`}
+                  .
+                </p>
+              ) : null}
+              <div className="domino-table">
+                <div className="domino-opponent">
+                  <strong>{match.names[match.seat === 0 ? 1 : 0]}</strong>
+                  <span>
+                    {Array.from(
+                      { length: Math.min(match.opponentCount, 14) },
+                      (_, index) => (
+                        <i key={index} className="domino-back" />
+                      ),
+                    )}
+                    <small>
+                      {match.opponentCount}
+                      <UiCopy pt="peças" en="tiles" />
+                    </small>
+                  </span>
+                </div>
+                <div
+                  className="domino-chain"
+                  aria-label={tr("Peças na mesa", "Tiles on the table")}
+                >
+                  {match.chain.length ? (
+                    match.chain.map((tile, index) => (
+                      <Tile
+                        key={`${index}-${tile.id}`}
+                        left={tile.left}
+                        right={tile.right}
+                      />
+                    ))
+                  ) : (
+                    <span>
+                      {match.openingTile === null
+                        ? tr("Mesa vazia", "Empty table")
+                        : tr(
+                            "Comece com a maior dupla",
+                            "Start with the highest double",
+                          )}
+                    </span>
+                  )}
+                </div>
+                <div className="domino-stock">
+                  <span className="domino-back" />
+                  <UiCopy pt="Monte ·" en="Stock ·" /> {match.stockCount}
+                  <UiCopy pt="peças" en="tiles" />
+                </div>
+              </div>
+              <h3 className="domino-hand-title">
+                <UiCopy pt="Sua mão" en="Your hand" />
                 <small>
-                  {match.opponentCount}
+                  {match.hand.length}
                   <UiCopy pt="peças" en="tiles" />
                 </small>
-              </span>
-            </div>
-            <div
-              className="domino-chain"
-              aria-label={tr("Peças na mesa", "Tiles on the table")}
-            >
-              {match.chain.length ? (
-                match.chain.map((tile, index) => (
-                  <Tile
-                    key={`${index}-${tile.id}`}
-                    left={tile.left}
-                    right={tile.right}
-                  />
-                ))
-              ) : (
-                <span>
-                  {match.openingTile === null
-                    ? tr("Mesa vazia", "Empty table")
-                    : tr(
-                        "Comece com a maior dupla",
-                        "Start with the highest double",
-                      )}
-                </span>
-              )}
-            </div>
-            <div className="domino-stock">
-              <span className="domino-back" />
-              <UiCopy pt="Monte ·" en="Stock ·" /> {match.stockCount}
-              <UiCopy pt="peças" en="tiles" />
-            </div>
-          </div>
-          <h3 className="domino-hand-title">
-            <UiCopy pt="Sua mão" en="Your hand" />
-            <small>
-              {match.hand.length}
-              <UiCopy pt="peças" en="tiles" />
-            </small>
-          </h3>
-          <div
-            className="domino-hand"
-            aria-label={tr("Suas peças", "Your tiles")}
-          >
-            {match.hand.map((tile) => (
-              <button
-                key={tile}
-                type="button"
-                className="domino-hand-tile"
-                data-selected={selected === tile}
-                data-playable={match.canPlay.includes(tile)}
-                disabled={!myTurn || busy}
-                onClick={() => setSelected(tile)}
+              </h3>
+              <div
+                className="domino-hand"
+                aria-label={tr("Suas peças", "Your tiles")}
               >
-                <Tile id={tile} />
-              </button>
-            ))}
-          </div>
-          <div className="game-options">
-            <button
-              type="button"
-              disabled={!myTurn || selected === null || busy}
-              onClick={() =>
-                void act({ type: "play", tile: selected!, side: "left" })
-              }
-            >
-              <UiCopy pt="Jogar à esquerda" en="Play on left" />
-            </button>
-            <button
-              type="button"
-              disabled={!myTurn || selected === null || busy}
-              onClick={() =>
-                void act({ type: "play", tile: selected!, side: "right" })
-              }
-            >
-              <UiCopy pt="Jogar à direita" en="Play on right" />
-            </button>
-            <button
-              type="button"
-              disabled={
-                !myTurn || !!match.canPlay.length || !match.stockCount || busy
-              }
-              onClick={() => void act({ type: "draw" })}
-            >
-              <UiCopy pt="Comprar" en="Draw" />
-            </button>
-            <button
-              type="button"
-              disabled={
-                !myTurn || !!match.canPlay.length || !!match.stockCount || busy
-              }
-              onClick={() => void act({ type: "pass" })}
-            >
-              <UiCopy pt="Passar" en="Pass" />
-            </button>
-            <button
-              type="button"
-              disabled={match.phase !== "playing" || busy}
-              onClick={() => {
-                if (confirm("Abandonar a partida?"))
-                  void act({ type: "resign" });
-              }}
-            >
-              <UiCopy pt="Abandonar" en="Forfeit" />
-            </button>
-          </div>
+                {match.hand.map((tile) => (
+                  <button
+                    key={tile}
+                    type="button"
+                    className="domino-hand-tile"
+                    data-selected={selected === tile}
+                    data-playable={match.canPlay.includes(tile)}
+                    disabled={!myTurn || busy}
+                    onClick={() => setSelected(tile)}
+                  >
+                    <Tile id={tile} />
+                  </button>
+                ))}
+              </div>
+              <div className="game-options">
+                <button
+                  type="button"
+                  disabled={!myTurn || selected === null || busy}
+                  onClick={() =>
+                    void act({ type: "play", tile: selected!, side: "left" })
+                  }
+                >
+                  <UiCopy pt="Jogar à esquerda" en="Play on left" />
+                </button>
+                <button
+                  type="button"
+                  disabled={!myTurn || selected === null || busy}
+                  onClick={() =>
+                    void act({ type: "play", tile: selected!, side: "right" })
+                  }
+                >
+                  <UiCopy pt="Jogar à direita" en="Play on right" />
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    !myTurn ||
+                    !!match.canPlay.length ||
+                    !match.stockCount ||
+                    busy
+                  }
+                  onClick={() => void act({ type: "draw" })}
+                >
+                  <UiCopy pt="Comprar" en="Draw" />
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    !myTurn ||
+                    !!match.canPlay.length ||
+                    !!match.stockCount ||
+                    busy
+                  }
+                  onClick={() => void act({ type: "pass" })}
+                >
+                  <UiCopy pt="Passar" en="Pass" />
+                </button>
+                <button
+                  type="button"
+                  disabled={match.phase !== "playing" || busy}
+                  onClick={() => {
+                    if (confirm("Abandonar a partida?"))
+                      void act({ type: "resign" });
+                  }}
+                >
+                  <UiCopy pt="Abandonar" en="Forfeit" />
+                </button>
+              </div>
+            </>
+          ) : null}
           <button
             type="button"
             onClick={() => {

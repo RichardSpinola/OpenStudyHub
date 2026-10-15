@@ -38,7 +38,7 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 | 3     | Admin, usuários/gestores, remoção segura, eventos e modo de prova                          | Revisada na etapa 4; teste local concluído                 |
 | 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                      | Implementada; 400 testes; limites da revisão em STAGE_4.md |
 | 5     | Notas: workspace, colaboração e bases simples                                              | Implementada localmente; validação em STAGE_5.md           |
-| 6     | Chat, Quadro e cinco jogos                                                                 | Planejada                                                  |
+| 6     | Chat, nove jogos, Foco e flashcards compartilhados                                         | Concluída localmente; testes e limites em STAGE_6.md       |
 | 7     | Backup, recuperação, desempenho, diagnóstico, configurações e idioma                       | Planejada                                                  |
 | 8     | Checkpoint integrado, documentação, extensão e pacote distribuível                         | Planejada                                                  |
 
@@ -84,3 +84,7 @@ Publicação, tag e atualização pública não foram realizadas nesta etapa. A 
 - 30 testes dirigidos aprovados e percurso no navegador com duas contas fictícias. Notas ficam no banco da instância; não há espelho automático de notas no Drive. Backup completo continua nas etapas 7/8.
 
 - [Refinamento das Notas](STAGE_5_REFINEMENT.md): páginas/modelos, bases, imagens locais com enquadramento e seção Créditos.
+
+## Etapa 6
+
+Entrega única: Chat, nove jogos, Pomodoro/cronômetro, flashcards compartilhados e ajuste de Arquivados na Biblioteca. Quadro Branco preservado. [STAGE_6.md](STAGE_6.md). Guia em [Chat e Extras](../../docs/chat-e-extras.md).

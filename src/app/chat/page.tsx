@@ -1,3 +1,5 @@
+import { canModerateRoom } from "@/lib/chat-moderation";
+import { CroppedImageInput } from "@/components/cropped-image-input";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { IconMessages } from "@tabler/icons-react";
@@ -466,18 +468,15 @@ export default async function ChatPage({
                             name="roomId"
                             value={selected.id}
                           />
-                          <label>
-                            <UiCopy
-                              pt="Imagem da conversa"
-                              en="Conversation image"
-                            />
-                            <input
-                              type="file"
-                              name="avatar"
-                              accept="image/png,image/jpeg,image/webp"
-                              required
-                            />
-                          </label>
+                          <CroppedImageInput
+                            name="avatar"
+                            label={tr(
+                              "Imagem da conversa",
+                              "Conversation image",
+                            )}
+                            aspectRatio={1}
+                            required
+                          />
                           <small>
                             <UiCopy
                               pt="PNG, JPEG ou WebP · até 5 MiB."
@@ -550,6 +549,7 @@ export default async function ChatPage({
                 </div>
               </div>
               <ChatRoom
+                canModerate={canModerateRoom(user.id, selected.id)}
                 key={selected.id}
                 roomId={selected.id}
                 initialMessages={messages}

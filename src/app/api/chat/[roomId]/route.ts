@@ -1,3 +1,4 @@
+import { assertToolAvailable } from "@/lib/v2/exam-access";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -11,6 +12,7 @@ import {
   deleteChatMessage,
   editChatMessage,
   listChatMessages,
+  chatWindow,
   sendChatMessage,
 } from "@/lib/chat";
 import { renderChatMarkdown } from "@/lib/chat-markdown";
@@ -30,7 +32,35 @@ export async function GET(
   if (!session)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
+    assertToolAvailable(session.user.id);
     const roomId = id.parse((await context.params).roomId);
+    if (
+      request.nextUrl.searchParams.has("sync") ||
+      request.nextUrl.searchParams.has("before")
+    ) {
+      const number = (key: string) =>
+        request.nextUrl.searchParams.has(key)
+          ? z.coerce
+              .number()
+              .int()
+              .nonnegative()
+              .parse(request.nextUrl.searchParams.get(key))
+          : undefined;
+      const result = chatWindow(session.user.id, roomId, {
+        before: number("before"),
+        since: number("since"),
+      });
+      return NextResponse.json(
+        {
+          ...result,
+          messages: result.messages.map((m) => ({
+            ...m,
+            bodyHtml: renderChatMarkdown(m.bodySource),
+          })),
+        },
+        { headers: { "cache-control": "private, no-store" } },
+      );
+    }
     const after = z.coerce
       .number()
       .int()
@@ -60,6 +90,7 @@ export async function POST(
   if (!session)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
+    assertToolAvailable(session.user.id);
     const roomId = id.parse((await context.params).roomId);
     const contentType = request.headers.get("content-type") ?? "";
 
@@ -199,6 +230,7 @@ export async function PATCH(
   const session = await getCurrentSession();
   if (!session) return new NextResponse(null, { status: 401 });
   try {
+    assertToolAvailable(session.user.id);
     const roomId = id.parse((await context.params).roomId);
     const input = z
       .object({
@@ -235,6 +267,7 @@ export async function DELETE(
   const session = await getCurrentSession();
   if (!session) return new NextResponse(null, { status: 401 });
   try {
+    assertToolAvailable(session.user.id);
     const roomId = id.parse((await context.params).roomId);
     const input = z
       .object({ messageId: z.number().int().positive() })

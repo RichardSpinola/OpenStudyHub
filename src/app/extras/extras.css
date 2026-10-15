@@ -999,165 +999,435 @@ html[data-design="legacy"]
   }
 }
 
-/* Os tabuleiros usam a altura disponível da área do app. */
+/* Tabuleiros preservam tamanho legível; conteúdo longo usa a rolagem do app. */
 .app-content:has(.extras-shell .local-game) {
-  overflow-y: hidden;
-  scrollbar-gutter: auto;
+  overflow-y: auto;
 }
 .extras-shell:has(.local-game) {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  padding-block: clamp(0.45rem, 1.4vh, 0.85rem);
+  height: auto;
+  min-height: 100%;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  max-width: 82rem;
 }
 .extras-shell:has(.local-game) .extras-header {
-  flex: none;
-  gap: 0.1rem;
-  margin-bottom: clamp(0.3rem, 1vh, 0.7rem);
+  margin-bottom: 0.8rem;
+  gap: 0.25rem;
 }
 .extras-shell:has(.local-game) .extras-header h1 {
-  font-size: clamp(1.35rem, 3vh, 2.1rem);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
 }
-.extras-shell:has(.local-game) .local-game {
+.game-experience {
+  position: relative;
+  border: 1px solid var(--gray-3);
+  border-radius: 1rem;
+  background: var(--panel);
+  padding: clamp(0.75rem, 2vw, 1.4rem);
+  min-width: 0;
+}
+.game-experience .local-game {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  padding: 0;
   display: flex;
-  flex: 1;
   flex-direction: column;
-  min-height: 0;
   align-items: center;
-  justify-content: flex-start;
-  gap: clamp(0.25rem, 0.8vh, 0.5rem);
+  gap: 0.8rem;
+  min-width: 0;
+  min-height: 0;
 }
-.extras-shell:has(.local-game)
-  .local-game
-  > :is(.game-dashboard, .game-options, p) {
-  flex: none;
-  margin-block: 0;
+.game-utility-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--gray-2);
 }
-.extras-shell:has(.local-game) .game-dashboard {
-  justify-content: center;
-  gap: 0.5rem;
+.game-utility-bar details {
+  max-width: 40rem;
 }
-.extras-shell:has(.local-game) .game-dashboard > span {
-  min-width: 6rem;
-  padding: 0.3rem 0.7rem;
-}
-.extras-shell:has(.local-game) .game-options {
-  justify-content: center;
+.game-utility-bar label {
+  display: flex;
+  align-items: center;
   gap: 0.4rem;
 }
-.extras-shell:has(.local-game) .game-options button,
-.extras-shell:has(.local-game) .game-options select {
-  min-height: 2.2rem;
+.game-utility-bar input {
+  width: 1rem;
+  height: 1rem;
 }
-.extras-shell:has(.local-game) .game-hint,
-.extras-shell:has(.local-game) .game-minesweeper > p:not(.game-result) {
+.game-utility-bar p {
+  line-height: 1.6;
+}
+.game-experience :is(.game-dashboard, .game-options, .game-toolbar) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  max-width: 100%;
+  margin: 0;
+}
+.game-experience .game-dashboard > span {
+  border: 1px solid var(--gray-3);
+  background: var(--panel-raised);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  min-width: 5rem;
   text-align: center;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
-.extras-shell:has(.local-game) :is(.game-2048-grid, .snake-grid) {
-  width: min(100%, 34rem, calc(100dvh - 31rem));
-  min-width: 0;
-  flex: 0 1 auto;
-  margin-block: auto;
+.game-experience .game-dashboard strong {
+  display: block;
+  font-size: 1.4rem;
 }
-.extras-shell:has(.local-game) .mines-grid {
-  width: min(100%, 38rem, calc(100dvh - 24rem));
-  min-width: 0;
-  flex: 0 1 auto;
-  margin-block: auto;
-}
-.extras-shell:has(.local-game) .game-direction-buttons {
-  flex: none;
-  grid-template-columns: repeat(3, 2.7rem);
-  gap: 0.15rem;
-  margin: 0 auto;
-}
-.extras-shell:has(.local-game) .game-direction-buttons button {
-  min-height: 2.35rem;
-}
-.extras-shell:has(.local-game) .game-result,
-.extras-shell:has(.local-game) .game-feedback,
-.extras-shell:has(.local-game) .game-merge-feedback {
-  padding: 0.25rem 0.65rem;
-  margin: 0 auto;
-}
-.extras-shell:has(.solitaire-game) {
-  --card-step: clamp(0.58rem, 1.45vh, 1.05rem);
-}
-.extras-shell:has(.solitaire-game) .solitaire-game {
-  align-items: stretch;
-}
-.extras-shell:has(.solitaire-game) .solitaire-top {
-  flex: none;
-  justify-content: flex-start;
-  margin: 0;
-}
-.extras-shell:has(.solitaire-game) .solitaire-pile,
-.extras-shell:has(.solitaire-game) .solitaire-column {
-  width: clamp(2.5rem, 7.5vw, 5.3rem);
-  min-height: clamp(3.5rem, 10vw, 7rem);
-}
-.extras-shell:has(.solitaire-game) .solitaire-column {
-  flex-basis: clamp(2.5rem, 7.5vw, 5.3rem);
-}
-.extras-shell:has(.solitaire-game) .solitaire-card {
-  height: clamp(3.5rem, 10vw, 7rem);
-}
-.extras-shell:has(.solitaire-game) .solitaire-tableau {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  padding-bottom: 0;
-}
-.extras-shell:has(.domino-game) .domino-game {
-  align-items: stretch;
-}
-.extras-shell:has(.domino-game) .domino-table {
-  flex: 1;
-  min-height: 0;
-  max-height: 25rem;
+.game-experience .game-toolbar label {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem;
-  margin: 0;
+  flex-wrap: wrap;
 }
-.extras-shell:has(.domino-game) .domino-chain {
-  min-height: 0;
-  gap: 0.1rem;
+.game-experience :is(.game-options, .game-toolbar) :is(button, select) {
+  min-height: 2.6rem;
 }
-.extras-shell:has(.domino-game) .domino-hand {
+.game-experience p {
+  margin: 0.2rem 0;
+  line-height: 1.5;
+}
+.game-experience :is(.game-2048-grid, .snake-grid) {
+  width: min(100%, 28rem);
+  height: auto;
   flex: none;
-  min-height: 0;
-  margin-bottom: 0;
+  margin: 0;
+  aspect-ratio: 1;
 }
-.extras-shell:has(.domino-game) .domino-hand-title {
+.game-experience .mines-grid {
+  width: min(100%, 38rem);
+  height: auto;
+  margin: 0;
+  aspect-ratio: 1;
+}
+.game-experience .mines-grid button {
+  min-width: 0;
+  min-height: 0;
+}
+.game-experience .game-direction-buttons {
+  margin: 0 auto;
+}
+.game-experience .solitaire-game,
+.game-experience .domino-game {
+  align-items: stretch;
+}
+.game-experience .solitaire-top {
+  margin: 0.5rem 0 1rem;
+}
+.game-experience .solitaire-tableau {
+  min-height: 25rem;
+  max-height: none;
+  overflow-y: visible;
+  overflow-x: auto;
+  --card-step: 1.5rem;
+}
+.game-experience .solitaire-column {
+  min-height: 25rem;
+}
+.game-experience .domino-table {
+  width: 100%;
+  min-height: 12rem;
+  max-height: none;
   margin: 0;
 }
-@media (max-width: 650px), (max-height: 680px) {
-  .extras-shell:has(.local-game) {
-    padding: 0.35rem;
+.game-experience .domino-chain {
+  overflow: auto;
+  max-width: 100%;
+  padding: 0.6rem;
+  min-height: 4rem;
+}
+.game-experience .domino-hand {
+  overflow-x: auto;
+  max-width: 100%;
+  min-height: 5rem;
+}
+.game-experience .domino-hand-tile {
+  flex-shrink: 0;
+}
+.memory-grid {
+  display: grid;
+  gap: 0.5rem;
+  width: min(100%, 30rem);
+}
+.memory-grid button {
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.3rem;
+  font-size: clamp(1.4rem, 5vw, 2.3rem);
+  border: 1px solid var(--gray-3);
+  border-radius: 0.5rem;
+  background: var(--panel-raised);
+  color: var(--gray-2);
+}
+.memory-grid button[data-open="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--panel), var(--accent) 10%);
+  opacity: 1;
+}
+.tic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: min(100%, 25rem);
+  gap: 0.5rem;
+}
+.tic-grid button {
+  aspect-ratio: 1;
+  font-size: clamp(2rem, 9vw, 4rem);
+  padding: 0.2rem;
+  opacity: 1;
+}
+.connect-grid,
+.connect-controls {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  width: min(100%, 32rem);
+  gap: 0.35rem;
+}
+.connect-grid {
+  padding: 0.7rem;
+  border: 1px solid var(--gray-3);
+  background: var(--panel-raised);
+  border-radius: 0.75rem;
+}
+.connect-grid > span {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  line-height: 1;
+  font-size: clamp(1.4rem, 5vw, 3rem);
+  color: var(--gray-3);
+}
+.connect-controls button {
+  min-width: 0;
+  padding: 0.2rem;
+  min-height: 2.6rem;
+}
+.connect-grid [data-player="1"],
+.tic-grid [data-player="1"] {
+  color: var(--accent);
+}
+.connect-grid [data-player="2"],
+.tic-grid [data-player="2"] {
+  color: var(--white);
+}
+.sudoku-grid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  width: min(100%, 31rem);
+  border: 2px solid var(--accent);
+}
+.sudoku-grid input {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  aspect-ratio: 1;
+  border: 0;
+  border-right: 1px solid var(--gray-3);
+  border-bottom: 1px solid var(--gray-3);
+  border-radius: 0;
+  padding: 0.1rem;
+  text-align: center;
+  font-size: clamp(0.95rem, 3vw, 1.4rem);
+  background: var(--panel);
+  color: var(--accent);
+}
+.sudoku-grid input[data-given="true"] {
+  background: var(--panel-raised);
+  color: var(--white);
+  font-weight: 700;
+}
+.sudoku-grid input[aria-invalid="true"] {
+  background: #a7373744;
+  color: var(--white);
+}
+.sudoku-grid input[data-notes="true"] {
+  font-size: 0.65rem;
+  letter-spacing: 0;
+}
+.sudoku-grid input:nth-child(3n) {
+  border-right: 2px solid var(--accent);
+}
+.sudoku-grid input:nth-child(n + 19):nth-child(-n + 27),
+.sudoku-grid input:nth-child(n + 46):nth-child(-n + 54) {
+  border-bottom: 2px solid var(--accent);
+}
+.sudoku-grid input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+.game-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 4;
+}
+.game-confetti i {
+  position: absolute;
+  top: 0;
+  width: 0.45rem;
+  height: 0.8rem;
+  animation: game-celebrate 1.2s ease-in forwards;
+}
+@keyframes game-celebrate {
+  to {
+    transform: translateY(35rem) rotate(240deg);
+    opacity: 0;
   }
-  .extras-shell:has(.local-game) .game-dashboard small {
-    font-size: 0.58rem;
+}
+@media (max-width: 650px) {
+  .game-experience .solitaire-tableau {
+    gap: 0.25rem;
+    --card-step: 1.25rem;
   }
-  .extras-shell:has(.local-game) :is(.game-2048-grid, .snake-grid) {
-    width: min(100%, 26rem, calc(100dvh - 25rem));
+  .game-experience :is(.solitaire-column, .solitaire-pile) {
+    width: calc((100vw - 4.5rem) / 7);
+    min-width: 2.1rem;
+    flex-basis: calc((100vw - 4.5rem) / 7);
   }
-  .extras-shell:has(.local-game) .mines-grid {
-    width: min(100%, 28rem, calc(100dvh - 20rem));
+  .game-experience .solitaire-card {
+    font-size: 0.8rem;
   }
-  .extras-shell:has(.solitaire-game) {
-    --card-step: 0.58rem;
-  }
-  .extras-shell:has(.solitaire-game) .solitaire-corner-bottom,
-  .extras-shell:has(.solitaire-game) .solitaire-center {
+  .game-experience .solitaire-center,
+  .game-experience .solitaire-corner-bottom {
     display: none;
   }
-  .extras-shell:has(.domino-game) .domino-tile {
-    width: 3.3rem;
-    height: 1.85rem;
+  .game-experience .solitaire-top {
+    gap: 0.25rem;
   }
-  .extras-shell:has(.domino-game) .domino-hand {
-    gap: 0.1rem;
+  .game-experience .solitaire-foundations {
+    gap: 0.25rem;
   }
+  .game-experience .domino-table {
+    padding: 0.5rem;
+  }
+  .game-experience .game-hint {
+    font-size: 0.8rem;
+  }
+  .memory-grid {
+    gap: 0.3rem;
+  }
+  .game-experience .game-options {
+    justify-content: flex-start;
+  }
+  .game-experience .game-dashboard > span {
+    padding: 0.35rem 0.65rem;
+  }
+  .game-experience .game-dashboard strong {
+    font-size: 1.15rem;
+  }
+  .game-utility-bar {
+    font-size: 0.75rem;
+  }
+}
+html[data-design="legacy"]
+  :is(.game-experience, .memory-grid button, .connect-grid) {
+  border-radius: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-confetti {
+    display: none;
+  }
+}
+
+.new-game-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 2.5rem);
+  justify-content: center;
+  align-content: center;
+  gap: 0.35rem;
+  min-height: 11rem;
+  background: var(--panel-raised);
+  color: var(--accent);
+}
+.new-game-preview span {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--gray-3);
+  border-radius: 0.4rem;
+  font-size: 1.3rem;
+}
+.new-game-preview[data-game="memory"] {
+  grid-template-columns: repeat(2, 3.6rem);
+}
+.new-game-preview[data-game="connect4"] span {
+  border-radius: 50%;
+  color: var(--accent);
+}
+.game-experience .solitaire-game {
+  --card-width: min(9vw, 6rem);
+  --card-step: 1.5rem;
+}
+.game-experience .solitaire-card {
+  height: calc(var(--card-width) * 1.42);
+}
+.game-experience .solitaire-top > .solitaire-stock {
+  width: var(--card-width);
+  flex: none;
+}
+.game-experience :is(.solitaire-pile, .solitaire-column) {
+  width: var(--card-width);
+  flex-basis: var(--card-width);
+  min-width: 0;
+}
+.game-experience .solitaire-pile {
+  min-height: calc(var(--card-width) * 1.42);
+}
+.game-experience .solitaire-top {
+  align-items: start;
+}
+.game-experience .solitaire-tableau {
+  min-height: 29rem;
+  --card-step: 1.5rem;
+}
+.game-experience .solitaire-column {
+  min-height: 29rem;
+}
+@media (max-width: 650px) {
+  .game-experience .solitaire-game {
+    --card-width: calc((100vw - 5.5rem) / 7);
+  }
+  .game-experience .solitaire-corner {
+    left: 0.2rem;
+    top: 0.25rem;
+    font-size: 0.85rem;
+  }
+  .game-experience .solitaire-tableau {
+    --card-step: 1.4rem;
+  }
+  .game-experience .solitaire-empty {
+    padding-top: 0.75rem;
+  }
+}
+
+.game-experience .game-toolbar {
+  align-items: end;
+}
+.game-experience .tic-grid button:disabled {
+  opacity: 1;
+}
+.game-experience .game-hint {
+  display: none;
+}
+.game-experience .mines-board-scroll {
+  width: min(100%, 38rem);
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.game-experience .mines-board-scroll .mines-grid {
+  width: 100%;
+  max-width: none;
 }

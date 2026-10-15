@@ -1,4 +1,5 @@
 "use client";
+import { useGameWin } from "@/components/game-experience";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useEffect, useState } from "react";
@@ -20,6 +21,7 @@ import {
 export function SolitaireGame() {
   const tr = useUiText();
   const [state, setState] = useState(() => dealSolitaire(1, () => 0.5));
+  useGameWin(solitaireWon(state));
   const [history, setHistory] = useState<SolitaireState[]>([]);
   const [selected, setSelected] = useState<Pile | null>(null);
   const [feedback, setFeedback] = useState("");

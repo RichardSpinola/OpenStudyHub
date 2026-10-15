@@ -1,3 +1,4 @@
+import { FocusProvider, FocusChip } from "@/components/focus-tools";
 import { ExamAccessBridge } from "@/components/exam-access-bridge";
 import { examForLegacyUser } from "@/lib/v2/exam-access";
 import type { Metadata } from "next";
@@ -36,6 +37,7 @@ import "./home-polish.css";
 import "./workspace-polish.css";
 import "./weekly-schedule.css";
 import "./note-workspace.css";
+import "./study-tools.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getServerEnvironment().APP_URL),
@@ -87,6 +89,7 @@ export default async function RootLayout({
   let appearance = defaultAppearance;
   let projectsEnabled = false;
   let extrasEnabled = false;
+  let focusEnabled = false;
   let hasAvatar = false;
 
   try {
@@ -97,8 +100,11 @@ export default async function RootLayout({
       theme = profile.theme;
       appearance = getAppearance(session.user.id);
       projectsEnabled = isProjectsFeatureEnabled();
-      if (process.env.OPENSTUDYHUB_V2_ENABLED === "1")
-        extrasEnabled = withV2Db((db) => getExtrasFlags(db).extras);
+      if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
+        const flags = withV2Db(getExtrasFlags);
+        extrasEnabled = flags.extras;
+        focusEnabled = flags.extras && flags.focus;
+      }
     } else {
       language = getUiLanguage();
     }
@@ -166,87 +172,103 @@ export default async function RootLayout({
               endsAt={exam?.endsAt ?? null}
             />
           )}
-          <AvatarShapeBridge />
-          <div className="app-frame">
-            <header className="app-header">
-              <Link className="brand" href="/">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  className="brand-icon"
-                  src="/brand/icon-32.png"
-                  alt=""
-                  width="20"
-                  height="20"
-                />
-                <span className="brand-app-name">{environment.APP_NAME}</span>
-                {institutionName ? (
-                  <span className="brand-institution">
-                    <span aria-hidden="true">/</span> {institutionName}
-                  </span>
+          <FocusProvider
+            key={session?.user.id ?? 0}
+            userId={session?.user.id ?? 0}
+            enabled={!!session && focusEnabled && !exam}
+          >
+            <AvatarShapeBridge />
+            <div className="app-frame">
+              <header className="app-header">
+                <Link className="brand" href="/">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className="brand-icon"
+                    src="/brand/icon-32.png"
+                    alt=""
+                    width="20"
+                    height="20"
+                  />
+                  <span className="brand-app-name">{environment.APP_NAME}</span>
+                  {institutionName ? (
+                    <span className="brand-institution">
+                      <span aria-hidden="true">/</span> {institutionName}
+                    </span>
+                  ) : null}
+                </Link>
+                {!classicNavigation ? (
+                  <PrimaryNavigation
+                    authenticated={session !== null}
+                    projectsEnabled={projectsEnabled}
+                    extrasEnabled={extrasEnabled && !exam}
+                    examMode={!!exam}
+                  />
                 ) : null}
-              </Link>
-              {!classicNavigation ? (
-                <PrimaryNavigation
-                  authenticated={session !== null}
-                  projectsEnabled={projectsEnabled}
-                  extrasEnabled={extrasEnabled && !exam}
-                  examMode={!!exam}
-                />
+                {session && !classicNavigation ? (
+                  <div className="shell-utilities">
+                    <ExternalLinksMenu links={externalLinks} />
+                    {!exam && (
+                      <>
+                        <FocusChip />
+                        <NotificationCenter />
+                      </>
+                    )}
+                    <AccountMenu
+                      userId={session.user.id}
+                      name={session.user.displayName}
+                      hasAvatar={hasAvatar}
+                      logoutLabel={getTranslations(language).access.logout}
+                      managementLink={<V2ManagementLink />}
+                    />
+                  </div>
+                ) : null}
+              </header>
+              {session && process.env.OPENSTUDYHUB_V2_ENABLED === "1" ? (
+                <GoogleConnectionNotice />
               ) : null}
-              {session && !classicNavigation ? (
-                <div className="shell-utilities">
-                  <ExternalLinksMenu links={externalLinks} />
-                  {!exam && <NotificationCenter />}
-                  <AccountMenu
-                    userId={session.user.id}
-                    name={session.user.displayName}
-                    hasAvatar={hasAvatar}
-                    logoutLabel={getTranslations(language).access.logout}
-                    managementLink={<V2ManagementLink />}
+              <main className="app-content" id="main-content">
+                {exam ? (
+                  <aside className="exam-mode-notice" role="status">
+                    {language === "en"
+                      ? "Exam mode: study tools are temporarily unavailable until "
+                      : "Modo de prova: ferramentas temporariamente indisponíveis até "}
+                    {new Intl.DateTimeFormat(language, {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    }).format(exam.endsAt)}{" "}
+                    · {exam.title}
+                  </aside>
+                ) : null}
+                {children}
+              </main>
+              {classicNavigation ? (
+                <footer className="app-footer classic-navigation-bar">
+                  <PrimaryNavigation
+                    authenticated
+                    projectsEnabled={projectsEnabled}
+                    extrasEnabled={extrasEnabled && !exam}
+                    examMode={!!exam}
                   />
-                </div>
+                  <div className="classic-footer-utilities">
+                    <ExternalLinksMenu links={externalLinks} />
+                    {!exam && (
+                      <>
+                        <FocusChip />
+                        <NotificationCenter />
+                      </>
+                    )}
+                    <AccountMenu
+                      userId={session.user.id}
+                      name={session.user.displayName}
+                      hasAvatar={hasAvatar}
+                      logoutLabel={getTranslations(language).access.logout}
+                      managementLink={<V2ManagementLink />}
+                    />
+                  </div>
+                </footer>
               ) : null}
-            </header>
-            {session && process.env.OPENSTUDYHUB_V2_ENABLED === "1" ? (
-              <GoogleConnectionNotice />
-            ) : null}
-            <main className="app-content" id="main-content">
-              {exam ? (
-                <aside className="exam-mode-notice" role="status">
-                  {language === "en"
-                    ? "Exam mode: study tools are temporarily unavailable until "
-                    : "Modo de prova: ferramentas temporariamente indisponíveis até "}
-                  {new Intl.DateTimeFormat(language, {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  }).format(exam.endsAt)}{" "}
-                  · {exam.title}
-                </aside>
-              ) : null}
-              {children}
-            </main>
-            {classicNavigation ? (
-              <footer className="app-footer classic-navigation-bar">
-                <PrimaryNavigation
-                  authenticated
-                  projectsEnabled={projectsEnabled}
-                  extrasEnabled={extrasEnabled && !exam}
-                  examMode={!!exam}
-                />
-                <div className="classic-footer-utilities">
-                  <ExternalLinksMenu links={externalLinks} />
-                  {!exam && <NotificationCenter />}
-                  <AccountMenu
-                    userId={session.user.id}
-                    name={session.user.displayName}
-                    hasAvatar={hasAvatar}
-                    logoutLabel={getTranslations(language).access.logout}
-                    managementLink={<V2ManagementLink />}
-                  />
-                </div>
-              </footer>
-            ) : null}
-          </div>
+            </div>
+          </FocusProvider>
         </UiLanguageProvider>
       </body>
     </html>

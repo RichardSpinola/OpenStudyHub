@@ -1,3 +1,4 @@
+import { getAcademicAuthority } from "@/lib/academic-authority";
 import { canAccessChatRoom } from "@/lib/chat";
 import { getDatabase, type DatabaseConnection } from "@/lib/db/client";
 import { withV2Db } from "./runtime-database";
@@ -18,6 +19,13 @@ export function canManageChatRoomAvatar(
     )
     .get(legacyUserId, roomId) as
     { kind: string; creatorId: number; memberRole: string | null } | undefined;
+  const global = connection.sqlite
+    .prepare(
+      "SELECT 1 FROM chat_room_audiences WHERE room_id=? AND audience_type='instance'",
+    )
+    .get(roomId);
+  if (global)
+    return getAcademicAuthority(legacyUserId, connection).role === "admin";
   return Boolean(
     room &&
     room.kind !== "direct" &&

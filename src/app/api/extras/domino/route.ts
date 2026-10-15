@@ -1,3 +1,6 @@
+import { getCurrentSession } from "@/lib/authorization";
+import { assertToolAvailable } from "@/lib/v2/exam-access";
+import { sameNoteRequestOrigin } from "@/lib/note-request-origin";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { withV2DbAsync, currentUserV2 } from "@/lib/v2/runtime";
@@ -37,6 +40,13 @@ const unavailable = () =>
   NextResponse.json({ error: "Partida indisponível." }, { status: 404 });
 export async function GET(request: NextRequest) {
   if (process.env.OPENSTUDYHUB_V2_ENABLED !== "1") return unavailable();
+  const legacy = await getCurrentSession();
+  if (!legacy) return unavailable();
+  try {
+    assertToolAvailable(legacy.user.id);
+  } catch {
+    return NextResponse.json({ error: "Modo de prova." }, { status: 403 });
+  }
   return withV2DbAsync(async (db) => {
     const user = await currentUserV2(db);
     if (!user || user.kind !== "user" || user.mustChangePassword)
@@ -60,11 +70,15 @@ export async function GET(request: NextRequest) {
 }
 export async function POST(request: NextRequest) {
   if (process.env.OPENSTUDYHUB_V2_ENABLED !== "1") return unavailable();
-  if (
-    request.headers.get("origin") !==
-    new URL(process.env.APP_URL ?? request.url).origin
-  )
+  if (!sameNoteRequestOrigin(request.headers))
     return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
+  const legacy = await getCurrentSession();
+  if (!legacy) return unavailable();
+  try {
+    assertToolAvailable(legacy.user.id);
+  } catch {
+    return NextResponse.json({ error: "Modo de prova." }, { status: 403 });
+  }
   return withV2DbAsync(async (db) => {
     const user = await currentUserV2(db);
     if (!user || user.kind !== "user" || user.mustChangePassword)

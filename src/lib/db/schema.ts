@@ -1863,3 +1863,89 @@ export const noteImageRefs = sqliteTable(
     index("note_image_refs_image").on(t.imageId),
   ],
 );
+
+export const chatMessageChanges = sqliteTable("chat_message_changes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  roomId: integer("room_id")
+    .notNull()
+    .references(() => chatRooms.id, { onDelete: "cascade" }),
+  messageId: integer("message_id")
+    .notNull()
+    .references(() => chatMessages.id, { onDelete: "cascade" }),
+});
+export const flashcardDecks = sqliteTable("flashcard_decks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  ownerId: integer("owner_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description").notNull().default(""),
+  offeringId: integer("offering_id").references(() => subjectOfferings.id, {
+    onDelete: "set null",
+  }),
+  archivedAt: integer("archived_at"),
+  updatedAt: integer("updated_at").notNull(),
+});
+export const flashcards = sqliteTable("flashcards", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  deckId: integer("deck_id")
+    .notNull()
+    .references(() => flashcardDecks.id, { onDelete: "cascade" }),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+});
+export const flashcardPersonShares = sqliteTable(
+  "flashcard_person_shares",
+  {
+    deckId: integer("deck_id")
+      .notNull()
+      .references(() => flashcardDecks.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.deckId, t.userId] })],
+);
+export const flashcardGroupShares = sqliteTable(
+  "flashcard_group_shares",
+  {
+    deckId: integer("deck_id")
+      .notNull()
+      .references(() => flashcardDecks.id, { onDelete: "cascade" }),
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => studyGroups.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.deckId, t.groupId] })],
+);
+export const flashcardProgress = sqliteTable(
+  "flashcard_progress",
+  {
+    cardId: integer("card_id")
+      .notNull()
+      .references(() => flashcards.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    known: integer("known").notNull(),
+    reviewedAt: integer("reviewed_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.cardId, t.userId] })],
+);
+
+export const chatReports = sqliteTable("chat_reports", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  reporterId: integer("reporter_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  messageId: integer("message_id")
+    .notNull()
+    .references(() => chatMessages.id, { onDelete: "cascade" }),
+  roomId: integer("room_id")
+    .notNull()
+    .references(() => chatRooms.id, { onDelete: "cascade" }),
+  excerpt: text("excerpt").notNull(),
+  reason: text("reason").notNull(),
+  createdAt: integer("created_at").notNull(),
+  resolvedAt: integer("resolved_at"),
+});

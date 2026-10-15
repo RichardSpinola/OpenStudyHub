@@ -15,8 +15,8 @@ export default function ExtrasPage() {
         <h1>Extras</h1>
         <p>
           <UiCopy
-            pt="Um espaço para desenhar e jogar, fora da rotina acadêmica."
-            en="A place to draw and play, away from academic work."
+            pt="Ferramentas para estudar, desenhar e fazer uma pausa."
+            en="Tools to study, draw and take a break."
           />
         </p>
       </header>
@@ -40,6 +40,47 @@ export default function ExtrasPage() {
             </span>
           </Link>
         ) : null}
+        {(
+          [
+            [
+              "focus",
+              "Foco",
+              "Focus",
+              "Pomodoro e cronômetro para seu estudo.",
+              "Pomodoro and stopwatch for your study.",
+            ],
+            [
+              "flashcards",
+              "Flashcards",
+              "Flashcards",
+              "Crie baralhos, revise e estude com colegas.",
+              "Create decks, review and study with classmates.",
+            ],
+          ] as const
+        ).map(([key, title, en, detail, detailEn]) =>
+          extraAccessible(flags, key) ? (
+            <Link
+              key={key}
+              href={`/extras/${key}`}
+              className="extras-feature-card"
+            >
+              <div className="study-feature-symbol" aria-hidden="true">
+                {key === "focus" ? "◷" : "▤"}
+              </div>
+              <span className="extras-card-copy">
+                <strong>
+                  <UiCopy pt={title} en={en} />
+                </strong>
+                <span>
+                  <UiCopy pt={detail} en={detailEn} />
+                </span>
+                <em>
+                  <UiCopy pt="Abrir →" en="Open →" />
+                </em>
+              </span>
+            </Link>
+          ) : null,
+        )}
         {extraAccessible(flags, "games") ? (
           <Link href="/extras/games" className="extras-feature-card">
             <ExtrasPreview kind="games" />
@@ -49,8 +90,8 @@ export default function ExtrasPage() {
               </strong>
               <span>
                 <UiCopy
-                  pt="Cinco jogos para uma pausa, incluindo partidas privadas de Dominó."
-                  en="Five games for a break, including private Domino matches."
+                  pt="Nove jogos para uma pausa, incluindo partidas privadas de Dominó."
+                  en="Nine games for a break, including private Domino matches."
                 />
               </span>
               <em>

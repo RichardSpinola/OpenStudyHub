@@ -29,6 +29,7 @@ type Message = {
   bodySource: string;
   bodyHtml: string;
   replyBody: string | null;
+  replyToMessageId?: number | null;
   replyAuthorName: string | null;
   replyAuthorUserId: number | null;
   editedAt: number | null;
@@ -55,6 +56,7 @@ export function ChatRoom({
   currentUserId,
   wallpaper = "plain",
   wallpaperVersion = 0,
+  canModerate = false,
 }: {
   roomId: number;
   initialMessages: Message[];
@@ -62,6 +64,7 @@ export function ChatRoom({
   currentUserId: number;
   wallpaper?: "plain" | "grid" | "dots" | "custom";
   wallpaperVersion?: number;
+  canModerate?: boolean;
 }) {
   const tr = useUiText();
   const [messages, setMessages] = useState(initialMessages);
@@ -70,6 +73,9 @@ export function ChatRoom({
     null,
   );
   const [editPending, setEditPending] = useState(false);
+  const [reporting, setReporting] = useState<number | null>(null);
+  const [reportStatus, setReportStatus] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [editError, setEditError] = useState("");
   const [error, setError] = useState("");
   const [image, setImage] = useState<File | null>(null);
@@ -82,6 +88,11 @@ export function ChatRoom({
   const [mentionBindings, setMentionBindings] = useState<
     Array<{ id: number; label: string }>
   >([]);
+  const historyMode = useRef(false);
+  const revision = useRef<number | undefined>(undefined);
+  const [hasOlder, setHasOlder] = useState(initialMessages.length >= 50);
+  const [historyBusy, setHistoryBusy] = useState(false);
+  const [newMessages, setNewMessages] = useState(false);
   const lastId = useRef(initialMessages.at(-1)?.id ?? 0);
   const polling = useRef(false);
   const messageListRef = useRef<HTMLOListElement>(null);
@@ -165,24 +176,63 @@ export function ChatRoom({
       polling.current = true;
       try {
         const response = await fetch(
-          `/api/chat/${roomId}?after=${lastId.current}`,
+          `/api/chat/${roomId}?sync=1${revision.current === undefined ? "" : `&since=${revision.current}`}`,
           { cache: "no-store" },
         );
         if (!response.ok) return;
-        const payload = (await response.json()) as { messages: Message[] };
-        if (!payload.messages.length) return;
+        const payload = (await response.json()) as {
+          messages: Message[];
+          removedIds: number[];
+          revision: number;
+          hasOlder: boolean;
+        };
+        if (revision.current === undefined) setHasOlder(payload.hasOlder);
+        revision.current = payload.revision;
+        if (!payload.messages.length && !payload.removedIds.length) return;
+        if (
+          !stickToBottom.current &&
+          payload.messages.some((m) => m.id > lastId.current)
+        )
+          setNewMessages(true);
         lastId.current = Math.max(
           lastId.current,
           ...payload.messages.map(({ id }) => id),
         );
         setMessages((current) => {
           const byId = new Map(current.map((message) => [message.id, message]));
-          for (const message of payload.messages) byId.set(message.id, message);
-          return [...byId.values()].sort((a, b) => a.id - b.id);
+          for (const id of payload.removedIds) byId.delete(id);
+          for (const message of payload.messages) {
+            if (
+              byId.has(message.id) ||
+              (message.id >= (current[0]?.id ?? 0) &&
+                (!historyMode.current || byId.size < 200))
+            )
+              byId.set(message.id, message);
+          }
+          for (const [id, message] of byId) {
+            if (!message.replyToMessageId) continue;
+            if (payload.removedIds.includes(message.replyToMessageId))
+              byId.set(id, {
+                ...message,
+                replyBody: tr("Mensagem removida", "Message removed"),
+              });
+            else {
+              const updated = payload.messages.find(
+                (v) => v.id === message.replyToMessageId,
+              );
+              if (updated)
+                byId.set(id, { ...message, replyBody: updated.bodySource });
+            }
+          }
+          const values = [...byId.values()].sort((a, b) => a.id - b.id);
+          return values.slice(-200);
         });
-        void fetch(`/api/chat/${roomId}/read`, { method: "POST" }).catch(
-          () => undefined,
-        );
+        if (stickToBottom.current)
+          void fetch(`/api/chat/${roomId}/read`, { method: "POST" }).catch(
+            () => undefined,
+          );
+      } catch {
+        // The next poll/reconnect retries; unsent drafts remain in the composer.
       } finally {
         polling.current = false;
       }
@@ -228,6 +278,7 @@ export function ChatRoom({
     };
     sendRealtime({ type: "subscribe", roomId });
     void read();
+    void poll();
     window.addEventListener("openstudyhub:realtime", onRealtime);
     const visibility = () => {
       if (!document.hidden) void poll();
@@ -240,7 +291,7 @@ export function ChatRoom({
       document.removeEventListener("visibilitychange", visibility);
       window.clearInterval(interval);
     };
-  }, [currentUserId, roomId]);
+  }, [currentUserId, roomId, tr]);
 
   useEffect(() => {
     const ids = roomUsers
@@ -248,6 +299,7 @@ export function ChatRoom({
       .map(({ id }) => id);
     if (!ids.length) return;
     const refresh = async () => {
+      if (document.hidden) return;
       const response = await fetch(`/api/presence?ids=${ids.join(",")}`, {
         cache: "no-store",
       });
@@ -492,6 +544,96 @@ export function ChatRoom({
             : `${onlineIds.length} online agora`}
         </p>
       ) : null}
+      {reportStatus ? <p role="status">{reportStatus}</p> : null}
+      <div className="chat-history-tools">
+        {hasOlder ? (
+          <button
+            type="button"
+            disabled={historyBusy}
+            onClick={async () => {
+              if (historyBusy || !messages.length) return;
+              setHistoryBusy(true);
+              const list = messageListRef.current,
+                height = list?.scrollHeight ?? 0,
+                top = list?.scrollTop ?? 0;
+              stickToBottom.current = false;
+              try {
+                const response = await fetch(
+                  `/api/chat/${roomId}?before=${messages[0].id}`,
+                  { cache: "no-store" },
+                );
+                if (!response.ok) throw new Error();
+                const data = (await response.json()) as {
+                  messages: Message[];
+                  hasOlder: boolean;
+                };
+                setMessages((current) =>
+                  [
+                    ...new Map(
+                      [...data.messages, ...current].map((m) => [m.id, m]),
+                    ).values(),
+                  ]
+                    .sort((a, b) => a.id - b.id)
+                    .slice(0, 200),
+                );
+                setHasOlder(data.hasOlder);
+                historyMode.current = true;
+                setNewMessages(true);
+                requestAnimationFrame(() => {
+                  if (list) list.scrollTop = top + list.scrollHeight - height;
+                });
+              } catch {
+                setError(
+                  tr(
+                    "Não foi possível carregar o histórico. Tente novamente.",
+                    "Could not load history. Try again.",
+                  ),
+                );
+              } finally {
+                setHistoryBusy(false);
+              }
+            }}
+          >
+            {historyBusy
+              ? tr("Carregando…", "Loading…")
+              : tr("↑ Mensagens anteriores", "↑ Earlier messages")}
+          </button>
+        ) : null}
+        {newMessages ? (
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const response = await fetch(`/api/chat/${roomId}?sync=1`, {
+                  cache: "no-store",
+                });
+                if (!response.ok) throw new Error();
+                const data = (await response.json()) as {
+                  messages: Message[];
+                  revision: number;
+                  hasOlder: boolean;
+                };
+                stickToBottom.current = true;
+                historyMode.current = false;
+                ownMessageScroll.current = true;
+                revision.current = data.revision;
+                setMessages(data.messages);
+                setHasOlder(data.hasOlder);
+                setNewMessages(false);
+              } catch {
+                setError(
+                  tr(
+                    "Não foi possível atualizar. Tente novamente.",
+                    "Could not refresh. Try again.",
+                  ),
+                );
+              }
+            }}
+          >
+            {tr("Ir para mensagens recentes ↓", "Go to recent messages ↓")}
+          </button>
+        ) : null}
+      </div>
       <ol
         ref={messageListRef}
         className="chat-message-list"
@@ -691,63 +833,176 @@ export function ChatRoom({
                 </button>
               </form>
             ) : null}
-            <div className="chat-message-actions">
-              <button
-                type="button"
-                onClick={() => {
-                  setReplyTo((current) =>
-                    current.some(({ id }) => id === message.id)
-                      ? current
-                      : [...current, message].slice(0, 5),
-                  );
-                  textareaRef.current?.focus();
+            {reporting === message.id ? (
+              <form
+                className="chat-inline-edit"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const reason = new FormData(e.currentTarget).get("reason");
+                  try {
+                    const response = await fetch(`/api/chat/${roomId}/report`, {
+                      method: "POST",
+                      headers: { "content-type": "application/json" },
+                      body: JSON.stringify({ messageId: message.id, reason }),
+                    });
+                    if (!response.ok) throw new Error();
+                    setReportStatus(tr("Denúncia enviada.", "Report sent."));
+                    setReporting(null);
+                  } catch {
+                    setError(
+                      tr(
+                        "Não foi possível denunciar. Tente novamente.",
+                        "Could not report. Try again.",
+                      ),
+                    );
+                  }
                 }}
               >
-                <UiCopy pt="Responder" en="Reply" />
-              </button>
-              {message.authorUserId === currentUserId ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditing({ id: message.id, body: message.bodySource });
-                      setEditError("");
-                    }}
-                  >
-                    <UiCopy pt="Editar" en="Edit" />
-                  </button>
+                <p>
+                  {tr(
+                    "O Admin receberá o texto desta mensagem e seu motivo. As demais mensagens privadas não serão enviadas.",
+                    "The Admin receives this message text and your reason. Other private messages are not sent.",
+                  )}
+                </p>
+                <label>
+                  {tr("Motivo da denúncia", "Report reason")}
+                  <textarea
+                    name="reason"
+                    minLength={3}
+                    maxLength={1000}
+                    required
+                  />
+                </label>
+                <button>{tr("Enviar denúncia", "Send report")}</button>
+                <button type="button" onClick={() => setReporting(null)}>
+                  {tr("Cancelar", "Cancel")}
+                </button>
+              </form>
+            ) : null}
+            <details className="chat-actions-disclosure">
+              <summary aria-label={tr("Ações da mensagem", "Message actions")}>
+                ···
+              </summary>
+              <div className="chat-message-actions">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.currentTarget
+                      .closest("details")
+                      ?.removeAttribute("open");
+                    setReplyTo((current) =>
+                      current.some(({ id }) => id === message.id)
+                        ? current
+                        : [...current, message].slice(0, 5),
+                    );
+                    textareaRef.current?.focus();
+                  }}
+                >
+                  <UiCopy pt="Responder" en="Reply" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.currentTarget
+                      .closest("details")
+                      ?.removeAttribute("open");
+                    setReporting(message.id);
+                    setReportStatus("");
+                  }}
+                >
+                  {tr("Denunciar mensagem", "Report message")}
+                </button>
+                {canModerate && message.authorUserId !== currentUserId ? (
                   <button
                     type="button"
                     onClick={async () => {
-                      if (
-                        !window.confirm(
-                          "Excluir esta mensagem para todos nesta conversa?",
-                        )
-                      )
+                      if (deleteConfirm !== message.id) {
+                        setDeleteConfirm(message.id);
                         return;
-                      const response = await fetch(`/api/chat/${roomId}`, {
-                        method: "DELETE",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify({ messageId: message.id }),
-                      });
-                      if (response.ok) {
-                        setMessages((current) =>
-                          current.filter(({ id }) => id !== message.id),
+                      }
+                      try {
+                        const response = await fetch(`/api/chat/${roomId}`, {
+                          method: "DELETE",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify({ messageId: message.id }),
+                        });
+                        if (!response.ok) throw new Error();
+                        setMessages((m) =>
+                          m.filter((v) => v.id !== message.id),
                         );
-                      } else
+                      } catch {
                         setError(
                           tr(
-                            "Não foi possível excluir a mensagem.",
-                            "Could not delete message.",
+                            "Não foi possível moderar.",
+                            "Could not moderate.",
                           ),
                         );
+                      }
                     }}
                   >
-                    <UiCopy pt="Excluir para todos" en="Delete for everyone" />
+                    {deleteConfirm === message.id
+                      ? tr("Confirmar remoção", "Confirm removal")
+                      : tr("Moderar: remover", "Moderate: remove")}
                   </button>
-                </>
-              ) : null}
-            </div>
+                ) : null}
+                {message.authorUserId === currentUserId ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.currentTarget
+                          .closest("details")
+                          ?.removeAttribute("open");
+                        setEditing({
+                          id: message.id,
+                          body: message.bodySource,
+                        });
+                        setEditError("");
+                      }}
+                    >
+                      <UiCopy pt="Editar" en="Edit" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (deleteConfirm !== message.id) {
+                          setDeleteConfirm(message.id);
+                          return;
+                        }
+                        const response = await fetch(`/api/chat/${roomId}`, {
+                          method: "DELETE",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify({ messageId: message.id }),
+                        });
+                        if (response.ok) {
+                          setMessages((current) =>
+                            current.filter(({ id }) => id !== message.id),
+                          );
+                        } else
+                          setError(
+                            tr(
+                              "Não foi possível excluir a mensagem.",
+                              "Could not delete message.",
+                            ),
+                          );
+                      }}
+                    >
+                      {deleteConfirm === message.id
+                        ? tr(
+                            "Confirmar exclusão para todos",
+                            "Confirm deletion for everyone",
+                          )
+                        : tr("Excluir para todos", "Delete for everyone")}
+                    </button>
+                  </>
+                ) : null}
+                {deleteConfirm === message.id ? (
+                  <button type="button" onClick={() => setDeleteConfirm(null)}>
+                    {tr("Cancelar exclusão", "Cancel deletion")}
+                  </button>
+                ) : null}
+              </div>
+            </details>
           </li>
         ))}
       </ol>

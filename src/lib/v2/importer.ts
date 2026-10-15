@@ -11,6 +11,13 @@ export type ImportPlanRow = {
   count: number;
 };
 const optionalV3Tables = new Set([
+  "chat_reports",
+  "chat_message_changes",
+  "flashcard_decks",
+  "flashcards",
+  "flashcard_person_shares",
+  "flashcard_group_shares",
+  "flashcard_progress",
   "note_images",
   "note_image_refs",
   "project_group_shares",
@@ -41,8 +48,8 @@ export function loadV1ImportMatrix(
       throw new Error("Invalid import matrix");
     map.set(match[1], category);
   }
-  if (map.size !== 59)
-    throw new Error("Import matrix must classify all 59 app tables");
+  if (map.size !== 66)
+    throw new Error("Import matrix must classify all 66 app tables");
   return map;
 }
 

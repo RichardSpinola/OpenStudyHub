@@ -83,7 +83,7 @@
 ## Limites já decididos
 
 - Sem IA, vídeo, apresentações ou expansão do quadro para uma plataforma inteira.
-- Sem novos minigames além dos cinco já escolhidos nesta entrega; melhorar os existentes.
+- Escopo ampliado pelo usuário na etapa 6: nove jogos (cinco atuais + Memória, Sudoku, Quatro em Linha e Jogo da Velha), Pomodoro/cronômetro e flashcards compartilhados.
 - Sem fórmulas/relacionamentos nas bases de Notas desta entrega.
 - Não trocar autenticação, idioma ou runtime por sistemas paralelos expostos aos usuários.
 - Backups não prometem capturar conteúdo de links externos sem acesso. Manifesto separa cópia real de referência.
@@ -103,3 +103,7 @@ Implementação e limites de A07–A11, A14 e U10–U13 em [STAGE_4.md](STAGE_4.
 ## Revisão de 15/10/2026 — etapa 5
 
 U14 e a parte de Notas de U28 implementados localmente. Páginas/subpáginas, blocos, busca, associação acadêmica opcional, pessoas/grupos com leitura/edição, bases Tabela/Quadro, histórico e recuperação. Créditos e limites em [STAGE_5.md](STAGE_5.md). Integração de referências no Chat continua na etapa 6; backup completo e teste integrado nas etapas 7/8.
+
+### Aparência opcional reservada à etapa 7
+
+Planejar com o usuário um wallpaper com blur nas superfícies selecionadas e possível barra de navegação translúcida. Desligado inicialmente; fundo sólido preservado quando desativado. Nenhuma implementação de blur na etapa 6.

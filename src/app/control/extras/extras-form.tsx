@@ -4,49 +4,14 @@ import { useState, useTransition } from "react";
 import { extraKeys, type ExtraKey, type ExtrasFlags } from "@/lib/v2/extras";
 import { saveExtrasAction } from "./actions";
 
-const games: Array<{
-  key: ExtraKey;
-  label: string;
-  labelEn: string;
-  detail: string;
-  detailEn: string;
-}> = [
-  {
-    key: "snake",
-    label: "Snake",
-    labelEn: "Snake",
-    detail: "Arcade de movimento e pontuação.",
-    detailEn: "Movement and scoring arcade game.",
-  },
-  {
-    key: "2048",
-    label: "2048",
-    labelEn: "2048",
-    detail: "Combine peças numéricas.",
-    detailEn: "Combine numbered tiles.",
-  },
-  {
-    key: "minesweeper",
-    label: "Campo Minado",
-    labelEn: "Minesweeper",
-    detail: "Descubra casas sem atingir minas.",
-    detailEn: "Reveal cells without hitting mines.",
-  },
-  {
-    key: "solitaire",
-    label: "Paciência",
-    labelEn: "Solitaire",
-    detail: "Organize as cartas por naipe.",
-    detailEn: "Arrange cards by suit.",
-  },
-  {
-    key: "domino",
-    label: "Dominó",
-    labelEn: "Dominoes",
-    detail: "Partidas privadas entre duas pessoas.",
-    detailEn: "Private matches between two people.",
-  },
-];
+import { gameCatalog } from "@/lib/game-catalog";
+const games = gameCatalog.map((g) => ({
+  key: g.id,
+  label: g.pt,
+  labelEn: g.en,
+  detail: g.detail,
+  detailEn: g.detailEn,
+}));
 
 export function ExtrasForm({
   initial,
@@ -157,6 +122,21 @@ export function ExtrasForm({
           tr(
             "Quadro colaborativo da instância.",
             "Collaborative instance whiteboard.",
+          ),
+          !flags.extras,
+        )}
+        {option(
+          "focus",
+          tr("Foco: Pomodoro e cronômetro", "Focus: Pomodoro and stopwatch"),
+          tr("Sessões de estudo e pausas.", "Study sessions and breaks."),
+          !flags.extras,
+        )}
+        {option(
+          "flashcards",
+          tr("Flashcards", "Flashcards"),
+          tr(
+            "Baralhos pessoais e compartilhados.",
+            "Personal and shared decks.",
           ),
           !flags.extras,
         )}

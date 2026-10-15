@@ -1,3 +1,4 @@
+import { canModerateRoom } from "@/lib/chat-moderation";
 import { z } from "zod";
 
 import { getAcademicAuthority } from "@/lib/academic-authority";
@@ -483,6 +484,7 @@ export function listChatMessages(
   roomId: number,
   afterId = 0,
   connection: DatabaseConnection = getDatabase(),
+  window?: { before?: number; ids?: number[] },
 ): ChatMessage[] {
   const actorId = idSchema.parse(userId);
   const targetRoomId = idSchema.parse(roomId);
@@ -493,19 +495,27 @@ export function listChatMessages(
       `select m.id, m.room_id as roomId, m.author_user_id as authorUserId,
               u.display_name as authorName, m.body_source as bodySource,
               m.reply_to_message_id as replyToMessageId,
-              reply.body_source as replyBody, reply_author.display_name as replyAuthorName,
+              case when reply.deleted_at is null then reply.body_source else 'Mensagem removida' end as replyBody, reply_author.display_name as replyAuthorName,
               reply.author_user_id as replyAuthorUserId,
               m.edited_at as editedAt,
               m.created_at as createdAt
        from chat_messages m join users u on u.id = m.author_user_id
        left join chat_messages reply on reply.id = m.reply_to_message_id
        left join users reply_author on reply_author.id = reply.author_user_id
-       where m.room_id = ? and m.id > ? and m.deleted_at is null
-       order by m.id asc limit 200`,
+       where m.room_id = ? and ${window?.ids ? `m.id in (${window.ids.map(() => "?").join(",") || "NULL"})` : window?.before ? "m.id < ?" : "m.id > ?"} and m.deleted_at is null
+       order by m.id ${afterId > 0 || window?.ids ? "asc limit 200" : "desc limit 50"}`,
     )
-    .all(targetRoomId, z.number().int().min(0).parse(afterId)) as Array<
-    Omit<ChatMessage, "attachmentIds">
-  >;
+    .all(
+      targetRoomId,
+      ...(window?.ids ?? [
+        z
+          .number()
+          .int()
+          .min(0)
+          .parse(window?.before ?? afterId),
+      ]),
+    ) as Array<Omit<ChatMessage, "attachmentIds">>;
+  if (afterId === 0 && !window?.ids) messages.reverse();
   const attachments = connection.sqlite.prepare(
     "select id from chat_attachments where message_id = ? order by id",
   );
@@ -523,6 +533,14 @@ export function editChatMessage(
   bodyInput: string,
   connection: DatabaseConnection = getDatabase(),
 ): void {
+  const target = connection.sqlite
+    .prepare(
+      "SELECT room_id roomId FROM chat_messages WHERE id=? AND author_user_id=?",
+    )
+    .get(idSchema.parse(messageId), idSchema.parse(userId)) as
+    { roomId: number } | undefined;
+  if (!target || !canAccessChatRoom(userId, target.roomId, connection))
+    throw new Error("Message not found.");
   const result = connection.sqlite
     .prepare(
       `update chat_messages set body_source = ?, edited_at = ?
@@ -542,11 +560,71 @@ export function deleteChatMessage(
   messageId: number,
   connection: DatabaseConnection = getDatabase(),
 ): void {
+  const target = connection.sqlite
+    .prepare("SELECT room_id roomId FROM chat_messages WHERE id=?")
+    .get(idSchema.parse(messageId)) as { roomId: number } | undefined;
+  if (!target || !canAccessChatRoom(userId, target.roomId, connection))
+    throw new Error("Message not found.");
   const result = connection.sqlite
     .prepare(
       `update chat_messages set deleted_at = ?
-       where id = ? and author_user_id = ? and deleted_at is null`,
+       where id = ? and (author_user_id = ? OR ? = 1) and deleted_at is null`,
     )
-    .run(Date.now(), idSchema.parse(messageId), idSchema.parse(userId));
+    .run(
+      Date.now(),
+      idSchema.parse(messageId),
+      idSchema.parse(userId),
+      canModerateRoom(userId, target.roomId, connection) ? 1 : 0,
+    );
   if (result.changes !== 1) throw new Error("Message not found.");
+}
+
+/** Snapshot and change cursor are read in one transaction to avoid a lost update. */
+export function chatWindow(
+  userId: number,
+  roomId: number,
+  options: { before?: number; since?: number } = {},
+  connection: DatabaseConnection = getDatabase(),
+) {
+  return connection.sqlite.transaction(() => {
+    if (!canAccessChatRoom(userId, roomId, connection))
+      throw new Error("Forbidden.");
+    const latest = (
+      connection.sqlite
+        .prepare(
+          "SELECT coalesce(max(id),0) n FROM chat_message_changes WHERE room_id=?",
+        )
+        .get(roomId) as { n: number }
+    ).n;
+    if (options.since !== undefined) {
+      const changes = connection.sqlite
+        .prepare(
+          "SELECT id,message_id messageId FROM chat_message_changes WHERE room_id=? AND id>? ORDER BY id LIMIT 200",
+        )
+        .all(roomId, options.since) as { id: number; messageId: number }[];
+      const ids = [...new Set(changes.map((c) => c.messageId))];
+      const messages = ids.length
+        ? listChatMessages(userId, roomId, 0, connection, { ids })
+        : [];
+      const live = new Set(messages.map((m) => m.id));
+      return {
+        messages,
+        removedIds: ids.filter((id) => !live.has(id)),
+        revision: changes.at(-1)?.id ?? latest,
+        hasOlder: false,
+      };
+    }
+    const messages = listChatMessages(userId, roomId, 0, connection, {
+      before: options.before,
+    });
+    const first = messages[0]?.id;
+    const hasOlder =
+      !!first &&
+      !!connection.sqlite
+        .prepare(
+          "SELECT 1 FROM chat_messages WHERE room_id=? AND id<? AND deleted_at IS NULL LIMIT 1",
+        )
+        .get(roomId, first);
+    return { messages, removedIds: [] as number[], revision: latest, hasOlder };
+  })();
 }

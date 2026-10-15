@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { GlobalChatAvatarControl } from "@/components/global-chat-avatar-control";
 import { redirect } from "next/navigation";
 import { ConsoleShell } from "../ui";
 import { currentAdminV2, withV2DbAsync } from "@/lib/v2/runtime";
@@ -22,6 +24,10 @@ export default async function ControlExtrasPage() {
         active="extras"
       >
         <ExtrasForm initial={flags} english={english} />
+        <GlobalChatAvatarControl />
+        <Link className="button" href="/control/chat">
+          Gerenciar Chat Global e denúncias →
+        </Link>
       </ConsoleShell>
     );
   });

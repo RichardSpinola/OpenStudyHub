@@ -19,6 +19,16 @@ describe("Extras da instância", () => {
       updateExtrasFlags(db, { ...flags, snake: false });
       expect(extraAccessible(getExtrasFlags(db), "snake")).toBe(false);
       expect(extraAccessible(getExtrasFlags(db), "2048")).toBe(true);
+      updateExtrasFlags(db, {
+        ...flags,
+        memory: false,
+        focus: false,
+        flashcards: false,
+      });
+      expect(extraAccessible(getExtrasFlags(db), "memory")).toBe(false);
+      expect(extraAccessible(getExtrasFlags(db), "focus")).toBe(false);
+      expect(extraAccessible(getExtrasFlags(db), "flashcards")).toBe(false);
+      expect(extraAccessible(getExtrasFlags(db), "sudoku")).toBe(true);
       updateExtrasFlags(db, { ...flags, domino: false, solitaire: true });
       expect(extraAccessible(getExtrasFlags(db), "domino")).toBe(false);
       expect(extraAccessible(getExtrasFlags(db), "solitaire")).toBe(true);
