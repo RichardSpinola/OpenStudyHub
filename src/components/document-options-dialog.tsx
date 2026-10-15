@@ -4,9 +4,11 @@ import { IconDots } from "@tabler/icons-react";
 import { useUiText } from "./ui-language-provider";
 export function DocumentOptionsDialog({
   name,
+  kind = "DOCUMENTO",
   children,
 }: {
   name: string;
+  kind?: string;
   children: ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null),
@@ -35,7 +37,11 @@ export function DocumentOptionsDialog({
       >
         <header>
           <div>
-            <small>{tr("DOCUMENTO", "DOCUMENT")}</small>
+            <small>
+              {kind === "DOCUMENTO"
+                ? tr("DOCUMENTO", "DOCUMENT")
+                : tr(kind, "PROJECT")}
+            </small>
             <h2 id={id}>{name}</h2>
           </div>
           <button

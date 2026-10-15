@@ -95,3 +95,7 @@ Próxima etapa principal: **5 — workspace de Notas**. Chat/jogos seguem na 6; 
 - [Exportação de arquivos Google Workspace](https://developers.google.com/workspace/drive/api/reference/rest/v3/files/export).
 - [Upload e conversão para Google Workspace](https://developers.google.com/workspace/drive/api/guides/manage-uploads).
 - [Permissões do Google Drive](https://developers.google.com/workspace/drive/api/reference/rest/v3/permissions/create).
+
+## Revisão visual solicitada após a entrega
+
+[Correções de 15/10/2026](REVIEW_FIXES_2026_10_15.md): substituição da grade pelo formato compacto da referência, ajustes do workspace de projetos, exclusão definitiva com confirmação, enquadramento comum e faixa lateral do wallpaper. Esta revisão antecede a etapa 5.

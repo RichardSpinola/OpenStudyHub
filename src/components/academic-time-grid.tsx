@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useUiText } from "./ui-language-provider";
 import type { AgendaSlot } from "@/lib/academic";
 import { formatMinutes, joinLocation } from "@/lib/academic-format";
-import { weeklyLayout } from "@/lib/weekly-layout";
+import { weeklyScheduleRows } from "@/lib/weekly-layout";
 export const weekdays = [
   "Segunda",
   "Terça",
@@ -31,19 +31,16 @@ export function AcademicTimeGrid({
   today: number;
 }) {
   const tr = useUiText();
+  const rows = weeklyScheduleRows(slots);
+  const classDays = [
+    ...new Set(rows.flatMap((r) => r.slots.map((s) => s.weekday))),
+  ].sort((a, b) => a - b);
+  const [allDays, setAllDays] = useState(false);
   const [selected, setSelected] = useState(
-      slots.some((s) => s.weekday === today)
-        ? today
-        : (slots[0]?.weekday ?? today),
-    ),
-    [allDays, setAllDays] = useState(false),
-    [detail, setDetail] = useState<AgendaSlot | null>(null);
-  const layout = weeklyLayout(slots);
-  const visibleDays = allDays
-    ? weekdays.map((_, i) => i + 1)
-    : [...new Set(layout.events.map((e) => e.slot.weekday))].sort(
-        (a, b) => a - b,
-      );
+    classDays.includes(today) ? today : (classDays[0] ?? today),
+  );
+  const [detail, setDetail] = useState<AgendaSlot | null>(null);
+  const visibleDays = allDays ? weekdays.map((_, i) => i + 1) : classDays;
   return (
     <section className="weekly-board" aria-labelledby="week-grid-title">
       <header className="weekly-board-heading">
@@ -72,127 +69,93 @@ export function AcademicTimeGrid({
             </button>
           </div>
           <small>
-            {layout.events.length} {tr("aula(s)", "class(es)")}
-            {layout.events.length
-              ? ` · ${formatMinutes(layout.start)}–${formatMinutes(layout.end)}`
-              : ""}
+            {rows.reduce((n, r) => n + r.slots.length, 0)}{" "}
+            {tr("aulas", "classes")}
           </small>
         </div>
       </header>
-      {layout.events.length ? (
+      {rows.length ? (
         <>
           <div
             className="weekly-day-picker"
             role="group"
             aria-label={tr("Dia da semana", "Day of week")}
           >
-            {weekdays.map((day, i) => (
+            {visibleDays.map((day) => (
               <button
-                key={day}
                 type="button"
-                aria-pressed={selected === i + 1}
-                onClick={() => setSelected(i + 1)}
+                key={day}
+                aria-pressed={selected === day}
+                onClick={() => setSelected(day)}
               >
-                {tr(day, weekdaysEn[i])}
+                {tr(weekdays[day - 1], weekdaysEn[day - 1])}
               </button>
             ))}
           </div>
-          <div
-            className="weekly-scroll"
-            data-selected-empty={
-              !layout.events.some((e) => e.slot.weekday === selected)
-            }
-          >
-            <p className="weekly-empty-day">
-              {tr("Nenhuma aula neste dia.", "No classes on this day.")}
-            </p>
-            <div
-              className="weekly-table"
-              style={
-                {
-                  "--calendar-rows": layout.rows,
-                  "--calendar-days": Math.max(1, visibleDays.length),
-                  "--calendar-hours": (layout.end - layout.start) / 60,
-                } as CSSProperties
-              }
-            >
-              <span className="weekly-corner">{tr("Hora", "Time")}</span>
-              {weekdays.map((day, i) =>
-                visibleDays.includes(i + 1) ? (
-                  <div
-                    className="weekly-day-label"
-                    key={day}
-                    data-selected={selected === i + 1}
-                    style={
-                      {
-                        "--calendar-day": visibleDays.indexOf(i + 1) + 2,
-                      } as CSSProperties
-                    }
-                  >
-                    {tr(day, weekdaysEn[i])}
-                  </div>
-                ) : null,
-              )}
-              {weekdays.map((day, i) =>
-                visibleDays.includes(i + 1) ? (
-                  <div
-                    key={day}
-                    className="weekly-day-track"
-                    data-selected={selected === i + 1}
-                    data-today={today === i + 1}
-                    style={
-                      {
-                        "--calendar-day": visibleDays.indexOf(i + 1) + 2,
-                        gridRow: `2 / span ${layout.rows}`,
-                      } as CSSProperties
-                    }
-                  />
-                ) : null,
-              )}
-              {Array.from(
-                { length: (layout.end - layout.start) / 30 + 1 },
-                (_, i) => (
-                  <div
-                    key={i}
-                    className="weekly-hour-line"
-                    data-start={i === 0}
-                    style={{ gridRow: i === 0 ? 2 : i * 6 + 1 }}
-                  >
-                    <span className="weekly-hour-label">
-                      {formatMinutes(layout.start + i * 30)}
-                    </span>
-                  </div>
-                ),
-              )}
-              {layout.events.map(({ slot, row, span, lane, lanes }) => (
-                <button
-                  key={slot.slotId}
-                  type="button"
-                  className="weekly-lesson"
-                  data-selected={selected === slot.weekday}
-                  style={
-                    {
-                      "--calendar-day": visibleDays.indexOf(slot.weekday) + 2,
-                      gridRow: `${row} / span ${span}`,
-                      width: `calc((100% - 6px) / ${lanes})`,
-                      marginLeft: `calc(${lane} * (100% - 6px) / ${lanes} + 3px)`,
-                    } as CSSProperties
-                  }
-                  onClick={() => setDetail(slot)}
-                  aria-label={`${slot.subjectName}, ${formatMinutes(slot.startsAtMinutes)}–${formatMinutes(slot.endsAtMinutes)}, ${joinLocation([slot.locationName, slot.room]) ?? tr("Sala não informada", "Room not specified")}, ${slot.instructorName ?? tr("Professor não informado", "Instructor not specified")}`}
-                >
-                  <strong>{slot.subjectShortName ?? slot.subjectName}</strong>
-                  <time>
-                    {formatMinutes(slot.startsAtMinutes)}–
-                    {formatMinutes(slot.endsAtMinutes)}
-                  </time>
-                  <small>
-                    {joinLocation([slot.locationName, slot.room]) ??
-                      tr("Sala não informada", "Room not specified")}
-                  </small>
-                </button>
-              ))}
-            </div>
+          <div className="weekly-scroll">
+            <table className="weekly-compact-table">
+              <caption className="sr-only">
+                {tr(
+                  "Aulas por horário e dia da semana. Cada linha mostra o intervalo cadastrado.",
+                  "Classes by time and weekday. Each row shows its scheduled interval.",
+                )}
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">{tr("Horário", "Time")}</th>
+                  {visibleDays.map((day) => (
+                    <th
+                      scope="col"
+                      key={day}
+                      data-selected={day === selected}
+                      data-today={day === today}
+                    >
+                      {tr(weekdays[day - 1], weekdaysEn[day - 1])}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={`${row.start}-${row.end}`}>
+                    <th scope="row">
+                      <time>{formatMinutes(row.start)}</time>
+                      <span aria-hidden="true">–</span>
+                      <time>{formatMinutes(row.end)}</time>
+                    </th>
+                    {visibleDays.map((day) => (
+                      <td
+                        key={day}
+                        data-selected={day === selected}
+                        data-today={day === today}
+                      >
+                        {row.slots
+                          .filter((s) => s.weekday === day)
+                          .map((slot) => (
+                            <button
+                              key={slot.slotId}
+                              type="button"
+                              className="weekly-class-item"
+                              onClick={() => setDetail(slot)}
+                            >
+                              <strong>
+                                {slot.subjectShortName ?? slot.subjectName}
+                              </strong>
+                              <small>
+                                {joinLocation([slot.locationName, slot.room]) ??
+                                  tr(
+                                    "Sala não informada",
+                                    "Room not specified",
+                                  )}
+                              </small>
+                            </button>
+                          ))}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </>
       ) : (
@@ -205,9 +168,7 @@ export function AcademicTimeGrid({
           </strong>
         </div>
       )}
-      {detail ? (
-        <LessonDialog slot={detail} close={() => setDetail(null)} />
-      ) : null}
+      {detail && <LessonDialog slot={detail} close={() => setDetail(null)} />}
     </section>
   );
 }

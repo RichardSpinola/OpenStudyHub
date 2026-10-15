@@ -260,7 +260,7 @@ export function getUserProject(
 }
 
 export function getProjectDriveStorageUser(
-  project: ProjectRecord,
+  project: Pick<ProjectRecord, "id" | "ownerUserId" | "driveProjectFolderId">,
   connection: DatabaseConnection = getDatabase(),
 ): number {
   if (process.env.OPENSTUDYHUB_V2_ENABLED !== "1") return project.ownerUserId;

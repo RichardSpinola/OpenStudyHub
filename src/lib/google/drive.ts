@@ -859,3 +859,22 @@ export async function exportGoogleDocumentAsDocx(
     options,
   );
 }
+
+/** Explicit permanent deletion; callers must authorize the stored project reference. */
+export async function permanentlyDeleteDriveFile(
+  userId: number,
+  fileId: string,
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+) {
+  const token = await getGoogleAccessToken(idSchema.parse(userId), options);
+  const response = await driveRequest(
+    token,
+    `${DRIVE_FILES_ENDPOINT}/${encodeURIComponent(fileId)}?supportsAllDrives=true`,
+    { method: "DELETE" },
+    options.fetchImpl ?? fetch,
+  );
+  if (!response.ok && response.status !== 404)
+    throw new Error(
+      "Não foi possível excluir os arquivos no Drive. Nenhum registro local foi apagado; tente novamente.",
+    );
+}

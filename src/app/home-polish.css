@@ -396,3 +396,20 @@ html[data-design] .home-customize-trigger:active {
 .shortcut-link .shortcut-visual * {
   pointer-events: none;
 }
+
+/* The Home has no reserved scrollbar lane: its wallpaper reaches both edges. */
+html[data-design] .app-content:has(.home-shell) {
+  scrollbar-gutter: auto;
+}
+html[data-design] .home-shell {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+html[data-design] .app-content:has(.home-shell) {
+  scrollbar-width: none;
+}
+html[data-design] .app-content:has(.home-shell)::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}

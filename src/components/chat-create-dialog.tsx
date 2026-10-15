@@ -1,4 +1,5 @@
 "use client";
+import { CroppedImageInput } from "./cropped-image-input";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useRef, useState } from "react";
@@ -88,15 +89,15 @@ export function ChatCreateDialog({
         ) : null}
         {kind === "group" ? (
           <form action={createGroupAction} className="chat-create-form">
-            <label>
+            <div>
               <UiCopy
                 pt="Imagem do grupo (opcional)"
                 en="Group image (optional)"
               />
-              <input
-                type="file"
+              <CroppedImageInput
                 name="avatar"
-                accept="image/png,image/jpeg,image/webp"
+                label="Escolher imagem"
+                aspectRatio={1}
               />
               <small>
                 <UiCopy
@@ -104,7 +105,7 @@ export function ChatCreateDialog({
                   en="PNG, JPEG or WebP · up to 5 MiB."
                 />
               </small>
-            </label>
+            </div>
             <label>
               <UiCopy pt="Nome" en="Name" />
               <input name="name" maxLength={120} required />
@@ -152,15 +153,15 @@ export function ChatCreateDialog({
         ) : null}
         {kind === "audience" && audience ? (
           <form action={createAudienceChatAction} className="chat-create-form">
-            <label>
+            <div>
               <UiCopy
                 pt="Imagem da conversa (opcional)"
                 en="Conversation image (optional)"
               />
-              <input
-                type="file"
+              <CroppedImageInput
                 name="avatar"
-                accept="image/png,image/jpeg,image/webp"
+                label="Escolher imagem"
+                aspectRatio={1}
               />
               <small>
                 <UiCopy
@@ -168,7 +169,7 @@ export function ChatCreateDialog({
                   en="PNG, JPEG or WebP · up to 5 MiB."
                 />
               </small>
-            </label>
+            </div>
             <label>
               <UiCopy pt="Nome" en="Name" />
               <input name="name" maxLength={120} required />

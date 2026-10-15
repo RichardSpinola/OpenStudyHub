@@ -1,5 +1,6 @@
 "use server";
 
+import { deleteOwnedProject } from "@/lib/project-deletion";
 import { isDriveStorageAvailableForUser } from "@/lib/google/storage-owner";
 
 import { subjectResourceHref } from "@/lib/v2/academic-links";
@@ -216,4 +217,26 @@ export async function shareProjectGroupAction(form: FormData) {
   revalidatePath("/library");
   revalidatePath(`/projects/${projectId}`);
   redirect(`/projects/${projectId}?area=sharing&status=${status}`);
+}
+
+export async function deleteProjectAction(formData: FormData) {
+  const user = await requireToolUser();
+  const id = idSchema.parse(formData.get("projectId"));
+  try {
+    await deleteOwnedProject(
+      user.id,
+      id,
+      String(formData.get("confirmation") ?? ""),
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Não foi possível excluir o projeto.";
+    redirect(`/library?type=projects&error=${encodeURIComponent(message)}`);
+  }
+  revalidatePath("/library");
+  revalidatePath("/subjects");
+  revalidatePath("/projects/archived");
+  redirect("/library?type=projects&status=deleted");
 }

@@ -170,7 +170,7 @@ export default async function SubjectsPage() {
               </div>
             )}
           </section>
-          <section className="subject-period-section">
+          <section className="subject-period-section subject-history-section">
             <div className="section-heading">
               <h2>
                 <UiCopy pt="Outros períodos" en="Other periods" />

@@ -109,9 +109,13 @@ export default async function LibraryPage({
       "Documento criado no Drive.",
       "Document created in Drive.",
     ],
+    deleted: [
+      "Projeto e arquivos excluídos definitivamente.",
+      "Project and files permanently deleted.",
+    ],
     archived: [
-      "Projeto arquivado. O conteúdo no Drive foi mantido.",
-      "Project archived. Drive content was kept.",
+      "Projeto arquivado. Os arquivos foram mantidos e podem ser restaurados.",
+      "Project archived. Files were kept and can be restored.",
     ],
   };
   const message = feedback[query.status ?? ""];
@@ -249,6 +253,11 @@ export default async function LibraryPage({
           ) : null}
         </div>
       </header>
+      {query.error && (
+        <p className="feedback-banner is-error" role="alert">
+          {query.error}
+        </p>
+      )}
       {message && (!flow || flow === "import") ? (
         <p
           className={`feedback-banner ${query.status?.endsWith("error") ? "is-error" : "is-success"}`}
@@ -401,6 +410,7 @@ export default async function LibraryPage({
                   {filtered.map((item) =>
                     item.kind === "project" ? (
                       <ProjectLibraryCard
+                        currentUserId={user.id}
                         key={`project:${item.value.id}`}
                         project={item.value}
                         fromProjects

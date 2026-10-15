@@ -1,3 +1,4 @@
+import { ProjectDeleteForm } from "@/components/project-delete-form";
 import { getDriveAccessPolicy } from "@/lib/drive-access-policy";
 import { subjectResourceHref } from "@/lib/v2/academic-links";
 import { ProjectSharingPanel } from "@/components/project-sharing-panel";
@@ -14,7 +15,6 @@ import { ProjectUpload } from "@/components/project-upload";
 import { ProjectSyncSubmit } from "@/components/project-sync-submit";
 import { ProjectTechnologyPicker } from "@/components/project-technology-picker";
 import { ProjectFileBrowser } from "@/components/project-file-browser";
-import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { requireAuthenticatedUser } from "@/lib/authorization";
 import { getUserProfile } from "@/lib/profile";
 import { uiText } from "@/lib/translations";
@@ -240,7 +240,7 @@ export default async function ProjectDetailPage({
       </div>
       {project.description && <p>{project.description}</p>}
       <nav
-        className="resource-workspace-tabs"
+        className="resource-workspace-tabs project-detail-nav"
         aria-label={tr("Áreas do projeto", "Project areas")}
       >
         {(isOwner
@@ -306,34 +306,36 @@ export default async function ProjectDetailPage({
                 </p>
               </section>
             )}
-          </div>
-
-          <section
-            className="utility-panel project-file-browser"
-            aria-label={tr("Arquivos da versão atual", "Current version files")}
-          >
-            <div className="panel-title">
-              <UiCopy
-                pt="ARQUIVOS · VERSÃO ATUAL"
-                en="FILES · CURRENT VERSION"
-              />
-            </div>
-            {files.length === 0 ? (
-              <p>
+            <section
+              className="utility-panel project-file-browser"
+              aria-label={tr(
+                "Arquivos da versão atual",
+                "Current version files",
+              )}
+            >
+              <div className="panel-title">
                 <UiCopy
-                  pt="Nenhum arquivo sincronizado ainda."
-                  en="No files synced yet."
+                  pt="ARQUIVOS · VERSÃO ATUAL"
+                  en="FILES · CURRENT VERSION"
                 />
-              </p>
-            ) : (
-              <ProjectFileBrowser
-                projectId={project.id}
-                files={files}
-                directDriveAccess={directDriveAccess}
-                currentVersionNumber={project.currentVersionNumber}
-              />
-            )}
-          </section>
+              </div>
+              {files.length === 0 ? (
+                <p>
+                  <UiCopy
+                    pt="Nenhum arquivo sincronizado ainda."
+                    en="No files synced yet."
+                  />
+                </p>
+              ) : (
+                <ProjectFileBrowser
+                  projectId={project.id}
+                  files={files}
+                  directDriveAccess={directDriveAccess}
+                  currentVersionNumber={project.currentVersionNumber}
+                />
+              )}
+            </section>
+          </div>
         </>
       )}
       {parameters.area === "versions" && (
@@ -566,6 +568,11 @@ export default async function ProjectDetailPage({
                 <UiCopy pt="Abrir no Drive ↗" en="Open in Drive ↗" />
               </a>
             ) : null}
+            <ProjectDeleteForm
+              id={project.id}
+              name={project.name}
+              storageBackend={project.storageBackend}
+            />
             <details className="danger-zone">
               <summary>
                 <UiCopy pt="Arquivar projeto" en="Archive project" />
@@ -578,16 +585,9 @@ export default async function ProjectDetailPage({
               </p>
               <form action={archiveProjectAction}>
                 <input type="hidden" name="projectId" value={project.id} />
-                <ConfirmSubmitButton
-                  type="submit"
-                  className="danger-button"
-                  confirmation={tr(
-                    "Arquivar este projeto? Os arquivos armazenados permanecerão intactos.",
-                    "Archive this project? Stored files will remain intact.",
-                  )}
-                >
+                <button type="submit" className="danger-button">
                   <UiCopy pt="Arquivar localmente" en="Archive locally" />
-                </ConfirmSubmitButton>
+                </button>
               </form>
             </details>
           </aside>

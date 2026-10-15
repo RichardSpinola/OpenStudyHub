@@ -1,3 +1,4 @@
+import { CroppedImageInput } from "./cropped-image-input";
 import { UiCopy } from "@/components/ui-language-provider";
 import {
   chatWallpaperAction,
@@ -66,15 +67,13 @@ export function ChatWallpaperSettings({
       </form>
       <form action={chatWallpaperUploadAction}>
         <input type="hidden" name="roomId" value={roomId} />
-        <label>
-          <UiCopy pt="Imagem pessoal" en="Personal image" />{" "}
-          <input
-            type="file"
-            name="image"
-            accept="image/png,image/jpeg,image/webp"
-            required
-          />
-        </label>
+        <CroppedImageInput
+          name="image"
+          label="Imagem pessoal"
+          maxMiB={10}
+          aspectRatio={16 / 9}
+          required
+        />
         <small>
           <UiCopy
             pt="PNG, JPEG ou WebP; até 10 MiB."

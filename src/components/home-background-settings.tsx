@@ -1,4 +1,5 @@
 "use client";
+import { CroppedImageInput } from "./cropped-image-input";
 import { UiCopy } from "@/components/ui-language-provider";
 
 import { useRouter } from "next/navigation";
@@ -53,12 +54,13 @@ export function HomeBackgroundSettings({
 
   return (
     <div className="home-background-settings">
-      <input
-        ref={input}
-        className="sr-only"
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        onChange={(event) => void upload(event.target.files?.item(0) ?? null)}
+      <CroppedImageInput
+        name="background"
+        label="Escolher imagem para a Home"
+        inputRef={input}
+        hidePicker
+        maxMiB={10}
+        onCropped={(file) => void upload(file)}
       />
       <div className="panel-actions">
         <button type="button" onClick={() => input.current?.click()}>

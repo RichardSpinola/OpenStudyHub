@@ -75,3 +75,5 @@ Publicação, tag e atualização pública não foram realizadas nesta etapa. A 
 - [STAGE_4.md](STAGE_4.md): projetos locais, uploads recuperáveis, documentos/modelos e revisão de todos os menus administrativos, incluindo primeiro acesso.
 - A revisão da etapa 3 foi ampliada a pedido do usuário. Extras tem acesso próprio, capas têm ação visível, os cadastros básicos são agrupados e o setup inicial foi reorganizado.
 - A prévia local ficou pausada em 15/10/2026 para liberar memória após o relato de travamento do notebook. Não reiniciar builds/testes pesados junto do navegador. Há três ajustes pequenos e o ciclo de arquivamento/restauração a retestar visualmente; a compilação e os testes automáticos passaram.
+
+- [Revisão de 15/10/2026](REVIEW_FIXES_2026_10_15.md): grade compacta, projetos, exclusão definitiva, enquadramento e wallpaper. Prévia local reaberta após conferência.

@@ -1,4 +1,5 @@
 "use client";
+import { CroppedImageInput } from "./cropped-image-input";
 import { UiCopy } from "@/components/ui-language-provider";
 
 import { useRouter } from "next/navigation";
@@ -74,13 +75,14 @@ export function HomeWallpaperPicker({
 
   return (
     <div className="home-background-settings">
-      <input
-        ref={input}
-        className="sr-only"
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        aria-label="Escolher imagem para a Home"
-        onChange={(event) => void upload(event.target.files?.item(0) ?? null)}
+      <CroppedImageInput
+        name="background"
+        label="Escolher imagem para a Home"
+        inputRef={input}
+        hidePicker
+        maxMiB={limitMiB}
+        aspectRatio={16 / 9}
+        onCropped={(file) => void upload(file)}
       />
       <div className="wallpaper-choices">
         {presets.map((preset) => (

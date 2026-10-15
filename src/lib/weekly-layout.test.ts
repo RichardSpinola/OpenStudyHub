@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { AgendaSlot } from "./academic";
-import { weeklyLayout } from "./weekly-layout";
+import { weeklyLayout, weeklyScheduleRows } from "./weekly-layout";
 const slot = (id: number, start: number, end: number, weekday = 1) =>
   ({
     slotId: id,
@@ -49,4 +49,20 @@ describe("weekly schedule placement", () => {
     ]);
     expect(weeklyLayout([]).events).toEqual([]);
   });
+});
+
+it("builds concise rows from actual intervals, keeping overlapping classes readable", () => {
+  const rows = weeklyScheduleRows([
+    slot(1, 420, 495, 2),
+    slot(2, 420, 495, 5),
+    slot(3, 505, 580, 2),
+    slot(4, 480, 629, 1),
+    slot(5, 480, 629, 1),
+    slot(6, 700, 600),
+  ]);
+  expect(rows.map((r) => [r.start, r.end, r.slots.length])).toEqual([
+    [420, 495, 2],
+    [480, 629, 2],
+    [505, 580, 1],
+  ]);
 });

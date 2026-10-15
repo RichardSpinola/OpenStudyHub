@@ -96,6 +96,7 @@ export default async function ProjectsPage({
           <ul className={`project-library-grid is-${layout}`}>
             {projects.map((project) => (
               <ProjectLibraryCard
+                currentUserId={user.id}
                 key={project.id}
                 project={project}
                 fromProjects

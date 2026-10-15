@@ -1208,6 +1208,7 @@ export default async function SubjectPage({
                   <ul className="project-library-grid is-grid">
                     {projects.map((project) => (
                       <ProjectLibraryCard
+                        currentUserId={user.id}
                         key={project.id}
                         project={project}
                         language={language}

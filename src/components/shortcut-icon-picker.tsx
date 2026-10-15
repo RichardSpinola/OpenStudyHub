@@ -1,4 +1,5 @@
 "use client";
+import { CroppedImageInput } from "./cropped-image-input";
 import { useRef, useState } from "react";
 import { shortcutIconPresets } from "@/lib/shortcut-icon-catalog";
 import { ShortcutPresetIcon } from "./shortcut-icon";
@@ -152,36 +153,22 @@ export function ShortcutIconPicker({
           <button type="button" onClick={() => dialog.current?.showModal()}>
             {tr("Escolher no catálogo", "Choose from catalog")}
           </button>
-          <label>
-            {tr(
+          <CroppedImageInput
+            name="iconFile"
+            label={tr(
               "Ou enviar sua imagem — até 2 MB",
               "Or upload your image — up to 2 MB",
             )}
-            <input
-              name="iconFile"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                setStatus("");
-                if (!file) return;
-                if (file.size > 2 * 1024 * 1024) {
-                  e.target.value = "";
-                  setStatus(
-                    tr(
-                      "A imagem deve ter até 2 MB.",
-                      "The image must be at most 2 MB.",
-                    ),
-                  );
-                  return;
-                }
-                setChoice("@image");
-                const reader = new FileReader();
-                reader.onload = () => setImage(String(reader.result));
-                reader.readAsDataURL(file);
-              }}
-            />
-          </label>
+            maxMiB={2}
+            aspectRatio={1}
+            onCropped={(file) => {
+              setStatus("");
+              setChoice("@image");
+              const reader = new FileReader();
+              reader.onload = () => setImage(String(reader.result));
+              reader.readAsDataURL(file);
+            }}
+          />
           <p role="status">{status}</p>
         </div>
       )}

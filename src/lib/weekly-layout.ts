@@ -64,3 +64,35 @@ export function weeklyLayout(slots: AgendaSlot[]) {
   }
   return { start, end, rows: (end - start) / 5, events };
 }
+
+/** Compact portal view: actual intervals, without artificial rows or proportional cards. */
+export function weeklyScheduleRows(slots: AgendaSlot[]) {
+  const grouped = new Map<
+    string,
+    { start: number; end: number; slots: AgendaSlot[] }
+  >();
+  for (const slot of slots) {
+    if (
+      !Number.isInteger(slot.weekday) ||
+      slot.weekday < 1 ||
+      slot.weekday > 7 ||
+      !Number.isInteger(slot.startsAtMinutes) ||
+      !Number.isInteger(slot.endsAtMinutes) ||
+      slot.startsAtMinutes < 0 ||
+      slot.endsAtMinutes > 1440 ||
+      slot.endsAtMinutes <= slot.startsAtMinutes
+    )
+      continue;
+    const key = `${slot.startsAtMinutes}-${slot.endsAtMinutes}`;
+    const row = grouped.get(key) ?? {
+      start: slot.startsAtMinutes,
+      end: slot.endsAtMinutes,
+      slots: [],
+    };
+    row.slots.push(slot);
+    grouped.set(key, row);
+  }
+  return [...grouped.values()].sort(
+    (a, b) => a.start - b.start || a.end - b.end,
+  );
+}

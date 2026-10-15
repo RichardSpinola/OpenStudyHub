@@ -103,7 +103,7 @@ export function ProjectUpload({
       <div className="project-upload-heading">
         <div>
           <p className="eyebrow">
-            <UiCopy pt="ARQUIVOS E DIFF" en="FILES AND DIFF" />
+            <UiCopy pt="ATUALIZAR ARQUIVOS" en="UPDATE FILES" />
           </p>
           <h2>
             {currentVersionNumber === 0
@@ -112,8 +112,8 @@ export function ProjectUpload({
           </h2>
           <p>
             <UiCopy
-              pt="Confira as mudanças antes de sincronizar. Nenhum arquivo é executado aqui."
-              en="Review changes before syncing. No file is executed here."
+              pt="Adicione arquivos e confira o que mudou antes de salvar."
+              en="Add files and review the changes before saving."
             />
           </p>
         </div>
@@ -127,8 +127,8 @@ export function ProjectUpload({
         <div className="project-upload-picker">
           <p className="panel-help">
             <UiCopy
-              pt="Envie a pasta atual ou um ZIP. Arquivos temporários e sensíveis são ignorados com segurança."
-              en="Upload the current folder or a ZIP. Temporary and sensitive files are safely ignored."
+              pt="Escolha a pasta do projeto ou um arquivo ZIP."
+              en="Choose your project folder or a ZIP file."
             />
           </p>
           <input

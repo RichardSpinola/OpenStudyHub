@@ -1,3 +1,4 @@
+import { ProjectDeleteForm } from "@/components/project-delete-form";
 import Link from "next/link";
 import { requireAuthenticatedUser } from "@/lib/authorization";
 import { listArchivedProjects } from "@/lib/projects";
@@ -29,6 +30,11 @@ export default async function ArchivedProjects() {
               <input type="hidden" name="projectId" value={p.id} />
               <button>Restaurar projeto</button>
             </form>
+            <ProjectDeleteForm
+              id={p.id}
+              name={p.name}
+              storageBackend={p.storageBackend}
+            />
           </article>
         ))}
       </div>

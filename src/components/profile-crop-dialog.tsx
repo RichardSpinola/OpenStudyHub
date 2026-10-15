@@ -13,6 +13,8 @@ type Kind = "avatar" | "banner";
 
 export function ProfileCropDialog({
   kind,
+  aspectRatio,
+  saveLabel,
   source,
   pending,
   status,
@@ -20,6 +22,8 @@ export function ProfileCropDialog({
   onSave,
 }: {
   kind: Kind;
+  aspectRatio?: number;
+  saveLabel?: string;
   source: string;
   pending: boolean;
   status: string;
@@ -98,9 +102,11 @@ export function ProfileCropDialog({
           </button>
           <div>
             <span className="page-kicker">
-              {kind === "avatar"
-                ? tr("FOTO DE PERFIL", "PROFILE PHOTO")
-                : tr("IMAGEM DE CAPA", "COVER IMAGE")}
+              {aspectRatio
+                ? tr("ENQUADRAMENTO", "FRAMING")
+                : kind === "avatar"
+                  ? tr("FOTO DE PERFIL", "PROFILE PHOTO")
+                  : tr("IMAGEM DE CAPA", "COVER IMAGE")}
             </span>
             <h2 id="profile-crop-title">
               <UiCopy
@@ -112,6 +118,11 @@ export function ProfileCropDialog({
         </header>
         <div
           ref={stage}
+          style={
+            aspectRatio
+              ? { aspectRatio, width: `min(100%, ${aspectRatio * 50}dvh)` }
+              : undefined
+          }
           className={`profile-crop-stage is-${kind}`}
           role="img"
           tabIndex={0}
@@ -218,7 +229,9 @@ export function ProfileCropDialog({
               if (geometry) onSave(geometry.source);
             }}
           >
-            {pending ? "Salvando…" : "Aplicar e salvar"}
+            {pending
+              ? tr("Salvando…", "Saving…")
+              : (saveLabel ?? tr("Aplicar e salvar", "Apply and save"))}
           </button>
         </footer>
       </div>
