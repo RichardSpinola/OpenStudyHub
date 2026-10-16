@@ -1,50 +1,35 @@
-# Etapa 7 — escopo planejado
+# Etapa 7 — plano aprovado e execução
 
-Esta etapa ainda não foi iniciada. Os ajustes de jogos, Foco, Flashcards, som e Chat pedidos após a etapa 6 são uma revisão da etapa 6. A identidade Material/Legacy aprovada continua a base.
+Autorizada em 15/10/2026. A prévia fica **desligada durante implementação, testes técnicos e build**; só é ligada para as verificações visuais necessárias e volta a ser desligada ao terminar. Uma tarefa pesada por vez. Sem publicação, secrets do servidor ou integração Google real nesta etapa.
 
-## 1. Configurações e navegação
+## Configurações do usuário
 
-- Revisar todas as seções de Configurações do usuário: conta/perfil, personalização, Google, notificações, ajuda e Sobre/Créditos.
-- Separar ações comuns de opções avançadas, alinhar controles e tornar salvamento, erro e retorno explícitos. Evitar links pequenos como única entrada de uma função principal.
-- Conferir telas estreitas, baixas e amplas nos dois temas e nas duas posições de navegação. Preservar os fluxos administrativos já aprovados; ajustes ali serão direcionados a inconsistências comprovadas.
-- Manter som de jogos dentro de Aparência; não duplicar o controle em cada jogo.
+Portal com oito cartões ilustrados: Conta e perfil; Aparência; Home e atalhos; Notificações; Integrações; Acessibilidade e idioma; Ajuda; Sobre e Créditos. Três colunas em telas amplas, duas intermediárias e uma no celular. Cada grupo tem retorno claro ao portal; se o conteúdo for longo, a rolagem é normal. Links antigos continuam aceitos.
 
-## 2. Aparência opcional
+Preferências simples salvam automaticamente, com confirmação/erro; perfil mantém salvamento explícito. Não apagar preferências nem substituir a identidade Material/Legacy. Admin mantém a organização já aprovada; recebe somente os controles operacionais desta etapa.
 
-- Adicionar efeito de wallpaper com desfoque no fundo de áreas compatíveis e na barra de navegação, ativável em Personalização.
-- Desligado inicialmente; sem imagem usa a superfície normal. Intensidade e alcance precisam manter contraste e legibilidade.
-- Respeitar redução de transparência/movimento e oferecer retorno imediato ao visual sólido. Evitar aplicar filtros pesados a cada componente.
+## Movimento e aparência
 
-## 3. Backup e recuperação
+Animações discretas em toda a **área do usuário**, incluindo transições de página, controles, cartões e painéis. Duração curta, sem decoração contínua e sem animar novamente mensagens, colaboração ou contadores a cada atualização. Respeitar redução de movimento do sistema e do usuário.
 
-- Backup consistente dos bancos e arquivos locais geridos pela instância, com manifesto de conteúdo e versão. Distinguir links externos de arquivos efetivamente copiados.
-- Criptografia e chave de recuperação, exportação sanitizada separada, destino local e integração com Drive conforme a configuração autorizada.
-- Agendamento e retenção com estado de falha visível; não declarar sucesso após cópia parcial.
-- Restauração guiada em instância de teste, com verificação de integridade, vínculos e recuperação após interrupção. Tutorial simples para o administrador.
+Wallpaper desfocado opcional nas áreas comuns e na navegação: desligado, leve, médio ou forte. Sem imagem mantém fundo sólido. Chat mantém seu próprio wallpaper; editores, jogos abertos e Quadro Branco conservam a superfície de trabalho. Usar uma camada filtrada, preservar contraste e respeitar redução de transparência.
 
-## 4. Desempenho e consumo
+## Chat
 
-- Medir RAM e tempo de resposta antes/depois em cenários reproduzíveis, com tarefas pesadas uma por vez.
-- Limitar concorrência e cópias em RAM de ZIPs/uploads/downloads, preferindo transferência em fluxo quando suportada.
-- Reutilizar conexões de banco, tirar migrações/verificações caras das leituras comuns e reduzir consultas repetidas.
-- Cache curto e renovação de tokens Google sem duplicação; reduzir polling e automações repetidas, mantendo reconexão e atualização correta.
-- Conferir a base de build/runtime, dependências fixadas e pacote necessário. Otimizações só serão declaradas com medição.
+Seta flutuante para **Ir para última mensagem** sempre que a pessoa estiver acima do fim, mesmo sem mensagem nova. Indicador separado de novidade. Reaproveitar a janela recente carregada ou buscar as últimas mensagens se estiver no histórico paginado. Preservar rascunho/anexo e posição de leitura. Em caso de falha, manter a ação disponível.
 
-## 5. Diagnóstico e operação
+## Backup, recuperação e operação
 
-- Saúde real do banco, realtime, armazenamento e integrações; mostrar causa e ação de recuperação compreensíveis.
-- Configuração/diagnóstico de notificações push e VAPID para instalação nova.
-- Rever inicialização com rede tardia e operação pelo gerenciador/Compose, sem substituir silenciosamente a instalação existente.
-- Conferir autorização e limites de login/realtime em ambiente de teste controlado.
+Cópias manuais e rotina diária após configurar destino e guardar a chave de recuperação. Sugestão inicial: 03:00 no fuso escolhido, sete cópias automáticas válidas; retenção configurável e sem limpar manuais. Pacote criptografado com bancos e arquivos geridos, manifesto/checksums e exportação ZIP sanitizada antiga separada. Arquivos remotos não são declarados copiados.
 
-## 6. Idioma e teste de uso
+Destino local e cópia no Drive central quando configurado. Uma execução por vez entre processos, manutenção durante snapshot, histórico de falhas e recuperação offline com validação anterior à substituição e cópia de retorno. O ensaio real com Google continua dependendo da confirmação futura antes de acessar secrets.
 
-- Revisar textos e alternância de idioma, especialmente rótulos misturados, erros e configurações.
-- Percurso com contas fictícias como usuário iniciante: campos inválidos, cancelar, tentar de novo, recarregar, revogar acesso, recuperar backup e entender estados desconectados.
-- Relatar resultados e limites, com testes dirigidos, conferência visual e um commit da entrega.
+Reduzir trabalho repetido dos bancos, renovação duplicada de tokens, polling e cópias desnecessárias em RAM. Comparar um cenário técnico reproduzível, sem transformar microbenchmark em promessa para todas as páginas. Saúde dos dois bancos, realtime e arquivos; diagnóstico privado com ações compreensíveis e saúde pública sanitizada. Configuração push/VAPID para instalação nova. Rever reconexão com rede tardia e preparar o pacote operacional.
 
-## Integração real e etapa 8
+## Validação e entrega
 
-O ensaio com Google/Drive real, usando uma instância nova no notebook, depende da confirmação futura já combinada antes de acessar/copiar secrets do servidor. Nenhum secret será buscado enquanto isso. Produção continua pausada.
+Somente conferências visuais **necessárias nos elementos alterados**. A revisão visual ampla fica com o usuário. Testes técnicos dirigidos são mantidos para dados, recuperação e autorização. Sem passeios por todas as páginas, testes de carga ou builds repetidos sem falha concreta. Um commit local e relato curto com resultados e limitações.
 
-A etapa 8 continua reservada ao checkpoint integrado: ensaio real dividido em percursos, documentação/distribuição/extensão, revisão de privacidade e preparação de publicação no GitHub. Isso não elimina a possibilidade de novas funcionalidades depois da V3.
+## Etapa 8
+
+Checkpoint integrado: ensaio real dividido em percursos, nova instância de teste no notebook, confirmação antes de buscar secrets, Drive/Classroom real, instalação/gerenciador, imagem distribuível, extensão, documentação e preparação do GitHub. A V3 permanece aberta a novas funcionalidades depois deste checkpoint.

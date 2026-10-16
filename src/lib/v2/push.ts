@@ -1,3 +1,7 @@
+import {
+  managedPushConfiguration,
+  validPushConfiguration,
+} from "./push-config";
 import { createHash } from "node:crypto";
 import webpush from "web-push";
 import { z } from "zod";
@@ -16,9 +20,11 @@ export function pushConfiguration() {
   const publicKey = process.env.VAPID_PUBLIC_KEY || "";
   const privateKey = process.env.VAPID_PRIVATE_KEY || "";
   const subject = process.env.VAPID_SUBJECT || "";
-  return publicKey && privateKey && /^mailto:|^https:/.test(subject)
-    ? { publicKey, privateKey, subject }
-    : null;
+  if (publicKey || privateKey || subject)
+    return validPushConfiguration({ publicKey, privateKey, subject })
+      ? { publicKey, privateKey, subject }
+      : null;
+  return managedPushConfiguration();
 }
 
 function safeEndpoint(value: string): string {

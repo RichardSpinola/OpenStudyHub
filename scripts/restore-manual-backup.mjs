@@ -17,13 +17,15 @@ import { dirname, join, resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
 
 const [archiveInput, confirmation, stopped] = process.argv.slice(2);
+const validateOnly = confirmation === "--validate-only";
 const v1 = process.env.DATABASE_PATH;
 const v2 = process.env.OPENSTUDYHUB_V2_DATABASE_PATH;
 const privateAssets = process.env.PRIVATE_ASSET_PATH;
 if (
   !archiveInput ||
-  confirmation !== "--confirm-restore" ||
-  stopped !== "--services-stopped" ||
+  (!validateOnly &&
+    (confirmation !== "--confirm-restore" ||
+      stopped !== "--services-stopped")) ||
   !v1?.startsWith("/") ||
   !v2?.startsWith("/") ||
   !privateAssets?.startsWith("/")
@@ -158,8 +160,35 @@ async function main() {
       throw new Error(`Checksum inválido: ${name}`);
   checkDatabase(join(stage, "databases/v1.sqlite"));
   checkDatabase(join(stage, "databases/v2.sqlite"));
+  if (validateOnly) {
+    console.log(
+      `Backup validado: dois bancos íntegros, ${files.length} arquivos com checksum confirmado. Nenhum dado foi substituído.`,
+    );
+    return;
+  }
+  const targets = [
+    resolve(v1),
+    resolve(v2),
+    resolve(privateAssets),
+    join(dirname(resolve(v2)), "local-assets"),
+  ];
+  if (
+    targets.some((path, index) =>
+      targets.some(
+        (other, otherIndex) =>
+          index !== otherIndex &&
+          (path === other || path.startsWith(other + "/")),
+      ),
+    )
+  )
+    throw new Error("Destinos de restauração sobrepostos.");
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  // Sidecars are part of the rollback set. A WAL left by a crash must never
+  // be replayed onto a newly restored database.
   const operations = [
+    ...[resolve(v1), resolve(v2)].flatMap((db) =>
+      ["-wal", "-shm"].map((suffix) => ({ source: null, target: db + suffix })),
+    ),
     { source: join(stage, "databases/v1.sqlite"), target: resolve(v1) },
     { source: join(stage, "databases/v2.sqlite"), target: resolve(v2) },
     { source: join(stage, "assets/private"), target: resolve(privateAssets) },
@@ -178,8 +207,10 @@ async function main() {
         renameSync(item.target, old);
         moved.push({ target: item.target, old });
       }
-      if (existsSync(item.source)) renameSync(item.source, item.target);
-      else mkdirSync(item.target, { recursive: true, mode: 0o700 });
+      if (item.source && existsSync(item.source))
+        renameSync(item.source, item.target);
+      else if (item.source)
+        mkdirSync(item.target, { recursive: true, mode: 0o700 });
       installed.push(item.target);
     }
   } catch (error) {

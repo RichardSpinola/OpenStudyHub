@@ -15,6 +15,7 @@ const USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 const tokenSchema = z.object({
   access_token: z.string().min(1),
+  expires_in: z.number().positive().optional(),
   refresh_token: z.string().min(1).optional(),
   scope: z.string().optional(),
 });
@@ -216,46 +217,88 @@ export async function completeGoogleV2(
   ).run(userId, profile.sub, refresh, scopes.join(" "), Date.now());
 }
 
+const accessTokens = new WeakMap<
+  V2Database,
+  Map<string, { token?: string; expires: number; pending?: Promise<string> }>
+>();
 export async function googleAccessTokenV2(
   db: V2Database,
   userId: number,
   options: Options = {},
 ): Promise<string> {
   const config = options.config ?? requireGoogleV2Config();
-  const row = db
-    .prepare(
-      "SELECT encrypted_refresh_token token FROM google_connections_v2 WHERE user_id=? AND status='connected'",
-    )
-    .get(userId) as { token: string | null } | undefined;
-  if (!row?.token) throw new Error("Reconecte sua conta Google.");
-  const refreshToken = decryptSecret(row.token, config.encryptionKey);
-  const response = await (options.fetchImpl ?? fetch)(TOKEN_URL, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
-      refresh_token: refreshToken,
-      grant_type: "refresh_token",
-    }),
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as {
-      error?: string;
-    };
-    if (body.error === "invalid_grant") {
-      db.prepare(
-        "UPDATE google_connections_v2 SET encrypted_refresh_token=NULL,status='needs_reconnect',updated_at=? WHERE user_id=?",
-      ).run(Date.now(), userId);
+  const readCredential = () =>
+    (
+      db
+        .prepare(
+          "SELECT encrypted_refresh_token token FROM google_connections_v2 WHERE user_id=? AND status='connected'",
+        )
+        .get(userId) as { token: string | null } | undefined
+    )?.token;
+  const credential = readCredential();
+  if (!credential) throw new Error("Reconecte sua conta Google.");
+  // Injection-based tests do not share network state with production calls.
+  const cache = options.fetchImpl
+    ? new Map<
+        string,
+        { token?: string; expires: number; pending?: Promise<string> }
+      >()
+    : (accessTokens.get(db) ?? new Map());
+  if (!options.fetchImpl) accessTokens.set(db, cache);
+  const key = `${userId}:${hash(credential + config.clientId)}`;
+  const now = options.now ?? Date.now();
+  const hit = cache.get(key);
+  if (hit?.token && hit.expires > now) return hit.token;
+  if (hit?.pending) return hit.pending;
+  for (const [id, entry] of cache)
+    if (!entry.pending && entry.expires <= now) cache.delete(id);
+  if (cache.size >= 128) cache.delete(cache.keys().next().value!);
+  const entry: { token?: string; expires: number; pending?: Promise<string> } =
+    { expires: 0 };
+  entry.pending = (async () => {
+    const response = await (options.fetchImpl ?? fetch)(TOKEN_URL, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+        refresh_token: decryptSecret(credential, config.encryptionKey),
+        grant_type: "refresh_token",
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      if (body.error === "invalid_grant")
+        db.prepare(
+          "UPDATE google_connections_v2 SET encrypted_refresh_token=NULL,status='needs_reconnect',updated_at=? WHERE user_id=? AND encrypted_refresh_token=?",
+        ).run(Date.now(), userId, credential);
+      throw new Error(
+        body.error === "invalid_grant"
+          ? "Reconecte sua conta Google."
+          : "Google temporariamente indisponível.",
+      );
     }
-    throw new Error(
-      body.error === "invalid_grant"
-        ? "Reconecte sua conta Google."
-        : "Google temporariamente indisponível.",
-    );
+    const tokens = tokenSchema.parse(await response.json());
+    if (readCredential() !== credential)
+      throw new Error("Reconecte sua conta Google.");
+    entry.token = tokens.access_token;
+    entry.expires =
+      now +
+      Math.min(300_000, Math.max(0, (tokens.expires_in ?? 0) * 1000 - 60_000));
+    return tokens.access_token;
+  })();
+  cache.set(key, entry);
+  try {
+    return await entry.pending;
+  } catch (error) {
+    cache.delete(key);
+    throw error;
+  } finally {
+    entry.pending = undefined;
   }
-  return tokenSchema.parse(await response.json()).access_token;
 }
 
 export async function verifiedGoogleEmailV2(

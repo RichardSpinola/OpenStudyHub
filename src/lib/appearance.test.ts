@@ -26,6 +26,7 @@ describe("V2 appearance", () => {
         density: "compact",
         accent: "green",
         navigationLayout: "classic",
+        wallpaperBlur: "medium",
         searchEngine: "scholar",
       });
       expect(getAppearanceFromDb(db, 1)).toMatchObject({
@@ -34,6 +35,7 @@ describe("V2 appearance", () => {
         density: "compact",
         navigationLayout: "classic",
         searchEngine: "scholar",
+        wallpaperBlur: "medium",
       });
       saveAppearanceToDb(db, 1, {
         ...defaultAppearance,

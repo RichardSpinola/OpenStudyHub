@@ -3,6 +3,9 @@
 import { useEffect } from "react";
 
 let currentSocket: WebSocket | null = null;
+export function realtimeConnected() {
+  return currentSocket?.readyState === WebSocket.OPEN;
+}
 export function sendRealtime(event: unknown): boolean {
   if (!currentSocket || currentSocket.readyState !== WebSocket.OPEN)
     return false;
@@ -30,7 +33,10 @@ export function RealtimeBridge() {
         const response = await fetch("/api/realtime/config", {
           cache: "no-store",
         });
-        if (!response.ok) return;
+        if (!response.ok) {
+          if (!disposed) retry = window.setTimeout(connect, 5000);
+          return;
+        }
         const config = (await response.json()) as {
           enabled: boolean;
           url?: string;

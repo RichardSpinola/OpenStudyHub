@@ -15,7 +15,11 @@ import {
   requireAuthenticatedUser,
 } from "@/lib/authorization";
 import { recordAuditEvent } from "@/lib/audit";
-import { updateOwnHomePreferences, updateOwnProfile } from "@/lib/profile";
+import {
+  getUserProfile,
+  updateOwnHomePreferences,
+  updateOwnProfile,
+} from "@/lib/profile";
 import { createProfileTag, setOwnProfileTag } from "@/lib/collaboration";
 import {
   addDemoShortcuts,
@@ -108,6 +112,16 @@ export async function updateProfileAction(formData: FormData) {
   });
   revalidatePath("/", "layout");
   revalidatePath("/settings");
+}
+
+export async function updateLocaleSelectionAction(formData: FormData) {
+  const actor = await requireAuthenticatedUser();
+  const profile = getUserProfile(actor.id);
+  updateOwnProfile(actor.id, {
+    displayName: profile.displayName,
+    locale: z.enum(["pt-BR", "en"]).parse(formData.get("locale")),
+  });
+  revalidatePath("/", "layout");
 }
 
 export async function setOwnProfileTagAction(formData: FormData) {

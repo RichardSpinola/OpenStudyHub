@@ -1,3 +1,16 @@
+import {
+  databaseIntegrity,
+  operationalHealth,
+} from "@/lib/v2/operational-health";
+import { PushSetup } from "@/components/push-setup";
+import { pushConfiguration } from "@/lib/v2/push";
+import { BackupCenter } from "@/components/backup-center";
+import {
+  backupConfig,
+  backupRuns,
+  hasRecoveryKey,
+} from "@/lib/v2/backup-service";
+import { storageOwnerStatus } from "@/lib/v2/drive-storage";
 import { AdminSettingsTabs } from "../settings-tabs";
 import { AdminActionPanel } from "../admin-action-panel";
 import Link from "next/link";
@@ -65,14 +78,14 @@ export default async function SystemPage({
     const actor = await currentAdminV2(db);
     if (!actor) redirect("/control/login");
     if (actor.mustChangePassword) redirect("/control/password");
-    const integrity =
-      (db.pragma("quick_check", { simple: true }) as string) === "ok";
-    const foreignKeys = (db.pragma("foreign_key_check") as unknown[]).length;
+    const check = databaseIntegrity(db),
+      integrity = check.healthy,
+      foreignKeys = check.foreignKeys;
     const legacy = getDatabase().sqlite;
-    const legacyIntegrity =
-      legacy.pragma("quick_check", { simple: true }) === "ok";
-    const legacyForeignKeys = (legacy.pragma("foreign_key_check") as unknown[])
-      .length;
+    const legacyCheck = databaseIntegrity(legacy),
+      legacyIntegrity = legacyCheck.healthy,
+      legacyForeignKeys = legacyCheck.foreignKeys;
+    const operational = await operationalHealth();
     const legacyMigrationLog = legacy
       .prepare(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'",
@@ -563,14 +576,36 @@ export default async function SystemPage({
               label: tr("Backup", "Backup"),
               content: (
                 <>
-                  <section className="admin-system-links">
+                  <BackupCenter
+                    config={backupConfig()}
+                    workerActive={Boolean(
+                      backupConfig().workerSeenAt &&
+                      Date.now() - backupConfig().workerSeenAt! < 180000,
+                    )}
+                    configured={hasRecoveryKey()}
+                    runs={backupRuns()}
+                    driveReady={Boolean(
+                      storageOwnerStatus(db)?.connected &&
+                      storageOwnerStatus(db)?.rootReady,
+                    )}
+                  />
+                  <details className="admin-system-links">
+                    <summary>
+                      <UiCopy
+                        pt="Exportação antiga sem criptografia"
+                        en="Legacy unencrypted export"
+                      />
+                    </summary>
                     <h2>
-                      <UiCopy pt="Backup manual" en="Manual backup" />
+                      <UiCopy
+                        pt="Exportação sanitizada"
+                        en="Sanitized export"
+                      />
                     </h2>
                     <p>
                       <UiCopy
-                        pt="Cria uma cópia consistente dos dois bancos e dos assets locais. Sessões e tokens de acesso são removidos; após uma restauração, reconecte o Google. O arquivo ainda contém dados privados e hashes de senha: guarde-o em local protegido."
-                        en="Creates a consistent copy of both databases and local assets. Sessions and access tokens are removed; reconnect Google after a restore. The file still contains private data and password hashes, so keep it protected."
+                        pt="Cria um ZIP sem criptografia dos dois bancos e dos assets locais. Sessões e tokens de acesso são removidos; após uma restauração, reconecte o Google. O arquivo ainda contém dados privados e hashes de senha: guarde-o em local protegido."
+                        en="Creates an unencrypted ZIP of both databases and local assets. Sessions and access tokens are removed; reconnect Google after a restore. The file still contains private data and password hashes, so keep it protected."
                       />
                     </p>
                     <form action={createManualBackupAction}>
@@ -618,7 +653,7 @@ export default async function SystemPage({
                       />
                       <code>docs/operations/manual-backup-restore.md</code>.
                     </p>
-                  </section>
+                  </details>
                 </>
               ),
             },
@@ -627,6 +662,75 @@ export default async function SystemPage({
               label: tr("Diagnóstico", "Diagnostics"),
               content: (
                 <>
+                  <section className="admin-diagnostics-summary">
+                    <h2>
+                      <UiCopy
+                        pt="Serviços e armazenamento"
+                        en="Services and storage"
+                      />
+                    </h2>
+                    <dl>
+                      <div>
+                        <dt>Realtime</dt>
+                        <dd>
+                          {operational.realtime === "operational"
+                            ? tr("Respondendo", "Responding")
+                            : tr(
+                                "Sem resposta. Confira o serviço realtime e seu endereço interno.",
+                                "No response. Check the realtime service and its internal address.",
+                              )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>
+                          <UiCopy pt="Arquivos locais" en="Local files" />
+                        </dt>
+                        <dd>
+                          {operational.storage === "operational"
+                            ? tr(
+                                "Pasta disponível para leitura e gravação",
+                                "Folder available for reading and writing",
+                              )
+                            : tr(
+                                "Confira permissões e espaço disponível",
+                                "Check permissions and free space",
+                              )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>
+                          <UiCopy
+                            pt="Espaço livre no volume"
+                            en="Free space on volume"
+                          />
+                        </dt>
+                        <dd>
+                          {operational.freeBytes === null
+                            ? tr("Indisponível", "Unavailable")
+                            : `${(operational.freeBytes / 1024 ** 3).toFixed(1)} GiB`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>
+                          <UiCopy
+                            pt="Memória deste processo"
+                            en="This process memory"
+                          />
+                        </dt>
+                        <dd>
+                          {Math.round(process.memoryUsage().rss / 1024 ** 2)}{" "}
+                          MiB
+                        </dd>
+                      </div>
+                    </dl>
+                    <p>
+                      <UiCopy
+                        pt="O diagnóstico de integridade é reutilizado por até um minuto; o estado dos serviços, por até 15 segundos."
+                        en="Integrity results are reused for up to one minute; service status, for up to 15 seconds."
+                      />
+                    </p>
+                  </section>
+                  <PushSetup configured={Boolean(pushConfiguration())} />
                   <h2>
                     <UiCopy pt="Estado do banco V2" en="V2 database status" />
                   </h2>

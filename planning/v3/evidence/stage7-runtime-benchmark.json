@@ -1,0 +1,7 @@
+{
+  "date": "2026-10-15",
+  "scenario": "100 canonical SQLite reads, 1000 synthetic users, median of 5 repetitions in separate Node processes; same database schema and query",
+  "before": {"medianMs": 393.2, "rssMiB": 199.9, "peakMiB": 199.9, "strategy": "open, migrate and validate migration hashes, query, close on every operation"},
+  "after": {"medianMs": 5.2, "rssMiB": 123.2, "peakMiB": 123.2, "strategy": "reuse connection, migrate once, check file identity and projection state"},
+  "limitations": "Synthetic helper benchmark, not end-to-end page latency, production load, or total laptop RAM. No real Google requests. Preview services stopped. Results are observations, not general guarantees."
+}

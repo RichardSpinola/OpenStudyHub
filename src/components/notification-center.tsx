@@ -1,4 +1,5 @@
 "use client";
+import { realtimeConnected } from "./realtime-bridge";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -50,7 +51,7 @@ export function NotificationCenter() {
   const bootstrapped = useRef(false);
 
   const poll = useCallback(async () => {
-    if (inFlight.current) return;
+    if (inFlight.current || document.hidden || !navigator.onLine) return;
     inFlight.current = true;
     try {
       const response = await fetch(
@@ -105,7 +106,16 @@ export function NotificationCenter() {
       }
     }, 0);
     void poll();
-    const interval = window.setInterval(poll, 5000);
+    let lastFallback = Date.now();
+    const interval = window.setInterval(() => {
+      if (
+        Date.now() - lastFallback >=
+        (realtimeConnected() ? 30_000 : 10_000)
+      ) {
+        lastFallback = Date.now();
+        void poll();
+      }
+    }, 5000);
     const visibility = () => {
       if (!document.hidden) void poll();
     };

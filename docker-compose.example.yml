@@ -5,6 +5,7 @@ x-openstudyhub-env: &openstudyhub-env
   DATABASE_PATH: /app/data/openstudyhub.db
   OPENSTUDYHUB_V2_DATABASE_PATH: /app/data/v2.db
   PRIVATE_ASSET_PATH: /app/data/private-assets
+  REALTIME_HEALTH_URL: http://openstudyhub-realtime:3045/health
   REALTIME_PUBLIC_URL: ${OPENSTUDYHUB_REALTIME_PUBLIC_URL:-ws://127.0.0.1:3000/realtime}
 
 x-openstudyhub-service: &openstudyhub-service

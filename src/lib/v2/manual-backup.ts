@@ -10,13 +10,14 @@ import {
   lstatSync,
   chmodSync,
   unlinkSync,
-  rmdirSync,
+  rmSync,
 } from "node:fs";
 import { dirname, join, resolve, relative, sep } from "node:path";
 import { pipeline } from "node:stream/promises";
 import yazl from "yazl";
 import { getServerEnvironment } from "@/lib/env";
-import { v2RuntimePath } from "./runtime";
+import { v2RuntimePath } from "./runtime-database";
+import { withBackupLease, finishBackupSnapshot } from "./maintenance";
 
 export type BackupManifest = {
   format: "openstudyhub-v2-manual-backup";
@@ -24,6 +25,12 @@ export type BackupManifest = {
   createdAt: string;
   files: Record<string, string>;
   notice: string;
+  coverage?: {
+    managedFiles: number;
+    remoteReferences: number;
+    noteImagesInDatabase: number;
+    externalFilesCopied: false;
+  };
 };
 
 export function backupDirectory(): string {
@@ -51,6 +58,7 @@ function safeFiles(
             ? /^(?:(?:chat|profiles|shortcut-icons|offering-covers)\/)?[0-9a-f-]{36}\.(?:png|jpg|webp)$/.test(
                 name,
               ) ||
+              /^chat\/[0-9a-f-]{36}\.bin$/.test(name) ||
               /^projects\/(versions|staging)\/[0-9a-f-]{36}\.zip$/.test(name)
             : /^[0-9a-f-]{36}$/.test(name);
         if (!accepted)
@@ -63,6 +71,54 @@ function safeFiles(
   }
   walk(root);
   return result;
+}
+
+function assertManagedInventory(
+  legacy: Database.Database,
+  canonical: Database.Database,
+  names: Set<string>,
+) {
+  const requireFile = (name: string) => {
+    if (!names.has(name))
+      throw new Error(
+        "Há arquivo local referenciado mas ausente. Revise o armazenamento antes do backup.",
+      );
+  };
+  const rows = (db: Database.Database, table: string, column: string) => {
+    if (
+      !db
+        .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?")
+        .get(table)
+    )
+      return [];
+    return db
+      .prepare(
+        `SELECT ${column} ref FROM ${table} WHERE ${column} IS NOT NULL AND ${column}<>''`,
+      )
+      .all() as { ref: string }[];
+  };
+  for (const [table, column, prefix] of [
+    ["users", "avatar_storage_name", "profiles/"],
+    ["users", "banner_storage_name", "profiles/"],
+    ["shortcuts", "icon_storage_name", "shortcut-icons/"],
+    ["user_shortcuts", "icon_storage_name", "shortcut-icons/"],
+    ["user_home_assets", "storage_name", ""],
+    ["chat_attachments", "storage_name", "chat/"],
+  ])
+    for (const row of rows(legacy, table, column))
+      requireFile(`assets/private/${prefix}${row.ref}`);
+  for (const table of ["user_home_wallpapers", "offering_covers"])
+    for (const row of rows(canonical, table, "storage_name"))
+      requireFile(`assets/private/${row.ref}`);
+  for (const row of rows(legacy, "project_versions", "archive_drive_file_id"))
+    if (row.ref.startsWith("local:"))
+      requireFile(`assets/private/projects/versions/${row.ref.slice(6)}.zip`);
+  for (const row of canonical
+    .prepare(
+      "SELECT o.provider_ref ref FROM storage_objects o JOIN storage_backends b ON b.id=o.backend_id WHERE b.kind='local' AND o.archived_at IS NULL",
+    )
+    .all() as { ref: string }[])
+    requireFile(`assets/local/${row.ref}`);
 }
 
 async function sha256(path: string): Promise<string> {
@@ -100,11 +156,15 @@ function removeCredentials(path: string, kind: "v1" | "v2"): void {
   }
 }
 
-export async function createManualBackup(): Promise<{
+export async function createManualBackup(
+  options: { leaseHeld?: boolean } = {},
+): Promise<{
   id: string;
   path: string;
   createdAt: string;
 }> {
+  if (!options.leaseHeld)
+    return withBackupLease(() => createManualBackup({ leaseHeld: true }));
   const env = getServerEnvironment();
   const v1Path = resolve(env.DATABASE_PATH);
   const v2Path = v2RuntimePath();
@@ -118,7 +178,17 @@ export async function createManualBackup(): Promise<{
   const temporary = join(dir, `.pending-${id}`);
   mkdirSync(temporary, { mode: 0o700 });
   const archivePath = join(dir, `${id}.zip`);
+  const guards: Database.Database[] = [];
   try {
+    // Block new requests first, then let short in-flight writes settle. Both DBs
+    // remain write-locked until their snapshots and managed files are staged.
+    await new Promise<void>((resolve) => setTimeout(resolve, 1200));
+    for (const path of [v1Path, v2Path]) {
+      const guard = new Database(path, { fileMustExist: true });
+      guards.push(guard);
+      guard.pragma("busy_timeout=5000");
+      guard.exec("BEGIN IMMEDIATE");
+    }
     const copies = [
       {
         source: v1Path,
@@ -149,17 +219,78 @@ export async function createManualBackup(): Promise<{
       { root: resolve(env.PRIVATE_ASSET_PATH), prefix: "assets/private" },
       { root: join(dirname(v2Path), "local-assets"), prefix: "assets/local" },
     ];
+    const assets = assetRoots.flatMap(({ root, prefix }) =>
+      safeFiles(root, prefix),
+    );
+    assertManagedInventory(
+      guards[0],
+      guards[1],
+      new Set(assets.map((file) => file.name)),
+    );
+    if (assets.length > 19997)
+      throw new Error("Backup excede o limite de arquivos.");
+    let totalBytes =
+      copies.reduce((sum, file) => sum + statSync(file.target).size, 0) +
+      8 * 1024 * 1024;
+    const stagedAssets: Array<{ source: string; name: string }> = [];
+    for (const file of assets) {
+      const size = statSync(file.source).size;
+      totalBytes += size;
+      if (size > 1024 ** 3 || totalBytes > 4 * 1024 ** 3)
+        throw new Error("Backup excede o limite de tamanho.");
+      const target = join(temporary, file.name);
+      mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
+      await pipeline(
+        createReadStream(file.source),
+        createWriteStream(target, { flags: "wx", mode: 0o600 }),
+      );
+      stagedAssets.push({ source: target, name: file.name });
+    }
+    const canonical = guards[1];
+    let remoteObjects = (
+      canonical
+        .prepare(
+          "SELECT count(*) n FROM storage_objects o JOIN storage_backends b ON b.id=o.backend_id WHERE b.kind='google-drive' AND o.archived_at IS NULL",
+        )
+        .get() as { n: number }
+    ).n;
+    for (const query of [
+      "SELECT count(*) n FROM generated_documents WHERE drive_file_id IS NOT NULL",
+      "SELECT count(*) n FROM document_templates",
+      "SELECT count(*) n FROM projects WHERE storage_backend='google-drive' AND drive_project_folder_id IS NOT NULL",
+    ])
+      remoteObjects += (guards[0].prepare(query).get() as { n: number }).n;
+    const noteImagesInDatabase = guards[0]
+      .prepare("SELECT 1 FROM sqlite_master WHERE name='note_images'")
+      .get()
+      ? (
+          guards[0].prepare("SELECT count(*) n FROM note_images").get() as {
+            n: number;
+          }
+        ).n
+      : 0;
+    for (const guard of guards.splice(0)) {
+      guard.exec("ROLLBACK");
+      guard.close();
+    }
+    finishBackupSnapshot();
     const files = [
       ...copies.map(({ target, name }) => ({ source: target, name })),
-      ...assetRoots.flatMap(({ root, prefix }) => safeFiles(root, prefix)),
+      ...stagedAssets,
     ];
     const manifest: BackupManifest = {
       format: "openstudyhub-v2-manual-backup",
       version: 1,
       createdAt,
       files: {},
+      coverage: {
+        managedFiles: assets.length,
+        remoteReferences: remoteObjects,
+        noteImagesInDatabase,
+        externalFilesCopied: false,
+      },
       notice:
-        "Dados de usuários e hashes de senha. Sessões e tokens OAuth foram removidos; reconecte o Google e configure o push após restaurar.",
+        "Bancos e arquivos locais geridos, incluindo imagens de notas no banco. Referências externas e arquivos do Drive NÃO são copiados. Dados privados e hashes de senha presentes. Sessões e tokens OAuth removidos; reconecte Google e push após restaurar. Ambiente e secrets devem ser configurados separadamente.",
     };
     const zip = new yazl.ZipFile();
     for (const file of files) {
@@ -186,10 +317,10 @@ export async function createManualBackup(): Promise<{
     if (existsSync(archivePath)) unlinkSync(archivePath);
     throw error;
   } finally {
-    for (const name of ["v1.sqlite", "v2.sqlite"]) {
-      const path = join(temporary, name);
-      if (existsSync(path)) unlinkSync(path);
+    for (const guard of guards) {
+      if (guard.inTransaction) guard.exec("ROLLBACK");
+      guard.close();
     }
-    rmdirSync(temporary);
+    rmSync(temporary, { recursive: true, force: true });
   }
 }

@@ -25,6 +25,7 @@ export const appearanceSchema = z.object({
     "startpage",
     "ecosia",
   ]),
+  wallpaperBlur: z.enum(["off", "light", "medium", "strong"]).default("off"),
   motion: z.enum(["system", "reduce"]),
   contrast: z.enum(["system", "high"]),
 });
@@ -37,6 +38,7 @@ export const defaultAppearance: Appearance = {
   customAccent: "#6e7680",
   navigationLayout: "top",
   searchEngine: "google",
+  wallpaperBlur: "off",
   motion: "system",
   contrast: "system",
 };
@@ -64,7 +66,7 @@ export function getAppearanceFromDb(
 ): Appearance {
   const row = db
     .prepare(
-      "SELECT theme,mode,density,accent,custom_accent customAccent,navigation_layout navigationLayout,search_engine searchEngine,motion,contrast FROM user_appearance WHERE user_id=?",
+      "SELECT theme,mode,density,accent,custom_accent customAccent,navigation_layout navigationLayout,search_engine searchEngine,motion,contrast,wallpaper_blur wallpaperBlur FROM user_appearance WHERE user_id=?",
     )
     .get(canonicalUserId);
   const stored = row as
@@ -85,11 +87,11 @@ export function saveAppearanceToDb(
 ): Appearance {
   const appearance = appearanceSchema.parse(input);
   db.prepare(
-    `INSERT INTO user_appearance(user_id,theme,mode,density,accent,custom_accent,navigation_layout,search_engine,motion,contrast,updated_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET theme=excluded.theme,mode=excluded.mode,
+    `INSERT INTO user_appearance(user_id,theme,mode,density,accent,custom_accent,navigation_layout,search_engine,motion,contrast,wallpaper_blur,updated_at)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET theme=excluded.theme,mode=excluded.mode,
     density=excluded.density,accent=excluded.accent,custom_accent=excluded.custom_accent,
     navigation_layout=excluded.navigation_layout,
-    search_engine=excluded.search_engine,motion=excluded.motion,contrast=excluded.contrast,updated_at=excluded.updated_at`,
+    search_engine=excluded.search_engine,motion=excluded.motion,contrast=excluded.contrast,wallpaper_blur=excluded.wallpaper_blur,updated_at=excluded.updated_at`,
   ).run(
     canonicalUserId,
     appearance.theme,
@@ -101,6 +103,7 @@ export function saveAppearanceToDb(
     appearance.searchEngine,
     appearance.motion,
     appearance.contrast,
+    appearance.wallpaperBlur,
     Date.now(),
   );
   return appearance;

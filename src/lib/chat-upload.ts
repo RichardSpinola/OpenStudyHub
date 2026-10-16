@@ -13,28 +13,44 @@ export function validChatFilename(name: string) {
     name !== ".."
   );
 }
-export async function readChatFormData(request: Request) {
+export async function readBoundedFormData(request: Request, limit: number) {
   const declared = Number(request.headers.get("content-length"));
-  if (declared > chatRequestLimitBytes) throw new Error("Envio grande demais.");
+  if (declared > limit) throw new Error("Envio grande demais.");
   const reader = request.body?.getReader();
   if (!reader) throw new Error("Envio vazio.");
-  const chunks: Uint8Array<ArrayBuffer>[] = [];
   let size = 0;
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.byteLength;
-      if (size > chatRequestLimitBytes) {
-        await reader.cancel();
-        throw new Error("Envio grande demais.");
+  const counted = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          controller.close();
+          return;
+        }
+        size += value.byteLength;
+        if (size > limit) {
+          await reader.cancel();
+          controller.error(new Error("Envio grande demais."));
+          return;
+        }
+        controller.enqueue(value);
+      } catch (error) {
+        controller.error(error);
       }
-      chunks.push(new Uint8Array(value));
-    }
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
+  try {
+    return await new Response(counted, {
+      headers: { "content-type": request.headers.get("content-type") ?? "" },
+    }).formData();
   } finally {
+    await reader.cancel().catch(() => undefined);
     reader.releaseLock();
   }
-  return new Response(new Blob(chunks), {
-    headers: { "content-type": request.headers.get("content-type") ?? "" },
-  }).formData();
+}
+export function readChatFormData(request: Request) {
+  return readBoundedFormData(request, chatRequestLimitBytes);
 }

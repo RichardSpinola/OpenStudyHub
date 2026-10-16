@@ -94,7 +94,13 @@ export default async function GoogleOnboarding({
             ? "mapping"
             : "discovery";
   return (
-    <div className="academic-shell google-journey">
+    <div className="academic-shell google-journey settings-integration-journey">
+      <Link
+        className="settings-back"
+        href={onboardingIncomplete ? "/onboarding" : "/settings?section=google"}
+      >
+        <UiCopy pt="← Voltar" en="← Back" />
+      </Link>
       <header className="google-hero">
         <div>
           <span className="page-kicker">
@@ -218,7 +224,7 @@ export default async function GoogleOnboarding({
             </span>
           </li>
           <li
-            data-done={data.courses.length > 0}
+            data-done={connected && data.courses.length > 0}
             aria-current={step === "discovery" ? "step" : undefined}
           >
             2{" "}
@@ -227,7 +233,7 @@ export default async function GoogleOnboarding({
             </span>
           </li>
           <li
-            data-done={data.mappings.length > 0}
+            data-done={connected && data.mappings.length > 0}
             aria-current={step === "mapping" ? "step" : undefined}
           >
             3{" "}

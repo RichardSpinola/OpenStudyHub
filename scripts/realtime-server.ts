@@ -1,3 +1,6 @@
+import { realtimeBudget } from "../src/lib/v2/realtime-budget";
+import { tickBackupSchedule } from "../src/lib/v2/backup-service";
+import { backupMaintenanceActive } from "../src/lib/v2/maintenance";
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { WebSocketServer, WebSocket, type RawData } from "ws";
@@ -6,12 +9,12 @@ import { canAccessChatRoom } from "../src/lib/chat";
 import { getDatabase } from "../src/lib/db/client";
 import { activeExam } from "../src/lib/v2/academic-events";
 import { sessionUserV2 } from "../src/lib/v2/auth";
-import { openV2Database, migrateV2 } from "../src/lib/v2/database";
+import { migrateV2 } from "../src/lib/v2/database";
 import {
   legacyChatUserId,
   sendChatMessageOnce,
 } from "../src/lib/v2/chat-state";
-import { USER_COOKIE, v2RuntimePath } from "../src/lib/v2/runtime-database";
+import { USER_COOKIE, withV2Db } from "../src/lib/v2/runtime-database";
 import { extraAccessible, getExtrasFlags } from "../src/lib/v2/extras";
 import { canAccessDominoMatch } from "../src/lib/v2/domino-match";
 import {
@@ -86,14 +89,7 @@ const wire = z.discriminatedUnion("type", [
   z.object({ type: z.literal("domino-refresh"), matchId: z.string().uuid() }),
 ]);
 
-function withDb<T>(fn: (db: ReturnType<typeof openV2Database>) => T): T {
-  const db = openV2Database(v2RuntimePath());
-  try {
-    return fn(db);
-  } finally {
-    db.close();
-  }
-}
+const withDb = withV2Db;
 function principal(token: string) {
   return withDb((db) => {
     const user = sessionUserV2(db, token);
@@ -123,6 +119,7 @@ function write(peer: Peer, value: unknown) {
     peer.socket.send(JSON.stringify(value));
 }
 function heartbeat(peer: Peer) {
+  if (backupMaintenanceActive()) return;
   const now = Date.now();
   withDb((db) => {
     db.prepare(
@@ -189,6 +186,7 @@ function boardPatch(elements: BoardElement[]) {
 }
 http.on("upgrade", (request, socket, head) => {
   try {
+    if (backupMaintenanceActive()) throw new Error("Maintenance");
     if (
       (request.url !== "/realtime" && request.url !== "/whiteboard") ||
       request.headers.origin !== appOrigin ||
@@ -199,6 +197,12 @@ http.on("upgrade", (request, socket, head) => {
     if (!token) throw new Error("No normal session");
     const user = principal(token);
     if (!user) throw new Error("Session denied");
+    const connections = [...peers, ...whiteboardPeers];
+    if (
+      connections.filter((peer) => peer.canonicalId === user.canonicalId)
+        .length >= 8
+    )
+      throw new Error("Connection limit");
     if (request.url === "/whiteboard") {
       if (!boardEnabled()) throw new Error("Whiteboard disabled");
       const name = withDb(
@@ -231,11 +235,20 @@ boardWss.on(
       ...identity,
     };
     whiteboardPeers.add(peer);
+    const allowEvent = realtimeBudget(300);
     socket.send(
       JSON.stringify({ type: "scene", elements: withDb(readGlobalWhiteboard) }),
     );
     boardPresence();
     socket.on("message", (raw: RawData) => {
+      if (!allowEvent()) {
+        socket.close(1008, "Too many events");
+        return;
+      }
+      if (backupMaintenanceActive()) {
+        socket.send(JSON.stringify({ type: "error", reason: "maintenance" }));
+        return;
+      }
       try {
         const valid = principal(peer.token);
         if (
@@ -295,9 +308,18 @@ wss.on(
       ...identity,
     };
     peers.add(peer);
+    const allowEvent = realtimeBudget(60);
     heartbeat(peer);
     write(peer, { type: "ready" });
     socket.on("message", (raw: RawData) => {
+      if (!allowEvent()) {
+        socket.close(1008, "Too many events");
+        return;
+      }
+      if (backupMaintenanceActive()) {
+        socket.send(JSON.stringify({ type: "error", reason: "maintenance" }));
+        return;
+      }
       try {
         const data = wire.parse(JSON.parse(raw.toString()));
         const stillValid = principal(peer.token);
@@ -408,6 +430,7 @@ wss.on(
   },
 );
 setInterval(() => {
+  if (backupMaintenanceActive()) return;
   const cutoff = Date.now() - 45_000;
   withDb((db) =>
     db
@@ -432,3 +455,10 @@ setInterval(() => {
 
 withDb(migrateV2);
 http.listen(port, host, () => console.log(`Realtime ready on ${host}:${port}`));
+
+const backupTick = () =>
+  void tickBackupSchedule().catch(() =>
+    console.error("Backup: confira Sistema > Backup no Admin."),
+  );
+backupTick();
+setInterval(backupTick, 60_000).unref();

@@ -1,33 +1,37 @@
 import { NextResponse } from "next/server";
-
-import { checkDatabaseConnection } from "@/lib/db/client";
-
+import { operationalHealth } from "@/lib/v2/operational-health";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-export function GET() {
+export async function GET() {
   try {
-    if (!checkDatabaseConnection()) {
-      throw new Error("Database check failed");
-    }
-
-    return NextResponse.json({
-      status: "ok",
-      checks: {
-        application: "operational",
-        database: "operational",
-      },
-    });
-  } catch {
+    const health = await operationalHealth();
+    const ready =
+      health.database === "operational" &&
+      health.canonical !== "unavailable" &&
+      health.storage === "operational" &&
+      !health.maintenance;
     return NextResponse.json(
       {
-        status: "unavailable",
+        status: ready
+          ? health.realtime === "unavailable"
+            ? "degraded"
+            : "ok"
+          : "unavailable",
         checks: {
           application: "operational",
-          database: "unavailable",
+          database: health.database,
+          canonical: health.canonical,
+          storage: health.storage,
+          realtime: health.realtime,
+          maintenance: health.maintenance,
         },
       },
-      { status: 503 },
+      { status: ready ? 200 : 503, headers: { "cache-control": "no-store" } },
+    );
+  } catch {
+    return NextResponse.json(
+      { status: "unavailable" },
+      { status: 503, headers: { "cache-control": "no-store" } },
     );
   }
 }

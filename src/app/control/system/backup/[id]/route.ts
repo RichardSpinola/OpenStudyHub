@@ -16,14 +16,18 @@ export async function GET(
   const { id } = await context.params;
   if (!/^[0-9a-f-]{36}$/.test(id))
     return new Response("Não encontrado.", { status: 404 });
-  const path = join(backupDirectory(), `${id}.zip`);
+  const encrypted = existsSync(join(backupDirectory(), `${id}.oshbackup`));
+  const extension = encrypted ? "oshbackup" : "zip";
+  const path = join(backupDirectory(), `${id}.${extension}`);
   if (!existsSync(path))
     return new Response("Não encontrado.", { status: 404 });
   const stream = Readable.toWeb(createReadStream(path)) as ReadableStream;
   return new Response(stream, {
     headers: {
-      "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="openstudyhub-backup-${id}.zip"`,
+      "Content-Type": encrypted
+        ? "application/octet-stream"
+        : "application/zip",
+      "Content-Disposition": `attachment; filename="openstudyhub-backup-${id}.${extension}"`,
       "Content-Length": String(statSync(path).size),
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",

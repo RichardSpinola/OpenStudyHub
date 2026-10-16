@@ -1,3 +1,20 @@
+import Image from "next/image";
+import { SettingsGroup, SettingsRow } from "@/components/settings-group";
+import { SettingsShortcuts } from "@/components/settings-shortcuts";
+import { HomePresentationControls } from "@/components/home-presentation-controls";
+import {
+  IconShieldLock,
+  IconArrowRight,
+  IconBook,
+  IconBell,
+  IconDeviceDesktop,
+  IconBrandGoogleDrive,
+  IconBrandGoogle,
+  IconExternalLink,
+  IconKeyboard,
+} from "@tabler/icons-react";
+import { SettingsPortal, settingsGroups } from "@/components/settings-portal";
+import { SettingsForm } from "@/components/settings-form";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import packageMetadata from "../../../package.json";
@@ -60,25 +77,20 @@ import {
 
 import {
   addDemoShortcutsAction,
-  createPersonalShortcutAction,
   createShortcutAction,
-  deletePersonalShortcutAction,
   deleteShortcutAction,
-  movePersonalShortcutAction,
   moveShortcutAction,
-  togglePersonalShortcutAction,
   toggleShortcutAction,
   updateIdentityAction,
   updateHomePreferencesAction,
   updateHomeSearchAction,
-  updateAccessibilityAction,
   deactivateOwnV2AccountAction,
   addExternalLinkAction,
   deleteExternalLinkAction,
   updateInstitutionAction,
   updateLanguageAction,
-  updatePersonalShortcutAction,
   updateProfileAction,
+  updateLocaleSelectionAction,
   setOwnProfileTagAction,
   updateNotificationPreferencesAction,
   updateProjectsFeatureAction,
@@ -321,14 +333,6 @@ function ShortcutManager({
   );
 }
 
-const personalShortcutActions: ShortcutActions = {
-  create: createPersonalShortcutAction,
-  update: updatePersonalShortcutAction,
-  toggle: togglePersonalShortcutAction,
-  move: movePersonalShortcutAction,
-  remove: deletePersonalShortcutAction,
-};
-
 const instanceShortcutActions: ShortcutActions = {
   create: createShortcutAction,
   update: updateShortcutAction,
@@ -380,85 +384,51 @@ export default async function SettingsPage({
       ? getWallpaperCatalog(user.id, homeBackground !== null)
       : undefined;
 
+  const selectedGroup = settingsGroups.find(
+    ([key]) => key === (section === "privacy" ? "profile" : section),
+  );
+  const SectionIcon = selectedGroup?.[1] ?? IconShieldLock;
+
   return (
-    <div className="settings-shell">
-      <header className="page-heading">
-        <div>
-          <p className="system-label">
-            <UiCopy pt="PREFERÊNCIAS" en="PREFERENCES" />
-          </p>
-          <h1>
-            <UiCopy pt="Configurações" en="Settings" />
-          </h1>
-          <p className="page-description">
-            <UiCopy
-              pt="Perfil, preferências, integrações e personalização."
-              en="Profile, preferences, integrations and customization."
-            />
-          </p>
+    <div className="settings-shell settings-v7" data-settings-section={section}>
+      <header className="settings-detail-header">
+        {section !== "portal" ? (
+          <Link className="settings-back" href="/settings">
+            <UiCopy pt="← Configurações" en="← Settings" />
+          </Link>
+        ) : null}
+        <div className="settings-title-row">
+          {selectedGroup ? (
+            <span className="settings-title-icon" aria-hidden="true">
+              <SectionIcon size={30} stroke={1.5} />
+            </span>
+          ) : null}
+          <div>
+            <p className="system-label">
+              <UiCopy pt="SUAS PREFERÊNCIAS" en="YOUR PREFERENCES" />
+            </p>
+            <h1>
+              {selectedGroup
+                ? tr(selectedGroup[2], selectedGroup[3])
+                : tr("Configurações", "Settings")}
+            </h1>
+            <p className="page-description">
+              {selectedGroup
+                ? tr(selectedGroup[4], selectedGroup[5])
+                : tr(
+                    "Escolha uma área para personalizar seu espaço.",
+                    "Choose an area to personalize your workspace.",
+                  )}
+            </p>
+          </div>
         </div>
       </header>
-      <nav
-        className="section-tabs settings-tabs"
-        aria-label={tr("Configurações", "Settings")}
-      >
-        <Link
-          href="/settings?section=profile"
-          aria-current={section === "profile" ? "page" : undefined}
-        >
-          <UiCopy pt="Conta e Perfil" en="Account and Profile" />
+      {section === "portal" ? <SettingsPortal /> : null}
+      {!v2Mode && section === "portal" && canAdminister ? (
+        <Link className="settings-back" href="/settings?section=administration">
+          <UiCopy pt="Administração" en="Administration" />
         </Link>
-        <Link
-          href="/settings?section=personalization"
-          aria-current={section === "personalization" ? "page" : undefined}
-        >
-          <UiCopy pt="Personalização" en="Customization" />
-        </Link>
-        <Link
-          href="/settings?section=google"
-          aria-current={section === "google" ? "page" : undefined}
-        >
-          <UiCopy pt="Integrações" en="Integrations" />
-        </Link>
-        <Link
-          href="/settings?section=notifications"
-          aria-current={section === "notifications" ? "page" : undefined}
-        >
-          <UiCopy pt="Notificações" en="Notifications" />
-        </Link>
-        <Link
-          href="/settings?section=help"
-          aria-current={section === "help" ? "page" : undefined}
-        >
-          <UiCopy pt="Ajuda e Tutoriais" en="Help and Tutorials" />
-        </Link>
-        <Link
-          href="/settings?section=about"
-          aria-current={section === "about" ? "page" : undefined}
-        >
-          <UiCopy pt="Sobre" en="About" />
-        </Link>
-        {!v2Mode && data.available && data.instance ? (
-          <Link
-            href="/settings?section=instance"
-            aria-current={section === "instance" ? "page" : undefined}
-          >
-            <UiCopy pt="Instância" en="Instance" />
-          </Link>
-        ) : null}
-        {!v2Mode && canAdminister ? (
-          <Link
-            href="/settings?section=administration"
-            aria-current={
-              section === "administration" || section === "storage"
-                ? "page"
-                : undefined
-            }
-          >
-            <UiCopy pt="Administração" en="Administration" />
-          </Link>
-        ) : null}
-      </nav>
+      ) : null}
 
       {!data.available ? (
         <section className="config-panel" role="alert">
@@ -468,693 +438,175 @@ export default async function SettingsPage({
       ) : (
         <>
           {section === "profile" ? (
-            <section
-              className="config-panel settings-pane"
-              aria-labelledby="profile-title"
-            >
-              <div className="section-heading">
-                <span className="panel-index">01</span>
-                <h2 id="profile-title">
-                  <UiCopy pt="Conta e Perfil" en="Account and Profile" />
-                </h2>
-              </div>
-              <ProfileMediaSettings
-                userId={data.profile.id}
-                hasAvatar={Boolean(data.profile.avatarStorageName)}
-                hasBanner={Boolean(data.profile.bannerStorageName)}
-              />
-              <form className="stack-form" action={updateProfileAction}>
-                <label htmlFor="profile-display-name">
-                  {settings.displayName}
-                </label>
-                <input
-                  id="profile-display-name"
-                  name="displayName"
-                  type="text"
-                  minLength={2}
-                  maxLength={120}
-                  defaultValue={data.profile.displayName}
-                  required
-                />
-                <ProfileLocaleSelect
-                  label={settings.languageLabel}
-                  locale={data.profile.locale}
-                />
-                <label htmlFor="profile-bio">Bio</label>
-                <textarea
-                  id="profile-bio"
-                  name="bio"
-                  maxLength={500}
-                  defaultValue={data.profile.bio}
-                  rows={4}
-                />
-                <div className="form-actions">
-                  <span>{settings.personalPreferences}</span>
-                  <button type="submit">{settings.saveProfile}</button>
-                </div>
-              </form>
-              {data.profileTags.length ? (
-                <div className="profile-tag-settings">
-                  <strong>VISUAL TAGS</strong>
-                  {data.profileTags.map((tag) => (
-                    <form key={tag.id} action={setOwnProfileTagAction}>
-                      <input type="hidden" name="tagId" value={tag.id} />
-                      <input
-                        type="hidden"
-                        name="assigned"
-                        value={tag.assigned ? "false" : "true"}
-                      />
-                      <span>{tag.label}</span>
-                      <button type="submit" disabled={!tag.selfAssignable}>
-                        {tag.assigned
-                          ? tr("Remover", "Remove")
-                          : tr("Adicionar", "Add")}
-                      </button>
-                    </form>
-                  ))}
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-
-          {section === "notifications" ? (
-            <section
-              className="config-panel settings-pane"
-              aria-labelledby="notifications-title"
-            >
-              <div className="section-heading">
-                <span className="panel-index">04</span>
-                <h2 id="notifications-title">
-                  <UiCopy pt="Notificações" en="Notifications" />
-                </h2>
-              </div>
-              <form
-                className="stack-form"
-                action={updateNotificationPreferencesAction}
+            <div className="settings-detail-stack">
+              <SettingsGroup
+                title={tr("Foto e capa", "Photo and cover")}
+                description={tr(
+                  "Escolha uma imagem e ajuste o enquadramento antes de salvar.",
+                  "Choose an image and adjust its framing before saving.",
+                )}
               >
-                <strong>
-                  <UiCopy pt="NOTIFICAÇÕES" en="NOTIFICATIONS" />
-                </strong>
-                <label>
-                  <UiCopy pt="Conversas diretas" en="Direct conversations" />
-                  <select
-                    name="dm"
-                    defaultValue={data.notificationPreferences.dm}
-                  >
-                    <option value="all">
-                      <UiCopy pt="Todas" en="All" />
-                    </option>
-                    <option value="mentions">
-                      <UiCopy pt="Menções" en="Mentions" />
-                    </option>
-                    <option value="none">
-                      <UiCopy pt="Nenhuma" en="None" />
-                    </option>
-                  </select>
-                </label>
-                <label>
-                  <UiCopy pt="Grupos" en="Groups" />
-                  <select
-                    name="groupDefault"
-                    defaultValue={data.notificationPreferences.groupDefault}
-                  >
-                    <option value="all">
-                      <UiCopy pt="Todas" en="All" />
-                    </option>
-                    <option value="mentions">
-                      <UiCopy pt="Menções" en="Mentions" />
-                    </option>
-                    <option value="none">
-                      <UiCopy pt="Nenhuma" en="None" />
-                    </option>
-                  </select>
-                </label>
-                <label>
-                  <UiCopy pt="Audiências" en="Audiences" />
-                  <select
-                    name="audienceDefault"
-                    defaultValue={data.notificationPreferences.audienceDefault}
-                  >
-                    <option value="all">
-                      <UiCopy pt="Todas" en="All" />
-                    </option>
-                    <option value="mentions">
-                      <UiCopy pt="Menções" en="Mentions" />
-                    </option>
-                    <option value="none">
-                      <UiCopy pt="Nenhuma" en="None" />
-                    </option>
-                  </select>
-                </label>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    name="desktopEnabled"
-                    value="true"
-                    defaultChecked={data.notificationPreferences.desktopEnabled}
-                  />
-                  <UiCopy
-                    pt="Notificação do sistema enquanto o Hub estiver aberto"
-                    en="System notification while the Hub is open"
-                  />
-                </label>
-                <input type="hidden" name="mentionsEnabled" value="true" />
-                <input type="hidden" name="repliesEnabled" value="true" />
-                <button type="submit">
-                  <UiCopy pt="Salvar notificações" en="Save notifications" />
-                </button>
-              </form>
-              <div className="settings-push-panel">
-                <h3>
-                  <UiCopy
-                    pt="Notificações em segundo plano"
-                    en="Background notifications"
-                  />
-                </h3>
-                <p>
-                  <UiCopy
-                    pt="Ative neste dispositivo para receber avisos mesmo com o Hub fechado. A permissão depende do navegador."
-                    en="Enable on this device to receive alerts even when the Hub is closed. Permission depends on the browser."
-                  />
-                </p>
-                <PushControls />
-              </div>
-            </section>
-          ) : null}
-
-          {section === "personalization" ? (
-            <div className="settings-pane settings-personalization">
-              <section
-                className="config-panel"
-                aria-labelledby="personalization-title"
-              >
-                <div className="section-heading">
-                  <span className="panel-index">01</span>
-                  <h2 id="personalization-title">
-                    <UiCopy pt="Aparência e Home" en="Appearance and Home" />
-                  </h2>
-                </div>
-                <form
-                  className="stack-form home-preferences-form"
-                  action={updateHomePreferencesAction}
+                <ProfileMediaSettings
+                  userId={data.profile.id}
+                  hasAvatar={Boolean(data.profile.avatarStorageName)}
+                  hasBanner={Boolean(data.profile.bannerStorageName)}
+                />
+              </SettingsGroup>
+              <div className="settings-content-columns">
+                <SettingsGroup
+                  title={tr("Como você aparece", "How you appear")}
+                  description={tr(
+                    "Estas informações aparecem no seu perfil para outras pessoas da instância.",
+                    "These details appear on your profile to other people in the instance.",
+                  )}
                 >
-                  <h3>Home</h3>
-                  {process.env.OPENSTUDYHUB_V2_ENABLED === "1" ? (
+                  <SettingsForm
+                    action={updateProfileAction}
+                    className="stack-form settings-profile-form"
+                  >
+                    <label htmlFor="profile-display-name">
+                      {settings.displayName}
+                    </label>
+                    <input
+                      id="profile-display-name"
+                      name="displayName"
+                      type="text"
+                      minLength={2}
+                      maxLength={120}
+                      defaultValue={data.profile.displayName}
+                      required
+                    />
                     <input
                       type="hidden"
-                      name="theme"
-                      value={data.profile.theme}
+                      name="locale"
+                      value={data.profile.locale}
                     />
-                  ) : (
-                    <label>
-                      <UiCopy pt="Tema" en="Theme" />
-                      <ThemeSelect defaultValue={data.profile.theme} />
+                    <label htmlFor="profile-bio">
+                      {tr("Sobre você", "About you")}
                     </label>
-                  )}
-                  <label className="checkbox-label">
-                    <CanonicalCheckbox
-                      key={`clock-${data.profile.homeClockEnabled}`}
-                      name="homeClockEnabled"
-                      checked={data.profile.homeClockEnabled}
+                    <textarea
+                      id="profile-bio"
+                      name="bio"
+                      maxLength={500}
+                      defaultValue={data.profile.bio}
+                      rows={4}
+                      placeholder={tr(
+                        "O que você estuda ou gostaria de compartilhar?",
+                        "What do you study or want to share?",
+                      )}
                     />
-                    <UiCopy
-                      pt="Mostrar relógio na Home"
-                      en="Show clock on Home"
-                    />
-                  </label>
-                  <label>
-                    <UiCopy pt="Posição do relógio" en="Clock position" />
-                    <CanonicalSelect
-                      key={`position-${data.profile.homeClockPosition}`}
-                      name="homeClockPosition"
-                      value={data.profile.homeClockPosition}
-                    >
-                      <option value="top-left">
-                        <UiCopy pt="Superior esquerdo" en="Top left" />
-                      </option>
-                      <option value="top-right">
-                        <UiCopy pt="Superior direito" en="Top right" />
-                      </option>
-                      <option value="bottom-left">
-                        <UiCopy pt="Inferior esquerdo" en="Bottom left" />
-                      </option>
-                      <option value="bottom-right">
-                        <UiCopy pt="Inferior direito" en="Bottom right" />
-                      </option>
-                    </CanonicalSelect>
-                  </label>
-                  <label className="checkbox-label">
-                    <CanonicalCheckbox
-                      key={`today-${data.profile.todayWidgetEnabled}`}
-                      name="todayWidgetEnabled"
-                      checked={data.profile.todayWidgetEnabled}
-                    />
-                    {settings.todayWidget}
-                  </label>
-                  <button type="submit">
-                    <UiCopy pt="Salvar Home" en="Save Home" />
-                  </button>
-                </form>
-                {v2Mode ? (
-                  <form
-                    className="stack-form home-search-form"
-                    action={updateHomeSearchAction}
-                  >
-                    <h3>
-                      <UiCopy pt="Busca da Home" en="Home search" />
-                    </h3>
-                    <label>
-                      <UiCopy pt="Mecanismo de busca" en="Search provider" />
-                      <CanonicalSelect
-                        key={`search-${appearance?.searchEngine ?? "google"}`}
-                        name="searchEngine"
-                        value={appearance?.searchEngine ?? "google"}
-                      >
-                        <option value="google">Google</option>
-                        <option value="scholar">Google Scholar</option>
-                        <option value="duckduckgo">DuckDuckGo</option>
-                        <option value="startpage">Startpage</option>
-                        <option value="ecosia">Ecosia</option>
-                      </CanonicalSelect>
-                    </label>
-                    <button type="submit">
-                      <UiCopy pt="Salvar busca" en="Save search" />
-                    </button>
-                  </form>
-                ) : null}
-                {process.env.OPENSTUDYHUB_V2_ENABLED === "1" ? (
-                  <div className="stack-form appearance-form">
-                    <h3>
-                      <UiCopy
-                        pt="Aparência do aplicativo"
-                        en="App appearance"
-                      />
-                    </h3>
-                    <p>
-                      <UiCopy
-                        pt="Escolha tema, modo, cor de destaque, densidade e posição da navegação."
-                        en="Choose theme, mode, accent color, density and navigation position."
-                      />
-                    </p>
-                    {appearance ? (
-                      <AppearanceControls
-                        key={JSON.stringify(appearance)}
-                        initial={appearance}
-                      />
-                    ) : null}
+                    <small className="settings-note">
+                      {tr(
+                        "Até 500 caracteres. O idioma da interface fica em Acessibilidade e idioma.",
+                        "Up to 500 characters. Interface language is under Accessibility and language.",
+                      )}
+                    </small>
+                    <div className="form-actions">
+                      <button type="submit">{settings.saveProfile}</button>
+                      <Link href={`/profile/${user.id}`}>
+                        {tr("Ver meu perfil", "View my profile")}{" "}
+                        <IconExternalLink size={16} />
+                      </Link>
+                    </div>
+                  </SettingsForm>
+                </SettingsGroup>
+                <SettingsGroup
+                  title={tr("Sua conta", "Your account")}
+                  className="settings-account-summary"
+                >
+                  <div className="settings-account-avatar" aria-hidden="true">
+                    {data.profile.displayName.slice(0, 1).toUpperCase()}
                   </div>
-                ) : null}
-                <GameSoundSettings userId={user.id} />
-                {homePresentation ? (
-                  <HomeControlSettings
-                    enabled={homePresentation.controlEnabled}
-                  />
-                ) : null}
-                <div className="home-background-control">
-                  <h3>
-                    <UiCopy pt="Plano de fundo da Home" en="Home background" />
-                  </h3>
-                  <HomeBackgroundSettings
-                    configured={homeBackground !== null}
-                    catalog={wallpaperCatalog}
-                  />
-                </div>
-              </section>
-              <ShortcutManager
-                index="02"
-                title={settings.personalShortcuts}
-                idPrefix="personal-shortcut"
-                items={data.personalShortcuts}
-                actions={personalShortcutActions}
-                language={language}
-              />
+                  <strong>{data.profile.displayName}</strong>
+                  <span>@{user.login}</span>
+                  <p className="settings-note">
+                    {tr(
+                      "Seu login identifica a conta. Alterar o nome de exibição não muda o acesso.",
+                      "Your username identifies the account. Changing your display name does not change sign-in.",
+                    )}
+                  </p>
+                  <Link
+                    className="settings-related-link"
+                    href="/settings?section=accessibility"
+                  >
+                    {tr(
+                      "Idioma e acessibilidade",
+                      "Language and accessibility",
+                    )}{" "}
+                    <IconArrowRight size={17} />
+                  </Link>
+                </SettingsGroup>
+              </div>
+              {data.profileTags.length ? (
+                <SettingsGroup
+                  title={tr("Identificações do perfil", "Profile badges")}
+                  description={tr(
+                    "Algumas identificações são definidas pela instituição; outras você pode mostrar ou remover.",
+                    "Some badges are set by your institution; others can be added or removed by you.",
+                  )}
+                >
+                  <div className="profile-tag-settings">
+                    {data.profileTags.map((tag) => (
+                      <form key={tag.id} action={setOwnProfileTagAction}>
+                        <input type="hidden" name="tagId" value={tag.id} />
+                        <input
+                          type="hidden"
+                          name="assigned"
+                          value={tag.assigned ? "false" : "true"}
+                        />
+                        <span>{tag.label}</span>
+                        <button type="submit" disabled={!tag.selfAssignable}>
+                          {!tag.selfAssignable
+                            ? tr(
+                                "Definida pela instituição",
+                                "Set by institution",
+                              )
+                            : tag.assigned
+                              ? tr("Remover", "Remove")
+                              : tr("Adicionar", "Add")}
+                        </button>
+                      </form>
+                    ))}
+                  </div>
+                </SettingsGroup>
+              ) : null}
             </div>
           ) : null}
 
-          {section === "google" ? (
-            <section
-              className="config-panel settings-pane"
-              aria-labelledby="google-title"
-            >
-              <div className="section-heading">
-                <span className="panel-index">03</span>
-                <h2 id="google-title">{settings.googleIntegration}</h2>
-              </div>
-              {v2Mode ? (
-                <div className="settings-google-overview">
-                  <div className="settings-google-intro">
-                    <span className="page-kicker">
-                      <UiCopy
-                        pt="INTEGRAÇÃO PESSOAL"
-                        en="PERSONAL INTEGRATION"
-                      />
-                    </span>
-                    <h3>
-                      <UiCopy
-                        pt="Seu espaço Google no OpenStudyHub"
-                        en="Your Google space in OpenStudyHub"
-                      />
-                    </h3>
-                    <p>
-                      <UiCopy
-                        pt="Acompanhe sua conexão e gerencie Classroom e Drive em um só lugar."
-                        en="Follow your connection and manage Classroom and Drive in one place."
-                      />
-                    </p>
-                    <Link className="settings-google-action" href="/google">
-                      {googleHealth?.connection === "needs_reconnect"
-                        ? tr("Reconectar Google →", "Reconnect Google →")
-                        : googleHealth?.connection === "connected"
-                          ? tr("Gerenciar integração →", "Manage integration →")
-                          : tr("Conectar Google →", "Connect Google →")}
-                    </Link>
-                  </div>
-                  <div className="settings-google-status">
-                    <span>
-                      <UiCopy pt="ESTADO DA CONTA" en="ACCOUNT STATUS" />
-                    </span>
-                    <strong
-                      data-state={
-                        googleHealth?.connection === "needs_reconnect"
-                          ? "needs_reconnect"
-                          : googleHealth?.result === "temporary_error"
-                            ? "temporary_error"
-                            : (googleHealth?.connection ?? "not_connected")
-                      }
-                    >
-                      {googleHealth?.connection === "needs_reconnect"
-                        ? tr("Precisa reconectar", "Needs reconnection")
-                        : googleHealth?.result === "temporary_error"
-                          ? tr(
-                              "Verificação temporariamente indisponível",
-                              "Check temporarily unavailable",
-                            )
-                          : googleHealth?.connection === "connected"
-                            ? tr("Conectada", "Connected")
-                            : tr("Não conectada", "Not connected")}
-                    </strong>
-                    <p>
-                      {googleHealth?.connection === "needs_reconnect"
-                        ? tr(
-                            "A autorização precisa ser renovada para continuar a sincronização.",
-                            "Authorization must be renewed to continue syncing.",
-                          )
-                        : googleHealth?.result === "temporary_error"
-                          ? tr(
-                              "A conexão será verificada novamente. Seus dados locais continuam aqui.",
-                              "The connection will be checked again. Your local data remains here.",
-                            )
-                          : googleHealth?.connection === "connected"
-                            ? tr(
-                                "Acesse seus Classrooms, associações e sincronização na página Google.",
-                                "Access your Classrooms, mappings and sync on the Google page.",
-                              )
-                            : tr(
-                                "Conecte sua conta para começar a importar seus Classrooms.",
-                                "Connect your account to start importing your Classrooms.",
-                              )}
-                    </p>
-                    <small>
-                      {tr("Última verificação", "Last check")}:{" "}
-                      {googleHealth?.checkedAt
-                        ? new Intl.DateTimeFormat(language, {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          }).format(googleHealth.checkedAt)
-                        : tr("ainda não realizada", "not yet performed")}
-                    </small>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="google-connection-summary">
-                    <strong>
-                      {!googleAvailability.configured
-                        ? settings.googleUnavailable
-                        : googleConnection?.status === "connected"
-                          ? settings.googleConnected
-                          : googleConnection?.status === "revoked"
-                            ? settings.googleRevoked
-                            : settings.googleDisconnected}
-                    </strong>
-                    {googleConnection?.accountEmail ? (
-                      <span>{googleConnection.accountEmail}</span>
-                    ) : null}
-                    <small>{settings.googlePrivacy}</small>
-                    {googleConnection?.status === "connected" ? (
-                      <>
-                        <small>{settings.googleCapabilities}</small>
-                        <div
-                          className="capability-list"
-                          aria-label={tr("Recursos Google", "Google features")}
-                        >
-                          <span>
-                            <UiCopy
-                              pt="✓ Drive disponível"
-                              en="✓ Drive available"
-                            />
-                          </span>
-                          <span>
-                            <UiCopy
-                              pt="✓ Classroom disponível"
-                              en="✓ Classroom available"
-                            />
-                          </span>
-                          <span>
-                            <UiCopy
-                              pt="✓ Docs disponível"
-                              en="✓ Docs available"
-                            />
-                          </span>
-                        </div>
-                        <ClassroomSyncAll />
-                      </>
-                    ) : null}
-                    {!googleAvailability.configured && user.role === "admin" ? (
-                      <small>{googleAvailability.missing.join(" // ")}</small>
-                    ) : null}
-                  </div>
-                  {parameters.google === "error" ? (
-                    <p className="form-error" role="alert">
-                      {settings.googleDisconnected}
-                    </p>
-                  ) : null}
-                  {googleConnection ? (
-                    <form action={disconnectGoogleAccountAction}>
-                      <button type="submit">{settings.googleDisconnect}</button>
-                    </form>
-                  ) : (
-                    <form action={connectGoogleAccountAction}>
-                      <button
-                        type="submit"
-                        disabled={!googleAvailability.configured}
-                      >
-                        {settings.googleConnect}
-                      </button>
-                    </form>
-                  )}
-                </>
+          {section === "profile" || section === "privacy" ? (
+            <SettingsGroup
+              title={tr("Privacidade e acesso", "Privacy and access")}
+              description={tr(
+                "Revise suas conexões e as opções de acesso da sua conta.",
+                "Review your connections and account access options.",
               )}
-            </section>
-          ) : null}
-
-          {section === "privacy" ? (
-            <section
-              className="config-panel settings-pane"
-              aria-labelledby="privacy-title"
             >
-              <div className="section-heading">
-                <span className="panel-index">05</span>
-                <h2 id="privacy-title">
-                  <UiCopy pt="Privacidade e Dados" en="Privacy and Data" />
-                </h2>
-              </div>
-              <p>
-                <UiCopy
-                  pt="Sua conta Google e seus Classrooms são pessoais. Você pode revisar ou desconectar a integração quando quiser."
-                  en="Your Google account and Classrooms are personal. You can review or disconnect the integration whenever you want."
-                />
-              </p>
-              <div className="settings-link-list">
-                <Link href="/google">
-                  <UiCopy
-                    pt="Gerenciar conexão Google →"
-                    en="Manage Google connection →"
-                  />
-                </Link>
-                <Link href="/settings?section=notifications">
-                  <UiCopy
-                    pt="Preferências de notificação →"
-                    en="Notification preferences →"
-                  />
-                </Link>
-                <Link href="/settings?section=profile">
-                  <UiCopy pt="Dados do perfil →" en="Profile details →" />
-                </Link>
-              </div>
-            </section>
-          ) : null}
-          {section === "accessibility" ? (
-            <section
-              className="config-panel settings-pane"
-              aria-labelledby="accessibility-title"
-            >
-              <div className="section-heading">
-                <span className="panel-index">06</span>
-                <h2 id="accessibility-title">
-                  <UiCopy pt="Acessibilidade" en="Accessibility" />
-                </h2>
-              </div>
-              <p>
-                <UiCopy
-                  pt="Escolha como o aplicativo responde ao movimento e ao contraste."
-                  en="Choose how the app responds to motion and contrast."
-                />
-              </p>
-              {v2Mode && appearance ? (
-                <form
-                  action={updateAccessibilityAction}
-                  className="stack-form settings-accessibility-form"
+              <div className="settings-related-grid">
+                <Link
+                  className="settings-related-link"
+                  href="/settings?section=google"
                 >
-                  <fieldset>
-                    <legend>
-                      <UiCopy pt="Movimento" en="Motion" />
-                    </legend>
-                    <label>
-                      <input
-                        type="radio"
-                        name="motion"
-                        value="system"
-                        defaultChecked={appearance.motion === "system"}
-                      />{" "}
-                      <UiCopy
-                        pt="Respeitar preferência do sistema"
-                        en="Follow system preference"
-                      />
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="motion"
-                        value="reduce"
-                        defaultChecked={appearance.motion === "reduce"}
-                      />{" "}
-                      <UiCopy pt="Reduzir movimento" en="Reduce motion" />
-                    </label>
-                  </fieldset>
-                  <fieldset>
-                    <legend>
-                      <UiCopy pt="Contraste" en="Contrast" />
-                    </legend>
-                    <label>
-                      <input
-                        type="radio"
-                        name="contrast"
-                        value="system"
-                        defaultChecked={appearance.contrast === "system"}
-                      />{" "}
-                      <UiCopy
-                        pt="Respeitar preferência do sistema"
-                        en="Follow system preference"
-                      />
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="contrast"
-                        value="high"
-                        defaultChecked={appearance.contrast === "high"}
-                      />{" "}
-                      <UiCopy pt="Contraste alto" en="High contrast" />
-                    </label>
-                  </fieldset>
-                  <button>
-                    <UiCopy
-                      pt="Salvar acessibilidade"
-                      en="Save accessibility"
-                    />
-                  </button>
-                </form>
-              ) : null}
-              <p>
-                <UiCopy
-                  pt="Tab percorre os controles. Escape fecha painéis e menus."
-                  en="Tab moves through controls. Escape closes panels and menus."
-                />
-              </p>
-            </section>
-          ) : null}
-          {section === "help" ? (
-            <section
-              className="config-panel settings-pane settings-help-pane"
-              aria-labelledby="help-title"
-            >
-              <div className="section-heading">
-                <span className="panel-index">05</span>
-                <h2 id="help-title">
-                  <UiCopy pt="Ajuda e Tutoriais" en="Help and Tutorials" />
-                </h2>
-              </div>
-              <div className="settings-pane-intro">
-                <span className="page-kicker">
-                  <UiCopy pt="POR ONDE COMEÇAR" en="WHERE TO START" />
-                </span>
-                <h3>
-                  <UiCopy
-                    pt="Encontre seu caminho no OpenStudyHub."
-                    en="Find your way around OpenStudyHub."
-                  />
-                </h3>
-                <p>
-                  <UiCopy
-                    pt="Revise os primeiros passos ou vá direto ao ajuste de que precisa."
-                    en="Review the first steps or go straight to the setting you need."
-                  />
-                </p>
-              </div>
-              <div className="settings-guide-grid">
-                <Link href="/onboarding?replay=1">
-                  <span aria-hidden="true">01</span>
-                  <strong>
-                    <UiCopy pt="Primeiros passos" en="Getting started" />
-                  </strong>
-                  <p>
-                    <UiCopy
-                      pt="Reveja perfil e disciplinas e conheça os visuais. A aparência pode ser alterada aqui em Configurações."
-                      en="Review your profile and subjects and explore the themes. You can change appearance here in Settings."
-                    />
-                  </p>
-                  <b>
-                    <UiCopy pt="Rever guia →" en="Review guide →" />
-                  </b>
+                  <IconShieldLock size={21} />
+                  <span>
+                    {tr(
+                      "Revisar sua conexão Google",
+                      "Review your Google connection",
+                    )}
+                  </span>
+                  <IconArrowRight size={17} />
                 </Link>
-                <Link href="/">
-                  <span aria-hidden="true">02</span>
-                  <strong>
-                    <UiCopy pt="Personalizar a Home" en="Customize Home" />
-                  </strong>
-                  <p>
-                    <UiCopy
-                      pt="Use o lápis da Home para escolher fundo, atalhos e widgets."
-                      en="Use the Home pencil to choose background, shortcuts and widgets."
-                    />
-                  </p>
-                  <b>
-                    <UiCopy pt="Abrir Home →" en="Open Home →" />
-                  </b>
-                </Link>
-                <Link href="/google">
-                  <span aria-hidden="true">03</span>
-                  <strong>Google Classroom</strong>
-                  <p>
-                    <UiCopy
-                      pt="Conecte sua conta e confirme as disciplinas antes de sincronizar."
-                      en="Connect your account and confirm subjects before syncing."
-                    />
-                  </p>
-                  <b>
-                    <UiCopy pt="Configurar →" en="Configure →" />
-                  </b>
+                <Link
+                  className="settings-related-link"
+                  href="/settings?section=notifications"
+                >
+                  <IconBell size={21} />
+                  <span>
+                    {tr(
+                      "Escolher quais avisos receber",
+                      "Choose which alerts to receive",
+                    )}
+                  </span>
+                  <IconArrowRight size={17} />
                 </Link>
               </div>
               {v2Mode ? (
@@ -1202,106 +654,805 @@ export default async function SettingsPage({
                   </details>
                 </section>
               ) : null}
-            </section>
+            </SettingsGroup>
           ) : null}
-          {section === "about" ? (
-            <section
-              className="config-panel settings-pane settings-about-pane"
-              aria-labelledby="about-title"
-            >
-              <div className="section-heading">
-                <span className="panel-index">06</span>
-                <h2 id="about-title">
-                  <UiCopy pt="Sobre" en="About" />
-                </h2>
-              </div>
-              <div className="settings-about-identity">
-                <span className="page-kicker">
-                  <UiCopy pt="SEU ESPAÇO DE ESTUDO" en="YOUR STUDY SPACE" />
-                </span>
-                <strong>OpenStudyHub</strong>
-                <p>
-                  <UiCopy
-                    pt="Disciplinas, notas e projetos reunidos para acompanhar sua jornada acadêmica."
-                    en="Subjects, notes and projects together to support your academic journey."
-                  />
-                </p>
-              </div>
-              <dl className="settings-about-facts">
-                <div>
-                  <dt>
-                    <UiCopy pt="Versão" en="Version" />
-                  </dt>
-                  <dd>{packageMetadata.version}</dd>
-                </div>
-                <div>
-                  <dt>
-                    <UiCopy pt="Licença" en="License" />
-                  </dt>
-                  <dd>{packageMetadata.license}</dd>
-                </div>
-              </dl>
-              <details>
-                <summary>
-                  <UiCopy pt="Créditos" en="Credits" />
-                </summary>
-                <p>
-                  <UiCopy
-                    pt="Quadro Branco baseado em"
-                    en="Whiteboard based on"
-                  />{" "}
-                  <a
-                    href="https://github.com/excalidraw/excalidraw"
-                    target="_blank"
-                    rel="noreferrer"
+
+          {section === "notifications" ? (
+            <div className="settings-content-columns">
+              <SettingsForm
+                autoSave
+                className="settings-detail-stack settings-notification-form"
+                action={updateNotificationPreferencesAction}
+              >
+                <SettingsGroup
+                  title={tr("Conversas", "Conversations")}
+                  description={tr(
+                    "Escolha o padrão de avisos para cada tipo de conversa.",
+                    "Choose default alerts for each kind of conversation.",
+                  )}
+                >
+                  {(
+                    [
+                      [
+                        "dm",
+                        "Mensagens diretas",
+                        "Direct messages",
+                        "Conversas entre você e outra pessoa.",
+                        "Conversations between you and another person.",
+                      ],
+                      [
+                        "groupDefault",
+                        "Grupos",
+                        "Groups",
+                        "Padrão de avisos para seus grupos.",
+                        "Default alerts for your groups.",
+                      ],
+                      [
+                        "audienceDefault",
+                        "Conversas da comunidade",
+                        "Community conversations",
+                        "Canais e audiências da sua instituição.",
+                        "Your institution's channels and audiences.",
+                      ],
+                    ] as const
+                  ).map(([name, pt, en, description, english]) => (
+                    <SettingsRow
+                      key={name}
+                      title={tr(pt, en)}
+                      description={tr(description, english)}
+                    >
+                      <select
+                        name={name}
+                        aria-label={tr(pt, en)}
+                        defaultValue={data.notificationPreferences[name]}
+                      >
+                        <option value="all">
+                          {tr("Todas as mensagens", "All messages")}
+                        </option>
+                        <option value="mentions">
+                          {tr("Só menções", "Only mentions")}
+                        </option>
+                        <option value="none">{tr("Nenhuma", "None")}</option>
+                      </select>
+                    </SettingsRow>
+                  ))}
+                </SettingsGroup>
+                <SettingsGroup
+                  title={tr(
+                    "Quando chamar sua atenção",
+                    "When to get your attention",
+                  )}
+                >
+                  <SettingsRow
+                    title={tr(
+                      "Quando mencionarem você",
+                      "When you are mentioned",
+                    )}
+                    description={tr(
+                      "Avisos quando alguém usar seu nome em uma conversa.",
+                      "Alerts when someone mentions you in a conversation.",
+                    )}
                   >
-                    Excalidraw
-                  </a>
-                  <UiCopy
-                    pt=", licenciado sob MIT."
-                    en=", licensed under MIT."
-                  />{" "}
-                  <a
-                    href="https://github.com/excalidraw/excalidraw/blob/v0.18.1/LICENSE"
-                    target="_blank"
-                    rel="noreferrer"
+                    <CanonicalCheckbox
+                      key={`mentions-${data.notificationPreferences.mentionsEnabled}`}
+                      name="mentionsEnabled"
+                      checked={data.notificationPreferences.mentionsEnabled}
+                    />
+                  </SettingsRow>
+                  <SettingsRow
+                    title={tr(
+                      "Respostas às suas mensagens",
+                      "Replies to your messages",
+                    )}
                   >
-                    <UiCopy
-                      pt="Ler licença e créditos ↗"
-                      en="Read license and credits ↗"
+                    <CanonicalCheckbox
+                      key={`replies-${data.notificationPreferences.repliesEnabled}`}
+                      name="repliesEnabled"
+                      checked={data.notificationPreferences.repliesEnabled}
                     />
-                  </a>
-                </p>
-                <p>
-                  <UiCopy
-                    pt="Notas usa BlockNote (MPL-2.0) e Yjs (MIT)."
-                    en="Notes uses BlockNote (MPL-2.0) and Yjs (MIT)."
-                  />{" "}
-                  <Link href="/credits">
-                    <UiCopy
-                      pt="Licenças e créditos ↗"
-                      en="Licenses and credits ↗"
+                  </SettingsRow>
+                  <SettingsRow
+                    title={tr(
+                      "Avisos do sistema com o Hub aberto",
+                      "System alerts while Hub is open",
+                    )}
+                    description={tr(
+                      "Depende também da permissão do navegador.",
+                      "Also depends on browser permission.",
+                    )}
+                  >
+                    <CanonicalCheckbox
+                      key={`desktop-${data.notificationPreferences.desktopEnabled}`}
+                      name="desktopEnabled"
+                      checked={data.notificationPreferences.desktopEnabled}
                     />
+                  </SettingsRow>
+                </SettingsGroup>
+              </SettingsForm>
+              <SettingsGroup
+                title={tr("Neste dispositivo", "On this device")}
+                description={tr(
+                  "Receba avisos mesmo quando o Hub estiver fechado.",
+                  "Receive alerts even when Hub is closed.",
+                )}
+                className="settings-device-card"
+              >
+                <div
+                  className="settings-device-illustration"
+                  aria-hidden="true"
+                >
+                  <IconDeviceDesktop size={64} stroke={1.2} />
+                  <IconBell size={26} />
+                </div>
+                <PushControls />
+                <div className="settings-tip">
+                  <strong>
+                    {tr(
+                      "Não apareceu o pedido de permissão?",
+                      "No permission prompt?",
+                    )}
+                  </strong>
+                  <p>
+                    {tr(
+                      "Veja a permissão de notificações deste site no navegador. Se o envio não estiver configurado, o responsável da instância precisa ativá-lo.",
+                      "Check this site's notification permission in your browser. If delivery is not configured, the instance administrator needs to enable it.",
+                    )}
+                  </p>
+                </div>
+              </SettingsGroup>
+            </div>
+          ) : null}
+
+          {section === "personalization" ? (
+            <div className="settings-detail-stack">
+              {appearance ? (
+                <AppearanceControls initial={appearance} />
+              ) : (
+                <SettingsGroup title={tr("Tema", "Theme")}>
+                  <Link href="/settings?section=home">
+                    {tr("Escolher tema da Home", "Choose Home theme")}
                   </Link>
-                </p>
-              </details>
-              <div className="settings-about-links">
-                <a
-                  href="https://github.com/RichardSpinola/OpenStudyHub"
-                  target="_blank"
-                  rel="noreferrer"
+                </SettingsGroup>
+              )}
+              <SettingsGroup
+                title={tr("Sons e celebrações", "Sounds and celebrations")}
+                description={tr(
+                  "Um toque opcional nas vitórias, sem alterar o áudio do restante do site.",
+                  "An optional sound for victories without changing audio elsewhere.",
+                )}
+              >
+                <GameSoundSettings userId={user.id} />
+              </SettingsGroup>
+              <Link
+                className="settings-related-link"
+                href="/settings?section=accessibility"
+              >
+                <IconKeyboard size={21} />
+                <span>
+                  {tr(
+                    "Redução de movimento e contraste",
+                    "Reduced motion and contrast",
+                  )}
+                </span>
+                <IconArrowRight size={17} />
+              </Link>
+            </div>
+          ) : null}
+
+          {section === "home" ? (
+            <div className="settings-detail-stack">
+              <SettingsGroup
+                title={tr("Seu plano de fundo", "Your background")}
+                description={tr(
+                  "Escolha um dos fundos ou envie uma imagem. Você pode ajustar o enquadramento sem trocar o arquivo.",
+                  "Choose a background or upload an image. You can adjust framing without replacing the file.",
+                )}
+              >
+                <div className="settings-wallpaper-layout">
+                  <HomeBackgroundSettings
+                    configured={homeBackground !== null}
+                    catalog={wallpaperCatalog}
+                  />
+                  {homePresentation && wallpaperCatalog ? (
+                    <HomePresentationControls
+                      initial={homePresentation}
+                      catalog={wallpaperCatalog}
+                    />
+                  ) : null}
+                </div>
+              </SettingsGroup>
+              <div className="settings-equal-columns">
+                <SettingsGroup
+                  title={tr("O que aparece na Home", "What appears on Home")}
                 >
-                  <UiCopy pt="Projeto no GitHub ↗" en="Project on GitHub ↗" />
-                </a>
-                <a
-                  href="https://github.com/RichardSpinola/OpenStudyHub/releases"
-                  target="_blank"
-                  rel="noreferrer"
+                  <SettingsForm
+                    autoSave
+                    className="settings-home-preferences"
+                    action={updateHomePreferencesAction}
+                  >
+                    {v2Mode ? (
+                      <input
+                        type="hidden"
+                        name="theme"
+                        value={data.profile.theme}
+                      />
+                    ) : (
+                      <label>
+                        {tr("Tema", "Theme")}
+                        <ThemeSelect defaultValue={data.profile.theme} />
+                      </label>
+                    )}
+                    <SettingsRow
+                      title={tr("Relógio", "Clock")}
+                      description={tr(
+                        "Hora e data na tela inicial.",
+                        "Time and date on your home screen.",
+                      )}
+                    >
+                      <CanonicalCheckbox
+                        key={`clock-${data.profile.homeClockEnabled}`}
+                        name="homeClockEnabled"
+                        checked={data.profile.homeClockEnabled}
+                      />
+                    </SettingsRow>
+                    <SettingsRow
+                      title={tr("Posição do relógio", "Clock position")}
+                    >
+                      <CanonicalSelect
+                        key={`position-${data.profile.homeClockPosition}`}
+                        name="homeClockPosition"
+                        value={data.profile.homeClockPosition}
+                      >
+                        <option value="top-left">
+                          {tr("Superior esquerdo", "Top left")}
+                        </option>
+                        <option value="top-right">
+                          {tr("Superior direito", "Top right")}
+                        </option>
+                        <option value="bottom-left">
+                          {tr("Inferior esquerdo", "Bottom left")}
+                        </option>
+                        <option value="bottom-right">
+                          {tr("Inferior direito", "Bottom right")}
+                        </option>
+                      </CanonicalSelect>
+                    </SettingsRow>
+                    <SettingsRow
+                      title={tr("Resumo de Hoje", "Today summary")}
+                      description={tr(
+                        "Próxima aula, prazos e atualizações.",
+                        "Next class, deadlines and updates.",
+                      )}
+                    >
+                      <CanonicalCheckbox
+                        key={`today-${data.profile.todayWidgetEnabled}`}
+                        name="todayWidgetEnabled"
+                        checked={data.profile.todayWidgetEnabled}
+                      />
+                    </SettingsRow>
+                  </SettingsForm>
+                  {homePresentation ? (
+                    <HomeControlSettings
+                      enabled={homePresentation.controlEnabled}
+                    />
+                  ) : null}
+                </SettingsGroup>
+                <SettingsGroup
+                  title={tr("Sua pesquisa", "Your search")}
+                  description={tr(
+                    "O provedor usado ao pesquisar na Home ou em uma nova aba.",
+                    "The provider used when searching on Home or a new tab.",
+                  )}
                 >
-                  <UiCopy pt="Notas de versão ↗" en="Release notes ↗" />
-                </a>
+                  {v2Mode ? (
+                    <SettingsForm
+                      autoSave
+                      className="stack-form"
+                      action={updateHomeSearchAction}
+                    >
+                      <label>
+                        {tr("Pesquisar com", "Search with")}
+                        <CanonicalSelect
+                          key={`search-${appearance?.searchEngine ?? "google"}`}
+                          name="searchEngine"
+                          value={appearance?.searchEngine ?? "google"}
+                        >
+                          <option value="google">Google</option>
+                          <option value="scholar">Google Scholar</option>
+                          <option value="duckduckgo">DuckDuckGo</option>
+                          <option value="startpage">Startpage</option>
+                          <option value="ecosia">Ecosia</option>
+                        </CanonicalSelect>
+                      </label>
+                      <p className="settings-note">
+                        {tr(
+                          "O endereço e o termo da pesquisa são enviados ao provedor escolhido quando você pesquisa.",
+                          "The search address and query are sent to your selected provider when you search.",
+                        )}
+                      </p>
+                    </SettingsForm>
+                  ) : null}
+                  <Link className="settings-related-link" href="/">
+                    {tr("Ver minha Home", "View my Home")}{" "}
+                    <IconExternalLink size={17} />
+                  </Link>
+                </SettingsGroup>
               </div>
-            </section>
+              <SettingsGroup
+                title={tr("Seus atalhos", "Your shortcuts")}
+                description={tr(
+                  "Os mesmos links e o mesmo editor que você usa na Home.",
+                  "The same links and editor you use on Home.",
+                )}
+              >
+                <SettingsShortcuts items={data.personalShortcuts} />
+              </SettingsGroup>
+            </div>
+          ) : null}
+
+          {section === "google" ? (
+            <div className="settings-detail-stack">
+              {v2Mode ? (
+                <div className="settings-content-columns">
+                  <SettingsGroup
+                    title="Google Classroom"
+                    description={tr(
+                      "Traga avisos, atividades e materiais das suas disciplinas.",
+                      "Bring announcements, assignments and materials from your courses.",
+                    )}
+                  >
+                    <div className="settings-integration-brand">
+                      <IconBrandGoogle size={34} />
+                      <span
+                        className="settings-connection-badge"
+                        data-connected={
+                          googleHealth?.connection === "connected"
+                        }
+                      >
+                        {googleHealth?.connection === "needs_reconnect"
+                          ? tr("Reconectar", "Reconnect")
+                          : googleHealth?.connection === "connected"
+                            ? tr("Conectado", "Connected")
+                            : tr("Não conectado", "Not connected")}
+                      </span>
+                    </div>
+                    <p>
+                      {googleHealth?.connection === "needs_reconnect"
+                        ? tr(
+                            "A autorização precisa ser renovada. As informações já salvas continuam aqui.",
+                            "Authorization needs renewing. Your saved information remains here.",
+                          )
+                        : googleHealth?.connection === "connected"
+                          ? tr(
+                              "Sua conexão está disponível. Você pode revisar as disciplinas associadas e sincronizar as novidades.",
+                              "Your connection is available. Review linked courses and sync updates.",
+                            )
+                          : tr(
+                              "Conecte sua conta pessoal e escolha as disciplinas que correspondem aos seus Classrooms.",
+                              "Connect your personal account and choose which subjects match your Classrooms.",
+                            )}
+                    </p>
+                    {googleHealth?.result === "temporary_error" ? (
+                      <p role="status" className="settings-tip">
+                        {tr(
+                          "A verificação está temporariamente indisponível. Tente novamente depois.",
+                          "The check is temporarily unavailable. Try again later.",
+                        )}
+                      </p>
+                    ) : null}
+                    <Link className="settings-primary-link" href="/google">
+                      {googleHealth?.connection === "connected"
+                        ? tr(
+                            "Gerenciar conexão e disciplinas",
+                            "Manage connection and courses",
+                          )
+                        : tr(
+                            "Configurar conexão Google",
+                            "Set up Google connection",
+                          )}
+                      <IconArrowRight size={18} />
+                    </Link>
+                    <small className="settings-note">
+                      {tr("Última verificação", "Last check")}:{" "}
+                      {googleHealth?.checkedAt
+                        ? new Intl.DateTimeFormat(language, {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          }).format(googleHealth.checkedAt)
+                        : tr("Ainda não realizada", "Not yet performed")}
+                    </small>
+                  </SettingsGroup>
+                  <SettingsGroup
+                    title={tr(
+                      "Arquivos e Google Drive",
+                      "Files and Google Drive",
+                    )}
+                    className="settings-integration-storage"
+                  >
+                    <IconBrandGoogleDrive size={38} stroke={1.3} />
+                    <h3>
+                      {tr("Armazenamento da instância", "Instance storage")}
+                    </h3>
+                    <p>
+                      {tr(
+                        "O responsável configura o Drive central. Sua conta pessoal do Classroom e o armazenamento da instância são conexões diferentes.",
+                        "The administrator configures central Drive. Your personal Classroom account and instance storage are separate connections.",
+                      )}
+                    </p>
+                    <p className="settings-tip">
+                      {tr(
+                        "Notas e arquivos locais continuam disponíveis sem Google. Arquivos remotos dependem da conexão do Drive.",
+                        "Notes and local files stay available without Google. Remote files depend on the Drive connection.",
+                      )}
+                    </p>
+                    <Link className="settings-related-link" href="/library">
+                      {tr("Abrir Biblioteca", "Open Library")}{" "}
+                      <IconArrowRight size={17} />
+                    </Link>
+                  </SettingsGroup>
+                </div>
+              ) : (
+                <SettingsGroup title={settings.googleIntegration}>
+                  {" "}
+                  <>
+                    <div className="google-connection-summary">
+                      <strong>
+                        {!googleAvailability.configured
+                          ? settings.googleUnavailable
+                          : googleConnection?.status === "connected"
+                            ? settings.googleConnected
+                            : googleConnection?.status === "revoked"
+                              ? settings.googleRevoked
+                              : settings.googleDisconnected}
+                      </strong>
+                      {googleConnection?.accountEmail ? (
+                        <span>{googleConnection.accountEmail}</span>
+                      ) : null}
+                      <small>{settings.googlePrivacy}</small>
+                      {googleConnection?.status === "connected" ? (
+                        <>
+                          <small>{settings.googleCapabilities}</small>
+                          <div
+                            className="capability-list"
+                            aria-label={tr(
+                              "Recursos Google",
+                              "Google features",
+                            )}
+                          >
+                            <span>
+                              <UiCopy
+                                pt="✓ Drive disponível"
+                                en="✓ Drive available"
+                              />
+                            </span>
+                            <span>
+                              <UiCopy
+                                pt="✓ Classroom disponível"
+                                en="✓ Classroom available"
+                              />
+                            </span>
+                            <span>
+                              <UiCopy
+                                pt="✓ Docs disponível"
+                                en="✓ Docs available"
+                              />
+                            </span>
+                          </div>
+                          <ClassroomSyncAll />
+                        </>
+                      ) : null}
+                      {!googleAvailability.configured &&
+                      user.role === "admin" ? (
+                        <small>{googleAvailability.missing.join(" // ")}</small>
+                      ) : null}
+                    </div>
+                    {parameters.google === "error" ? (
+                      <p className="form-error" role="alert">
+                        {settings.googleDisconnected}
+                      </p>
+                    ) : null}
+                    {googleConnection ? (
+                      <form action={disconnectGoogleAccountAction}>
+                        <button type="submit">
+                          {settings.googleDisconnect}
+                        </button>
+                      </form>
+                    ) : (
+                      <form action={connectGoogleAccountAction}>
+                        <button
+                          type="submit"
+                          disabled={!googleAvailability.configured}
+                        >
+                          {settings.googleConnect}
+                        </button>
+                      </form>
+                    )}
+                  </>
+                </SettingsGroup>
+              )}
+            </div>
+          ) : null}
+
+          {section === "accessibility" ? (
+            <div className="settings-detail-stack">
+              {appearance ? (
+                <AppearanceControls initial={appearance} accessibilityOnly />
+              ) : null}
+              <div className="settings-equal-columns">
+                <SettingsGroup
+                  title={tr("Idioma da interface", "Interface language")}
+                  description={tr(
+                    "Muda menus e avisos. Seus textos, mensagens e conteúdos não são traduzidos.",
+                    "Changes menus and notices. Your texts, messages and content are not translated.",
+                  )}
+                >
+                  <SettingsForm
+                    action={updateLocaleSelectionAction}
+                    autoSave
+                    className="stack-form"
+                  >
+                    <ProfileLocaleSelect
+                      label={settings.languageLabel}
+                      locale={data.profile.locale}
+                    />
+                  </SettingsForm>
+                </SettingsGroup>
+                <SettingsGroup
+                  title={tr("Navegação pelo teclado", "Keyboard navigation")}
+                >
+                  <div className="settings-keyboard-guide">
+                    <p>
+                      <kbd>Tab</kbd>
+                      <span>
+                        {tr("Percorrer os controles", "Move between controls")}
+                      </span>
+                    </p>
+                    <p>
+                      <kbd>Enter</kbd>
+                      <span>{tr("Abrir ou confirmar", "Open or confirm")}</span>
+                    </p>
+                    <p>
+                      <kbd>Esc</kbd>
+                      <span>
+                        {tr("Fechar menus e painéis", "Close menus and panels")}
+                      </span>
+                    </p>
+                  </div>
+                </SettingsGroup>
+              </div>
+            </div>
+          ) : null}
+
+          {section === "help" ? (
+            <div className="settings-detail-stack">
+              <SettingsGroup
+                title={tr(
+                  "O que você quer fazer?",
+                  "What would you like to do?",
+                )}
+              >
+                <div className="settings-help-grid">
+                  {(
+                    [
+                      [
+                        "/onboarding?replay=1",
+                        "Primeiros passos",
+                        "Getting started",
+                        "Um percurso curto para conhecer seu espaço.",
+                        "A short tour of your workspace.",
+                      ],
+                      [
+                        "/settings?section=home",
+                        "Personalizar a Home",
+                        "Customize Home",
+                        "Fundo, atalhos, relógio e pesquisa.",
+                        "Background, shortcuts, clock and search.",
+                      ],
+                      [
+                        "/notes",
+                        "Organizar minhas notas",
+                        "Organize my notes",
+                        "Páginas, bases e imagens em um só lugar.",
+                        "Pages, databases and images in one place.",
+                      ],
+                      [
+                        "/google",
+                        "Conectar o Classroom",
+                        "Connect Classroom",
+                        "Conexão, disciplinas e sincronização.",
+                        "Connection, courses and syncing.",
+                      ],
+                    ] as const
+                  ).map(([href, pt, en, description, english]) => (
+                    <Link key={href} href={href}>
+                      <IconBook size={25} stroke={1.5} />
+                      <strong>{tr(pt, en)}</strong>
+                      <p>{tr(description, english)}</p>
+                      <span>
+                        {tr("Abrir", "Open")} <IconArrowRight size={17} />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </SettingsGroup>
+              <SettingsGroup
+                title={tr("Dúvidas frequentes", "Common questions")}
+              >
+                <div className="settings-faq">
+                  <details>
+                    <summary>
+                      {tr(
+                        "Preciso do Google para usar o Hub?",
+                        "Do I need Google to use Hub?",
+                      )}
+                    </summary>
+                    <p>
+                      {tr(
+                        "Você pode usar notas e arquivos locais sem Google. Classroom e arquivos remotos precisam das respectivas integrações.",
+                        "You can use notes and local files without Google. Classroom and remote files need their respective integrations.",
+                      )}
+                    </p>
+                  </details>
+                  <details>
+                    <summary>
+                      {tr(
+                        "Uma alteração não foi salva. E agora?",
+                        "A change was not saved. What now?",
+                      )}
+                    </summary>
+                    <p>
+                      {tr(
+                        "Confira sua conexão e o aviso junto ao controle. Tente salvar novamente. Nome e apresentação usam o botão Salvar perfil.",
+                        "Check your connection and the notice next to the control. Try saving again. Name and bio use the Save profile button.",
+                      )}
+                    </p>
+                  </details>
+                  <details>
+                    <summary>
+                      {tr(
+                        "Onde vejo licenças e créditos?",
+                        "Where are licenses and credits?",
+                      )}
+                    </summary>
+                    <p>
+                      <Link href="/settings?section=about">
+                        {tr("Sobre e Créditos", "About and Credits")}{" "}
+                        <IconArrowRight size={16} />
+                      </Link>
+                    </p>
+                  </details>
+                </div>
+              </SettingsGroup>
+            </div>
+          ) : null}
+
+          {section === "about" ? (
+            <div className="settings-detail-stack">
+              <SettingsGroup
+                title="OpenStudyHub"
+                description={tr(
+                  "Seu espaço para estudar, criar e compartilhar.",
+                  "Your space to study, create and share.",
+                )}
+              >
+                <div className="settings-about-brand">
+                  <Image
+                    src="/brand/icon-180.png"
+                    width="72"
+                    height="72"
+                    alt=""
+                  />
+                  <div>
+                    <strong>OpenStudyHub</strong>
+                    <p>
+                      {tr(
+                        "Disciplinas, notas, documentos e projetos reunidos.",
+                        "Subjects, notes, documents and projects together.",
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <dl className="settings-version-facts">
+                  <div>
+                    <dt>{tr("Versão", "Version")}</dt>
+                    <dd>{packageMetadata.version}</dd>
+                  </div>
+                  <div>
+                    <dt>{tr("Licença do projeto", "Project license")}</dt>
+                    <dd>{packageMetadata.license}</dd>
+                  </div>
+                </dl>
+                <div className="settings-related-grid">
+                  <a
+                    className="settings-related-link"
+                    href="https://github.com/RichardSpinola/OpenStudyHub"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {tr("Projeto no GitHub", "Project on GitHub")}{" "}
+                    <IconExternalLink size={17} />
+                  </a>
+                  <a
+                    className="settings-related-link"
+                    href="https://github.com/RichardSpinola/OpenStudyHub/releases"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {tr("Notas de versão", "Release notes")}{" "}
+                    <IconExternalLink size={17} />
+                  </a>
+                </div>
+              </SettingsGroup>
+              <SettingsGroup
+                title={tr("Créditos", "Credits")}
+                description={tr(
+                  "Software que ajuda a construir o OpenStudyHub.",
+                  "Software that helps build OpenStudyHub.",
+                )}
+              >
+                <div className="settings-credit-grid">
+                  <article>
+                    <span className="settings-credit-glyph" aria-hidden="true">
+                      ✎
+                    </span>
+                    <h3>Excalidraw</h3>
+                    <p>
+                      {tr("Base do Quadro Branco", "Whiteboard foundation")}
+                    </p>
+                    <span>MIT</span>
+                    <a
+                      href="https://github.com/excalidraw/excalidraw/blob/v0.18.1/LICENSE"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {tr("Licença e projeto", "License and project")}{" "}
+                      <IconExternalLink size={15} />
+                    </a>
+                  </article>
+                  <article>
+                    <span className="settings-credit-glyph" aria-hidden="true">
+                      ▤
+                    </span>
+                    <h3>BlockNote</h3>
+                    <p>
+                      {tr(
+                        "Editor por blocos nas Notas",
+                        "Block editor in Notes",
+                      )}
+                    </p>
+                    <span>MPL-2.0</span>
+                    <Link href="/credits">
+                      {tr("Licença e créditos", "License and credits")}{" "}
+                      <IconArrowRight size={15} />
+                    </Link>
+                  </article>
+                  <article>
+                    <span className="settings-credit-glyph" aria-hidden="true">
+                      ⇄
+                    </span>
+                    <h3>Yjs</h3>
+                    <p>
+                      {tr(
+                        "Edição colaborativa de notas",
+                        "Collaborative note editing",
+                      )}
+                    </p>
+                    <span>MIT</span>
+                    <Link href="/credits">
+                      {tr("Licença e créditos", "License and credits")}{" "}
+                      <IconArrowRight size={15} />
+                    </Link>
+                  </article>
+                </div>
+                <Link className="settings-related-link" href="/credits">
+                  {tr(
+                    "Todos os créditos e avisos de terceiros",
+                    "All credits and third-party notices",
+                  )}{" "}
+                  <IconArrowRight size={18} />
+                </Link>
+              </SettingsGroup>
+            </div>
           ) : null}
 
           {canAdminister && section === "administration" ? (

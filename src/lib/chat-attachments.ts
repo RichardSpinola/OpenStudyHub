@@ -1,3 +1,5 @@
+import { createReadStream } from "node:fs";
+import { lstat } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -148,12 +150,11 @@ export async function saveChatAttachment(
   }
 }
 
-export async function readChatAttachment(
+function attachmentMetadata(
   userId: number,
   attachmentId: number,
-  options: { connection?: DatabaseConnection; assetRoot?: string } = {},
-): Promise<{ data: Buffer; mimeType: string; name: string } | null> {
-  const connection = options.connection ?? getDatabase();
+  connection: DatabaseConnection,
+) {
   const row = connection.sqlite
     .prepare(
       `select a.storage_name as storageName, a.mime_type as mimeType,
@@ -170,9 +171,49 @@ export async function readChatAttachment(
       }
     | undefined;
   if (!row || !canAccessChatRoom(userId, row.roomId, connection)) return null;
+  return row;
+}
+
+export async function readChatAttachment(
+  userId: number,
+  attachmentId: number,
+  options: { connection?: DatabaseConnection; assetRoot?: string } = {},
+): Promise<{ data: Buffer; mimeType: string; name: string } | null> {
+  const row = attachmentMetadata(
+    userId,
+    attachmentId,
+    options.connection ?? getDatabase(),
+  );
+  if (!row) return null;
   try {
     return {
       data: await readFile(safePath(row.storageName, options.assetRoot)),
+      mimeType: row.mimeType,
+      name: row.name ?? `imagem.${row.storageName.split(".").at(-1)}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function openChatAttachment(
+  userId: number,
+  attachmentId: number,
+  options: { connection?: DatabaseConnection; assetRoot?: string } = {},
+) {
+  const row = attachmentMetadata(
+    userId,
+    attachmentId,
+    options.connection ?? getDatabase(),
+  );
+  if (!row) return null;
+  const path = safePath(row.storageName, options.assetRoot);
+  try {
+    const file = await lstat(path);
+    if (!file.isFile() || file.isSymbolicLink()) return null;
+    return {
+      stream: createReadStream(path),
+      size: file.size,
       mimeType: row.mimeType,
       name: row.name ?? `imagem.${row.storageName.split(".").at(-1)}`,
     };

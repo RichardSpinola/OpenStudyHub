@@ -107,3 +107,16 @@ U14 e a parte de Notas de U28 implementados localmente. Páginas/subpáginas, bl
 ### Aparência opcional reservada à etapa 7
 
 Planejar com o usuário um wallpaper com blur nas superfícies selecionadas e possível barra de navegação translúcida. Desligado inicialmente; fundo sólido preservado quando desativado. Nenhuma implementação de blur na etapa 6.
+
+## Revisão de 15/10 — Etapa 7
+
+Configurações recebeu o portal e o redesign dos oito grupos internos; Home mantém os controles existentes de enquadramento/atalhos. Blur opcional, movimento reduzido, seta de última mensagem e alinhamento do botão Enviar estão registrados em [STAGE_7.md](STAGE_7.md).
+
+- **A12: parcial.** Multipart do chat com limite contado e download em stream; backup e cópia no Drive em stream. O ZIP de Projects até 200 MB ainda usa buffers: orçamento global/carga grande ficam para a etapa 8.
+- **A13 e A27: implementados e testados em fixture.** Cache curto/deduplicação de refresh com checagem da credencial; conexão canônica reutilizada e migrations fora das leituras repetidas. Microbenchmark limitado, sem promessa de consumo global do notebook.
+- **A28: implementado parcialmente.** Polling de Chat/notificações reduzido com realtime e pausado em aba oculta/offline; automação evita manutenção. Ciclo completo de todas as ferramentas depende do ensaio integrado.
+- **A29/A30: implementação local.** Saúde sanitizada, diagnóstico privado, integridade dos dois bancos e configuração VAPID; inscrição real de navegador/entrega push permanece na etapa 8.
+- **A31: preparação parcial.** Reconexão com rede tardia no cliente; boot real e gerenciador ZimaOS/CasaOS não foram ensaiados nesta etapa.
+- **A32: implementado com testes dirigidos.** Pacote criptografado, snapshots coordenados, inventário de arquivos geridos, retenção, chave separada e validação de restore. Drive foi testado com transporte simulado; queda de energia/processo e recuperação na instalação real continuam pendentes.
+- **A33: parcial.** Orçamento por socket/usuário no realtime e testes de autorização dirigidos; carga concorrente e limite completo de login são conferências da etapa 8.
+- **A34: preparação parcial.** Entradas operacionais empacotáveis verificadas, sem novas dependências. Build Next validado; imagem final, boot e medição total de memória ainda pendentes.

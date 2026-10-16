@@ -16,10 +16,14 @@ describe("navegação contextual de configurações", () => {
       "personalization",
     );
     expect(resolveSettingsSection("google", personal)).toBe("google");
-    expect(resolveSettingsSection("privacy", personal)).toBe("profile");
-    expect(resolveSettingsSection("accessibility", personal)).toBe("profile");
-    expect(resolveSettingsSection("administration", personal)).toBe("profile");
-    expect(resolveSettingsSection("storage", personal)).toBe("profile");
+    expect(resolveSettingsSection(undefined, personal)).toBe("portal");
+    expect(resolveSettingsSection("home", personal)).toBe("home");
+    expect(resolveSettingsSection("privacy", personal)).toBe("privacy");
+    expect(resolveSettingsSection("accessibility", personal)).toBe(
+      "accessibility",
+    );
+    expect(resolveSettingsSection("administration", personal)).toBe("portal");
+    expect(resolveSettingsSection("storage", personal)).toBe("portal");
   });
 
   it("mantém deep links permitidos de instância e administração", () => {

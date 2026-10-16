@@ -1,9 +1,10 @@
+import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getCurrentSession } from "@/lib/authorization";
 import { assertToolAvailable } from "@/lib/v2/exam-access";
-import { readChatAttachment } from "@/lib/chat-attachments";
+import { openChatAttachment } from "@/lib/chat-attachments";
 
 export async function GET(
   _request: Request,
@@ -13,7 +14,7 @@ export async function GET(
   if (!session) return new NextResponse(null, { status: 401 });
   try {
     assertToolAvailable(session.user.id);
-    const image = await readChatAttachment(
+    const image = await openChatAttachment(
       session.user.id,
       z.coerce
         .number()
@@ -22,8 +23,9 @@ export async function GET(
         .parse((await context.params).attachmentId),
     );
     if (!image) return new NextResponse(null, { status: 404 });
-    return new NextResponse(new Uint8Array(image.data), {
+    return new NextResponse(Readable.toWeb(image.stream) as ReadableStream, {
       headers: {
+        "content-length": String(image.size),
         "cache-control": "private, no-store",
         "content-disposition": `${image.mimeType.startsWith("image/") ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(image.name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16)}`)}`,
         "content-type": image.mimeType,

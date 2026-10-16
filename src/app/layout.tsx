@@ -1,9 +1,12 @@
+import { UserAtmosphere } from "@/components/user-atmosphere";
+import { getHomeBackground } from "@/lib/home-background";
+import { getWallpaperCatalog } from "@/lib/home-wallpapers";
 import { FocusProvider, FocusChip } from "@/components/focus-tools";
 import { ExamAccessBridge } from "@/components/exam-access-bridge";
 import { examForLegacyUser } from "@/lib/v2/exam-access";
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { headers } from "next/headers";
 
 import { PrimaryNavigation } from "@/components/primary-navigation";
@@ -38,6 +41,7 @@ import "./workspace-polish.css";
 import "./weekly-schedule.css";
 import "./note-workspace.css";
 import "./study-tools.css";
+import "./settings-experience.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getServerEnvironment().APP_URL),
@@ -91,6 +95,7 @@ export default async function RootLayout({
   let extrasEnabled = false;
   let focusEnabled = false;
   let hasAvatar = false;
+  let commonWallpaper: string | null = null;
 
   try {
     if (session) {
@@ -99,6 +104,13 @@ export default async function RootLayout({
       language = profile.locale;
       theme = profile.theme;
       appearance = getAppearance(session.user.id);
+      const background = getHomeBackground(session.user.id);
+      const catalog = getWallpaperCatalog(session.user.id, background !== null);
+      commonWallpaper = catalog.selected.startsWith("custom:")
+        ? `/api/home-background?wallpaperId=${catalog.selected.slice(7)}`
+        : catalog.selected === "legacy"
+          ? `/api/home-background?v=${background?.updatedAt ?? 0}`
+          : null;
       projectsEnabled = isProjectsFeatureEnabled();
       if (process.env.OPENSTUDYHUB_V2_ENABLED === "1") {
         const flags = withV2Db(getExtrasFlags);
@@ -153,6 +165,7 @@ export default async function RootLayout({
       data-accent={session ? appearance.accent : "neutral"}
       data-nav-layout={session ? appearance.navigationLayout : "top"}
       data-motion={session ? appearance.motion : "system"}
+      data-wallpaper-blur={session ? appearance.wallpaperBlur : "off"}
       data-contrast={session ? appearance.contrast : "system"}
       style={customAccentStyle}
     >
@@ -179,6 +192,7 @@ export default async function RootLayout({
           >
             <AvatarShapeBridge />
             <div className="app-frame">
+              {session ? <Suspense fallback={null}><UserAtmosphere image={commonWallpaper} /></Suspense> : null}
               <header className="app-header">
                 <Link className="brand" href="/">
                   {/* eslint-disable-next-line @next/next/no-img-element */}

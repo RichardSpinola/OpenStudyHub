@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { createDatabase } from "@/lib/db/client";
 import { synchronizeAcademicProjection } from "./academic-projection";
 import { resolve } from "node:path";
@@ -54,30 +54,61 @@ function reconcile(db: V2Database) {
   }
 }
 
-export function withV2Db<T>(fn: (db: V2Database) => T): T {
-  const db = openV2Database(v2RuntimePath());
+// One connection per process, migrated once per database file. Concurrent callers
+// must continue to keep transactions synchronous (better-sqlite3 semantics).
+const runtime = globalThis as typeof globalThis & {
+  oshCanonicalDatabase?: { path: string; identity: string; db: V2Database };
+};
+export function runtimeV2Database(): V2Database {
+  const path = v2RuntimePath();
+  const stat = existsSync(path) ? statSync(path) : null;
+  const identity = stat ? `${stat.dev}:${stat.ino}` : "new";
+  const cached = runtime.oshCanonicalDatabase;
+  if (
+    cached &&
+    cached.path === path &&
+    cached.identity === identity &&
+    cached.db.open
+  )
+    return cached.db;
+  cached?.db.close();
+  const db = openV2Database(path);
   try {
     migrateV2(db);
-    reconcile(db);
-    const result = fn(db);
-    reconcile(db);
-    return result;
-  } finally {
+  } catch (error) {
     db.close();
+    throw error;
+  }
+  const created = statSync(path);
+  runtime.oshCanonicalDatabase = {
+    path,
+    identity: `${created.dev}:${created.ino}`,
+    db,
+  };
+  return db;
+}
+export function closeRuntimeV2Database(): void {
+  const cached = runtime.oshCanonicalDatabase;
+  if (cached?.db.open) cached.db.close();
+  delete runtime.oshCanonicalDatabase;
+}
+export function withV2Db<T>(fn: (db: V2Database) => T): T {
+  const db = runtimeV2Database();
+  reconcile(db);
+  try {
+    return fn(db);
+  } finally {
+    reconcile(db);
   }
 }
-
 export async function withV2DbAsync<T>(
   fn: (db: V2Database) => Promise<T>,
 ): Promise<T> {
-  const db = openV2Database(v2RuntimePath());
+  const db = runtimeV2Database();
+  reconcile(db);
   try {
-    migrateV2(db);
-    reconcile(db);
-    const result = await fn(db);
-    reconcile(db);
-    return result;
+    return await fn(db);
   } finally {
-    db.close();
+    reconcile(db);
   }
 }

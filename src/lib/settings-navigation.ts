@@ -1,4 +1,6 @@
 export type SettingsSection =
+  | "portal"
+  | "home"
   | "profile"
   | "personalization"
   | "google"
@@ -16,6 +18,10 @@ export function resolveSettingsSection(
   access: { instance: boolean; administration: boolean; storage: boolean },
 ): SettingsSection {
   const allowed: SettingsSection[] = [
+    "portal",
+    "home",
+    "privacy",
+    "accessibility",
     "profile",
     "personalization",
     "google",
@@ -28,7 +34,7 @@ export function resolveSettingsSection(
   if (access.storage) allowed.push("storage");
   return allowed.includes(requested as SettingsSection)
     ? (requested as SettingsSection)
-    : "profile";
+    : "portal";
 }
 
 export type AcademicSettingsSection =

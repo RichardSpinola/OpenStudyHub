@@ -1,3 +1,4 @@
+import { backupMaintenanceActive } from "@/lib/v2/maintenance";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { withV2Db, USER_COOKIE } from "@/lib/v2/runtime-database";
@@ -6,6 +7,21 @@ import { activeExam, examRestrictedPath } from "@/lib/v2/academic-events";
 import { configuredSurface, surfaceRoute } from "@/lib/v2/surface";
 
 export function proxy(request: NextRequest) {
+  if (
+    backupMaintenanceActive() &&
+    !/^\/(api\/health|_next\/|brand\/)/.test(request.nextUrl.pathname)
+  )
+    return new Response(
+      "Cópia de segurança em andamento. Aguarde e tente novamente; suas alterações não foram enviadas.",
+      {
+        status: 503,
+        headers: {
+          "retry-after": "10",
+          "cache-control": "no-store",
+          "content-type": "text/plain; charset=utf-8",
+        },
+      },
+    );
   const surface = configuredSurface(
     process.env.OPENSTUDYHUB_SURFACE,
     process.env.NODE_ENV === "production",

@@ -1,3 +1,4 @@
+import { backupMaintenanceActive } from "./maintenance";
 import { randomUUID } from "node:crypto";
 
 import type { Actor } from "./actor";
@@ -105,6 +106,7 @@ export async function runDueGoogleAutomation(
   db: V2Database,
   now = Date.now(),
 ): Promise<boolean> {
+  if (backupMaintenanceActive()) return false;
   const token = randomUUID();
   const acquired = db
     .prepare(
