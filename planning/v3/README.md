@@ -39,8 +39,8 @@ Consolidar as correções pós-V2 no mesmo projeto público, melhorar os fluxos 
 | 4     | Drive, bibliotecas, modelos, Documentos e Projects recuperáveis/local                      | Implementada; 400 testes; limites da revisão em STAGE_4.md |
 | 5     | Notas: workspace, colaboração e bases simples                                              | Implementada localmente; validação em STAGE_5.md           |
 | 6     | Chat, nove jogos, Foco e flashcards compartilhados                                         | Concluída localmente; testes e limites em STAGE_6.md       |
-| 7     | Backup, recuperação, desempenho, diagnóstico, configurações e idioma                       | Planejada                                                  |
-| 8     | Checkpoint integrado, documentação, extensão e pacote distribuível                         | Planejada                                                  |
+| 7     | Configurações/operação e complemento de agenda, tarefas e tour                             | Entrega local; complemento em STAGE_7_COMPLEMENT.md          |
+| 8     | 8A: testes/correções; 8B: documentação e GitHub; 8C: implantação                             | Planejada com o usuário; não executar nesta rodada          |
 
 ## Trabalho e validação
 
@@ -94,3 +94,5 @@ Entrega única: Chat, nove jogos, Pomodoro/cronômetro, flashcards compartilhado
 [Relatório da etapa 7](STAGE_7.md): portal e todos os grupos internos de Configurações, aparência/blur opcional, recuperação, desempenho, diagnóstico e notificações. [Plano aprovado](STAGE_7_PLAN.md). Integrações reais, instalação e revisão integrada permanecem na etapa 8.
 
 - [Refinamento da etapa 6](STAGE_6_REFINEMENT.md): áreas imersivas, ajuste de jogos à janela, prévias consistentes, som em Aparência, botão Pomodoro e anexos/menus do Chat.
+
+- [Complemento da etapa 7](STAGE_7_COMPLEMENT.md): tarefas pessoais, exportação .ics e tour guiado para contas novas/existentes. Testes integrados e implantação permanecem suspensos até o planejamento da 8A com o usuário.

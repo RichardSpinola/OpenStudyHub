@@ -1,3 +1,4 @@
+import { ProductTour } from "@/components/product-tour";
 import { UserAtmosphere } from "@/components/user-atmosphere";
 import { getHomeBackground } from "@/lib/home-background";
 import { getWallpaperCatalog } from "@/lib/home-wallpapers";
@@ -42,6 +43,8 @@ import "./weekly-schedule.css";
 import "./note-workspace.css";
 import "./study-tools.css";
 import "./settings-experience.css";
+import "./personal-planning.css";
+import "./product-tour.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getServerEnvironment().APP_URL),
@@ -192,7 +195,11 @@ export default async function RootLayout({
           >
             <AvatarShapeBridge />
             <div className="app-frame">
-              {session ? <Suspense fallback={null}><UserAtmosphere image={commonWallpaper} /></Suspense> : null}
+              {session ? (
+                <Suspense fallback={null}>
+                  <UserAtmosphere image={commonWallpaper} />
+                </Suspense>
+              ) : null}
               <header className="app-header">
                 <Link className="brand" href="/">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -282,6 +289,11 @@ export default async function RootLayout({
                 </footer>
               ) : null}
             </div>
+            {session ? (
+              <Suspense fallback={null}>
+                <ProductTour key={session.user.id} userId={session.user.id} />
+              </Suspense>
+            ) : null}
           </FocusProvider>
         </UiLanguageProvider>
       </body>

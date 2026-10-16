@@ -20,9 +20,13 @@ export default function ExtrasPage() {
           />
         </p>
       </header>
-      <div className="extras-cards extras-feature-grid">
+      <div className="extras-cards extras-feature-grid" data-tour="extras">
         {extraAccessible(flags, "whiteboard") ? (
-          <Link href="/extras/whiteboard" className="extras-feature-card">
+          <Link
+            href="/extras/whiteboard"
+            className="extras-feature-card"
+            data-tour="extra-whiteboard"
+          >
             <ExtrasPreview kind="whiteboard" />
             <span className="extras-card-copy">
               <strong>
@@ -63,6 +67,7 @@ export default function ExtrasPage() {
               key={key}
               href={`/extras/${key}`}
               className="extras-feature-card"
+              data-tour={`extra-${key}`}
             >
               <ExtrasPreview kind={key} />
               <span className="extras-card-copy">
@@ -80,7 +85,11 @@ export default function ExtrasPage() {
           ) : null,
         )}
         {extraAccessible(flags, "games") ? (
-          <Link href="/extras/games" className="extras-feature-card">
+          <Link
+            href="/extras/games"
+            className="extras-feature-card"
+            data-tour="extra-games"
+          >
             <ExtrasPreview kind="games" />
             <span className="extras-card-copy">
               <strong>

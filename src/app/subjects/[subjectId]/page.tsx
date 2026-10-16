@@ -465,7 +465,10 @@ export default async function SubjectPage({
   );
 
   return (
-    <div className="academic-shell subject-workspace">
+    <div
+      className="academic-shell subject-workspace"
+      data-tour="subject-workspace"
+    >
       {googleConnected ? (
         <SubjectAutoSync offeringIds={mappedOfferingIds} />
       ) : null}

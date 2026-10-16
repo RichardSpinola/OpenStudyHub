@@ -1,3 +1,4 @@
+import { tourInvitationEnabled } from "@/lib/product-tour";
 import {
   databaseIntegrity,
   operationalHealth,
@@ -34,6 +35,7 @@ import {
   saveDefaultShortcutAction,
   removeDefaultShortcutAction,
   setInstanceLanguageAction,
+  saveTourInvitationAction,
 } from "./actions";
 import { getUiLanguage } from "@/lib/ui-language";
 import { uiText } from "@/lib/translations";
@@ -422,6 +424,37 @@ export default async function SystemPage({
               label: tr("Recursos e modelos", "Features and templates"),
               content: (
                 <>
+                  <section className="admin-system-links">
+                    <h2>{tr("Apresentação do Hub", "Hub introduction")}</h2>
+                    <p>
+                      {tr(
+                        "O tour apresenta os recursos nas páginas reais para contas novas e existentes. Cada pessoa pode pular e voltar pela Ajuda.",
+                        "The tour introduces features on the real pages for new and existing accounts. People can skip and return through Help.",
+                      )}
+                    </p>
+                    <form action={saveTourInvitationAction}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="enabled"
+                          defaultChecked={tourInvitationEnabled()}
+                        />
+                        {tr(
+                          "Convidar usuários para conhecer o Hub",
+                          "Invite users to discover Hub",
+                        )}
+                      </label>
+                      <p>
+                        {tr(
+                          "Desativar remove o convite automático. O tour continua disponível em Configurações → Ajuda.",
+                          "Turning this off removes the automatic invitation. The tour remains available in Settings → Help.",
+                        )}
+                      </p>
+                      <button type="submit">
+                        {tr("Salvar apresentação", "Save introduction")}
+                      </button>
+                    </form>
+                  </section>
                   <div className="admin-context-links">
                     <Link href="/control/extras">
                       {tr("Configurar Extras", "Configure Extras")} →

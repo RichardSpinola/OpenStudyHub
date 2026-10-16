@@ -1,0 +1,231 @@
+.tour-launcher {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  text-align: left;
+  white-space: normal;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--gray-3);
+  background: var(--panel-raised);
+  border-radius: var(--ds-radius, 0.7rem);
+}
+.tour-launcher > span {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.tour-launcher strong {
+  font-size: 0.95rem;
+}
+.tour-launcher small {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--gray-2);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.tour-choice-grid {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1rem 0;
+}
+.tour-choice-grid > button {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  text-align: left;
+  padding: 0.85rem;
+  white-space: normal;
+  background: var(--panel-raised);
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius, 0.6rem);
+}
+.tour-choice-grid > button > span {
+  display: grid;
+  gap: 0.4rem;
+}
+.tour-choice-grid small {
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--gray-2);
+}
+.tour-spotlight-dialog {
+  position: fixed;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  border: 0;
+  background: transparent;
+  color: var(--white);
+  pointer-events: none;
+}
+.tour-spotlight-dialog:not([open]) {
+  display: none;
+}
+.tour-spotlight-dialog::backdrop {
+  background: transparent;
+}
+.tour-spotlight-hole {
+  position: fixed;
+  border: 2px solid var(--white);
+  border-radius: var(--ds-radius, 0.7rem);
+  box-shadow: 0 0 0 100vmax #0009;
+  pointer-events: none;
+}
+.tour-spotlight-shade {
+  position: absolute;
+  inset: 0;
+  background: #0009;
+}
+.tour-step-card {
+  position: fixed;
+  left: max(12px, calc(50vw - 192px));
+  bottom: 12px;
+  width: min(384px, calc(100vw - 24px));
+  height: max-content;
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  box-sizing: border-box;
+  pointer-events: auto;
+  background: var(--panel);
+  color: var(--white);
+  border: 1px solid var(--gray-2);
+  border-radius: var(--ds-radius, 0.8rem);
+  padding: 1rem;
+  box-shadow: 0 0.6rem 2rem #0006;
+}
+.tour-step-card[style] {
+  bottom: auto;
+}
+.tour-step-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.tour-step-card > header > span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--gray-2);
+}
+.tour-step-card > header > button {
+  display: grid;
+  place-items: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+}
+.tour-step-card > progress {
+  width: 100%;
+  height: 0.25rem;
+  accent-color: var(--white);
+  margin: 0.65rem 0;
+}
+.tour-step-card h2 {
+  font-size: 1.1rem;
+  margin: 0.2rem 0 0.6rem;
+  line-height: 1.35;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.tour-step-card > p {
+  font-size: 0.86rem;
+  line-height: 1.65;
+  margin: 0.4rem 0 0.9rem;
+  overflow-wrap: anywhere;
+}
+.tour-step-card > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+.tour-step-card > footer > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.65rem;
+}
+.tour-step-card > footer > button:last-child {
+  background: var(--white);
+  color: var(--black);
+}
+.tour-step-secondary {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+.tour-step-secondary button {
+  min-height: 2rem;
+  font-size: 0.72rem;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.tour-notice {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: min(30rem, calc(100vw - 2rem));
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--gray-2);
+  font-size: 0.8rem;
+}
+.tour-done {
+  text-align: center;
+  padding: 0.8rem;
+}
+@media (max-height: 520px) {
+  .tour-step-card {
+    padding: 0.65rem;
+  }
+  .tour-step-card > p {
+    font-size: 0.78rem;
+    margin-bottom: 0.5rem;
+  }
+  .tour-step-card h2 {
+    font-size: 0.95rem;
+  }
+  .tour-step-card > progress {
+    margin: 0.3rem 0;
+  }
+}
+
+/* The shared theme gives every dialog a solid surface; the spotlight must keep
+   the real page visible, with only its floating explanation on a solid panel. */
+html[data-design] .tour-spotlight-dialog {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}

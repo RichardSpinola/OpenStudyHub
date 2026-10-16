@@ -229,3 +229,15 @@ export async function saveAutocompleteAction(form: FormData) {
   revalidatePath("/");
   revalidatePath("/control/system");
 }
+
+export async function saveTourInvitationAction(form: FormData) {
+  await requireControlAdmin();
+  const enabled = form.get("enabled") === "on";
+  getDatabase()
+    .sqlite.prepare(
+      "INSERT INTO app_settings(key,value,updated_at) VALUES('tour.invitation_enabled',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
+    )
+    .run(enabled ? "true" : "false", Date.now());
+  revalidatePath("/control/system");
+  redirect("/control/system?area=resources&status=tour-saved");
+}

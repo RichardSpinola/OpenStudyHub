@@ -129,6 +129,7 @@ export function SearchForm({
     <form
       ref={formRef}
       className="search-form"
+      data-tour="home-search"
       action="/search"
       method="get"
       rel="noopener noreferrer"

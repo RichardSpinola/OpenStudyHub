@@ -8,7 +8,7 @@ Abra **Configurações** no menu da sua conta. Escolha um cartão:
 - **Notificações:** tipos de aviso e autorização deste dispositivo.
 - **Integrações:** conexão Google/Classroom. O Drive central é administrado pelo responsável da instância.
 - **Acessibilidade e idioma:** redução de movimento, contraste e idioma da interface.
-- **Ajuda:** guias práticos.
+- **Ajuda:** guias práticos e **Conheça o Hub**, para iniciar, continuar ou repetir o tour nas páginas reais.
 - **Sobre e Créditos:** versão, licença e componentes usados pelo aplicativo.
 
 Use **Voltar às configurações** para retornar aos cartões. Preferências simples mostram a confirmação de salvamento automático. Se houver erro, tente salvar novamente; seu perfil usa um botão de salvamento explícito.
@@ -26,3 +26,5 @@ Animações curtas acompanham botões, cartões, painéis e troca de páginas. E
 ## Última mensagem do Chat
 
 Ao subir na conversa, uma seta aparece no canto inferior direito, acima da caixa de mensagem. Ela volta ao fim sem apagar texto ou anexo ainda não enviado. Um ponto indica mensagens novas. Se a conexão falhar ao buscar o fim do histórico, a conversa atual permanece disponível e você pode tentar novamente.
+
+Veja também [Agenda, tarefas e tour](agenda-e-tour.md).

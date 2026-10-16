@@ -120,3 +120,7 @@ Configurações recebeu o portal e o redesign dos oito grupos internos; Home man
 - **A32: implementado com testes dirigidos.** Pacote criptografado, snapshots coordenados, inventário de arquivos geridos, retenção, chave separada e validação de restore. Drive foi testado com transporte simulado; queda de energia/processo e recuperação na instalação real continuam pendentes.
 - **A33: parcial.** Orçamento por socket/usuário no realtime e testes de autorização dirigidos; carga concorrente e limite completo de login são conferências da etapa 8.
 - **A34: preparação parcial.** Entradas operacionais empacotáveis verificadas, sem novas dependências. Build Next validado; imagem final, boot e medição total de memória ainda pendentes.
+
+## Complemento de 16/10 — somente etapa 7
+
+Agenda exportável por arquivo .ics, tarefas pessoais e tour guiado da área do usuário implementados localmente; ver [STAGE_7_COMPLEMENT.md](STAGE_7_COMPLEMENT.md). O convite atende também contas antigas e pode ser desligado pelo Admin, com repetição pela Ajuda. As pendências técnicas anteriores da 7 permanecem na 8A e **não foram encerradas**. A 8A depende de novo planejamento dos testes com o usuário; 8B fica para documentação/GitHub e 8C para implantação.

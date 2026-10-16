@@ -42,7 +42,10 @@ export default async function NotesPage({
         .includes(q.toLocaleLowerCase()),
   );
   return (
-    <div className="notes-workspace-shell notes-workspace-index">
+    <div
+      className="notes-workspace-shell notes-workspace-index"
+      data-tour="notes"
+    >
       <NoteNavigation
         notes={all.map(({ id, title, parentNoteId }) => ({
           id,

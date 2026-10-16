@@ -152,6 +152,7 @@ export default async function HomePage() {
   return (
     <div
       className="home-shell"
+      data-tour="home"
       data-has-background={hasImage}
       data-background-preset={catalog.selected}
       style={

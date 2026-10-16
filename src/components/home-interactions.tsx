@@ -146,7 +146,11 @@ export function HomeInteractions({
         engine={engine}
         autocompleteAvailable={autocompleteAvailable}
       />
-      <div className="shortcut-section" data-editing={editing}>
+      <div
+        className="shortcut-section"
+        data-editing={editing}
+        data-tour="home-shortcuts"
+      >
         {editing ? (
           <div className="home-shortcut-edit-header" role="status">
             <span>

@@ -79,7 +79,7 @@ export const settingsGroups = [
 ] as const;
 export function SettingsPortal() {
   return (
-    <div className="settings-portal">
+    <div className="settings-portal" data-tour="settings">
       {settingsGroups.map(([section, Icon, pt, en, description, english]) => (
         <Link
           className="settings-category"

@@ -78,7 +78,10 @@ export function AppearanceControls({
     }));
   }
   return (
-    <div className="appearance-controls appearance-visual-controls">
+    <div
+      className="appearance-controls appearance-visual-controls"
+      data-tour="appearance-controls"
+    >
       {!accessibilityOnly ? (
         <>
           <SettingsGroup

@@ -90,7 +90,8 @@ export function ShortcutGrid({
                 <span className="shortcut-visual" aria-hidden="true">
                   {preset ? (
                     <ShortcutPresetIcon preset={preset} />
-                  ) : shortcut.icon!=="@text" && shortcut.iconStorageName &&
+                  ) : shortcut.icon !== "@text" &&
+                    shortcut.iconStorageName &&
                     !failedIconIds.has(
                       `${shortcut.id}:${shortcut.iconStorageName}`,
                     ) ? (

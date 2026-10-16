@@ -33,3 +33,9 @@ Somente conferências visuais **necessárias nos elementos alterados**. A revis�
 ## Etapa 8
 
 Checkpoint integrado: ensaio real dividido em percursos, nova instância de teste no notebook, confirmação antes de buscar secrets, Drive/Classroom real, instalação/gerenciador, imagem distribuível, extensão, documentação e preparação do GitHub. A V3 permanece aberta a novas funcionalidades depois deste checkpoint.
+
+## Complemento aprovado em 16/10/2026
+
+Executar somente a etapa 7. Agenda exportável (.ics, sem assinatura), checklist privado em Hoje com gerenciamento em /today/tasks e tour guiado sobre as páginas reais, exclusivo da área do usuário. Contas novas e existentes recebem convite por edição; Ajuda oferece retomada/reinício; Admin pode desligar apenas o convite. Nenhum envio ou alteração de preferências pelo tour.
+
+A rodada integrada de testes será planejada com o usuário na **8A**. Nesta entrega, apenas verificações dirigidas de dados/acesso/datas/progresso e conferências visuais necessárias. **8B** ficará para documentação/apresentação e GitHub; **8C**, implantação no servidor. Não executar essas partes agora. Pendências anteriores da 7 continuam registradas na 8A; não são declaradas resolvidas por mudança de etapa.

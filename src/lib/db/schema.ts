@@ -1950,3 +1950,59 @@ export const chatReports = sqliteTable("chat_reports", {
   createdAt: integer("created_at").notNull(),
   resolvedAt: integer("resolved_at"),
 });
+
+// Personal planning belongs to the projected app user, independently of Classroom.
+export const personalTasks = sqliteTable(
+  "personal_tasks",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    offeringKey: text("offering_key"),
+    dueAt: integer("due_at"),
+    completedAt: integer("completed_at"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [
+    index("personal_tasks_owner_due_idx").on(
+      table.userId,
+      table.completedAt,
+      table.dueAt,
+    ),
+    check(
+      "personal_tasks_title",
+      sql`length(trim(${table.title})) BETWEEN 1 AND 180`,
+    ),
+    check(
+      "personal_tasks_description",
+      sql`length(${table.description})<=4000`,
+    ),
+  ],
+);
+export const userProductTours = sqliteTable(
+  "user_product_tours",
+  {
+    userId: integer("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    edition: integer("edition").notNull().default(1),
+    status: text("status", {
+      enum: ["active", "paused", "dismissed", "completed"],
+    }).notNull(),
+    mode: text("mode", { enum: ["full", "news"] }).notNull(),
+    stepId: text("step_id"),
+    revision: integer("revision").notNull().default(1),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [
+    check(
+      "user_product_tours_status",
+      sql`${table.status} IN ('active','paused','dismissed','completed')`,
+    ),
+    check("user_product_tours_mode", sql`${table.mode} IN ('full','news')`),
+  ],
+);

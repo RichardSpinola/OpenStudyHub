@@ -106,7 +106,7 @@ export default async function SubjectsPage() {
   }
 
   return (
-    <div className="academic-shell subjects-catalog-page">
+    <div className="academic-shell subjects-catalog-page" data-tour="subjects">
       <header className="academic-heading">
         <div>
           <p className="system-label">{academic.subjectsSystem}</p>

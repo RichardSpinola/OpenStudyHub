@@ -1,3 +1,9 @@
+import { PersonalTasks } from "@/components/personal-tasks";
+import { CalendarExport } from "@/components/calendar-export";
+import { defaultCalendarRange } from "@/lib/calendar-export";
+import { listPersonalTasks } from "@/lib/personal-tasks";
+import { personalPlanningContext } from "@/lib/personal-planning-context";
+import { examForLegacyUser } from "@/lib/v2/exam-access";
 import { academicClock } from "@/lib/academic-clock";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
@@ -17,6 +23,9 @@ export default async function TodayPage() {
   const profile = getUserProfile(user.id);
   const now = new Date();
   const data = getTodayData(user.id, now);
+  const exam = examForLegacyUser(user.id);
+  const planning = personalPlanningContext(user.id);
+  const calendarRange = defaultCalendarRange(planning.timeZone);
   const classroom = getPersonalClassroomSummary(user.id);
   const highlights = selectTodayHighlights(data, classroom, now);
   const weekday = academicClock(now, data.timeZone).weekday;
@@ -51,7 +60,12 @@ export default async function TodayPage() {
             />
           </p>
         </div>
-        <time dateTime={data.date}>{dateLabel}</time>
+        <div className="today-heading-actions">
+          <time dateTime={data.date}>{dateLabel}</time>
+          {!exam ? (
+            <CalendarExport {...calendarRange} timeZone={planning.timeZone} />
+          ) : null}
+        </div>
       </header>
       <div className="today-main-layout">
         <div className="today-priority">
@@ -103,10 +117,21 @@ export default async function TodayPage() {
           ) : null}
         </div>
 
-        <div id="today-week">
+        <div id="today-week" data-tour="today-schedule">
           <AcademicTimeGrid slots={data.weekSlots} today={weekday} />
         </div>
         <div className="today-detail-panels">
+          {!exam ? (
+            <PersonalTasks
+              compact
+              tasks={listPersonalTasks(user.id)}
+              timeZone={planning.timeZone}
+              offerings={planning.offerings.map((o) => ({
+                key: o.key,
+                label: `${o.subjectName} · ${o.periodLabel}`,
+              }))}
+            />
+          ) : null}
           <section className="workflow-panel" id="today-events">
             <div className="section-heading">
               <h2>

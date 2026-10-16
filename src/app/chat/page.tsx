@@ -162,6 +162,7 @@ export default async function ChatPage({
   return (
     <div
       className="chat-page"
+      data-tour="chat"
       data-mobile-conversation={Boolean(params.room || params.group)}
     >
       <ChatContextLayout key={selected?.id ?? "empty"}>

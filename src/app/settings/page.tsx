@@ -1,3 +1,4 @@
+import { TourLauncher } from "@/components/product-tour";
 import Image from "next/image";
 import { SettingsGroup, SettingsRow } from "@/components/settings-group";
 import { SettingsShortcuts } from "@/components/settings-shortcuts";
@@ -390,7 +391,11 @@ export default async function SettingsPage({
   const SectionIcon = selectedGroup?.[1] ?? IconShieldLock;
 
   return (
-    <div className="settings-shell settings-v7" data-settings-section={section}>
+    <div
+      className="settings-shell settings-v7"
+      data-settings-section={section}
+      data-tour="settings-section"
+    >
       <header className="settings-detail-header">
         {section !== "portal" ? (
           <Link className="settings-back" href="/settings">
@@ -1231,6 +1236,7 @@ export default async function SettingsPage({
                   "What would you like to do?",
                 )}
               >
+                <TourLauncher />
                 <div className="settings-help-grid">
                   {(
                     [
@@ -1238,8 +1244,8 @@ export default async function SettingsPage({
                         "/onboarding?replay=1",
                         "Primeiros passos",
                         "Getting started",
-                        "Um percurso curto para conhecer seu espaço.",
-                        "A short tour of your workspace.",
+                        "Rever perfil e preferências do primeiro acesso.",
+                        "Review initial profile and preferences.",
                       ],
                       [
                         "/settings?section=home",

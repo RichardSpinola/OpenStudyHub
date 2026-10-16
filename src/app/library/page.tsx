@@ -202,7 +202,10 @@ export default async function LibraryPage({
     return `/library?${values}`;
   }
   return (
-    <div className="workflow-shell resource-workspace library-workspace">
+    <div
+      className="workflow-shell resource-workspace library-workspace"
+      data-tour="library"
+    >
       <header className="section-header resource-page-header">
         <div>
           <p className="eyebrow">
