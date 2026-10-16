@@ -7,6 +7,7 @@ import { HomeBackgroundSettings } from "@/components/home-background-settings";
 import { ClassroomSyncAll } from "@/components/classroom-sync-all";
 import { ProfileLocaleSelect } from "@/components/profile-locale-select";
 import { ProfileMediaSettings } from "@/components/profile-media-settings";
+import { GameSoundSettings } from "@/components/game-sound-settings";
 import { ThemeSelect } from "@/components/theme-select";
 import { HomeControlSettings } from "@/components/home-control-settings";
 import { getHomePresentation } from "@/lib/home-presentation";
@@ -763,6 +764,7 @@ export default async function SettingsPage({
                     ) : null}
                   </div>
                 ) : null}
+                <GameSoundSettings userId={user.id} />
                 {homePresentation ? (
                   <HomeControlSettings
                     enabled={homePresentation.controlEnabled}

@@ -1,5 +1,11 @@
 import { UiCopy } from "@/components/ui-language-provider";
 type Preview =
+  | "memory"
+  | "sudoku"
+  | "connect4"
+  | "tictactoe"
+  | "focus"
+  | "flashcards"
   | "whiteboard"
   | "games"
   | "snake"
@@ -14,7 +20,28 @@ export function ExtrasPreview({ kind }: { kind: Preview }) {
       className={`extras-preview extras-preview--${kind}`}
       aria-hidden="true"
     >
-      {kind === "whiteboard" ? (
+      {["memory", "sudoku", "connect4", "tictactoe"].includes(kind) ? (
+        <span className={`preview-puzzle preview-puzzle--${kind}`}>
+          {(kind === "memory"
+            ? ["★", "?", "?", "★"]
+            : kind === "sudoku"
+              ? ["1", "·", "3", "·", "5", "·", "7", "·", "9"]
+              : kind === "connect4"
+                ? ["●", "○", "●", "○", "●", "○", "●", "○", "●"]
+                : ["X", "O", "·", "·", "X", "·", "O", "·", "X"]
+          ).map((value, index) => (
+            <i key={index}>{value}</i>
+          ))}
+        </span>
+      ) : kind === "focus" ? (
+        <span className="preview-focus">25:00</span>
+      ) : kind === "flashcards" ? (
+        <span className="preview-flashcards">
+          <i />
+          <i />
+          <i>?</i>
+        </span>
+      ) : kind === "whiteboard" ? (
         <span className="preview-board">
           <i className="preview-board-line" />
           <i className="preview-board-circle" />

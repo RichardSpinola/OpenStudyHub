@@ -3,12 +3,18 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   agentRules: false,
   devIndicators: false,
-  serverExternalPackages: ["@blocknote/core", "@blocknote/react", "@blocknote/server-util", "yjs"],
+  serverExternalPackages: [
+    "@blocknote/core",
+    "@blocknote/react",
+    "@blocknote/server-util",
+    "yjs",
+  ],
   experimental: {
     ...(process.env.OPENSTUDYHUB_QA_BUILD === "1"
       ? { cpus: 1, webpackMemoryOptimizations: true }
       : {}),
     serverActions: { bodySizeLimit: "12mb" },
+    proxyClientMaxBodySize: "21mb",
   },
   distDir:
     process.env.NODE_ENV === "production"

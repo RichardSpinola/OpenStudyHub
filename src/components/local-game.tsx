@@ -660,7 +660,7 @@ function Minesweeper() {
           <UiCopy pt="Modo bandeira (toque)" en="Flag mode (touch)" />
         </label>
       </div>
-      <p>
+      <p className="game-hint">
         <UiCopy
           pt="Toque para abrir; clique direito marca. Em um número aberto, clique do meio ou esquerdo e direito juntos abrem os vizinhos quando as bandeiras conferem."
           en="Tap to open; right-click marks. On an open number, middle-click or left and right together open its neighbors when the flags match."
@@ -670,10 +670,7 @@ function Minesweeper() {
         className="mines-board-scroll"
         tabIndex={0}
         role="region"
-        aria-label={tr(
-          "Tabuleiro com rolagem horizontal quando necessário",
-          "Board with horizontal scroll when needed",
-        )}
+        aria-label={tr("Tabuleiro de Campo Minado", "Minesweeper board")}
       >
         <div
           className="mines-grid"
@@ -681,7 +678,6 @@ function Minesweeper() {
           aria-label={tr("Campo Minado", "Minesweeper")}
           style={{
             gridTemplateColumns: `repeat(${width}, 1fr)`,
-            minWidth: width * 28,
           }}
         >
           {Array.from({ length: width * width }, (_, index) => {

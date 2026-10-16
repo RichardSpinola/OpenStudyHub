@@ -171,7 +171,7 @@ export default async function ChatPage({
               <UiCopy pt="Mensagens" en="Messages" />
             </h1>
             <span>
-              {rooms.filter(({ closed }) => !closed).length}
+              {rooms.filter(({ closed }) => !closed).length}{" "}
               <UiCopy pt="conversas" en="conversations" />
             </span>
           </div>

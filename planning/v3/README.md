@@ -88,3 +88,9 @@ Publicação, tag e atualização pública não foram realizadas nesta etapa. A 
 ## Etapa 6
 
 Entrega única: Chat, nove jogos, Pomodoro/cronômetro, flashcards compartilhados e ajuste de Arquivados na Biblioteca. Quadro Branco preservado. [STAGE_6.md](STAGE_6.md). Guia em [Chat e Extras](../../docs/chat-e-extras.md).
+
+## Etapa 7 — escopo a executar
+
+[Plano da etapa 7](STAGE_7_PLAN.md): configurações, aparência/blur opcional, backup/restore, desempenho, diagnóstico, notificações e idioma. Ainda não iniciada.
+
+- [Refinamento da etapa 6](STAGE_6_REFINEMENT.md): áreas imersivas, ajuste de jogos à janela, prévias consistentes, som em Aparência, botão Pomodoro e anexos/menus do Chat.

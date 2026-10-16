@@ -10,7 +10,13 @@ import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
 import { getServerEnvironment } from "@/lib/env";
 
-export const chatAttachmentLimitBytes = 5 * 1024 * 1024;
+import {
+  chatFileLimitBytes,
+  chatImageLimitBytes,
+  isChatImageName,
+  validChatFilename,
+} from "@/lib/chat-upload";
+export const chatAttachmentLimitBytes = chatImageLimitBytes;
 const id = z.number().int().positive();
 
 async function decodeImage(data: Buffer) {
@@ -44,7 +50,7 @@ function rootPath(root?: string) {
 }
 
 function safePath(name: string, root?: string) {
-  if (!/^[a-f0-9-]+\.(?:png|jpg|webp)$/u.test(name))
+  if (!/^[a-f0-9-]+\.(?:png|jpg|webp|bin)$/u.test(name))
     throw new Error("Invalid attachment.");
   const base = rootPath(root);
   const path = resolve(base, name);
@@ -57,13 +63,24 @@ export async function saveChatAttachment(
   roomId: number,
   messageId: number,
   data: Buffer,
-  options: { connection?: DatabaseConnection; assetRoot?: string } = {},
+  options: {
+    connection?: DatabaseConnection;
+    assetRoot?: string;
+    filename?: string;
+  } = {},
 ): Promise<number> {
   const actorId = id.parse(userId);
   const targetRoomId = id.parse(roomId);
   const targetMessageId = id.parse(messageId);
-  if (!data.length || data.length > chatAttachmentLimitBytes)
-    throw new Error("Invalid image.");
+  const isFile =
+    options.filename !== undefined && !isChatImageName(options.filename);
+  if (options.filename !== undefined && !validChatFilename(options.filename))
+    throw new Error("Invalid filename.");
+  if (
+    !data.length ||
+    data.length > (isFile ? chatFileLimitBytes : chatImageLimitBytes)
+  )
+    throw new Error("Invalid attachment.");
   const connection = options.connection ?? getDatabase();
   if (!canAccessChatRoom(actorId, targetRoomId, connection))
     throw new Error("Forbidden.");
@@ -75,7 +92,9 @@ export async function saveChatAttachment(
       .get(targetMessageId, targetRoomId, actorId)
   )
     throw new Error("Message not found.");
-  const image = await decodeImage(data);
+  const image = isFile
+    ? { extension: "bin", mimeType: "application/octet-stream" }
+    : await decodeImage(data);
   if (!image) throw new Error("Invalid image.");
   if (
     connection.sqlite
@@ -90,16 +109,39 @@ export async function saveChatAttachment(
   await writeFile(`${path}.tmp`, data, { flag: "wx", mode: 0o600 });
   await rename(`${path}.tmp`, path);
   try {
-    return Number(
+    return connection.sqlite.transaction(() => {
+      if (
+        !canAccessChatRoom(actorId, targetRoomId, connection) ||
+        !connection.sqlite
+          .prepare(
+            "select 1 from chat_messages where id=? and room_id=? and author_user_id=? and deleted_at is null",
+          )
+          .get(targetMessageId, targetRoomId, actorId)
+      )
+        throw new Error("Forbidden.");
+      const result = Number(
+        connection.sqlite
+          .prepare(
+            `insert into chat_attachments
+           (message_id, owner_user_id, storage_name, mime_type, size_bytes, original_name)
+           values (?, ?, ?, ?, ?, ?)`,
+          )
+          .run(
+            targetMessageId,
+            actorId,
+            storageName,
+            image.mimeType,
+            data.length,
+            options.filename ?? null,
+          ).lastInsertRowid,
+      );
       connection.sqlite
         .prepare(
-          `insert into chat_attachments
-           (message_id, owner_user_id, storage_name, mime_type, size_bytes)
-           values (?, ?, ?, ?, ?)`,
+          "INSERT INTO chat_message_changes(room_id,message_id) VALUES(?,?)",
         )
-        .run(targetMessageId, actorId, storageName, image.mimeType, data.length)
-        .lastInsertRowid,
-    );
+        .run(targetRoomId, targetMessageId);
+      return result;
+    })();
   } catch (error) {
     await unlink(path).catch(() => undefined);
     throw error;
@@ -110,22 +152,29 @@ export async function readChatAttachment(
   userId: number,
   attachmentId: number,
   options: { connection?: DatabaseConnection; assetRoot?: string } = {},
-): Promise<{ data: Buffer; mimeType: string } | null> {
+): Promise<{ data: Buffer; mimeType: string; name: string } | null> {
   const connection = options.connection ?? getDatabase();
   const row = connection.sqlite
     .prepare(
       `select a.storage_name as storageName, a.mime_type as mimeType,
-              m.room_id as roomId
+              m.room_id as roomId, a.original_name as name
        from chat_attachments a join chat_messages m on m.id = a.message_id
        where a.id = ? and m.deleted_at is null`,
     )
     .get(id.parse(attachmentId)) as
-    { storageName: string; mimeType: string; roomId: number } | undefined;
+    | {
+        storageName: string;
+        mimeType: string;
+        roomId: number;
+        name: string | null;
+      }
+    | undefined;
   if (!row || !canAccessChatRoom(userId, row.roomId, connection)) return null;
   try {
     return {
       data: await readFile(safePath(row.storageName, options.assetRoot)),
       mimeType: row.mimeType,
+      name: row.name ?? `imagem.${row.storageName.split(".").at(-1)}`,
     };
   } catch {
     return null;

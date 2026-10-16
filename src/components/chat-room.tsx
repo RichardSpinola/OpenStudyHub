@@ -1,4 +1,11 @@
 "use client";
+import { DismissibleDetails } from "@/components/dismissible-details";
+import {
+  chatFileLimitBytes,
+  chatImageLimitBytes,
+  isChatImageName,
+  validChatFilename,
+} from "@/lib/chat-upload";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import {
@@ -20,6 +27,7 @@ import {
   IconCode,
   IconQuote,
   IconPhoto,
+  IconPaperclip,
 } from "@tabler/icons-react";
 
 type Message = {
@@ -35,6 +43,12 @@ type Message = {
   editedAt: number | null;
   createdAt: number;
   attachmentIds: number[];
+  attachments?: {
+    id: number;
+    name: string;
+    mimeType: string;
+    sizeBytes: number;
+  }[];
 };
 
 type RoomUser = {
@@ -79,6 +93,8 @@ export function ChatRoom({
   const [editError, setEditError] = useState("");
   const [error, setError] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const dragDepth = useRef(0);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<Message[]>([]);
   const [sending, setSending] = useState(false);
@@ -101,6 +117,7 @@ export function ChatRoom({
   const imagePreviewRef = useRef<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const stickToBottom = useRef(true);
+  const userScrollIntent = useRef(false);
   const ownMessageScroll = useRef(false);
   const pendingId = useRef<string | null>(null);
   const lastTypingAt = useRef(0);
@@ -114,12 +131,33 @@ export function ChatRoom({
 
   function selectImage(next: File | null) {
     if (imagePreviewRef.current) URL.revokeObjectURL(imagePreviewRef.current);
-    const url = next ? URL.createObjectURL(next) : null;
+    const url =
+      next && isChatImageName(next.name) ? URL.createObjectURL(next) : null;
     imagePreviewRef.current = url;
     setImage(next);
     setImagePreview(url);
   }
 
+  function selectAttachment(next: File | null) {
+    if (!next) {
+      selectImage(null);
+      return;
+    }
+    const limit = isChatImageName(next.name)
+      ? chatImageLimitBytes
+      : chatFileLimitBytes;
+    if (!validChatFilename(next.name) || !next.size || next.size > limit) {
+      setError(
+        tr(
+          "Use um arquivo de até 20 MiB; imagens PNG, JPEG e WebP de até 5 MiB.",
+          "Use a file up to 20 MiB; PNG, JPEG and WebP images up to 5 MiB.",
+        ),
+      );
+      return;
+    }
+    selectImage(next);
+    setError("");
+  }
   function pasteImage(event: ClipboardEvent<HTMLTextAreaElement>) {
     const { file, hasText, invalidImage } = pastedChatImage(
       Array.from(event.clipboardData.items),
@@ -430,7 +468,7 @@ export function ChatRoom({
               "replyToMessageId",
               replyTo.length === 1 ? String(replyTo[0].id) : "",
             );
-            form.set("image", image);
+            form.set("file", image);
             form.set("clientMessageId", pendingId.current!);
             return fetch(`/api/chat/${roomId}`, { method: "POST", body: form });
           })()
@@ -444,11 +482,18 @@ export function ChatRoom({
             }),
           });
       if (!response.ok) {
+        if (image) {
+          const failure = (await response.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          if (failure?.error === "attachment-storage-failed")
+            pendingId.current = null;
+        }
         setError(
           image
             ? tr(
-                "Imagem não enviada. Verifique o arquivo e tente novamente.",
-                "Image not sent. Check the file and try again.",
+                "Anexo não enviado. Verifique o arquivo e tente novamente.",
+                "Attachment not sent. Check the file and try again.",
               )
             : tr("Mensagem não enviada.", "Message not sent."),
         );
@@ -461,14 +506,15 @@ export function ChatRoom({
       if (payload.attachmentWarning) {
         setError(
           tr(
-            "Mensagem enviada, mas a imagem não pôde ser armazenada.",
-            "Message sent, but the image could not be stored.",
+            "Mensagem enviada, mas o anexo não pôde ser armazenado.",
+            "Message sent, but the attachment could not be stored.",
           ),
         );
       }
       pendingId.current = null;
       sendRealtime({ type: "refresh", roomId });
       ownMessageScroll.current = true;
+      userScrollIntent.current = false;
       stickToBottom.current = true;
       lastId.current = Math.max(lastId.current, payload.message.id);
       setMessages((current) => {
@@ -536,7 +582,47 @@ export function ChatRoom({
       className="chat-room"
       aria-label={tr("Mensagens", "Messages")}
       data-wallpaper={wallpaper}
+      onDragEnter={(event) => {
+        if (!event.dataTransfer.types.includes("Files")) return;
+        event.preventDefault();
+        dragDepth.current++;
+        setDragging(true);
+      }}
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes("Files")) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }
+      }}
+      onDragLeave={(event) => {
+        event.preventDefault();
+        dragDepth.current = Math.max(0, dragDepth.current - 1);
+        if (!dragDepth.current) setDragging(false);
+      }}
+      onDrop={(event) => {
+        if (!event.dataTransfer.types.includes("Files")) return;
+        event.preventDefault();
+        dragDepth.current = 0;
+        setDragging(false);
+        if (sending) return;
+        const files = Array.from(event.dataTransfer.files);
+        if (files.length !== 1) {
+          setError(
+            tr("Envie um arquivo por mensagem.", "Send one file per message."),
+          );
+          return;
+        }
+        selectAttachment(files[0]);
+      }}
     >
+      {dragging ? (
+        <div className="chat-drop-target">
+          {tr(
+            "Solte a imagem ou arquivo para anexar. Revise antes de enviar.",
+            "Drop an image or file to attach. Review before sending.",
+          )}
+        </div>
+      ) : null}
       {onlineIds.length || typingIds.length ? (
         <p className="chat-presence" aria-live="polite">
           {typingIds.length
@@ -613,6 +699,7 @@ export function ChatRoom({
                   revision: number;
                   hasOlder: boolean;
                 };
+                userScrollIntent.current = false;
                 stickToBottom.current = true;
                 historyMode.current = false;
                 ownMessageScroll.current = true;
@@ -645,7 +732,38 @@ export function ChatRoom({
             : undefined
         }
         aria-live="polite"
+        onWheel={() => {
+          userScrollIntent.current = true;
+        }}
+        onTouchMove={() => {
+          userScrollIntent.current = true;
+        }}
+        onPointerDown={(event) => {
+          if (event.target === event.currentTarget)
+            userScrollIntent.current = true;
+        }}
+        onPointerMove={(event) => {
+          if (event.buttons === 1 && event.target === event.currentTarget)
+            userScrollIntent.current = true;
+        }}
+        onKeyDown={(event) => {
+          if (
+            [
+              "ArrowUp",
+              "ArrowDown",
+              "PageUp",
+              "PageDown",
+              "Home",
+              "End",
+              " ",
+            ].includes(event.key)
+          )
+            userScrollIntent.current = true;
+        }}
         onScroll={(event) => {
+          // Layout changes and image decoding must not be mistaken for a user leaving the tail.
+          if (!userScrollIntent.current) return;
+          userScrollIntent.current = false;
           const element = event.currentTarget;
           stickToBottom.current =
             element.scrollHeight - element.scrollTop - element.clientHeight <
@@ -658,7 +776,7 @@ export function ChatRoom({
             data-own={message.authorUserId === currentUserId}
           >
             <header>
-              <details className="chat-mini-profile">
+              <DismissibleDetails className="chat-mini-profile">
                 <summary>
                   {roomUsers.find(({ id }) => id === message.authorUserId)
                     ?.hasAvatar ? (
@@ -709,8 +827,16 @@ export function ChatRoom({
                     </div>
                   );
                 })()}
-              </details>
-              <time>{new Date(message.createdAt).toLocaleString("pt-BR")}</time>
+              </DismissibleDetails>
+              <time
+                dateTime={new Date(message.createdAt).toISOString()}
+                title={new Date(message.createdAt).toLocaleString("pt-BR")}
+              >
+                {new Date(message.createdAt).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </time>
               {message.editedAt ? (
                 <small>
                   <UiCopy pt="editada" en="edited" />
@@ -746,27 +872,54 @@ export function ChatRoom({
                 dangerouslySetInnerHTML={{ __html: message.bodyHtml }}
               />
             ) : null}
-            {message.attachmentIds.map((attachmentId) => (
-              <a
-                key={attachmentId}
-                className="chat-attachment-link"
-                href={`/api/chat-attachment/${attachmentId}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  className="chat-attachment"
-                  src={`/api/chat-attachment/${attachmentId}`}
-                  alt="Anexo da mensagem"
-                  onLoad={() => {
-                    if (!stickToBottom.current) return;
-                    const list = messageListRef.current;
-                    if (list) list.scrollTop = list.scrollHeight;
-                  }}
-                />
-              </a>
-            ))}
+            {message.attachmentIds.map((attachmentId) => {
+              const attachment = message.attachments?.find(
+                (a) => a.id === attachmentId,
+              );
+              const isImage =
+                !attachment ||
+                ["image/png", "image/jpeg", "image/webp"].includes(
+                  attachment.mimeType,
+                );
+              return isImage ? (
+                <a
+                  key={attachmentId}
+                  className="chat-attachment-link"
+                  href={`/api/chat-attachment/${attachmentId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className="chat-attachment"
+                    src={`/api/chat-attachment/${attachmentId}`}
+                    alt={attachment?.name || tr("Imagem enviada", "Sent image")}
+                    loading="lazy"
+                    onLoad={() => {
+                      if (stickToBottom.current && messageListRef.current)
+                        messageListRef.current.scrollTop =
+                          messageListRef.current.scrollHeight;
+                    }}
+                  />
+                </a>
+              ) : (
+                <a
+                  key={attachmentId}
+                  className="chat-file-link"
+                  href={`/api/chat-attachment/${attachmentId}`}
+                  download={attachment.name}
+                >
+                  <IconPaperclip size={24} aria-hidden="true" />
+                  <span>
+                    <strong>{attachment.name}</strong>
+                    <small>
+                      {(attachment.sizeBytes / 1024).toFixed(1)} KB ·{" "}
+                      {tr("Baixar arquivo", "Download file")}
+                    </small>
+                  </span>
+                </a>
+              );
+            })}
             {editing?.id === message.id ? (
               <form
                 className="chat-inline-edit"
@@ -879,7 +1032,7 @@ export function ChatRoom({
                 </button>
               </form>
             ) : null}
-            <details className="chat-actions-disclosure">
+            <DismissibleDetails className="chat-actions-disclosure">
               <summary aria-label={tr("Ações da mensagem", "Message actions")}>
                 ···
               </summary>
@@ -1002,7 +1155,7 @@ export function ChatRoom({
                   </button>
                 ) : null}
               </div>
-            </details>
+            </DismissibleDetails>
           </li>
         ))}
       </ol>
@@ -1057,127 +1210,117 @@ export function ChatRoom({
             </button>
           </div>
         ) : null}
-        <div
-          className="chat-format-toolbar"
-          aria-label={tr("Formatação da mensagem", "Message formatting")}
-        >
-          <button
-            type="button"
-            title={tr("Negrito", "Bold")}
-            aria-label={tr("Negrito", "Bold")}
-            onClick={() => applyFormat("bold")}
-          >
-            <IconBold size={19} stroke={1.8} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            title={tr("Itálico", "Italic")}
-            aria-label={tr("Itálico", "Italic")}
-            onClick={() => applyFormat("italic")}
-          >
-            <IconItalic size={19} stroke={1.8} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            title={tr("Riscado", "Strikethrough")}
-            aria-label={tr("Riscado", "Strikethrough")}
-            onClick={() => applyFormat("strike")}
-          >
-            <IconStrikethrough size={19} stroke={1.8} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            title={tr("Código inline", "Inline code")}
-            aria-label={tr("Código inline", "Inline code")}
-            onClick={() => applyFormat("code")}
-          >
-            <IconCode size={19} stroke={1.8} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            title={tr("Citação", "Quote")}
-            aria-label={tr("Citação", "Quote")}
-            onClick={() => applyFormat("quote")}
-          >
-            <IconQuote size={19} stroke={1.8} aria-hidden="true" />
-          </button>
-          <label
-            className="chat-toolbar-attachment"
-            title={tr("Adicionar imagem", "Add image")}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={(event) => {
-                const next = event.target.files?.[0] ?? null;
-                if (next && next.size > 5 * 1024 * 1024) {
-                  selectImage(null);
-                  event.target.value = "";
-                  setError(
-                    tr(
-                      "A imagem deve ter no máximo 5 MiB.",
-                      "Image must be at most 5 MiB.",
-                    ),
-                  );
-                  return;
-                }
-                setError("");
-                selectImage(next);
-              }}
-            />
-            <span>
-              <IconPhoto size={19} stroke={1.8} aria-hidden="true" />
-              {image ? image.name : "Imagem"}
-            </span>
-          </label>
-          {image ? (
-            <div className="chat-paste-preview" role="status">
-              {imagePreview ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imagePreview}
-                    alt={tr(
-                      "Prévia da imagem selecionada",
-                      "Preview of selected image",
-                    )}
-                  />
-                </>
-              ) : null}
-              <span>
-                {image.name}
-                <UiCopy
-                  pt="· será enviada com a mensagem"
-                  en="· will be sent with the message"
+        {image ? (
+          <div className="chat-selected-file" role="status">
+            {imagePreview ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imagePreview}
+                  alt={tr("Prévia do anexo", "Attachment preview")}
                 />
-              </span>
-            </div>
-          ) : null}
-          {image ? (
+              </>
+            ) : (
+              <IconPaperclip size={22} aria-hidden="true" />
+            )}
+            <span>
+              {image.name} · {(image.size / 1024).toFixed(1)} KB
+            </span>
             <button
               type="button"
-              className="chat-clear-attachment"
+              aria-label={tr(
+                "Remover anexo selecionado",
+                "Remove selected attachment",
+              )}
               onClick={() => {
                 selectImage(null);
                 if (fileInputRef.current) fileInputRef.current.value = "";
               }}
-              aria-label={tr(
-                "Remover imagem selecionada",
-                "Remove selected image",
-              )}
-              title={tr("Remover imagem selecionada", "Remove selected image")}
             >
               ×
             </button>
-          ) : null}
-          <span className="chat-format-help">
-            <UiCopy
-              pt="Enter envia · Shift+Enter quebra linha · @ menciona"
-              en="Enter sends · Shift+Enter adds a line · @ mentions"
-            />
-          </span>
-        </div>
+          </div>
+        ) : null}
+        <DismissibleDetails className="chat-compose-tools">
+          <summary
+            aria-label={tr("Formatação e anexos", "Formatting and attachments")}
+            title={tr("Formatação e anexos", "Formatting and attachments")}
+          >
+            ＋
+          </summary>
+          <div
+            className="chat-format-toolbar"
+            aria-label={tr("Formatação da mensagem", "Message formatting")}
+          >
+            <button
+              type="button"
+              title={tr("Negrito", "Bold")}
+              aria-label={tr("Negrito", "Bold")}
+              onClick={() => applyFormat("bold")}
+            >
+              <IconBold size={19} stroke={1.8} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              title={tr("Itálico", "Italic")}
+              aria-label={tr("Itálico", "Italic")}
+              onClick={() => applyFormat("italic")}
+            >
+              <IconItalic size={19} stroke={1.8} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              title={tr("Riscado", "Strikethrough")}
+              aria-label={tr("Riscado", "Strikethrough")}
+              onClick={() => applyFormat("strike")}
+            >
+              <IconStrikethrough size={19} stroke={1.8} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              title={tr("Código inline", "Inline code")}
+              aria-label={tr("Código inline", "Inline code")}
+              onClick={() => applyFormat("code")}
+            >
+              <IconCode size={19} stroke={1.8} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              title={tr("Citação", "Quote")}
+              aria-label={tr("Citação", "Quote")}
+              onClick={() => applyFormat("quote")}
+            >
+              <IconQuote size={19} stroke={1.8} aria-hidden="true" />
+            </button>
+            <label
+              className="chat-toolbar-attachment"
+              title={tr("Anexar imagem ou arquivo", "Attach image or file")}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                disabled={sending}
+                aria-label={tr(
+                  "Anexar imagem ou arquivo",
+                  "Attach image or file",
+                )}
+                onChange={(event) =>
+                  selectAttachment(event.target.files?.[0] ?? null)
+                }
+              />
+              <span>
+                <IconPhoto size={19} stroke={1.8} aria-hidden="true" />
+                {tr("Imagem ou arquivo", "Image or file")}
+              </span>
+            </label>
+            <span className="chat-format-help">
+              <UiCopy
+                pt="Enter envia · Shift+Enter quebra linha · @ menciona"
+                en="Enter sends · Shift+Enter adds a line · @ mentions"
+              />
+            </span>
+          </div>
+        </DismissibleDetails>
         <div className="chat-composer-main">
           <label className="chat-message-field">
             <span className="sr-only">
@@ -1195,7 +1338,7 @@ export function ChatRoom({
               onKeyDown={handleComposerKeyDown}
               onPaste={pasteImage}
               maxLength={10_000}
-              rows={2}
+              rows={1}
               placeholder={tr("Mensagem…", "Message…")}
             />
           </label>

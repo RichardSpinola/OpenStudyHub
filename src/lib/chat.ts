@@ -36,6 +36,12 @@ export type ChatMessage = {
   editedAt: number | null;
   createdAt: number;
   attachmentIds: number[];
+  attachments?: {
+    id: number;
+    name: string;
+    mimeType: string;
+    sizeBytes: number;
+  }[];
 };
 
 function hasAudienceAccess(
@@ -517,10 +523,16 @@ export function listChatMessages(
     ) as Array<Omit<ChatMessage, "attachmentIds">>;
   if (afterId === 0 && !window?.ids) messages.reverse();
   const attachments = connection.sqlite.prepare(
-    "select id from chat_attachments where message_id = ? order by id",
+    "select id, coalesce(original_name, 'Imagem') name, mime_type mimeType, size_bytes sizeBytes from chat_attachments where message_id = ? order by id",
   );
   return messages.map((message) => ({
     ...message,
+    attachments: attachments.all(message.id) as {
+      id: number;
+      name: string;
+      mimeType: string;
+      sizeBytes: number;
+    }[],
     attachmentIds: (attachments.all(message.id) as Array<{ id: number }>).map(
       ({ id }) => id,
     ),

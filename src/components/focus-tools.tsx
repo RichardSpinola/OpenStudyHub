@@ -1,4 +1,5 @@
 "use client";
+import { IconClock } from "@tabler/icons-react";
 import {
   createContext,
   useCallback,
@@ -280,16 +281,18 @@ export function FocusChip() {
   if (!ctx?.enabled) return null;
   const { state: s, now, ready } = ctx;
   return (
-    <div className="focus-chip">
+    <div className="notification-center focus-chip">
       <button
         type="button"
         aria-label={tr("Abrir Pomodoro", "Open Pomodoro")}
         onClick={() => dialog.current?.showModal()}
         title="Pomodoro"
       >
-        <span aria-hidden="true">◷</span>
+        <IconClock size={20} stroke={1.8} aria-hidden="true" />
         {ready && s.active ? (
-          <small>{clockText(remainingFocus(s, now))}</small>
+          <small className="focus-chip-time">
+            {clockText(remainingFocus(s, now))}
+          </small>
         ) : null}
       </button>
       <dialog

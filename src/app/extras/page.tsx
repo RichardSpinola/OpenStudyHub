@@ -64,9 +64,7 @@ export default function ExtrasPage() {
               href={`/extras/${key}`}
               className="extras-feature-card"
             >
-              <div className="study-feature-symbol" aria-hidden="true">
-                {key === "focus" ? "◷" : "▤"}
-              </div>
+              <ExtrasPreview kind={key} />
               <span className="extras-card-copy">
                 <strong>
                   <UiCopy pt={title} en={en} />

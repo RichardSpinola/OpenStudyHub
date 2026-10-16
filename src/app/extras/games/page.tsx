@@ -37,33 +37,7 @@ export default function GamesPage() {
               className="game-catalog-card"
               data-game={game.id}
             >
-              {["memory", "sudoku", "connect4", "tictactoe"].includes(
-                game.id,
-              ) ? (
-                <div
-                  className="new-game-preview"
-                  data-game={game.id}
-                  aria-hidden="true"
-                >
-                  {(game.id === "memory"
-                    ? ["★", "?", "?", "★"]
-                    : game.id === "sudoku"
-                      ? ["1", "·", "3", "·", "5", "·", "7", "·", "9"]
-                      : game.id === "connect4"
-                        ? ["●", "○", "●", "○", "●", "○", "●", "○", "●"]
-                        : ["X", "O", "·", "·", "X", "·", "O", "·", "X"]
-                  ).map((v, i) => (
-                    <span key={i}>{v}</span>
-                  ))}
-                </div>
-              ) : (
-                <ExtrasPreview
-                  kind={
-                    game.id as
-                      "snake" | "2048" | "minesweeper" | "solitaire" | "domino"
-                  }
-                />
-              )}
+              <ExtrasPreview kind={game.id} />
               <span className="extras-card-copy">
                 <strong>
                   <UiCopy pt={game.label} en={game.labelEn} />

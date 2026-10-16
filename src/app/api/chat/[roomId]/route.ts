@@ -4,11 +4,18 @@ import { z } from "zod";
 
 import { getCurrentSession } from "@/lib/authorization";
 import {
-  chatAttachmentLimitBytes,
   isValidChatAttachmentData,
   saveChatAttachment,
 } from "@/lib/chat-attachments";
 import {
+  chatFileLimitBytes,
+  chatImageLimitBytes,
+  isChatImageName,
+  validChatFilename,
+  readChatFormData,
+} from "@/lib/chat-upload";
+import {
+  canAccessChatRoom,
   deleteChatMessage,
   editChatMessage,
   listChatMessages,
@@ -95,8 +102,10 @@ export async function POST(
     const contentType = request.headers.get("content-type") ?? "";
 
     if (contentType.includes("multipart/form-data")) {
-      const form = await request.formData();
-      const image = form.get("image");
+      if (!canAccessChatRoom(session.user.id, roomId))
+        return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      const form = await readChatFormData(request);
+      const image = form.get("file") ?? form.get("image");
       const body = z
         .string()
         .trim()
@@ -109,14 +118,28 @@ export async function POST(
         .string()
         .uuid()
         .parse(form.get("clientMessageId") || randomUUID());
-      if (!(image instanceof File) || image.size > chatAttachmentLimitBytes) {
+      if (
+        !(image instanceof File) ||
+        !validChatFilename(image.name) ||
+        !image.size ||
+        image.size >
+          (isChatImageName(image.name)
+            ? chatImageLimitBytes
+            : chatFileLimitBytes) ||
+        form.getAll("file").length > 1 ||
+        form.getAll("image").length > 1 ||
+        (form.has("file") && form.has("image"))
+      ) {
         return NextResponse.json(
           { error: "invalid-attachment" },
           { status: 400 },
         );
       }
       const imageData = Buffer.from(await image.arrayBuffer());
-      if (!(await isValidChatAttachmentData(imageData))) {
+      if (
+        isChatImageName(image.name) &&
+        !(await isValidChatAttachmentData(imageData))
+      ) {
         return NextResponse.json(
           { error: "invalid-attachment" },
           { status: 400 },
@@ -154,18 +177,18 @@ export async function POST(
           },
         });
       try {
-        const attachmentId = await saveChatAttachment(
+        await saveChatAttachment(
           session.user.id,
           roomId,
           message.id,
           imageData,
+          { filename: image.name },
         );
+        const saved = listChatMessages(session.user.id, roomId, 0, undefined, {
+          ids: [message.id],
+        })[0];
         return NextResponse.json({
-          message: {
-            ...message,
-            attachmentIds: [attachmentId],
-            bodyHtml: renderChatMarkdown(message.bodySource),
-          },
+          message: { ...saved, bodyHtml: renderChatMarkdown(saved.bodySource) },
         });
       } catch {
         if (!body) {
@@ -239,16 +262,16 @@ export async function PATCH(
       })
       .parse(await request.json());
     if (
-      !listChatMessages(session.user.id, roomId).some(
-        ({ id }) => id === input.messageId,
-      )
+      !listChatMessages(session.user.id, roomId, 0, undefined, {
+        ids: [input.messageId],
+      }).some(({ id }) => id === input.messageId)
     ) {
       throw new Error("Message not found.");
     }
     editChatMessage(session.user.id, input.messageId, input.body);
-    const message = listChatMessages(session.user.id, roomId).find(
-      ({ id: messageId }) => messageId === input.messageId,
-    );
+    const message = listChatMessages(session.user.id, roomId, 0, undefined, {
+      ids: [input.messageId],
+    }).find(({ id: messageId }) => messageId === input.messageId);
     if (!message) throw new Error("Message not found.");
     return NextResponse.json({
       message: { ...message, bodyHtml: renderChatMarkdown(message.bodySource) },
@@ -273,9 +296,9 @@ export async function DELETE(
       .object({ messageId: z.number().int().positive() })
       .parse(await request.json());
     if (
-      !listChatMessages(session.user.id, roomId).some(
-        ({ id }) => id === input.messageId,
-      )
+      !listChatMessages(session.user.id, roomId, 0, undefined, {
+        ids: [input.messageId],
+      }).some(({ id }) => id === input.messageId)
     ) {
       throw new Error("Message not found.");
     }

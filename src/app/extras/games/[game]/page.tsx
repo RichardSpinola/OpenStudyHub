@@ -3,8 +3,7 @@ import { gameCatalog } from "@/lib/game-catalog";
 import { NewGames } from "@/components/new-games";
 import { newGameIds, type NewGame } from "@/lib/extra-games";
 import { GameExperience } from "@/components/game-experience";
-import { UiCopy } from "@/components/ui-language-provider";
-import Link from "next/link";
+import { ExtraWorkspace } from "@/components/extra-workspace";
 import { notFound } from "next/navigation";
 import {
   extraAccessible,
@@ -33,15 +32,13 @@ export default async function GamePage({
   const flags = withV2Db(getExtrasFlags);
   if (!extraAccessible(flags, game as ExtraKey)) notFound();
   return (
-    <>
-      <header className="extras-header">
-        <Link href="/extras/games">
-          <UiCopy pt="← Joguinhos" en="← Minigames" />
-        </Link>
-        <h1>
-          <UiCopy pt={info?.pt ?? game} en={info?.en ?? game} />
-        </h1>
-      </header>
+    <ExtraWorkspace
+      title={info?.pt ?? game}
+      titleEn={info?.en ?? game}
+      back="/extras/games"
+      games
+      kind="game"
+    >
       <GameExperience userId={user.id} game={game}>
         {newGameIds.includes(game as NewGame) ? (
           <NewGames game={game as NewGame} userId={user.id} />
@@ -56,6 +53,6 @@ export default async function GamePage({
           />
         )}
       </GameExperience>
-    </>
+    </ExtraWorkspace>
   );
 }

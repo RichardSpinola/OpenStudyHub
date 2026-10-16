@@ -1728,6 +1728,7 @@ export const chatAttachments = sqliteTable(
         onDelete: "cascade",
         onUpdate: "cascade",
       }),
+    originalName: text("original_name"),
     storageName: text("storage_name").notNull(),
     mimeType: text("mime_type").notNull(),
     sizeBytes: integer("size_bytes").notNull(),

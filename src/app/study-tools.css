@@ -1,17 +1,19 @@
-.focus-chip > button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  min-height: 2.4rem;
-  padding: 0.35rem 0.6rem;
-  white-space: nowrap;
+.focus-chip {
+  position: relative;
 }
-.focus-chip > button > span {
-  font-size: 1.35rem;
-}
-.focus-chip small {
+.focus-chip-time {
+  position: absolute;
+  right: 0.15rem;
+  bottom: -0.3rem;
+  padding: 0.05rem 0.2rem;
+  min-width: 2.2rem;
+  background: var(--panel);
+  border: 1px solid var(--gray-3);
+  border-radius: 0.2rem;
+  font-size: 0.55rem;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
+  pointer-events: none;
 }
 .focus-dialog {
   width: min(28rem, calc(100vw - 1.5rem));
@@ -331,14 +333,6 @@ html[data-design] .chat-inline-edit textarea {
   .flashcard-face {
     min-height: 12rem;
   }
-  .focus-chip > button {
-    padding: 0.3rem;
-    gap: 0.15rem;
-    min-width: 2rem;
-  }
-  .focus-chip small {
-    font-size: 0.65rem;
-  }
   html[data-design] .chat-message-list > li {
     max-width: 94%;
     padding: 0.65rem;
@@ -359,4 +353,403 @@ html[data-design="legacy"]
     .tool-empty
   ) {
   border-radius: 0;
+}
+
+/* Conversation-first layout, using the existing Material/Legacy palette. */
+html[data-design] .chat-layout {
+  grid-template-columns: minmax(17rem, 23rem) minmax(0, 1fr);
+  border: 0;
+  background: var(--black);
+}
+html[data-design] .chat-sidebar {
+  padding: 1rem 0.75rem;
+  gap: 0.8rem;
+  border-right: 1px solid var(--gray-3);
+  background: var(--panel);
+  overflow: hidden;
+}
+html[data-design] .chat-sidebar-heading {
+  padding: 0 0.35rem 0.3rem;
+}
+html[data-design] .chat-sidebar-heading h1 {
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+}
+html[data-design] .chat-sidebar-heading > span {
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius, 0.5rem);
+  font-variant-numeric: tabular-nums;
+}
+html[data-design] .chat-create-controls {
+  display: flex;
+  gap: 0.4rem;
+  flex: none;
+}
+html[data-design] .chat-create-controls > button {
+  flex: 1 1 auto;
+  min-height: 2.4rem;
+  font-size: 0.75rem;
+  white-space: normal;
+}
+html[data-design] .chat-create-controls > button:first-child {
+  flex: 1 1 auto;
+}
+html[data-design] .chat-search {
+  flex: none;
+}
+html[data-design] .chat-search label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+html[data-design] .chat-search input {
+  border-color: transparent;
+  background: var(--black);
+  border-radius: var(--ds-radius, 0.5rem);
+  min-height: 2.7rem;
+}
+html[data-design] .chat-search button {
+  font-size: 0.75rem;
+}
+html[data-design] .chat-list {
+  gap: 1rem;
+  padding: 0.1rem 0.15rem;
+  scrollbar-gutter: stable;
+}
+html[data-design] .chat-list h2 {
+  padding: 0.35rem 0.65rem;
+  margin: 0;
+  font-size: 0.65rem;
+}
+html[data-design] .chat-sidebar nav.chat-list a.chat-conversation-link {
+  min-height: 4.65rem;
+  gap: 0.75rem;
+  padding: 0.7rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius, 0.7rem);
+}
+html[data-design]
+  .chat-sidebar
+  nav.chat-list
+  a.chat-conversation-link[aria-current="page"] {
+  background: color-mix(in srgb, var(--accent), var(--panel) 92%);
+  border-color: color-mix(in srgb, var(--accent), var(--gray-3) 65%);
+}
+html[data-design] .chat-list-avatar {
+  width: 2.7rem;
+  height: 2.7rem;
+  background: var(--panel-raised);
+  border: 1px solid var(--gray-3);
+}
+html[data-design] .chat-list-copy strong {
+  font-size: 0.9rem;
+}
+html[data-design] .chat-list-copy small {
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+html[data-design] .chat-archive-link {
+  border-top: 1px solid var(--gray-3);
+  padding: 0.8rem 0.65rem 0.2rem;
+  text-decoration: none;
+}
+html[data-design] .chat-main-header {
+  min-height: 4.25rem;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--gray-3);
+  background: var(--panel);
+}
+html[data-design] .chat-header-identity {
+  padding: 0.2rem 0.35rem;
+  border-radius: var(--ds-radius, 0.5rem);
+}
+html[data-design] .chat-message-list {
+  padding: 1rem clamp(0.75rem, 3vw, 2.5rem);
+  background-color: var(--black);
+}
+html[data-design] .chat-message-list > li {
+  width: fit-content;
+  max-width: min(82%, 42rem);
+  padding: 0.65rem 0.8rem;
+  margin: 0.45rem 0;
+  background: var(--panel);
+  border: 1px solid var(--gray-3);
+  border-radius: 0.15rem 0.8rem 0.8rem 0.8rem;
+  box-shadow: 0 1px 2px #0001;
+  gap: 0.25rem;
+}
+html[data-design] .chat-message-list > li[data-own="true"] {
+  margin-left: auto;
+  background: color-mix(in srgb, var(--accent), var(--panel) 94%);
+  border-color: color-mix(in srgb, var(--accent), var(--gray-3) 78%);
+  border-radius: 0.8rem 0.15rem 0.8rem 0.8rem;
+}
+html[data-design] .chat-message-list > li > header {
+  min-height: 1.3rem;
+  gap: 0.6rem;
+  align-items: center;
+}
+html[data-design] .chat-mini-profile > summary {
+  font-size: 0.73rem;
+  color: var(--accent);
+}
+html[data-design] .chat-mini-profile > summary :is(img, .chat-avatar-fallback) {
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.65rem;
+}
+html[data-design] .chat-message-list time {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 0.65rem;
+  color: var(--gray-2);
+}
+html[data-design] .chat-message-list > li > header > small {
+  font-size: 0.6rem;
+}
+html[data-design] .chat-message-body {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+html[data-design] .chat-actions-disclosure summary {
+  min-width: 2rem;
+  min-height: 1.5rem;
+  color: var(--gray-2);
+  line-height: 1;
+}
+html[data-design] .chat-actions-disclosure .chat-message-actions {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 11rem;
+  box-shadow: 0 0.4rem 1rem #0004;
+}
+html[data-design] .chat-actions-disclosure .chat-message-actions button {
+  text-align: left;
+  min-height: 2.5rem;
+  background: transparent;
+  border: 0;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.7rem;
+}
+html[data-design] .chat-actions-disclosure .chat-message-actions button:hover {
+  background: var(--gray-4);
+}
+html[data-design] .chat-composer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-top: 1px solid var(--gray-3);
+  background: var(--panel);
+  align-items: end;
+}
+html[data-design] .chat-composer-main {
+  grid-column: 2;
+}
+html[data-design] .chat-message-field textarea {
+  min-height: 2.8rem;
+  padding: 0.75rem 3.3rem 0.65rem 0.9rem;
+  background: var(--black);
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius, 0.8rem);
+  line-height: 1.35;
+  font-size: 0.9rem;
+}
+html[data-design] .chat-send-button {
+  width: 2.3rem;
+  height: 2.3rem;
+  min-height: 2.3rem;
+  min-width: 2.3rem;
+  right: 0.25rem;
+  bottom: 0.25rem;
+  border-radius: var(--ds-radius, 0.6rem);
+  font-size: 1.2rem;
+}
+html[data-design] .chat-compose-tools {
+  position: relative;
+  grid-column: 1;
+  align-self: end;
+}
+html[data-design] .chat-compose-tools > summary {
+  display: grid;
+  place-items: center;
+  list-style: none;
+  cursor: pointer;
+  width: 2.8rem;
+  height: 2.8rem;
+  background: var(--panel-raised);
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius, 0.6rem);
+  font-size: 1.5rem;
+}
+html[data-design] .chat-compose-tools > summary::-webkit-details-marker {
+  display: none;
+}
+html[data-design] .chat-compose-tools:not([open]) > .chat-format-toolbar {
+  display: none;
+}
+html[data-design] .chat-compose-tools[open] > .chat-format-toolbar {
+  position: absolute;
+  bottom: calc(100% + 0.75rem);
+  left: 0;
+  z-index: 12;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: 50dvh;
+  overflow: auto;
+  padding: 0.75rem;
+  gap: 0.4rem;
+  background: var(--panel);
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius, 0.75rem);
+  box-shadow: 0 0.5rem 1.5rem #0005;
+}
+html[data-design] .chat-format-help {
+  flex-basis: 100%;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  white-space: normal;
+  margin: 0.25rem 0 0;
+}
+html[data-design] .chat-presence {
+  background: var(--panel);
+  font-size: 0.68rem;
+  padding: 0.2rem 1rem;
+}
+html[data-design="legacy"] .chat-message-list > li {
+  border-radius: 0;
+  box-shadow: none;
+}
+.game-sound-settings {
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid var(--gray-3);
+  padding: 1rem;
+}
+.game-sound-settings label {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+.game-sound-settings input {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+.game-sound-settings p {
+  margin: 0;
+}
+@media (max-width: 900px) and (min-width: 781px) {
+  html[data-design] .chat-layout {
+    grid-template-columns: 17rem minmax(0, 1fr);
+  }
+}
+@media (max-width: 780px) {
+  html[data-design] .chat-layout {
+    display: block;
+  }
+  html[data-design] .chat-sidebar {
+    height: 100%;
+    padding: 0.8rem;
+  }
+  html[data-design] .chat-main-header {
+    padding: 0.4rem 0.6rem;
+    min-height: 3.75rem;
+  }
+  html[data-design] .chat-message-list {
+    padding: 0.65rem;
+  }
+  html[data-design] .chat-message-list > li {
+    max-width: 91%;
+    padding: 0.5rem 0.65rem;
+  }
+  html[data-design] .chat-message-list > li > header {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  html[data-design] .chat-composer {
+    padding: 0.5rem;
+  }
+  html[data-design] .chat-message-field textarea {
+    font-size: 1rem;
+  }
+}
+
+html[data-design="legacy"] .chat-message-list > li[data-own] {
+  border-radius: 0;
+}
+html[data-design] .chat-mobile-back {
+  white-space: nowrap;
+  font-size: 0.75rem;
+  text-decoration: none;
+  padding: 0.4rem;
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius, 0.5rem);
+}
+
+.chat-drop-target {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--panel), transparent 8%);
+  border: 3px dashed var(--accent);
+  font-size: 1.2rem;
+  text-align: center;
+  padding: 2rem;
+}
+html[data-design] .chat-room {
+  position: relative;
+}
+html[data-design] .chat-file-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--gray-3);
+  border-radius: var(--ds-radius, 0.5rem);
+  color: var(--white);
+  text-decoration: none;
+  max-width: 100%;
+  background: var(--panel-raised);
+}
+html[data-design] .chat-file-link > span {
+  min-width: 0;
+  display: grid;
+  gap: 0.3rem;
+  overflow-wrap: anywhere;
+}
+html[data-design] .chat-file-link small {
+  color: var(--gray-2);
+  font-size: 0.7rem;
+}
+html[data-design] .chat-selected-file {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--gray-3);
+  padding: 0.5rem;
+  background: var(--panel-raised);
+  min-width: 0;
+}
+html[data-design] .chat-selected-file img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+}
+html[data-design] .chat-selected-file span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+html[data-design] .chat-selected-file button {
+  margin-left: auto;
 }
