@@ -1534,7 +1534,11 @@ export function ManagementPanel({
                                 <td>{e.student}</td>
                                 <td>{e.offering}</td>
                                 <td>
-                                  {e.source}
+                                  {e.source === "exception"
+                                    ? tr("Individual", "Individual")
+                                    : e.source === "cohort"
+                                      ? tr("Turma", "Cohort")
+                                      : e.source}
                                   {e.withdrawn_at ? " · Retirada" : ""}
                                 </td>
                                 <td>

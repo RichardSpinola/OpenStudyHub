@@ -27,6 +27,23 @@ vi.mock("@/lib/google/storage-owner", () => ({
   resolveDriveStorageUser: vi.fn(),
 }));
 
+async function resumableUpload(input: RequestInfo | URL, init?: RequestInit) {
+  if (String(input).includes("uploadType=resumable"))
+    return new Response(null, {
+      headers: {
+        location:
+          "https://www.googleapis.com/upload/drive/v3/files?upload_id=fake",
+      },
+    });
+  if (init?.method === "PUT") {
+    let bytes = 0;
+    for await (const chunk of init.body as unknown as AsyncIterable<Buffer>)
+      bytes += chunk.length;
+    expect(bytes).toBe(Number(new Headers(init.headers).get("content-length")));
+  }
+  return null;
+}
+
 function seed(connection: DatabaseConnection) {
   const now = Date.now();
   connection.sqlite
@@ -186,7 +203,10 @@ describe("projects", () => {
   it("upgrades academic projects without rebuilding their versions or breaking foreign keys", () => {
     const old = createDatabase(":memory:");
     try {
-      for (const file of migrationFiles.slice(0, -2)) applyMigration(old, file);
+      for (const file of migrationFiles) {
+        if (file === "0016_personal_projects.sql") break;
+        applyMigration(old, file);
+      }
       const { ownerId, offeringId } = seed(old);
       const project = {
         id: Number(
@@ -256,6 +276,8 @@ describe("projects", () => {
     const names: string[] = [];
     let id = 0;
     const fetchImpl = vi.fn<typeof fetch>(async (input, init) => {
+      const start = await resumableUpload(input, init);
+      if (start) return start;
       if (init?.method === "GET") return Response.json({ files: [] });
       if (String(input).includes("/upload/"))
         return Response.json({ id: `upload-${++id}`, name: "file" });
@@ -274,11 +296,10 @@ describe("projects", () => {
       connection,
       fetchImpl,
     });
-    expect(names.slice(0, 5)).toEqual([
+    expect(names.slice(0, 4)).toEqual([
       "Instituição Teste - OSH",
-      "Pessoais",
-      `Pessoa-${ownerId}`,
-      "Projetos",
+      "Projetos pessoais",
+      "Owner",
       "Meu projeto",
     ]);
     expect(
@@ -450,6 +471,8 @@ describe("projects", () => {
     );
     let nextId = 0;
     const fetchImpl = vi.fn<typeof fetch>(async (input, init) => {
+      const start = await resumableUpload(input, init);
+      if (start) return start;
       const url = String(input);
       if (init?.method === "GET" && url.includes("q=")) {
         return Response.json({ files: [] });
@@ -517,6 +540,8 @@ describe("projects", () => {
     const folderNames = new Map<string, string>();
     const createdFolderNames: string[] = [];
     const fetchImpl = vi.fn<typeof fetch>(async (input, init) => {
+      const start = await resumableUpload(input, init);
+      if (start) return start;
       const url = String(input);
       const method = init?.method ?? "GET";
       requests.push({ method, url });
@@ -609,12 +634,11 @@ describe("projects", () => {
       syncStatus: "complete",
       driveProjectFolderId: originalProjectFolderId,
     });
-    expect(createdFolderNames.slice(0, 6)).toEqual([
+    expect(createdFolderNames.slice(0, 5)).toEqual([
       "Instituição Teste - OSH",
-      "ADS",
+      "Projetos - ADS",
       "2030.1",
       "Subject",
-      "Projetos",
       "Projeto incremental",
     ]);
     expect(folderParents.get("folder-2")).toBe("folder-1");

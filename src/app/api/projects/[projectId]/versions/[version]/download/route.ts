@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentSession } from "@/lib/authorization";
+import { streamLocalProjectArchive } from "@/lib/project-local-storage";
+import { getDatabase } from "@/lib/db/client";
 import {
   downloadProjectVersion,
   getProjectVersion,
@@ -26,11 +28,17 @@ export async function GET(
       project.id,
       Number(values.version),
     );
-    const archive = await downloadProjectVersion(
-      session.user.id,
-      project.id,
-      version.versionNumber,
-    );
+    const archive =
+      project.storageBackend === "local"
+        ? await streamLocalProjectArchive(
+            getDatabase(),
+            version.archiveDriveFileId,
+          )
+        : await downloadProjectVersion(
+            session.user.id,
+            project.id,
+            version.versionNumber,
+          );
     const safeName = project.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
     return new NextResponse(archive as unknown as BodyInit, {
       headers: {

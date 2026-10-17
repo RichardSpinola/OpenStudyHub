@@ -1,4 +1,7 @@
 import { once } from "node:events";
+import { stat, unlink, open } from "node:fs/promises";
+import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
 
 import yauzl from "yauzl";
 import yazl from "yazl";
@@ -14,13 +17,17 @@ function isSymlink(entry: yauzl.Entry): boolean {
   return (unixMode & 0o170000) === 0o120000;
 }
 
-function openZip(buffer: Buffer): Promise<yauzl.ZipFile> {
+function openZip(source: Buffer | string): Promise<yauzl.ZipFile> {
   return new Promise((resolve, reject) => {
-    yauzl.fromBuffer(
-      buffer,
-      { lazyEntries: true, decodeStrings: true, validateEntrySizes: true },
-      (error, zip) => (error || !zip ? reject(error) : resolve(zip)),
-    );
+    const options = {
+      lazyEntries: true,
+      decodeStrings: true,
+      validateEntrySizes: true,
+    };
+    const done = (error: Error | null, zip?: yauzl.ZipFile) =>
+      error || !zip ? reject(error) : resolve(zip);
+    if (typeof source === "string") yauzl.open(source, options, done);
+    else yauzl.fromBuffer(source, options, done);
   });
 }
 
@@ -48,14 +55,18 @@ function openEntry(zip: yauzl.ZipFile, entry: yauzl.Entry): Promise<Buffer> {
 }
 
 export async function readProjectZip(
-  buffer: Buffer,
+  buffer: Buffer | string,
+  onlyPath?: string,
 ): Promise<ProjectSourceFile[]> {
-  if (buffer.length > projectUploadLimits.maxTotalBytes) {
+  const size =
+    typeof buffer === "string" ? (await stat(buffer)).size : buffer.length;
+  if (size > projectUploadLimits.maxArchiveBytes) {
     throw new Error("ZIP exceeds the upload size limit.");
   }
   const zip = await openZip(buffer);
   const files: ProjectSourceFile[] = [];
   let expandedSize = 0;
+  let fileCount = 0;
   try {
     await new Promise<void>((resolve, reject) => {
       zip.once("error", reject);
@@ -70,7 +81,7 @@ export async function readProjectZip(
             if (isSymlink(entry)) {
               throw new Error("ZIP symlinks are not accepted.");
             }
-            if (files.length >= projectUploadLimits.maxFiles) {
+            if (++fileCount > projectUploadLimits.maxFiles) {
               throw new Error("ZIP exceeds the file count limit.");
             }
             const path = normalizeProjectPath(entry.fileName);
@@ -89,7 +100,8 @@ export async function readProjectZip(
             ) {
               throw new Error("ZIP compression ratio is unsafe.");
             }
-            files.push({ path, data: await openEntry(zip, entry) });
+            if (!onlyPath || path === onlyPath)
+              files.push({ path, data: await openEntry(zip, entry) });
             zip.readEntry();
           } catch (error) {
             reject(error);
@@ -103,6 +115,29 @@ export async function readProjectZip(
     zip.close();
   }
   return files;
+}
+
+export async function createProjectZipFile(
+  files: ProjectSourceFile[],
+  target: string,
+) {
+  const zip = new yazl.ZipFile();
+  for (const file of files)
+    zip.addReadStreamLazy(
+      normalizeProjectPath(file.path),
+      { mode: 0o100644, mtime: new Date(0), size: file.data.length },
+      (done) => done(null, Readable.from([file.data])),
+    );
+  const file = await open(target, "wx", 0o600);
+  const output = file.createWriteStream();
+  const done = pipeline(zip.outputStream, output);
+  zip.end();
+  try {
+    await done;
+  } catch (error) {
+    await unlink(target).catch(() => undefined);
+    throw error;
+  }
 }
 
 export async function createProjectZip(

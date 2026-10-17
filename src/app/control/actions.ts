@@ -4,6 +4,8 @@ import {
   cancelAcademicEvent,
 } from "@/lib/v2/academic-events";
 import { academicLocalDateTime } from "@/lib/academic-clock";
+import { getDatabase } from "@/lib/db/client";
+import { INSTITUTION_NAME_SETTING } from "@/lib/institution";
 import { validateSetupStep } from "@/lib/v2/setup-validation";
 import { setInstitutionTimeZone } from "@/lib/v2/academic-timezone";
 import { cookies } from "next/headers";
@@ -132,6 +134,11 @@ export async function setupAction(f: FormData): Promise<void> {
         location: str(f, "location"),
       });
     });
+    getDatabase()
+      .sqlite.prepare(
+        "INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
+      )
+      .run(INSTITUTION_NAME_SETTING, str(f, "institution"), Date.now());
     updateUiLanguage(language);
   } catch (e) {
     error = e instanceof Error ? e.message : "Erro no setup.";

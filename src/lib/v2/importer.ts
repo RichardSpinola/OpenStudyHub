@@ -25,6 +25,8 @@ const optionalV3Tables = new Set([
   "note_workspace_versions",
   "project_upload_claims",
   "project_upload_receipts",
+  "personal_tasks",
+  "user_product_tours",
 ]);
 const valid = new Set<ImportCategory>([
   "MIGRATE",
@@ -48,8 +50,8 @@ export function loadV1ImportMatrix(
       throw new Error("Invalid import matrix");
     map.set(match[1], category);
   }
-  if (map.size !== 66)
-    throw new Error("Import matrix must classify all 66 app tables");
+  if (map.size !== 68)
+    throw new Error("Import matrix must classify all 68 app tables");
   return map;
 }
 

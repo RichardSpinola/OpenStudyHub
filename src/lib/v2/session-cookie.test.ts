@@ -12,8 +12,8 @@ const request = vi.hoisted(() => {
     path: string;
   };
   const stored = new Map<string, Cookie>();
-  let origin = "http://192.168.1.70:3001";
-  let host = "192.168.1.70:3001";
+  let origin = "http://192.168.50.10:3001";
+  let host = "192.168.50.10:3001";
   let forwardedProto = "http";
   return {
     stored,
@@ -105,7 +105,7 @@ describe("cookies de sessão V2 por origem", () => {
     vi.stubEnv("OPENSTUDYHUB_V2_DATABASE_PATH", databasePath);
     vi.stubEnv("DATABASE_PATH", join(directory, "v1.db"));
     vi.stubEnv("APP_URL", "https://openstudyhub-ucsal.dev");
-    request.setOrigin("http://192.168.1.70:3001");
+    request.setOrigin("http://192.168.50.10:3001");
     try {
       const connection = openV2Database(databasePath);
       migrateV2(connection);
@@ -145,7 +145,7 @@ describe("cookies de sessão V2 por origem", () => {
 
   it("mantém o Admin autenticado nas páginas protegidas em HTTP LAN na produção", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    request.setOrigin("http://192.168.1.70:3001");
+    request.setOrigin("http://192.168.50.10:3001");
     db = openV2Database(":memory:");
     migrateV2(db);
     seedV2Fake(db, await hashPassword("FicticioLocal!2030"));
@@ -194,7 +194,7 @@ describe("cookies de sessão V2 por origem", () => {
     expect(request.jar.get(USER_COOKIE)).toBeUndefined();
     request.setOrigin("http://public.example:3000");
     expect(secureV2CookieForRequest(request.headers, true)).toBe(true);
-    request.setOrigin("http://192.168.1.70:3001", "https");
+    request.setOrigin("http://192.168.50.10:3001", "https");
     expect(secureV2CookieForRequest(request.headers, true)).toBe(true);
     expect(secureV2CookieForRequest({ get: () => null }, true)).toBe(true);
   });

@@ -7,7 +7,8 @@ import {
 } from "./project-local-storage";
 import { sharedProjectIds } from "./v2/project-sharing";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, unlink } from "node:fs/promises";
+import { withProjectTransfer } from "./project-transfer";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 
@@ -26,7 +27,7 @@ import {
 } from "@/lib/google/drive";
 import type { GoogleFetch } from "@/lib/google/oauth";
 import { resolveDriveStorageUser } from "@/lib/google/storage-owner";
-import { createProjectZip, readProjectZip } from "@/lib/project-archive";
+import { createProjectZipFile, readProjectZip } from "@/lib/project-archive";
 import {
   buildProjectManifest,
   diffProjectManifests,
@@ -40,6 +41,7 @@ import {
 } from "@/lib/project-manifest";
 import {
   buildProjectStoragePath,
+  drivePersonFolderName,
   getStorageLayout,
   getOfferingStorageContext,
 } from "@/lib/storage-layout";
@@ -446,12 +448,11 @@ export async function prepareProjectUpload(
     currentManifest(project.id, connection),
     prepared.manifest,
   );
-  const archive = await createProjectZip(prepared.accepted);
   const stagingRoot = projectStagingRoot(connection);
   await mkdir(stagingRoot, { recursive: true, mode: 0o700 });
   const token = randomUUID();
   const tempArchivePath = join(stagingRoot, `${token}.zip`);
-  await writeFile(tempArchivePath, archive, { mode: 0o600, flag: "wx" });
+  await createProjectZipFile(prepared.accepted, tempArchivePath);
   const now = Date.now();
   connection.sqlite
     .prepare(
@@ -598,7 +599,10 @@ async function ensureProjectDriveStructure(
     let parentId = root.id;
     for (const name of context
       ? buildProjectStoragePath(context, getStorageLayout(connection))
-      : ["Pessoais", `Pessoa-${project.ownerUserId}`, "Projetos"]) {
+      : [
+          "Projetos pessoais",
+          drivePersonFolderName(project.ownerUserId, connection),
+        ]) {
       const identity = createHash("sha256")
         .update(`${parentId}\0${name}`)
         .digest("hex")
@@ -724,9 +728,7 @@ async function performProjectUpload(
     .nullable()
     .transform((value) => value || null)
     .parse(messageInput);
-  const archive = await readFile(
-    assertTempArchivePath(preview.tempArchivePath, connection),
-  );
+  const archive = assertTempArchivePath(preview.tempArchivePath, connection);
   const sources = await readProjectZip(archive);
   const prepared = buildProjectManifest(sources, project.ignorePreset);
   const expectedManifest = JSON.parse(preview.manifestJson) as ProjectManifest;
@@ -1247,12 +1249,14 @@ export async function confirmProjectUpload(
     return response;
   };
   try {
-    return await performProjectUpload(userId, token, messageInput, {
-      ...options,
-      claimId,
-      connection,
-      fetchImpl: guardedFetch,
-    });
+    return await withProjectTransfer(() =>
+      performProjectUpload(userId, token, messageInput, {
+        ...options,
+        claimId,
+        connection,
+        fetchImpl: guardedFetch,
+      }),
+    );
   } finally {
     clearInterval(heartbeat);
     connection.sqlite

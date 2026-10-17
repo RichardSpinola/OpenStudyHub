@@ -21,6 +21,8 @@ export function validateSetupStep(
   if (required.some((k) => !v[k]?.trim()))
     return "Preencha os campos obrigatórios para continuar.";
   if (step === 0) {
+    if (v.institution.trim().length > 160)
+      return "Use até 160 caracteres para o nome da instituição.";
     try {
       new Intl.DateTimeFormat("pt-BR", { timeZone: v.timeZone });
     } catch {

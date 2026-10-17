@@ -1,5 +1,6 @@
 import { argon2id, hash, verify } from "argon2";
 import { z } from "zod";
+import { withPasswordBudget } from "./password-budget";
 
 export const localPasswordSchema = z
   .string()
@@ -10,7 +11,7 @@ let dummyHashPromise: Promise<string> | undefined;
 
 export async function hashPassword(password: string): Promise<string> {
   const validatedPassword = localPasswordSchema.parse(password);
-  return hash(validatedPassword, { type: argon2id });
+  return withPasswordBudget(() => hash(validatedPassword, { type: argon2id }));
 }
 
 export async function verifyPassword(
@@ -18,15 +19,18 @@ export async function verifyPassword(
   password: string,
 ): Promise<boolean> {
   try {
-    return await verify(passwordHash, password);
+    return await withPasswordBudget(() => verify(passwordHash, password));
   } catch {
     return false;
   }
 }
 
 export async function getDummyPasswordHash(): Promise<string> {
-  dummyHashPromise ??= hash("invalid-login-timing-sentinel", {
-    type: argon2id,
-  });
+  dummyHashPromise ??= hashPassword("invalid-login-timing-sentinel").catch(
+    (error) => {
+      dummyHashPromise = undefined;
+      throw error;
+    },
+  );
   return dummyHashPromise;
 }

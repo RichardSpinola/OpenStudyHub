@@ -221,6 +221,10 @@ async function authenticateRealm(
     )
     .get(realm, loginHash, cutoff) as { n: number };
   if (attempts.n >= 5) return null;
+  // Reserve before awaiting Argon2 so parallel requests cannot all pass the limit.
+  db.prepare(
+    "INSERT INTO v2_auth_attempts(realm,login_hash,attempted_at) VALUES(?,?,?)",
+  ).run(realm, loginHash, Date.now());
   const table = realm === "admin" ? "admin_accounts" : "users";
   const row = db
     .prepare(
@@ -233,9 +237,6 @@ async function authenticateRealm(
     password,
   );
   if (!row || !row.active || !valid) {
-    db.prepare(
-      "INSERT INTO v2_auth_attempts(realm,login_hash,attempted_at) VALUES(?,?,?)",
-    ).run(realm, loginHash, Date.now());
     return null;
   }
   db.prepare("DELETE FROM v2_auth_attempts WHERE realm=? AND login_hash=?").run(

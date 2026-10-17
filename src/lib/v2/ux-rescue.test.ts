@@ -99,7 +99,9 @@ describe("UX Rescue: segurança e migração", () => {
           Buffer.alloc(offeringCoverLimitBytes + 1),
         ),
       ).rejects.toThrow("5 MiB");
-      await expect(saveOfferingCover(db,userActor(2),1,image)).rejects.toThrow("permissão");
+      await expect(
+        saveOfferingCover(db, userActor(2), 1, image),
+      ).rejects.toThrow("permissão");
       await saveOfferingCover(db, adminActor(1), 1, image);
       expect(() => linkLegacyOffering(db, userActor(2), 1, 9001)).toThrow(
         "Admin",

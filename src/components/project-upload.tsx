@@ -80,12 +80,20 @@ export function ProjectUpload({
     }
     try {
       const response = await fetch(
-        `/api/projects/${projectId}/upload-preview`,
+        `/api/projects/${projectId}/upload-preview${zip ? `?baseVersionNumber=${currentVersionNumber > 0 ? currentVersionNumber : ""}` : ""}`,
         {
           method: "POST",
-          body: data,
+          ...(zip ? { headers: { "content-type": "application/zip" } } : {}),
+          body: zip ?? data,
         },
       );
+      if (!response.headers.get("content-type")?.includes("application/json"))
+        throw new Error(
+          tr(
+            "Não foi possível preparar o envio. Aguarde e tente novamente.",
+            "Unable to prepare the upload. Please wait and try again.",
+          ),
+        );
       const result = (await response.json()) as Preview & { error?: string };
       if (!response.ok) throw new Error(result.error);
       setPreview(result);

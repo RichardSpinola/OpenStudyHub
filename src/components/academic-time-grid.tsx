@@ -136,6 +136,7 @@ export function AcademicTimeGrid({
                               key={slot.slotId}
                               type="button"
                               className="weekly-class-item"
+                              aria-label={`${slot.subjectName}, ${formatMinutes(slot.startsAtMinutes)}–${formatMinutes(slot.endsAtMinutes)}, ${joinLocation([slot.locationName, slot.room]) ?? tr("Sala não informada", "Room not specified")}, ${slot.instructorName ?? tr("Professor não informado", "Instructor not specified")}`}
                               onClick={() => setDetail(slot)}
                             >
                               <strong>

@@ -69,7 +69,7 @@ export function synchronizeAcademicProjection(
         // Adopt only explicit, previously confirmed links. Never guess by name or ID.
         const prior = db
           .prepare(
-            "SELECT l.offering_id id,l.legacy_offering_id legacyId,o.subject_id,o.program_id,o.period_id,o.instructor_id FROM legacy_offering_links l JOIN offerings o ON o.id=l.offering_id",
+            "SELECT l.offering_id id,l.legacy_offering_id legacyId,o.subject_id,o.program_id,o.period_id,o.instructor_id FROM legacy_offering_links l JOIN offerings o ON o.id=l.offering_id ORDER BY o.subject_id,o.id",
           )
           .all() as Array<Row>;
         for (const row of prior) {
@@ -83,8 +83,20 @@ export function synchronizeAcademicProjection(
             ["academic_periods", "period_id", "academic_period_id"],
             ["instructors", "instructor_id", "instructor_id"],
           ]) {
-            if (row[key] !== null && old[oldKey] !== null)
-              bind(entity, Number(row[key]), Number(old[oldKey]));
+            if (row[key] !== null && old[oldKey] !== null) {
+              const canonicalId = Number(row[key]);
+              const legacyId = Number(old[oldKey]);
+              const owner = db
+                .prepare(
+                  "SELECT canonical_id id FROM academic_legacy_ids WHERE entity=? AND legacy_id=?",
+                )
+                .get(entity, legacyId) as { id: number } | undefined;
+              // Older confirmed offering links can share one V1 subject across
+              // distinct canonical subjects. Give the other subject its own
+              // metadata row below; keep every offering ID and its contents.
+              if (!owner || owner.id === canonicalId)
+                bind(entity, canonicalId, legacyId);
+            }
           }
         }
         for (const entity of entities) {

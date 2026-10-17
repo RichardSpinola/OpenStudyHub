@@ -4,6 +4,8 @@ export const projectUploadLimits = {
   maxFiles: 1_000,
   maxFileBytes: 20 * 1024 * 1024,
   maxTotalBytes: 200 * 1024 * 1024,
+  // ZIP headers and incompressible-data overhead are separate from expanded data.
+  maxArchiveBytes: 202 * 1024 * 1024,
   maxPathLength: 512,
   maxCompressionRatio: 100,
 } as const;

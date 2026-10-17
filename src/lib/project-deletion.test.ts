@@ -109,10 +109,9 @@ describe("permanent project deletion", () => {
     expect(
       connection.sqlite.prepare("SELECT 1 FROM projects WHERE id=?").get(p.id),
     ).toBeTruthy();
-    const success = vi.fn(
-      async (_url: unknown, _init?: RequestInit) =>
-        new Response(null, { status: 204 }),
-    );
+    const success = vi.fn<
+      (url: unknown, init?: RequestInit) => Promise<Response>
+    >(async () => new Response(null, { status: 204 }));
     await deleteOwnedProject(1, p.id, p.name, {
       connection,
       fetchImpl: success,

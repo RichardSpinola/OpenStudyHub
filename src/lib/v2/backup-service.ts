@@ -15,7 +15,11 @@ import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
 import { backupDirectory, createManualBackup } from "./manual-backup";
 import { encryptBackup } from "./backup-crypto";
-import { withBackupLease } from "./maintenance";
+import {
+  withBackupLease,
+  backupLeaseActive,
+  maintenancePath,
+} from "./maintenance";
 import { withV2Db, withV2DbAsync, v2RuntimePath } from "./runtime-database";
 import { storageOwnerStatus } from "./drive-storage";
 import { googleAccessTokenV2 } from "./google-oauth";
@@ -63,6 +67,9 @@ function keyPath() {
 function runsPath() {
   return join(controlDirectory(), "runs.json");
 }
+function activeRunPath() {
+  return join(controlDirectory(), "active-run.json");
+}
 function secureDirectory(path: string) {
   mkdirSync(path, { recursive: true, mode: 0o700 });
   if (realpathSync(path) !== resolve(path))
@@ -92,8 +99,40 @@ export function backupConfig(): BackupConfig {
   return config;
 }
 export function backupRuns(): BackupRun[] {
-  if (!existsSync(runsPath())) return [];
-  return JSON.parse(readFileSync(runsPath(), "utf8")) as BackupRun[];
+  const records: BackupRun[] = existsSync(runsPath())
+    ? JSON.parse(readFileSync(runsPath(), "utf8"))
+    : [];
+  if (!existsSync(activeRunPath())) return records;
+  const active = JSON.parse(readFileSync(activeRunPath(), "utf8")) as {
+    pid: number;
+    leaseId?: string;
+    run: BackupRun;
+  };
+  if (!Number.isSafeInteger(active.pid) || active.pid < 1)
+    throw new Error("Registro de backup em andamento inválido.");
+  const lockPath = maintenancePath();
+  const lock =
+    lockPath && existsSync(lockPath)
+      ? (JSON.parse(readFileSync(lockPath, "utf8")) as {
+          id: string;
+          pid: number;
+          startedAt: number;
+        })
+      : null;
+  const sameRun =
+    lock &&
+    (active.leaseId
+      ? active.leaseId === lock.id
+      : active.pid === lock.pid && lock.startedAt <= active.run.createdAt);
+  if (sameRun && backupLeaseActive()) return records;
+  if (!records.some((r) => r.id === active.run.id))
+    records.unshift({
+      ...active.run,
+      status: "error",
+      message:
+        "O processo foi interrompido antes de confirmar o backup. A última cópia válida foi mantida. Crie uma nova cópia e confira o espaço disponível.",
+    });
+  return records;
 }
 export function hasRecoveryKey() {
   return existsSync(keyPath());
@@ -260,6 +299,10 @@ export async function runEncryptedBackup(
       createdAt: Date.now(),
       status: "error",
     };
+    const previousRuns = backupRuns();
+    const leaseId = JSON.parse(readFileSync(maintenancePath()!, "utf8"))
+      .id as string;
+    writeJson(activeRunPath(), { pid: process.pid, leaseId, run });
     let zip: string | null = null;
     const target = archivePath(run.id),
       partial = `${target}.pending`;
@@ -288,8 +331,9 @@ export async function runEncryptedBackup(
       if (zip && existsSync(zip)) unlinkSync(zip);
       if (existsSync(partial)) unlinkSync(partial);
     }
-    const records = [run, ...backupRuns()];
+    const records = [run, ...previousRuns];
     writeJson(runsPath(), records);
+    unlinkSync(activeRunPath());
     if (run.status === "complete" && kind === "automatic") {
       const expired = records
         .filter((r) => r.kind === "automatic" && r.status === "complete")

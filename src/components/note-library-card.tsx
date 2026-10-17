@@ -24,7 +24,8 @@ export function NoteLibraryCard({
     )
     .replaceAll(/\[([^\]]+)\]\([^)]+\)/gu, "$1")
     .replaceAll(/[#>*_`]/gu, "")
-    .trim().slice(0,280);
+    .trim()
+    .slice(0, 280);
   const date = new Intl.DateTimeFormat(language, {
     dateStyle: "medium",
   }).format(note.updatedAt);

@@ -8,10 +8,12 @@ import {
   existsSync,
   rmSync,
   readdirSync,
+  watch,
 } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { once } from "node:events";
 import { createMigratedTestDatabase } from "../test-database";
 import { migrateV2, openV2Database } from "./database";
 import { recoveryKey, decryptBackup } from "./backup-crypto";
@@ -24,7 +26,11 @@ import {
   scheduleDay,
   tickBackupSchedule,
 } from "./backup-service";
-import { withBackupLease, backupMaintenanceActive } from "./maintenance";
+import {
+  withBackupLease,
+  backupMaintenanceActive,
+  maintenancePath,
+} from "./maintenance";
 import { closeRuntimeV2Database } from "./runtime-database";
 import { encryptSecret } from "../google/crypto";
 import { DRIVE_SCOPE } from "./google-config";
@@ -62,6 +68,16 @@ beforeAll(async () => {
       "insert into note_images(id,data,mime_type,width,height,created_at) values('image',?,'image/webp',1,1,1)",
     )
     .run(Buffer.from("note image stored in database"));
+  legacy.sqlite
+    .prepare(
+      "INSERT INTO personal_tasks(user_id,title,description,completed_at,created_at,updated_at) VALUES(1,'Tarefa privada de recuperação','Manter conclusão',42,1,1)",
+    )
+    .run();
+  legacy.sqlite
+    .prepare(
+      "INSERT INTO user_product_tours(user_id,status,mode,step_id,revision,updated_at) VALUES(1,'paused','full','home',3,1)",
+    )
+    .run();
   await legacy.sqlite.backup(v1);
   legacy.close();
   const canonical = openV2Database(v2);
@@ -95,6 +111,7 @@ afterAll(() => {
   vi.unstubAllEnvs();
   rmSync(root, { recursive: true, force: true });
 });
+
 it("checks schedule time in the selected zone, validates setup, and preserves key on invalid configuration", () => {
   expect(
     scheduleDay(Date.parse("2026-10-15T05:59:00Z"), {
@@ -137,6 +154,38 @@ it("serializes jobs, releases maintenance after failure and prevents a second pr
   ).rejects.toThrow("test");
   expect(backupMaintenanceActive()).toBe(false);
 });
+it("uses the shared lease across PID namespaces and detects a stale marker despite a reused PID", async () => {
+  const path = maintenancePath()!;
+  await withBackupLease(async () => {
+    const marker = JSON.parse(readFileSync(path, "utf8"));
+    writeFileSync(path, JSON.stringify({ ...marker, pid: 999999999 }));
+    expect(backupMaintenanceActive()).toBe(true);
+  });
+  writeFileSync(path, JSON.stringify({ pid: process.pid, phase: "snapshot" }));
+  expect(backupMaintenanceActive()).toBe(false);
+  rmSync(path);
+  mkdirSync(join(root, "backup-control"), { recursive: true });
+  const active = join(root, "backup-control", "active-run.json");
+  writeFileSync(
+    active,
+    JSON.stringify({
+      pid: process.pid,
+      run: {
+        id: "stale-container-test",
+        kind: "manual",
+        createdAt: 1,
+        status: "error",
+      },
+    }),
+  );
+  try {
+    expect(
+      backupRuns().find((r) => r.id === "stale-container-test")?.message,
+    ).toContain("interrompido");
+  } finally {
+    rmSync(active);
+  }
+});
 it("exports both DBs, note image blobs and binary chat assets; validates and restores offline with rollback", async () => {
   const run = await runEncryptedBackup();
   expect(run.status).toBe("complete");
@@ -150,23 +199,28 @@ it("exports both DBs, note image blobs and binary chat assets; validates and res
     OPENSTUDYHUB_V2_DATABASE_PATH: join(restoreRoot, "v2.db"),
     PRIVATE_ASSET_PATH: join(restoreRoot, "assets"),
   };
+  const operatorKey = join(root, "operator.key");
+  writeFileSync(operatorKey, key, { mode: 0o600 });
+  const encryptedArgs = [
+    "--import",
+    "tsx",
+    "scripts/restore-encrypted-backup.ts",
+    encryptedBackupPath(run.id),
+    "--key-file",
+    operatorKey,
+  ];
   writeFileSync(env.DATABASE_PATH, "old database marker");
   writeFileSync(env.DATABASE_PATH + "-wal", "old WAL marker");
   const validate = spawnSync(
     process.execPath,
-    ["scripts/restore-manual-backup.mjs", zip, "--validate-only"],
+    [...encryptedArgs, "--validate-only"],
     { env, encoding: "utf8" },
   );
   expect(validate.status, validate.stderr).toBe(0);
   expect(readFileSync(env.DATABASE_PATH, "utf8")).toBe("old database marker");
   const restore = spawnSync(
     process.execPath,
-    [
-      "scripts/restore-manual-backup.mjs",
-      zip,
-      "--confirm-restore",
-      "--services-stopped",
-    ],
+    [...encryptedArgs, "--confirm-restore", "--services-stopped"],
     { env, encoding: "utf8" },
   );
   expect(restore.status, restore.stderr).toBe(0);
@@ -178,6 +232,14 @@ it("exports both DBs, note image blobs and binary chat assets; validates and res
     readdirSync(restoreRoot).some((n) => n.includes(".pre-restore-")),
   ).toBe(true);
   const restored = new Database(env.DATABASE_PATH, { readonly: true });
+  expect(
+    restored.prepare("SELECT title,completed_at FROM personal_tasks").get(),
+  ).toEqual({ title: "Tarefa privada de recuperação", completed_at: 42 });
+  expect(
+    restored
+      .prepare("SELECT status,mode,step_id,revision FROM user_product_tours")
+      .get(),
+  ).toEqual({ status: "paused", mode: "full", step_id: "home", revision: 3 });
   expect(
     (
       restored
@@ -240,6 +302,43 @@ it("streams a protected package to the configured Drive and reports a failed rem
     vi.unstubAllGlobals();
     saveBackupConfig({ ...backupConfig(), destination: "local" });
   }
+}, 20000);
+it("records a killed backup process and permits a later manual retry without losing valid copies", async () => {
+  saveBackupConfig({ ...backupConfig(), destination: "local" });
+  const valid = await runEncryptedBackup();
+  let child: ReturnType<typeof spawn> | undefined;
+  const observer = watch(join(root, "backup-control"), (_, filename) => {
+    if (
+      filename === "active-run.json" &&
+      existsSync(join(root, "backup-control", "active-run.json"))
+    )
+      child?.kill("SIGKILL");
+  });
+  try {
+    child = spawn(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        "--input-type=module",
+        "-e",
+        "import {runEncryptedBackup} from './src/lib/v2/backup-service.ts'; await runEncryptedBackup();",
+      ],
+      { env: process.env, stdio: "ignore" },
+    );
+    const [, signal] = await once(child, "exit");
+    expect(signal).toBe("SIGKILL");
+  } finally {
+    observer.close();
+    child?.kill("SIGKILL");
+  }
+  expect(backupMaintenanceActive()).toBe(false);
+  const interrupted = backupRuns().find((r) => r.status === "error");
+  expect(interrupted?.message).toContain("interrompido");
+  expect(existsSync(encryptedBackupPath(valid.id))).toBe(true);
+  const retry = await runEncryptedBackup();
+  expect(retry.status).toBe("complete");
+  expect(backupRuns().some((r) => r.id === interrupted?.id)).toBe(true);
 }, 20000);
 it("rejects missing referenced assets and does not report a partial copy as success", async () => {
   const db = new Database(v1);

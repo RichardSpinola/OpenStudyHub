@@ -31,6 +31,80 @@ function fixture() {
   };
 }
 describe("V3 academic projection", () => {
+  it("upgrades confirmed offerings sharing old subject metadata without moving their contents", () => {
+    const f = fixture();
+    try {
+      synchronizeAcademicProjection(f.db, f.legacy);
+      const rows = f.db
+        .prepare(
+          "SELECT l.offering_id canonicalId,l.legacy_offering_id legacyId,o.subject_id subjectId FROM legacy_offering_links l JOIN offerings o ON o.id=l.offering_id ORDER BY o.id",
+        )
+        .all() as Array<{
+        canonicalId: number;
+        legacyId: number;
+        subjectId: number;
+      }>;
+      const first = rows[0];
+      const second = rows.find((r) => r.subjectId !== first.subjectId)!;
+      const subject = f.legacy.sqlite
+        .prepare("SELECT subject_id id FROM subject_offerings WHERE id=?")
+        .get(first.legacyId) as { id: number };
+      f.legacy.sqlite
+        .prepare("UPDATE subject_offerings SET subject_id=? WHERE id=?")
+        .run(subject.id, second.legacyId);
+      f.legacy.sqlite
+        .prepare(
+          "INSERT INTO notes(owner_user_id,offering_id,title,content) VALUES(99,?,'Keep note','Original content')",
+        )
+        .run(second.legacyId);
+      f.db.prepare("DELETE FROM academic_legacy_ids").run();
+      expect(synchronizeAcademicProjection(f.db, f.legacy, true)).toBe(true);
+      const subjects = f.legacy.sqlite
+        .prepare(
+          "SELECT subject_id id FROM subject_offerings WHERE id IN (?,?) ORDER BY id",
+        )
+        .all(first.legacyId, second.legacyId) as Array<{ id: number }>;
+      expect(new Set(subjects.map((s) => s.id)).size).toBe(2);
+      expect(
+        f.db
+          .prepare(
+            "SELECT offering_id canonicalId,legacy_offering_id legacyId FROM legacy_offering_links ORDER BY offering_id",
+          )
+          .all(),
+      ).toEqual(
+        rows
+          .map(({ canonicalId, legacyId }) => ({ canonicalId, legacyId }))
+          .sort((a, b) => a.canonicalId - b.canonicalId),
+      );
+      expect(
+        f.legacy.sqlite
+          .prepare("SELECT offering_id,title,content FROM notes")
+          .all(),
+      ).toEqual([
+        {
+          offering_id: second.legacyId,
+          title: "Keep note",
+          content: "Original content",
+        },
+      ]);
+      const stable = f.db
+        .prepare(
+          "SELECT * FROM academic_legacy_ids ORDER BY entity,canonical_id",
+        )
+        .all();
+      synchronizeAcademicProjection(f.db, f.legacy, true);
+      expect(
+        f.db
+          .prepare(
+            "SELECT * FROM academic_legacy_ids ORDER BY entity,canonical_id",
+          )
+          .all(),
+      ).toEqual(stable);
+      expect(f.legacy.sqlite.pragma("foreign_key_check")).toEqual([]);
+    } finally {
+      f.close();
+    }
+  });
   it("projects distinct IDs and enrollment, repeats safely, withdraws and restores without cross-user access", () => {
     const f = fixture();
     try {

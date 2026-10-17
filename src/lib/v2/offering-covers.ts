@@ -49,9 +49,7 @@ export async function saveOfferingCover(
   offeringId: number,
   data: Buffer,
 ) {
-  if (
-    !isAdmin(db, actor)
-  )
+  if (!isAdmin(db, actor))
     throw new Error("Sem permissão para a capa desta disciplina.");
   if (!data.length || data.length > offeringCoverLimitBytes)
     throw new Error("A capa deve ter até 5 MiB.");
@@ -99,9 +97,7 @@ export async function removeOfferingCover(
   actor: Actor,
   offeringId: number,
 ): Promise<void> {
-  if (
-    !isAdmin(db, actor)
-  )
+  if (!isAdmin(db, actor))
     throw new Error("Sem permissão para a capa desta disciplina.");
   const existing = db
     .prepare(

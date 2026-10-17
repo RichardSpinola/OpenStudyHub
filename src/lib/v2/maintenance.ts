@@ -15,12 +15,24 @@ export function maintenancePath() {
     ? join(dirname(path), ".backup-maintenance.json")
     : null;
 }
-function alive(pid: number) {
+// PIDs belong to each container's namespace. The shared SQLite lock is the
+// authority for liveness, including after a worker is killed or restarted.
+export function backupLeaseActive(): boolean {
+  const path = maintenancePath();
+  if (!path) return false;
+  const coordinatorPath = join(dirname(path), ".backup-coordinator.sqlite");
+  if (!existsSync(coordinatorPath)) return false;
+  const db = new Database(coordinatorPath, { fileMustExist: true });
+  db.pragma("busy_timeout=0");
   try {
-    process.kill(pid, 0);
-    return true;
+    db.exec("BEGIN IMMEDIATE");
+    db.exec("ROLLBACK");
+    return false;
   } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
+    if ((error as { code?: string }).code === "SQLITE_BUSY") return true;
+    throw error;
+  } finally {
+    db.close();
   }
 }
 export function backupMaintenanceActive() {
@@ -31,7 +43,7 @@ export function backupMaintenanceActive() {
     return (
       record.phase !== "export" &&
       Number.isSafeInteger(record.pid) &&
-      alive(record.pid)
+      backupLeaseActive()
     );
   } catch {
     return true;

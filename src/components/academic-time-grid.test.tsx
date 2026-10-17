@@ -29,21 +29,13 @@ const fixtureSlot: AgendaSlot = {
 };
 
 describe("AcademicTimeGrid", () => {
-  it("renders all seven days with accessible class time, room and teacher", () => {
+  it("shows scheduled days and offers a full week, with accessible time, room and teacher", () => {
     const html = renderToStaticMarkup(
       <AcademicTimeGrid slots={[fixtureSlot]} today={2} />,
     );
-    for (const day of [
-      "Segunda",
-      "Terça",
-      "Quarta",
-      "Quinta",
-      "Sexta",
-      "Sábado",
-      "Domingo",
-    ]) {
-      expect(html).toContain(day);
-    }
+    expect(html).toContain("Terça");
+    expect(html).not.toContain("Segunda");
+    expect(html).toContain("Semana completa");
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("10:00");
     expect(html).toContain("12:00");
@@ -81,7 +73,8 @@ describe("AcademicTimeGrid", () => {
     );
     expect(html).toContain("06:00");
     expect(html).toContain("23:00");
-    expect(html).toContain("--calendar-hours:17");
+    expect(html).toContain('class="weekly-compact-table"');
+    expect(html.match(/scope="row"/g)).toHaveLength(2);
   });
 
   it("uses a compact interval around normal class times", () => {
@@ -90,7 +83,7 @@ describe("AcademicTimeGrid", () => {
     );
     expect(html).toContain("10:00");
     expect(html).toContain("12:00");
-    expect(html).toContain("--calendar-hours:2");
+    expect(html.match(/scope="row"/g)).toHaveLength(1);
     expect(html).not.toContain("09:00");
     expect(html).not.toContain("13:00");
   });
