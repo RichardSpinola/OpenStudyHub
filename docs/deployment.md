@@ -1,45 +1,50 @@
-# Instalação V2 com Docker
+# Deployment and service layout
 
-Se você vai hospedar o OpenStudyHub, comece decidindo quem pode acessar cada entrada. A comunidade usa o App; a configuração da instituição fica no Admin / Control Plane. O [Compose de exemplo](https://github.com/RichardSpinola/OpenStudyHub/blob/main/docker-compose.example.yml) usa a imagem pública fixa `ghcr.io/richardspinola/openstudyhub:2.0.1` e instala essas duas superfícies junto com colaboração em tempo real, proxy local e migrations; quem instala não precisa de PAT ou login no GHCR. O App pode receber tráfego público por HTTPS. O Admin deve ficar na rede local ou em acesso administrativo privado.
+An instance consists of **migration, App, Admin, realtime and a local Caddy proxy**, with two SQLite databases and private assets in one persistent volume. Keep the five services in the same Compose project. Node development requires Node.js 24 and pnpm 10; a server using the ready-made image does not need either installed on its host.
 
-## Portas e persistência
+| Service   | Responsibility                               | Host exposure             |
+| --------- | -------------------------------------------- | ------------------------- |
+| migration | Apply main and canonical database migrations | None; exits after success |
+| App       | Student workspace                            | Through the local proxy   |
+| Admin     | Setup and administration                     | Localhost 3001 by default |
+| realtime  | Collaboration and backup scheduling          | Internal network          |
+| web       | App and WebSocket routing                    | Localhost 3000 by default |
 
-| Serviço                 | Porta no host por padrão | Uso                                                     |
-| ----------------------- | ------------------------ | ------------------------------------------------------- |
-| `openstudyhub-web`      | `127.0.0.1:3000`         | App e WebSockets `/realtime` e `/whiteboard` pelo Caddy |
-| `openstudyhub-admin`    | `127.0.0.1:3001`         | Admin `/control`, sem publicação pública                |
-| `openstudyhub-app`      | interna `3000`           | Next.js do App                                          |
-| `openstudyhub-realtime` | interna `3045`           | colaboração e presença                                  |
-| `openstudyhub-migrate`  | sem porta                | aplica migrations V1 e V2 antes do App/Admin            |
+## Choose the installation method
 
-O volume `openstudyhub-data` guarda os dois bancos SQLite, anexos privados, assets locais e backups em `/app/data`. Nunca exponha esse volume nem o Docker socket ao público. O `.env` privado guarda os segredos e deve ser incluído no plano de backup seguro, fora do Git.
+- New Linux server with Docker: [guided installer](instalacao-do-zero.md).
+- ZimaOS/CasaOS graphical manager: [ZimaOS](zimaos.md) or [CasaOS](casaos.md).
+- Other Compose-capable hosts: manual installation below; [UmbrelOS limitations](umbrelos.md).
 
-O Admin em HTTP na LAN aceita sessão nesse endereço, mas login e cookie trafegam sem criptografia. Use apenas uma rede local confiável e restrita; para acesso por redes não confiáveis, coloque o Admin atrás de HTTPS privado. Nunca publique a porta `3001` na internet.
+## Manual Compose
 
-## Primeiro deploy
+Copy `.env.example` to a private `.env`; set `NODE_ENV=production`, `APP_URL`, realtime public URL and a stable 32-byte Base64 `GOOGLE_TOKEN_ENCRYPTION_KEY`. The Compose template defines the database paths inside `/app/data`. Do not use the same path for both databases.
 
-1. Copie `.env.example` para `.env`. Configure `NODE_ENV=production`, `APP_URL` com a origem HTTPS pública, `OPENSTUDYHUB_V2_ENABLED=1`, `GOOGLE_REDIRECT_URI` se for usar Google e `OPENSTUDYHUB_REALTIME_PUBLIC_URL=wss://SEU-DOMINIO/realtime`. O Compose define os caminhos dos bancos dentro do volume.
-2. Defina `OPENSTUDYHUB_APP_BIND=127.0.0.1`. Para acessar o Admin de outra máquina na LAN, use o IP LAN do host em `OPENSTUDYHUB_ADMIN_BIND`; mantenha firewall/restrição de rede. Nunca aponte o túnel público para `3001`.
-3. Execute:
+`docker-compose.example.yml`, the graphical template and the guided installer pin `ghcr.io/richardspinola/openstudyhub:3.0.0`. Keep App, Admin, migrations and realtime on the same image version. Follow the update guide for an existing instance; the installer is for a new one.
 
-   ```sh
-   docker compose -f docker-compose.example.yml up -d
-   ```
+```sh
+# Use only after checking the image version in the template:
+docker compose -f docker-compose.example.yml config --quiet
+docker compose -f docker-compose.example.yml up -d
+```
 
-4. Confira `http://127.0.0.1:3000/api/health` no host e a tela de login do Admin em `http://127.0.0.1:3001/control/login`. Em banco vazio, conclua o setup do primeiro administrador antes de abrir a instância ao público.
+Do not share the output of plain `docker compose config`: it can reveal secrets. The `--quiet` check validates without printing resolved configuration.
 
-O serviço `openstudyhub-migrate` roda `migrate-production.mjs` e `migrate-v2-production.mjs` em sequência; App/Admin/realtime só iniciam depois de migrations concluídas. Não aponte os dois caminhos de banco para o mesmo arquivo.
+## Network and persistent data
 
-## Domínio e Cloudflare
+Only App should be reachable publicly. Keep Admin loopback-bound or on a deliberately protected private address, never behind the public App proxy. Forward both `/realtime` and `/whiteboard` with WebSocket support. A public HTTPS origin requires `wss`, not `ws`.
 
-Termine HTTPS num reverse proxy ou Cloudflare Tunnel e encaminhe a origem pública apenas para `openstudyhub-web:3000` (ou `127.0.0.1:3000` quando o túnel roda no host). Preserve os caminhos `/realtime` e `/whiteboard` com upgrade WebSocket. Configure `APP_URL=https://seu-dominio` e `OPENSTUDYHUB_REALTIME_PUBLIC_URL=wss://seu-dominio/realtime`. O callback Google cadastrado no Cloud deve ser `https://seu-dominio/api/v2/google/callback`, sem slash extra. Veja [Google](google.md).
+`openstudyhub-data:/app/data` retains databases and assets across container recreation. `down -v` deletes a Compose volume: it is not an update command. Docker socket access is powerful; the application containers do not need it. Keep configuration files private and preserve the encryption key through updates.
 
-Se usar domínio LAN sem HTTPS, não espere que OAuth de produção aceite esse callback. Use HTTPS público para a integração real, ou o fluxo local `localhost`/`127.0.0.1` apenas para teste. Não exponha porta de SQLite, assets privados, Admin ou realtime diretamente na internet.
+## First health checks
 
-## Plataformas domésticas
+Check App `/api/health`, Admin `/control/setup` on an empty instance or `/control/login` otherwise, and realtime availability. A health 200 can be degraded if realtime is unavailable; inspect its checks. Diagnose the migration service before retrying startup. [Updating and recovering](backup-update.md) explains data-preserving changes.
 
-Para importar pela GUI do [ZimaOS](zimaos.md) ou [CasaOS](casaos.md), use o Compose autocontido em `deploy/zimaos-compose.yml`, com metadata do card e proxy embutido. O Compose genérico desta página continua sendo o caminho para hosts com `.env` e arquivo Caddyfile. [UmbrelOS](umbrelos.md) continua com instalação manual por Compose; não há pacote publicado nas lojas.
+<!-- Compatibility anchors for previously published guide links. -->
 
-## Atualização e recuperação
-
-Siga [Backup e atualização](backup-update.md) antes de substituir a imagem. O endpoint de saúde do App é `/api/health`; o Admin tem healthcheck próprio de login. A restauração de banco **não** acontece pelo navegador e exige App, Admin e realtime parados, conforme [guia operacional](operations/manual-backup-restore.md).
+<span id="atualizacao-e-recuperacao"></span>
+<span id="dominio-e-cloudflare"></span>
+<span id="instalacao-v2-com-docker"></span>
+<span id="plataformas-domesticas"></span>
+<span id="portas-e-persistencia"></span>
+<span id="primeiro-deploy"></span>

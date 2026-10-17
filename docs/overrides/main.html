@@ -1,0 +1,24 @@
+{% extends "base.html" %} {% block content %}
+<nav class="osh-language-bar" aria-label="Language / Idioma">
+  {% if config.extra.osh_language == 'pt-BR' %}
+  <a href="{{ base_url }}/../{{ page.url }}" lang="en" hreflang="en">English</a
+  ><a
+    href="{{ base_url }}/{{ page.url }}"
+    lang="pt-BR"
+    hreflang="pt-BR"
+    aria-current="true"
+    >Português (Brasil)</a
+  >
+  {% else %}
+  <a
+    href="{{ base_url }}/{{ page.url }}"
+    lang="en"
+    hreflang="en"
+    aria-current="true"
+    >English</a
+  ><a href="{{ base_url }}/pt-BR/{{ page.url }}" lang="pt-BR" hreflang="pt-BR"
+    >Português (Brasil)</a
+  >
+  {% endif %}
+</nav>
+{{ super() }} {% endblock %}

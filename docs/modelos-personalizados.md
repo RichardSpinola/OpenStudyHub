@@ -1,75 +1,25 @@
-# Modelos personalizados
+# Document templates
 
-OpenStudyHub não tenta reconstruir um DOCX do zero. O fluxo recomendado é
-transformar seu arquivo-base em um Google Docs autorizado ao Hub e reutilizá-lo
-como modelo.
+Templates provide a guided form for repeatable documents. They are different from note-page templates and do not copy your notes into Google Docs.
 
-## Importar um DOCX
+## Use a template
 
-1. Abra **Documentos → Gerenciar modelos**.
-2. Escolha **Importar DOCX**.
-3. Dê um nome ao modelo.
-4. Escolha a categoria:
-   - Atividade
-   - Anotações
-   - Documento
-   - Outro
-5. Selecione o `.docx`.
-6. Importe como Google Docs.
+Open Library → Documents → Create document, select an available template and fill the requested fields. Review the title and association before generating. Central Drive must be ready for Google-backed generation. A missing remote template cannot be repaired by repeatedly submitting the form.
 
-O Drive converte o arquivo e o OpenStudyHub salva a referência autorizada pelo
-scope `drive.file`.
+## Bring your own
 
-## Usar um Google Doc existente
+Use the custom-template workflow to import DOCX or, when configured, select an existing Google Doc through Picker. Expand the Google Docs import section only when using that path. A pasted URL alone does not authorize an arbitrary Drive document under `drive.file`.
 
-Quando o Google Picker estiver configurado, use **Escolher no Drive**. O Picker
-concede acesso por arquivo sem exigir acesso geral ao Drive.
+Give templates recognizable names, use the supported field/placeholder syntax shown in the import form and preview the detected fields. Verify a generated example before sharing it widely. The distributed generic DOCX examples are under `docs/examples/document-templates/`; their manifest describes the starter set. They contain fictional content.
 
-Colar o ID/URL de um Google Doc arbitrário não garante autorização. Com
-`drive.file`, conhecer o ID não é o mesmo que ter permissão para operar naquele
-arquivo.
+Private templates belong under the person's named folder in Models on the configured Drive. Sharing a template, using a generated document and granting Google edit permission are separate actions. Check [Google](google.md) and [Library](library.md) for storage/access details.
 
-## Preparar o layout
+<!-- Compatibility anchors for previously published guide links. -->
 
-Faça no próprio documento-base tudo que precisa ser preservado:
-
-- fonte;
-- margens;
-- cabeçalho;
-- logotipo institucional;
-- espaçamento;
-- tabelas;
-- blocos de código;
-- seções fixas.
-
-Ao gerar um documento, o Hub copia a base em vez de tentar redesenhar o layout.
-
-## Categorias
-
-A categoria do modelo é pré-selecionada na geração, mas pode ser alterada.
-
-Exemplo de destino:
-
-```text
-Instituição - OSH/
-  ADS/
-    2026.2/
-      POO/
-        Atividades/
-          Lista 01
-```
-
-## Compartilhar ao gerar
-
-Se o formulário oferecer um Group, você pode registrar o compartilhamento no Hub
-durante a geração. O acesso do Hub e a permissão real do Google Drive são camadas
-separadas: o sistema nunca transforma o arquivo em público apenas para facilitar
-o acesso.
-
-## Boas práticas
-
-- mantenha modelos genéricos;
-- não coloque IDs reais no Git;
-- evite dados pessoais no documento-base;
-- prefira importar o DOCX pela própria instância;
-- teste uma cópia antes de usar o modelo em uma atividade real.
+<span id="boas-praticas"></span>
+<span id="categorias"></span>
+<span id="compartilhar-ao-gerar"></span>
+<span id="importar-um-docx"></span>
+<span id="modelos-personalizados"></span>
+<span id="preparar-o-layout"></span>
+<span id="usar-um-google-doc-existente"></span>

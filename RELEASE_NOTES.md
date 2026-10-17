@@ -1,23 +1,19 @@
-# OpenStudyHub v2.0.0 — notas de release
+# OpenStudyHub 3.0.0
 
-Esta versão reúne o contexto acadêmico, a colaboração e as integrações opcionais em uma instalação self-hosted. A V2 usa dois bancos SQLite e separa o App do Admin / Control Plane; o Admin fica local/LAN por padrão, enquanto o App pode ser publicado com HTTPS.
+A self-hosted study workspace with a reorganized user experience, administration, collaborative notes and optional Google integration. Use the pinned `ghcr.io/richardspinola/openstudyhub:3.0.0` image; follow the update guide before changing an existing instance.
 
-## Principais recursos
+## Current workspace
 
-Cursos, períodos, turmas e disciplinas estruturam Hoje, atividades, notas, documentos e projetos. O Chat e o Quadro Global usam colaboração em tempo real. A Home, os temas Material e Legacy/TUI, os perfis, as notificações e os Extras administráveis completam a interface em Português e English. Cada pessoa pode conectar seu Google Classroom em modo somente de leitura; Drive e Google Docs são opcionais. A extensão Nova Aba abre a instância configurada usando a sessão web normal.
+Home/search/shortcuts, a compact timetable, subject materials, pages/databases/private images in Notes, Library/project workflows, inline chat edits and attachments, study tools, reorganized settings, personal planning and a replayable tour. Admin has a dedicated academic structure and clearer setup, integration and storage controls. Local storage works without Google; central Drive remains optional.
 
-## Instalação e atualização
+## Deployment compatibility
 
-Para instalar, use Docker com Compose e volume persistente `/app/data`, conforme [Instalação do zero](docs/instalacao-do-zero.md) e [Deploy](docs/deployment.md). Para desenvolvimento local, use Node.js 24 e pnpm 10. Configure um `.env` privado a partir de `.env.example`; conclua o primeiro setup na superfície Admin. Exponha apenas o App por HTTPS. A implantação manual por Compose pode ser usada em hosts ZimaOS, CasaOS e UmbrelOS que ofereçam esse recurso; não há pacote nativo de loja.
+Keep both databases, private assets, environment, encryption key and Compose volume/project. Apply new migrations in order; preserve existing applied SQL. Technical names `v2.db`, `v2-migrations` and `OPENSTUDYHUB_V2_*` remain intentional. A normal update does not reset the library, recreate Drive or discard accounts.
 
-Antes de atualizar, crie e baixe um [backup](docs/backup-update.md), preserve uma cópia externa do volume e do `.env` e confira a compatibilidade dos dados. Migrations V1 e V2 são executadas na ordem definida pelo Compose. Não execute código antigo contra um banco já migrado. A restauração requer App, Admin e realtime parados; usuários fazem login novamente e reconectam o Google depois dela.
+Create an external recovery copy first. If rolling back after migrations, restore the matching data and image together. Remote-only Drive files are not part of local backups. Files belonging to another OAuth client can still be refused by Google's `drive.file` policy; the Hub reports the failure instead of deleting local references blindly.
 
-## Mudanças em relação à V1
+## Documentation and installation
 
-A V2 introduz estrutura acadêmica e banco próprios, setup inicial, duas superfícies, colaboração e recursos opcionais administráveis. A existência de um banco V1 não implica importação automática de dados reais: planeje e valide a migração separadamente, com backup anterior.
+English documentation is the default, with complete Português (Brasil), real fictional-data captures and a redesigned public site. The new installer creates a new instance using existing Docker/Compose and offers read-only diagnosis; it is not an updater. The installer and Compose examples use the versioned 3.0.0 image. The initial application setup wizard still has Portuguese labels, documented explicitly.
 
-## Google e limites conhecidos
-
-Google exige credenciais OAuth da própria instalação, callback `APP_URL + /api/v2/google/callback` e os scopes documentados em [Google](docs/google.md). Classroom é pessoal e somente de leitura; a associação às disciplinas é confirmada pelo usuário. Conteúdo remoto do Drive não entra no backup local. A extensão Firefox precisa de assinatura para instalação permanente. O ZIP da extensão acompanha a GitHub Release; a imagem pública versionada é `ghcr.io/richardspinola/openstudyhub:2.0.0`. As lojas Chrome Web Store e Firefox Add-ons não fazem parte desta publicação.
-
-Licença e créditos: [LICENSING.md](docs/LICENSING.md). Guia em inglês: [en.md](docs/en.md).
+See [installation](docs/instalacao-do-zero.md), [updates](docs/backup-update.md), [credits](docs/LICENSING.md) and [publication checklist](docs/release-checklist.md). Previous notes: [2.0.1](RELEASE_NOTES_2_0_1.md), [2.0.0](RELEASE_NOTES_2_0_0.md).

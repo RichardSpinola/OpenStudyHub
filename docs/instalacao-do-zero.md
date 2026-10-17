@@ -1,137 +1,88 @@
-# Instalação do zero
+# Install a new server
 
-Este guia acompanha a primeira instalação, do endereço da instância até o primeiro acesso. Você vai preparar o App para a comunidade e manter o Admin em acesso privado; as integrações Google podem esperar até o espaço acadêmico estar pronto.
+## Before you start
 
-## 1. Escolha o endereço público
+Use a Linux host with Docker Engine and Docker Compose v2 already working, Bash, GNU coreutils (including `realpath -m`), `awk` and at least 2 GiB free for initial data. Uploads, images and backups require additional space. The installer does not install Docker, configure DNS/TLS/firewalls or update existing instances. It uses prebuilt images, not an on-server source build.
 
-Defina primeiro onde a instância será acessada, por exemplo:
+The installer uses the pinned `ghcr.io/richardspinola/openstudyhub:3.0.0` image. Check the [release notes](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.0.0) before installing. Use `--image` only to select another trusted, explicitly versioned image.
 
-```text
-https://hub.exemplo.com
+## 1. Obtain and inspect the project
+
+Use a complete checkout or release source bundle from the [official repository](https://github.com/RichardSpinola/OpenStudyHub). Run the script from that checkout; downloading the script alone is insufficient because it uses the deployment templates. Review `scripts/install-server.sh` before running it. No `curl | sudo bash` command is required.
+
+## 2. Run the wizard
+
+```sh
+bash scripts/install-server.sh
+# Portuguese (Brazil):
+bash scripts/install-server.sh --language pt-BR
 ```
 
-Produção deve usar HTTPS. O endereço será usado por `APP_URL` e pelo callback
-OAuth do Google.
+The defaults are directory `./openstudyhub`, App `127.0.0.1:3000`, Admin `127.0.0.1:3001`. The wizard asks for directory, bind address, ports and the URL people will use. It displays a summary and requires `yes` before continuing. Choosing `0.0.0.0` deliberately exposes the App on host interfaces; configure host/network protection yourself. Admin stays on localhost.
 
-## 2. Prepare os dados persistentes
+For repeatable setup, supply the values explicitly and use `--yes` only after reviewing them:
 
-No Docker, persista `/app/data`. É ali que ficam SQLite e private-assets.
-
-Nunca coloque em Git:
-
-- `.env`;
-- banco SQLite/WAL/SHM;
-- tokens;
-- uploads;
-- IDs privados de Classroom/Drive;
-- backups.
-
-## 3. Crie o `.env`
-
-Comece com:
-
-```bash
-cp .env.example .env
+```sh
+bash scripts/install-server.sh --directory ./openstudyhub   --project openstudyhub --app-url http://127.0.0.1:3000   --app-bind 127.0.0.1 --app-port 3000 --admin-port 3001 --yes
 ```
 
-Para produção, ajuste pelo menos:
+The installer checks Docker access, existing project/volumes, ports and space; creates a private configuration with a random encryption key; runs both migrations; starts the five services; and checks readiness. It never adopts an existing instance. If it stops, preserve the directory, volume and private `install.log`; use [troubleshooting](troubleshooting.md). Do not retry by deleting the data volume.
 
-```env
-NODE_ENV=production
-APP_NAME=OpenStudyHub
-APP_URL=https://hub.exemplo.com
-DATABASE_PATH=/app/data/openstudyhub.db
-OPENSTUDYHUB_V2_ENABLED=1
-OPENSTUDYHUB_V2_DATABASE_PATH=/app/data/v2.db
-PRIVATE_ASSET_PATH=/app/data/private-assets
-OPENSTUDYHUB_REALTIME_PUBLIC_URL=wss://hub.exemplo.com/realtime
+## 3. Open private Admin
+
+On the host: `http://127.0.0.1:3001/control/setup`. For a remote server, keep the port private and forward it from your own computer:
+
+```sh
+ssh -N -L 3001:127.0.0.1:3001 YOUR_USER@YOUR_SERVER
 ```
 
-Google pode ficar vazio até o Core estar funcionando.
+Then open the same localhost URL on your computer. If local port 3001 is occupied, change only the leftmost port in the forwarding command and open that port. Use your own SSH account; this is not an OpenStudyHub username.
 
-## 4. Suba a aplicação
+Complete language, first Admin, institution, course and academic structure; review the final summary. Credentials are created in this setup, not by the installer. The account creation flow for students is managed separately by the Admin.
 
-O Compose usa a imagem pública fixa `ghcr.io/richardspinola/openstudyhub:2.0.1`; a instalação não exige conta GitHub nem PAT.
+## 4. Publish the App when ready
 
-```bash
-docker compose -f docker-compose.example.yml up -d
+Put only the App behind your HTTPS reverse proxy/tunnel. Set `APP_URL` to that exact public origin and `OPENSTUDYHUB_REALTIME_PUBLIC_URL` to its `wss://.../realtime` address; preserve `/realtime` and `/whiteboard` WebSocket routes. Restart services after configuration changes. Admin must remain private.
+
+Google and Brave autocomplete can be configured later. [Google](google.md) explains OAuth; [deployment](deployment.md) explains service layout and manual installation.
+
+## Diagnose without changing data
+
+```sh
+bash scripts/install-server.sh --diagnose --directory ./openstudyhub
 ```
 
-Confira o App em `http://127.0.0.1:3000` e o Admin local em `http://127.0.0.1:3001/control/login`. Publique somente o App por HTTPS. Confira:
+It validates Compose, lists service state and checks App/Admin, proxy and realtime health and the running version without printing environment values. Custom project names are recorded by the installer. Raw logs may contain private information: inspect them privately.
 
-```text
-GET /api/health
-```
+> The current first-run wizard has Portuguese labels, including when English is selected. The choice sets the instance language after setup; the screenshot shows the real interface. This documentation change does not translate application code.
 
-A resposta saudável deve ser HTTP 200.
+## Installer options
 
-## 5. Faça o primeiro setup
+| Option                                  | Purpose                                                                                  |
+| --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `--language en` / `--language pt-BR`    | Choose the installer language; English is the default.                                   |
+| `--directory PATH`                      | New, empty installation directory. Never point at an existing instance.                  |
+| `--project NAME`                        | Unique Docker Compose project name. Recorded for later diagnosis.                        |
+| `--app-bind IPv4`                       | Default `127.0.0.1`. Choose a private interface or `0.0.0.0` deliberately.               |
+| `--app-port PORT` / `--admin-port PORT` | Two different ports from 1024 to 65535. Admin remains on localhost.                      |
+| `--app-url URL`                         | Exact HTTP(S) origin, without a path, query or credentials.                              |
+| `--image IMAGE:VERSION`                 | Explicit, trusted version. No `latest`; defaults to the public 3.0.0 image.              |
+| `--yes`                                 | Accept the displayed configuration without an interactive prompt.                        |
+| `--diagnose`                            | Check an installer-managed instance without starting services or changing configuration. |
+| `--help`                                | Display command usage.                                                                   |
 
-Abra `/control/setup` na superfície Admin local/LAN. Em um banco V2 vazio, o setup começa pela escolha do idioma da instância, com English selecionado inicialmente.
+The installer stores `compose.yml`, `Caddyfile`, `.env`, `instance-project` and a private `install.log` in the chosen directory. Application data live in the named Docker volume, not beside `.env`. Keep both the volume backup and the private configuration, especially the encryption key.
 
-Crie:
+<!-- Compatibility anchors for previously published guide links. -->
 
-1. escolha do idioma;
-2. primeiro Admin;
-3. nome da instituição;
-4. primeiro curso;
-5. período e turma iniciais;
-6. detalhes opcionais, revisão e conclusão.
-
-Depois você pode ampliar o modelo acadêmico em Administração. Veja as [capturas fictícias do fluxo inicial](getting-started.md#como-aparecem-as-etapas-iniciais).
-
-## 6. Configure Google do zero
-
-Somente depois que login/Core estiverem saudáveis, siga
-[Google: OAuth, Classroom, Drive e Docs](google.md).
-
-A instalação usa um OAuth app por instância. Cada usuário conecta sua própria
-Conta Google. A conta central de Drive é escolhida depois entre contas já
-conectadas.
-
-## 7. Defina a conta de armazenamento
-
-No Admin → Integrações, escolha uma conta Google já conectada que será dona do armazenamento central.
-
-A pasta raiz é nomeada a partir da instituição:
-
-```text
-Nome da Instituição - OSH/
-```
-
-Classroom continua usando a conta pessoal do aluno.
-
-## 8. Cadastre usuários e Offerings
-
-Não assuma que todos do mesmo Program possuem as mesmas matérias.
-
-Use:
-
-```text
-Subject
-  -> Subject Offering
-      -> Enrollment
-```
-
-Turma/professor/Classroom diferente deve ser uma Offering diferente.
-
-## 9. Teste antes de colocar dados reais
-
-Faça um smoke test:
-
-- login/logout;
-- Home;
-- Chat;
-- Note privada;
-- Note compartilhada;
-- modelo DOCX;
-- geração de documento;
-- pasta correta no Drive;
-- sync Classroom, se disponível;
-- backup.
-
-## 10. Backup inicial
-
-Depois que a configuração estiver boa, faça o primeiro backup do diretório
-persistente e guarde uma cópia segura do `.env`, especialmente da chave de
-criptografia dos tokens Google.
+<span id="1-escolha-o-endereco-publico"></span>
+<span id="10-backup-inicial"></span>
+<span id="2-prepare-os-dados-persistentes"></span>
+<span id="3-crie-o-env"></span>
+<span id="4-suba-a-aplicacao"></span>
+<span id="5-faca-o-primeiro-setup"></span>
+<span id="6-configure-google-do-zero"></span>
+<span id="7-defina-a-conta-de-armazenamento"></span>
+<span id="8-cadastre-usuarios-e-offerings"></span>
+<span id="9-teste-antes-de-colocar-dados-reais"></span>
+<span id="instalacao-do-zero"></span>

@@ -1,19 +1,20 @@
-# Licença
+# License and credits
 
-OpenStudyHub é distribuído sob a **GNU Affero General Public License v3.0 (`AGPL-3.0-only`)**.
+OpenStudyHub is distributed under **GNU Affero General Public License v3.0 only (`AGPL-3.0-only`)**. Read the [original project license](https://github.com/RichardSpinola/OpenStudyHub/blob/main/LICENSE). This explanation does not replace that text.
 
-O texto oficial completo está disponível no arquivo [`LICENSE`](https://github.com/RichardSpinola/OpenStudyHub/blob/main/LICENSE) na raiz do repositório.
+## Main third-party components
 
-## O que isso significa
+- **Excalidraw 0.18.1**, MIT: collaborative whiteboard. Its original [MIT notice](licenses/EXCALIDRAW-MIT.txt) and [font notices](licenses/EXCALIDRAW-FONTS.md) are preserved.
+- **BlockNote 0.56.0**, MPL-2.0: note editor, consumed as a dependency without modifying its original files.
+- **Yjs 13.6.33**, **y-prosemirror**, **y-protocols** and **y-indexeddb**, MIT: collaborative note state and related bindings/persistence.
+- Tabler icons and figlet retain the notices supplied with their dependencies and project assets.
 
-Você pode usar, estudar, modificar e redistribuir o OpenStudyHub nos termos da AGPL v3.
+See [THIRD_PARTY_NOTICES.md](https://github.com/RichardSpinola/OpenStudyHub/blob/main/THIRD_PARTY_NOTICES.md), the lockfile and bundled `public/licenses/` for versions and original texts. The page/database organization around the editor is implemented by OpenStudyHub; it does not incorporate AppFlowy or Notion code.
 
-Se uma versão modificada do OpenStudyHub for disponibilizada para usuários através de uma rede, esses usuários devem poder obter o código-fonte correspondente dessa versão, conforme os termos da AGPL v3.
+Original license and copyright notices are not replaced by translations. The Credits area in Settings exposes the relevant product attributions. The extension keeps the project's license and its own browser manifest metadata.
 
-Este texto é apenas um resumo informativo. Em caso de divergência, prevalece o texto integral do arquivo `LICENSE`.
+<!-- Compatibility anchors for previously published guide links. -->
 
-## Componentes de terceiros
-
-O Quadro Branco usa Excalidraw; os textos de licença e de fontes estão em [Excalidraw MIT](licenses/EXCALIDRAW-MIT.txt) e [fontes do Excalidraw](licenses/EXCALIDRAW-FONTS.md). Esta documentação é gerada com [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/), distribuído sob MIT. Os créditos e licenças continuam disponíveis mesmo com o aviso visual do gerador oculto no rodapé.
-
-O editor de Notas usa BlockNote 0.56.0 (MPL-2.0), Yjs e seus adaptadores (MIT). Os avisos completos estão em `public/licenses/`, na página `/credits` da aplicação e em `THIRD_PARTY_NOTICES.md` na raiz do repositório. Os pacotes são consumidos sem modificar seus arquivos originais.
+<span id="componentes-de-terceiros"></span>
+<span id="licenca"></span>
+<span id="o-que-isso-significa"></span>

@@ -1,27 +1,21 @@
-# Checklist de release V2
+# Publication checklist
 
-Este checklist pertence ao gate da Fase 10.2. Nenhum item marcado aqui substitui execução e evidência do gate final.
+Maintainer checklist for each release. Mark completion only after checking the exact candidate and its published artifacts.
 
-## Código, dados e licenças
+- [ ] Review candidate source files, Git history and screenshots for private information.
+- [ ] Build both documentation languages in strict mode; check links, language counterparts and responsive pages.
+- [ ] Validate installer tests and one disposable clean installation; preserve production installations.
+- [ ] Review version, release notes, licenses and known limitations.
+- [ ] Confirm public image 3.0.0 is available before switching public Compose examples and installation claims.
+- [ ] Review the existing code quality/build/test gate and reuse recorded functional validation where appropriate.
+- [ ] Group pending changes into reviewable commits, preserving previous history.
+- [ ] After publication approval: publish the candidate branch and tag, wait for the image workflow, verify the anonymous pull, then publish `main`, GitHub Release and documentation and verify public links.
 
-- [ ] Revisar diff e histórico público: nenhum banco de QA, dado pessoal, `.env`, token, cookie, upload real, credencial ou caminho local.
-- [ ] Conservar código oficial, migrations V1/V2, scripts de manutenção, testes úteis, extensão e atribuições de terceiros.
-- [ ] Confirmar `LICENSE`, licença MIT do Excalidraw e notas de licença das fontes incorporadas.
+Do not interpret a checked documentation build as a full application/security/load test. A running private instance does not by itself prove availability or correctness of the public image and GitHub Release.
 
-## Verificações técnicas
+<!-- Compatibility anchors for previously published guide links. -->
 
-- [ ] Formatação, lint sem warnings, typecheck e suíte completa.
-- [ ] Builds finais de App, Admin, realtime e extensão.
-- [ ] Instalação limpa e atualização com migrations V1/V2 em bancos separados.
-- [ ] Integridade e chaves estrangeiras dos bancos; `/api/health` do App e acesso ao login do Admin.
-- [ ] Build da imagem Docker e Compose com volume persistente e Admin acessível apenas na rede prevista.
-- [ ] Backup, restauração com serviços parados e recuperação após falha.
-- [ ] Revisão de sessões, autorização, OAuth, uploads, WebSocket, logs e exposição de dados.
-
-## Smoke humano e publicação
-
-- [ ] Setup, login e logout no App/Admin; Home, Hoje, Disciplinas, Notes, Documents, Projects, Chat e Extras.
-- [ ] Google Classroom e Drive com consentimento real apenas se o ambiente estiver configurado; verificar callback V2.
-- [ ] Extensão Chromium instalada sem compactação: opções, URL inválida, Nova Aba e sessão web normal.
-- [ ] Documentação publicada sem links locais e sem afirmar que há pacote de loja para ZimaOS/CasaOS/UmbrelOS.
-- [ ] Definir versão, tag, push e publicação somente após aprovação explícita do gate.
+<span id="checklist-de-release-v2"></span>
+<span id="codigo-dados-e-licencas"></span>
+<span id="smoke-humano-e-publicacao"></span>
+<span id="verificacoes-tecnicas"></span>

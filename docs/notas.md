@@ -1,51 +1,43 @@
-# Notas: páginas e trabalho em grupo
+# Notes: pages, databases and images
 
-Abra **Notas** e clique em **Nova página**. Dê um nome e escolha começar em branco, com anotações de aula ou pauta de reunião. Você pode guardar a página dentro de outra em **Onde guardar**. Disciplina e atividade são opcionais; a página começa privada.
+Open **Notes → New page**, name the page and start blank or with a template. Subject and coursework associations are optional. Pages start private. Create subpages to organize a longer subject or project.
 
-## Escrever e organizar
+![Notes workspace with fictional content](assets/screens/en/notes.jpg)
 
-- Escreva normalmente. Digite `/` para escolher título, lista, checklist, citação, código ou tabela de texto. A seleção de texto mostra opções de formatação.
-- Use a alça de um bloco para movê-lo. **Desfazer texto** e **Refazer texto** ficam na barra do editor.
-- Crie uma **Nova subpágina** ao final da página. Em **Opções da página**, você pode mover a página, mudar a associação acadêmica, duplicar ou exportar.
-- A busca em Notas encontra títulos e conteúdo. A disciplina continua mostrando as notas que você associou a ela.
+## Write and organize
 
-## Bases em Tabela e Quadro
+Type `/` to insert headings, lists, checklists, quotes, code and text tables. Select text to format it; use a block handle to move it. Page options include moving, duplicating, associating, exporting and history/recovery. Text undo and database/title undo are separate controls.
 
-**Adicionar base** abre a criação: dê um nome, escolha uma base vazia, tarefas ou leituras e a visualização inicial. Os modelos já trazem os campos de prazo ou fonte/data. Tabela e Quadro mostram os mesmos dados. Cada registro tem nome e status: A fazer, Em andamento ou Concluído. Você pode adicionar campos de texto, número, data ou caixa de seleção.
+## Simple databases
 
-No Quadro, cada coluna tem **Novo registro**; ele já nasce com o status daquela coluna. Arraste pela alça ou escolha o status no próprio cartão. A visualização escolhida fica lembrada neste navegador. As opções de cada campo permitem renomear/remover. Remover registros, campos ou bases pode ser desfeito em **Desfazer título ou base**, enquanto a página estiver aberta. Essa ação de desfazer é separada da edição do texto.
+Add an empty, tasks or reading database. Table and Board show the same records. Records have a name and status; extra fields support text, numbers, dates and checkboxes. Move cards or change their status directly. These are lightweight study databases, not a spreadsheet with formulas or relational queries.
 
-## Imagens
+## Images
 
-Clique em **Imagem** na barra do editor, escolha o arquivo e confira a prévia. Se quiser, use **Ajustar enquadramento**: arraste a imagem e ajuste o zoom na proporção original, quadrada ou paisagem. Adicione uma legenda e clique em **Inserir na página**. Também é possível colar ou arrastar imagens diretamente para o texto. Depois de inserir, use os controles do bloco para redimensionar, editar a legenda ou remover.
+Use **Image** in the editor toolbar, or paste/drop an image. Preview, crop, add a caption and insert. PNG, JPEG and WebP are accepted up to 5 MB and 20 megapixels; conversion removes metadata and resizes to at most 2,560 pixels. Each page permits 50 images and 20 MB, including retained history images. Uploading needs a connection to the instance.
 
-PNG, JPG e WebP são aceitos com até 5 MB e 20 megapixels. A instância reduz imagens grandes para até 2.560 px e remove metadados ao converter para WebP. Cada página permite até 50 imagens e 20 MB, incluindo imagens retidas para o histórico.
+Images stored locally follow the page's access permissions. HTML export embeds local images; Markdown and recovery JSON retain references that need the instance's images. External images still depend on their host.
 
-As imagens enviadas ficam no banco local e seguem o acesso da nota. Cópias e recuperação no mesmo servidor conservam as imagens. O HTML exportado incorpora as imagens locais para abrir fora do Hub; Markdown e rascunho JSON guardam referências e exigem as imagens disponíveis na instância. Links externos dependem do site de origem. O envio de imagens precisa de conexão com a instância.
+## Sharing and saving
 
-## Compartilhar
+The owner grants read or edit access to people or eligible groups. Subpages have independent permissions: sharing a parent does not automatically share every child. Group access ends when membership ends.
 
-Em **Compartilhar**, escolha uma pessoa ou um grupo do qual você participa. **Pode ler** é o padrão; escolha **Pode editar** para trabalhar em conjunto. Só o proprietário gerencia acesso, associação, organização e exclusão. Participantes que saem de um grupo perdem o acesso concedido por esse grupo.
+Editing synchronizes periodically, not through live participant cursors. **Saved** means the server acknowledged the change. When disconnected, an already open page can retain a browser draft where storage is available. Do not clear site storage before recovering it.
 
-Cada subpágina tem suas próprias permissões. Compartilhar a página principal não compartilha automaticamente todas as subpáginas.
+Download a recovery draft if needed. Import recovery JSON, Markdown or text from Notes to create a separate private page. History can restore recent versions as private copies; up to 15 snapshots are retained with a minimum 30-second interval. Permanent page deletion requires typed confirmation; subpages remain.
 
-A edição colaborativa usa sincronização periódica: as alterações são enviadas após uma pequena pausa e as alterações de outras pessoas aparecem em aproximadamente cinco segundos com a página ativa. Esta entrega não mostra os cursores de outros participantes.
+## Storage and limits
 
-## Salvamento e recuperação
+Notes and their private images are local instance data and work without Google; they are included in local backups, not automatically copied into Drive. Pages allow 100,000 characters, 2,500 blocks and 1.5 MB of collaborative state. A page supports 12 databases, 20 fields and 300 records per database.
 
-**Salvo** significa que o servidor confirmou a alteração. Durante uma queda de conexão, uma página já aberta permite continuar escrevendo e mantém um rascunho no navegador, quando o armazenamento local está disponível. Não limpe os dados do site antes de recuperar o trabalho.
+The editor uses BlockNote and Yjs. [Credits and licenses](LICENSING.md) explain these dependencies. No AppFlowy or Notion source code is incorporated.
 
-Ao voltar a conexão, ou reabrir a página com o servidor disponível, o rascunho é combinado com a versão salva. Se o navegador não permitir manter rascunhos, o aviso orienta baixar uma cópia.
+<!-- Compatibility anchors for previously published guide links. -->
 
-- **Baixar rascunho de recuperação** exporta um JSON com texto, bases e estado da edição, inclusive alterações ainda sem confirmação.
-- **Importar página**, na entrada de Notas, aceita esse JSON, Markdown ou texto. A importação cria uma página privada separada.
-- Em **Opções da página → Histórico e recuperação**, versões recentes podem ser recuperadas como cópias privadas. São guardadas até 15 versões, com intervalo mínimo de 30 segundos entre capturas; não há uma versão por tecla digitada.
-- A exclusão da página exige confirmação escrita e é permanente. As subpáginas são mantidas.
-
-As notas ficam no banco local da instância e funcionam sem Google. Esta etapa não cria um espelho automático de cada nota no Drive. Os dados fazem parte do backup do banco; a conferência integrada de restauração está prevista nas etapas 7 e 8.
-
-## Limites desta entrega
-
-Até 100 mil caracteres, 2.500 blocos e 1,5 MB de estado colaborativo por página. As bases permitem até 12 coleções, 20 campos e 300 registros por coleção. Fórmulas, relações entre bases e anexos de outros tipos não fazem parte desta etapa; esses arquivos continuam na Biblioteca.
-
-O editor usa [BlockNote](https://www.blocknotejs.org/docs) e [Yjs](https://github.com/yjs/yjs), com créditos em **Configurações → Sobre → Créditos**. Não utiliza código do AppFlowy ou do Notion.
+<span id="bases-em-tabela-e-quadro"></span>
+<span id="compartilhar"></span>
+<span id="escrever-e-organizar"></span>
+<span id="imagens"></span>
+<span id="limites-desta-entrega"></span>
+<span id="notas-paginas-e-trabalho-em-grupo"></span>
+<span id="salvamento-e-recuperacao"></span>

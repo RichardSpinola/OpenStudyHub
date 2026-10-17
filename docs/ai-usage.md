@@ -1,25 +1,13 @@
-# Uso de IA no desenvolvimento
+# AI-assisted development
 
-OpenStudyHub é desenvolvido com uso extensivo de ferramentas de IA como assistência de engenharia de software.
+OpenStudyHub's development uses AI tools as engineering assistance. The maintainer directs requirements, priorities, product decisions and release approval. Assistance can include implementation, debugging, tests, refactoring and documentation.
 
-## Responsabilidade e direção
+Generated or modified code is not assumed correct. Changes need contextual review and appropriate validation, especially authentication, authorization, OAuth, uploads, private data and deployment. Do not send real secrets or private user data to tools unnecessarily.
 
-A direção do produto, requisitos, prioridades, fluxos, arquitetura e decisões de release são definidos pelo mantenedor.
+AI assistance is disclosed without claiming the work was entirely hand-written or that generated output guarantees quality. Third-party software retains its own licensing and attribution. The maintainer remains responsible for the released product.
 
-Ferramentas de IA podem auxiliar em:
+<!-- Compatibility anchors for previously published guide links. -->
 
-- implementação e boilerplate;
-- testes;
-- debugging;
-- refatoração;
-- revisão de código;
-- pesquisa técnica;
-- documentação.
-
-Código gerado ou modificado com IA não é considerado correto por padrão. Mudanças devem ser revisadas em contexto e validadas por testes, com atenção extra para autenticação, autorização, OAuth, uploads, dados privados e deploy.
-
-## Transparência
-
-O projeto não tenta apresentar código assistido por IA como se tivesse sido integralmente escrito manualmente.
-
-A assistência de IA no desenvolvimento do OpenStudyHub V2 incluiu o OpenAI Codex com os modelos GPT-5.6 Luna, GPT-5.6 Sol, GPT-6 Luna e GPT-6 Sol.
+<span id="responsabilidade-e-direcao"></span>
+<span id="transparencia"></span>
+<span id="uso-de-ia-no-desenvolvimento"></span>

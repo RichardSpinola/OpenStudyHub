@@ -1,0 +1,87 @@
+# Referência de classificação da importação legada
+
+Base: schema V1 atual em `src/lib/db/schema.ts`, com 68 tabelas (52 da V1 e 16 da V3). `MIGRATE` preserva registros com remapeamento de IDs; `TRANSFORM` exige conversão de modelo/colunas; `SKIP/RUNTIME` recria estado efêmero; `REVIEW` depende de política ou validação humana. Esta matriz orienta o importador V2 e não autoriza importar banco real.
+
+|   # | Tabela V1                      | Ação         | Destino/critério V2                                                                                                                                                                         |
+| --: | ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|   1 | `app_settings`                 | TRANSFORM    | Lista permitida de configurações não secretas; instituição, tema e storage vão para entidades próprias.                                                                                     |
+|   2 | `shortcuts`                    | TRANSFORM    | Atalhos globais; validar URL e copiar ícones privados se usados.                                                                                                                            |
+|   3 | `users`                        | TRANSFORM    | Contas V1 viram somente usuários normais V2; hashes/locale/preferências compatíveis, inativos preservados. `role=admin` gera REVIEW; nunca cria `admin_accounts` nem grant automaticamente. |
+|   4 | `user_home_assets`             | TRANSFORM    | Assets privados após cópia verificada, sem paths V1 absolutos.                                                                                                                              |
+|   5 | `user_shortcuts`               | TRANSFORM    | Atalhos pessoais e ícones após validação de URL/asset.                                                                                                                                      |
+|   6 | `google_connections`           | REVIEW       | Reconexão padrão; só importar refresh token em restore seguro com chave correta e consentimento/política definidos.                                                                         |
+|   7 | `google_oauth_states`          | SKIP/RUNTIME | Nonces OAuth expiram e são recriados.                                                                                                                                                       |
+|   8 | `sessions`                     | SKIP/RUNTIME | Revogar sessões V1; login novo.                                                                                                                                                             |
+|   9 | `login_rate_limits`            | SKIP/RUNTIME | Contadores temporários são recriados.                                                                                                                                                       |
+|  10 | `audit_events`                 | REVIEW       | Histórico legado somente se necessário; separar de audit V2 e não copiar conteúdo sensível.                                                                                                 |
+|  11 | `subjects`                     | TRANSFORM    | Subjects canônicas; `program/semester` legados viram candidatos para mapping, sem inferência automática ambígua.                                                                            |
+|  12 | `programs`                     | TRANSFORM    | Programs ligados à Institution; não dividir por turno.                                                                                                                                      |
+|  13 | `cohorts`                      | TRANSFORM    | Cohorts com Program, Shift e Curriculum explícitos; revisar nomes ambíguos.                                                                                                                 |
+|  14 | `moderator_program_scopes`     | REVIEW       | Converter para grants apenas depois de mapear responsabilidades reais.                                                                                                                      |
+|  15 | `curator_cohort_scopes`        | REVIEW       | Converter para grants apenas se houver capability correspondente.                                                                                                                           |
+|  16 | `user_academic_memberships`    | TRANSFORM    | Histórico/contexto de Program/Cohort e progressão; a V1 só guarda vínculo atual.                                                                                                            |
+|  17 | `instructors`                  | MIGRATE      | Professor preservado, com remapeamento de ID.                                                                                                                                               |
+|  18 | `academic_periods`             | TRANSFORM    | Período letivo com lifecycle; não confundir com semestre curricular.                                                                                                                        |
+|  19 | `locations`                    | MIGRATE      | Salas/locais preservados, com remapeamento de ID.                                                                                                                                           |
+|  20 | `subject_offerings`            | TRANSFORM    | Offering V2 e currículo; `curriculum_term` textual exige revisão, períodos e histórico ficam distintos.                                                                                     |
+|  21 | `offering_google_integrations` | REVIEW       | Separar pasta Drive central de Classroom por usuário; mapping global antigo não prova identidade individual.                                                                                |
+|  22 | `enrollments`                  | TRANSFORM    | User↔Offering canônico; preservar exceções e relações históricas.                                                                                                                           |
+|  23 | `activities`                   | TRANSFORM    | Locais/históricas com novos FKs; itens derivados do Classroom são cache e regenerados.                                                                                                      |
+|  24 | `notes`                        | TRANSFORM    | Conteúdo e privacidade preservados; remapear Offering/Activity sem conceder leitura ao Admin.                                                                                               |
+|  25 | `document_templates`           | TRANSFORM    | Presets/pessoais, owner, referências Drive e regras de criação futura; validar assets.                                                                                                      |
+|  26 | `document_template_sections`   | TRANSFORM    | Seções vinculadas aos templates importados.                                                                                                                                                 |
+|  27 | `generated_documents`          | TRANSFORM    | Metadados/arquivos privados com remapeamento de owner, template, Offering e storage.                                                                                                        |
+|  28 | `schedule_slots`               | TRANSFORM    | Grade ligada à Offering V2 e Location; weekday 1–7 é interno.                                                                                                                               |
+|  29 | `timeline_events`              | TRANSFORM    | Eventos locais/históricos; entradas derivadas do Google são regeneradas.                                                                                                                    |
+|  30 | `classroom_sync_states`        | SKIP/RUNTIME | Estado de sync velho não é confiável após novo mapping.                                                                                                                                     |
+|  31 | `classroom_feed_items`         | SKIP/RUNTIME | Cache pessoal é reconstruído após reconexão/confirmar mapping.                                                                                                                              |
+|  32 | `storage_settings`             | TRANSFORM    | Padrões de organização não secretos; criar provider local/Drive separadamente.                                                                                                              |
+|  33 | `projects`                     | TRANSFORM    | Preservar Projects e vínculo à Offering; mover IDs Drive para referências do provider, validar pastas/owner.                                                                                |
+|  34 | `project_directories`          | TRANSFORM    | Árvore e paths normalizados sob Project importado.                                                                                                                                          |
+|  35 | `project_files`                | TRANSFORM    | Metadados/manifest com paths seguros e storage refs novas.                                                                                                                                  |
+|  36 | `project_versions`             | TRANSFORM    | ZIP/manifest/diff e sequência; verificar existência/checksum de cada arquivo.                                                                                                               |
+|  37 | `project_upload_previews`      | SKIP/RUNTIME | Tokens, arquivos temporários e previews expirados são descartados.                                                                                                                          |
+|  38 | `study_groups`                 | TRANSFORM    | Grupos, owner, Offering e archive; validar membresia.                                                                                                                                       |
+|  39 | `study_group_members`          | TRANSFORM    | Membresia ligada aos grupos/usuários preservados.                                                                                                                                           |
+|  40 | `profile_tags`                 | TRANSFORM    | Visual Tags são metadata, jamais grants; remapear escopos.                                                                                                                                  |
+|  41 | `user_profile_tags`            | TRANSFORM    | Atribuições de tags após remapeamento.                                                                                                                                                      |
+|  42 | `note_group_shares`            | TRANSFORM    | Shares explícitos válidos; revalidar existência de grupo/nota.                                                                                                                              |
+|  43 | `document_group_shares`        | TRANSFORM    | Shares explícitos; reavaliar estado de permissão Google.                                                                                                                                    |
+|  44 | `chat_rooms`                   | REVIEW       | Preservar histórico/arquivo conforme política de importação Chat; nunca abrir DM ao Admin.                                                                                                  |
+|  45 | `chat_direct_members`          | REVIEW       | Importar apenas junto com Chat, mantendo participantes exatos.                                                                                                                              |
+|  46 | `chat_room_audiences`          | REVIEW       | Revalidar audiência contra novo Program/Cohort e grants.                                                                                                                                    |
+|  47 | `chat_messages`                | REVIEW       | Histórico privado requer política explícita e checagem de integridade.                                                                                                                      |
+|  48 | `chat_message_mentions`        | REVIEW       | Somente junto com mensagens e usuários importados.                                                                                                                                          |
+|  49 | `chat_attachments`             | REVIEW       | Somente junto com Chat e cópia verificada dos assets privados.                                                                                                                              |
+|  50 | `notifications`                | REVIEW       | Importar somente notificações ainda úteis; descartar links/eventos obsoletos.                                                                                                               |
+|  51 | `note_person_shares`           | TRANSFORM    | Remapear nota, destinatário e autor do compartilhamento; descartar vínculos sem os três registros autorizados.                                                                              |
+|  52 | `document_person_shares`       | TRANSFORM    | Remapear documento, destinatário e autor do compartilhamento; revalidar acesso ao conteúdo e referência de storage.                                                                         |
+
+| 53 | `project_group_shares` | TRANSFORM | Preservar projeto e grupo; revalidar a participação atual e o acesso privado. |
+| 54 | `project_upload_claims` | SKIP/RUNTIME | Reservas de execução são renovadas somente pelo processo que iniciou o envio. Não transferir uma reserva em andamento. |
+| 55 | `project_upload_receipts` | REVIEW | Manter os recibos idempotentes junto dos projetos e versões, no banco associado. Não recriar versões no destino. |
+
+| 56 | `note_workspaces` | TRANSFORM | Preservar o estado colaborativo Yjs e remapear a página; nunca substituir por uma captura antiga de Markdown. |
+| 57 | `note_workspace_versions` | TRANSFORM | Preservar as versões recuperáveis e remapear nota e autor. |
+
+As dezesseis tabelas V3 são opcionais ao revisar um banco V1 anterior; tabelas desconhecidas continuam bloqueando a importação.
+
+Ordem do importador: backup consistente + verificação de restore V1; esquema V2 vazio; usuários/configuração segura; acadêmico e currículo; matrículas; conteúdo/asset; shares; Chat opcional; relatório de contagens, referências órfãs, hashes de assets e itens ignorados. IDs são mapeados por tabela em staging, com transações por lote e checkpoint; reexecução começa de DB V2 descartável. O original V1 fica intacto. A prévia exige escolha humana para `REVIEW`, `curriculum_term` ambíguo e conflitos de turma; matching por nome nunca promove integração Google automaticamente.
+
+| 58 | `note_images` | MIGRATE | Imagens privadas das notas (V3, opcional na origem V1). |
+| 59 | `note_image_refs` | MIGRATE | Vínculos e permissões das imagens nas páginas (V3). |
+
+| 60 | `chat_message_changes` | SKIP/RUNTIME | Recriar cursor de sincronização do chat. |
+| 61 | `flashcard_decks` | TRANSFORM | Remapear dono e disciplina dos baralhos V3. |
+| 62 | `flashcards` | TRANSFORM | Remapear baralho dos cartões V3. |
+| 63 | `flashcard_person_shares` | TRANSFORM | Remapear baralho e destinatário; revalidar acesso. |
+| 64 | `flashcard_group_shares` | TRANSFORM | Remapear baralho e grupo; revalidar associação. |
+| 65 | `flashcard_progress` | TRANSFORM | Remapear cartão e usuário do progresso privado. |
+
+| 66 | `chat_reports` | REVIEW | Denúncias voluntárias, remapear autor/mensagem/sala; preservar somente o conteúdo denunciado. |
+| 67 | `personal_tasks` | TRANSFORM | Preservar tarefas privadas e conclusão, remapear proprietário e vínculo acadêmico; nunca conceder acesso por papel administrativo. |
+| 68 | `user_product_tours` | TRANSFORM | Remapear proprietário e preservar progresso por edição; validar passo e edição disponíveis no destino. |
+
+<!-- Compatibility anchors for previously published guide links. -->
+
+<span id="openstudyhub-v2-matriz-de-importacao-v1"></span>

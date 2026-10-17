@@ -1,31 +1,46 @@
 site_name: OpenStudyHub
-site_description: Workspace acadêmico OpenStudyHub
+site_description: Your self-hosted study space.
+site_url: https://richardspinola.github.io/OpenStudyHub/
+docs_dir: docs
+site_dir: site
 nav:
-  - Início: index.md
-  - English: en.md
-  - Instalar:
-      - Instalação do zero: instalacao-do-zero.md
-      - Primeiros passos: getting-started.md
-      - Deploy: deployment.md
+  - Overview: index.md
+  - Start:
+      - First visit: getting-started.md
+      - New server installation: instalacao-do-zero.md
+  - Use:
+      - Home, Today and subjects: workspace.md
+      - Notes: notas.md
+      - Library and projects: library.md
+      - Document templates: modelos-personalizados.md
+      - Chat and study tools: chat-e-extras.md
+      - Personal planning and tour: agenda-e-tour.md
+      - Settings and accessibility: configuracoes.md
+      - New Tab extension: extension.md
+  - Administer:
+      - Admin guide: deployment/ADMIN_GUIDE.md
+      - Google and storage: google.md
+  - Host and maintain:
+      - Deployment: deployment.md
       - ZimaOS: zimaos.md
       - CasaOS: casaos.md
       - UmbrelOS: umbrelos.md
-  - Usar:
-      - Notas: notas.md
-      - Google: google.md
-      - Modelos personalizados: modelos-personalizados.md
-      - Extensão Nova Aba: extension.md
-  - Administrar:
-      - Guia do Admin: deployment/ADMIN_GUIDE.md
-      - Backup e atualização: backup-update.md
+      - Update an instance: backup-update.md
+      - Backup and recovery: operations/manual-backup-restore.md
       - Troubleshooting: troubleshooting.md
-      - Release checklist: release-checklist.md
-  - Projeto:
-      - IA no desenvolvimento: ai-usage.md
-      - Licença: LICENSING.md
+  - Project:
+      - Architecture: architecture.md
+      - Contribute: contributing.md
+      - Security: security.md
+      - AI-assisted development: ai-usage.md
+      - License and credits: LICENSING.md
+      - Version history: releases.md
+      - Publication checklist: release-checklist.md
+      - Legacy import reference: migrations/V1_IMPORT_MATRIX.md
 theme:
   name: material
-  language: pt
+  language: en
+  custom_dir: docs/overrides
   font: false
   logo: assets/openstudyhub-icon.png
   favicon: assets/openstudyhub-icon.png
@@ -38,14 +53,33 @@ theme:
     - navigation.sections
     - navigation.top
     - content.code.copy
+    - search.suggest
+    - search.highlight
+plugins:
+  - search:
+      lang:
+        - en
 extra_css:
   - stylesheets/extra.css
 extra_javascript:
   - assets/landing.js
 extra:
   generator: false
+  osh_language: en
 markdown_extensions:
   - tables
   - fenced_code
   - attr_list
   - md_in_html
+  - admonition
+  - pymdownx.details
+validation:
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: warn
+exclude_docs: "pt-BR/
+
+  overrides/
+
+  "

@@ -1,82 +1,49 @@
-# Backup e recuperação
+# Backup and offline recovery
 
-## Configurar pelo Admin
+## Configure the backup routine
 
-Em **Sistema → Backup**:
+In Admin → System → Backup, generate and download the recovery key, store it separately and confirm that you kept it. Choose local server storage or local storage plus central Drive. The latter requires an authorized central Drive. Enable the daily routine, timezone and retention only when ready. Manual copies are separate from automatic retention.
 
-1. Gere e baixe a chave de recuperação. Guarde-a fora deste servidor e separada das cópias. Confirme que a guardou; a chave não volta a ser exibida.
-2. Escolha **Neste servidor** ou **Neste servidor e no Drive central**. O segundo destino exige a conta responsável conectada e a pasta central configurada.
-3. Ative a rotina diária, escolha horário/fuso e retenção. Sugestão: **03:00 / America/Bahia / 7 cópias automáticas válidas**. A rotina começa desligada.
-4. Use **Criar backup agora** para uma cópia manual. Cópias manuais não entram na limpeza automática.
+Packages use `.oshbackup`, AES-256-GCM and a unique nonce. The server retains a protected key for scheduling; encryption protects the exported package, not a compromised server. The private control directory uses 0700 and the key file 0600. Preserve the original key; old packages depend on it.
 
-Os pacotes `.oshbackup` usam AES-256-GCM com chave aleatória de 256 bits e nonce exclusivo por pacote. O servidor guarda uma cópia da chave em `backup-control/recovery.key`, ao lado do banco V2, com permissão `0600`; a pasta tem `0700`. Isso permite o agendamento. Proteção contra perda do servidor depende de guardar a chave e uma cópia fora dele. Quem controla o servidor também controla a chave; esta criptografia protege o pacote exportado, não um servidor comprometido.
+## Included and excluded data
 
-Os pacotes ficam na pasta privada `backups`, ao lado do banco V2. O download exige sessão do Admin sem troca de senha pendente. A chave não aparece em URLs, auditoria ou propriedades da página. Não edite nem substitua a chave de uma instância em uso: cópias antigas dependem da chave original.
+Packages include both SQLite databases, local notes/images, private assets, chat files and local project versions, with a checksum inventory. Missing referenced local files prevent a successful package. Files stored **only on Drive or another remote site are not downloaded**. Their references can remain in the database without the remote bytes being recoverable locally.
 
-## O que é recuperável
+Sessions, OAuth states, push subscriptions and Google refresh tokens are removed from backup copies. Private content and password hashes remain. Environment files and deployment secrets are not included. Restore requires configuring those separately and reconnecting Google/push. Keep a copy and key outside the server.
 
-Inclui os dois bancos, notas/páginas/bases, imagens das notas e wallpapers de chat guardados nos bancos, imagens privadas, anexos binários do chat, arquivos de storage local e versões ZIP locais dos projetos. Um inventário com SHA-256 acompanha o pacote. Uma referência local sem arquivo impede concluir o backup.
+## Consistency, scheduling and limits
 
-**Arquivos existentes apenas no Google Drive ou em outros sites NÃO são baixados para o pacote.** O manifesto distingue arquivos geridos copiados de referências remotas não copiadas. Referências continuam no banco, mas recuperação remota depende do serviço e da conta originais. Não é um espelho do Drive.
+The snapshot briefly pauses new application operations while both databases and managed assets are copied consistently. Compression, encryption and Drive transfer use streams afterward. A process lock prevents concurrent backups. The realtime service checks the schedule every minute; an alternative worker is `node dist/backup-worker.mjs` in the built image. Use the same data paths and control volume.
 
-Sessões, estados OAuth, inscrições push e refresh tokens são removidos da cópia. Hashes de senha e conteúdo privado continuam presentes. O arquivo de ambiente, secrets e as chaves VAPID não entram no pacote; configure-os separadamente e reconecte Google/push depois da recuperação. Isso evita portar sessões ou declarar que uma integração externa foi recuperada apenas porque seu ID existe.
+A missing worker heartbeat is shown in Admin. The routine attempts once per day after the chosen time; it does not replay every missed day. Only completed automatic copies beyond retention are removed. Manual copies and failures remain. A Drive failure after local success is reported as local-only success.
 
-## Consistência e consumo
+Reserve staging space. Limits include 19,997 assets, 1 GiB per asset and 4 GiB of assets, subject also to the 4 GiB package validation limit. Uploads can need retrying during a snapshot.
 
-Durante o snapshot, App/Admin/realtime pausam novas operações com resposta temporária. Dois bloqueios SQLite de escrita mantêm os bancos estáveis enquanto os snapshots e arquivos locais são preparados. Depois a edição é liberada; compressão, criptografia e cópia ao Drive usam streams. Um bloqueio SQLite separado impede dois backups simultâneos, inclusive entre processos. Se o processo cair, o bloqueio é liberado pelo sistema; a próxima execução assume a rotina. Uploads em andamento podem falhar temporariamente e devem ser reenviados.
+## Validate an encrypted backup
 
-Limites: 19.997 assets, 1 GiB por arquivo e 4 GiB de assets, além do limite de validação do pacote de 4 GiB no total. Reserve espaço para staging, ZIP temporário e pacote criptografado. Falha de disco/arquivo não substitui a última cópia válida. Se o Drive falhar após concluir a cópia local, o histórico mostra **Somente cópia local**, sem declarar sucesso nos dois destinos. Cópias parciais são mantidas para revisão; verifique espaço e remova-as manualmente após recuperar o destino.
-
-A retenção remove apenas cópias automáticas concluídas além da quantidade configurada; manuais e falhas não são removidas. No Drive, só são removidos IDs de cópias criadas e registrados por esta instância. Não há limpeza de arquivos arbitrários da pasta central.
-
-## Agendamento
-
-O serviço realtime verifica a rotina a cada minuto. Para instalações sem realtime, execute um único worker alternativo:
+Use a disposable recovery target and paths inside its mounted volume. Never put a recovery key directly in command arguments:
 
 ```sh
-node --import tsx scripts/backup-worker.ts
-# Imagem construída da V3:
-node dist/backup-worker.mjs
+# Inside a container with the recovery target volume mounted at /app/data:
+DATABASE_PATH=/app/data/app.db OPENSTUDYHUB_V2_DATABASE_PATH=/app/data/v2.db PRIVATE_ASSET_PATH=/app/data/private-assets node dist/restore-encrypted-backup.mjs /app/data/backup.oshbackup   --key-file /app/data/recovery-key.txt --validate-only
 ```
 
-App/worker precisam compartilhar os mesmos caminhos de dados e volume de controle. A trava impede execução duplicada mesmo se dois workers estiverem ativos. A tela avisa se não houver sinal do worker há três minutos. A rotina tenta uma vez por dia após o horário, inclusive ao iniciar tarde; falhas ficam no histórico para intervenção. Não executa vários backups atrasados de dias anteriores. Retenção e fuso são configuráveis; mudanças não apagam o histórico de execução.
+Use your actual backup/key filenames. Validation authenticates/decrypts the package and checks entries, paths, inventory, checksums and SQLite integrity/foreign keys. `--validate-only` does not replace target data.
 
-## Validar antes de restaurar
+## Apply offline recovery
 
-Use uma instalação/pasta de teste, com espaço disponível. Nunca passe a chave diretamente na linha de comando. O arquivo baixado da tela é aceito pela ferramenta.
+Stop **App, Admin, realtime and any separate backup worker**. Make an additional external copy of the current target data. Run the same command with `--confirm-restore --services-stopped` instead of `--validate-only`. The tool preserves previous target files with recovery suffixes; do not remove them until recovery is accepted. Configure the matching image and environment, run the required migrations, start services and check health. Do not run this against a live server.
 
-```sh
-DATABASE_PATH=/teste/app.db \
-OPENSTUDYHUB_V2_DATABASE_PATH=/teste/v2.db \
-PRIVATE_ASSET_PATH=/teste/private-assets \
-node --import tsx scripts/restore-encrypted-backup.ts /seguro/backup.oshbackup \
-  --key-file /seguro/openstudyhub-recovery-key.txt --validate-only
-```
+The older sanitized unencrypted ZIP export remains available as a legacy option. It contains private data and password hashes in readable form and uses `scripts/restore-manual-backup.mjs`; it is not interchangeable with `.oshbackup`. Prefer the encrypted flow for new backups.
 
-Na imagem construída da V3, use `node dist/restore-encrypted-backup.mjs` no lugar de `node --import tsx scripts/restore-encrypted-backup.ts`.
+<!-- Compatibility anchors for previously published guide links. -->
 
-A validação autentica/descriptografa o pacote, recusa caminhos inseguros, links simbólicos, entradas duplicadas, inventário divergente, checksums incorretos e bancos que falhem em `integrity_check` ou `foreign_key_check`. `--validate-only` não substitui nenhum dado.
-
-## Aplicar a recuperação offline
-
-Pare **App, Admin, realtime e qualquer worker de backup**. Configure os três caminhos da instalação de destino e execute a mesma ferramenta trocando `--validate-only` por:
-
-```sh
---confirm-restore --services-stopped
-```
-
-A ferramenta valida tudo antes de substituir dados e preserva a instalação anterior, incluindo WAL/SHM, em `*.pre-restore-<data>`. Se a instalação falhar no meio, reverte os caminhos já movidos. Não restaure com serviços ativos: a confirmação é uma exigência operacional, não um detector de todos os processos possíveis.
-
-Depois execute as migrations da versão instalada, configure o ambiente, confira o Admin e só então reabra o App. Todos precisam entrar novamente; reconecte Google e dispositivos push. Revise destino e agenda de backup. Preserve as cópias anteriores até concluir sua conferência.
-
-## Compatibilidade com ZIP antigo
-
-A opção **Exportação antiga sem criptografia** continua separada no Admin. Ela sanitiza credenciais, mas contém dados privados e hashes de senha. Proteja o ZIP. Para validar/restaurar os arquivos antigos:
-
-```sh
-node scripts/restore-manual-backup.mjs /seguro/backup.zip --validate-only
-# Com serviços parados e os três caminhos de ambiente definidos:
-node scripts/restore-manual-backup.mjs /seguro/backup.zip --confirm-restore --services-stopped
-```
-
-Google/Drive real, secrets do servidor e troca da instalação de produção permanecem reservados ao ensaio autorizado da etapa 8.
+<span id="agendamento"></span>
+<span id="aplicar-a-recuperacao-offline"></span>
+<span id="backup-e-recuperacao"></span>
+<span id="compatibilidade-com-zip-antigo"></span>
+<span id="configurar-pelo-admin"></span>
+<span id="consistencia-e-consumo"></span>
+<span id="o-que-e-recuperavel"></span>
+<span id="validar-antes-de-restaurar"></span>

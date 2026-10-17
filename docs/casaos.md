@@ -1,9 +1,13 @@
 # CasaOS
 
-Use o mesmo [Compose de importação gráfica do ZimaOS](https://github.com/RichardSpinola/OpenStudyHub/blob/main/deploy/zimaos-compose.yml) no instalador de aplicativos personalizados do CasaOS. O arquivo usa Docker Compose e metadata `x-casaos`; não há uma segunda implementação nem pacote de loja. Importe **todos** os cinco serviços juntos.
+Use the complete `deploy/zimaos-compose.yml` custom-app import template in CasaOS. Import all five services together, with a persistent `openstudyhub-data` volume. This is a manual Compose installation, not an official app-store package.
 
-Antes de instalar, ajuste na GUI `APP_URL` e `REALTIME_PUBLIC_URL` dos serviços App, Admin e realtime para o endereço real do App. O padrão `localhost` do arquivo serve apenas para acesso local; para dispositivos da LAN, use `http://IP-DO-CASAOS:3000` e `ws://IP-DO-CASAOS:3000/realtime`. O card principal abre o App na porta `3000`. Se sua versão do CasaOS permitir atalhos, o Admin pode receber um atalho separado para `http://IP-DO-CASAOS:3001`; isso não duplica a instalação.
+The template pins the 3.0.0 image for all Hub services. Use the update guide when preserving an existing installation.
 
-O volume Docker nomeado `openstudyhub-data:/app/data` guarda bancos e arquivos. Não substitua por diretório temporário. Restrinja a porta `3001` à LAN ou ao acesso administrativo privado; só o App na porta `3000` pode ser exposto publicamente. Para recuperação, veja [Backup e atualização](backup-update.md).
+1. Inspect the template and image tag before import.
+2. Set the App origin and realtime public URL consistently for App, Admin and realtime.
+3. Keep the Admin port bound to localhost or a protected private LAN address. Publish only App through HTTPS.
+4. Wait for migrations, then check App health and open private Admin setup.
+5. Configure Google later, if required.
 
-Em HTTP na LAN, senha e cookie do Admin não são criptografados em trânsito. Mantenha o acesso numa rede confiável ou use HTTPS privado; nunca exponha a porta `3001` à internet.
+For remote localhost Admin, use the SSH forwarding example in [installation](instalacao-do-zero.md). Preserve the manager's project, mounts and configuration on updates. Do not run the first-install script over the managed installation. See [updates](backup-update.md).

@@ -1,39 +1,25 @@
-# Google na V2: Classroom, Drive e Docs
+# Optional Google integration
 
-Você pode usar o OpenStudyHub sem conectar o Google. Se quiser trazer suas turmas e atividades do Classroom, cada pessoa autoriza a própria conta e confirma a associação com suas disciplinas. O Drive para documentos é uma escolha separada da instância: o Admin pode indicar uma conta conectada para o armazenamento central. Essa escolha não dá ao Admin acesso automático aos Classrooms pessoais. A instalação usa um cliente OAuth **Web application** por instância.
+OpenStudyHub works without Google. **Classroom is a personal, read-only connection**; each user connects and maps their own classes. **Central Drive is instance-managed storage**, designated by Admin from an authorized connected account. Choosing its owner does not reveal everybody's personal Classroom.
 
-## Configurar no Google Cloud
+## Configure the OAuth client
 
-1. Crie ou escolha um projeto no [Google Cloud Console](https://console.cloud.google.com/). Ative **Google Classroom API**, **Google Drive API** e **Google Docs API**. Ative **Google Picker API** apenas se for usar o seletor de Docs existentes.
-2. Configure a tela de consentimento OAuth com os scopes abaixo. Se o aplicativo estiver em modo **Testing**, cadastre cada conta que fará o teste em **Test users**. Revise requisitos de verificação do Google antes de disponibilizar amplamente.
-3. Em **APIs e serviços → Credenciais → Criar credenciais → ID do cliente OAuth**, escolha **Aplicativo da Web**. Copie o Client ID e o Client Secret do **mesmo cliente** para o ambiente privado do servidor.
-4. No cliente, adicione a URI de redirecionamento autorizada **exatamente** como `APP_URL + /api/v2/google/callback`. O esquema, host, porta e caminho devem coincidir; diferença produz `redirect_uri_mismatch` ([documentação do Google](https://developers.google.com/identity/protocols/oauth2/web-server)).
+1. In [Google Cloud Console](https://console.cloud.google.com/), choose the instance's project. Enable Classroom, Drive and Docs APIs; enable Picker only if selecting existing Docs through Picker.
+2. Configure the consent screen and test users when the OAuth application is in Testing. Review Google's verification requirements for broader access.
+3. Create a **Web application** OAuth client. Keep its Client ID and Client Secret in the private server environment.
+4. Register the exact callback: `APP_URL + /api/v2/google/callback`. Example: `https://hub.example.org/api/v2/google/callback`. Scheme, host, port and path must match. Admin is not the OAuth callback surface.
 
-Para uma instância de exemplo em `https://hub.example.org`, a URI exata é:
+For local QA, register the exact local origin/port separately. Do not change production credentials simply to bypass a local redirect error. See [Google's web-server flow](https://developers.google.com/identity/protocols/oauth2/web-server).
 
-```text
-https://hub.example.org/api/v2/google/callback
-```
+## Private configuration
 
-Para um teste local em `http://127.0.0.1:3000`, use `http://127.0.0.1:3000/api/v2/google/callback`; a porta precisa ser a mesma do App que iniciou o OAuth. Produção usa HTTPS. Registre cada origem de JavaScript autorizada que o Picker usar, incluindo a origem pública do App. Não use a URL do Admin como callback.
+Set `APP_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` and `GOOGLE_TOKEN_ENCRYPTION_KEY` on the services that need the integration. The key is random 32-byte Base64; preserve it through updates. Restart App/Admin after changes. The installer creates an initial key, but does not request OAuth secrets.
 
-## Variáveis privadas
+Picker additionally needs restricted `GOOGLE_PICKER_API_KEY` and `GOOGLE_CLOUD_PROJECT_NUMBER`. Optional starter-template file IDs belong only in private configuration. Never commit OAuth codes, tokens, cookies, real keys or private Drive/Classroom IDs.
 
-```env
-APP_URL=https://hub.example.org
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=https://hub.example.org/api/v2/google/callback
-GOOGLE_TOKEN_ENCRYPTION_KEY=
-```
+## Permissions and content
 
-`GOOGLE_TOKEN_ENCRYPTION_KEY` é uma chave aleatória de 32 bytes em Base64. Gere e guarde fora do Git, por exemplo com `openssl rand -base64 32`. Preserve a mesma chave em atualizações e backups seguros; perdê-la exige reconectar contas. Reinicie App e Admin após alterar variáveis. Não registre chaves, tokens, authorization code ou OAuth state em logs.
-
-O Picker é opcional e exige `GOOGLE_PICKER_API_KEY` e `GOOGLE_CLOUD_PROJECT_NUMBER` (número do projeto, não o ID textual). Restrinja a API key no Google Cloud. Sem Picker, a importação DOCX e os arquivos criados/autorizados pelo app continuam disponíveis. IDs opcionais de modelos iniciais (`GOOGLE_TEMPLATE_GENERIC_ACTIVITY_ID`, `GOOGLE_TEMPLATE_PROGRAMMING_ACTIVITY_ID`, `GOOGLE_TEMPLATE_CLASS_NOTES_ID`) pertencem somente ao ambiente privado.
-
-## Scopes usados
-
-O código V2 pede `openid`, `email` e os quatro scopes Classroom abaixo na conexão inicial:
+Initial connection requests `openid`, `email` and these Classroom scopes:
 
 ```text
 https://www.googleapis.com/auth/classroom.courses.readonly
@@ -42,12 +28,22 @@ https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly
 https://www.googleapis.com/auth/classroom.announcements.readonly
 ```
 
-O Drive opcional acrescenta `https://www.googleapis.com/auth/drive.file` quando o usuário autoriza esse recurso. Esse scope limita o acesso aos arquivos criados ou explicitamente abertos/compartilhados com o aplicativo, inclusive pelo Picker; ele não concede leitura geral do Drive ([guia oficial](https://developers.google.com/workspace/drive/api/guides/api-specific-auth)). A tela de consentimento do Google Cloud deve declarar os scopes que o app solicitará. O código determina o que é pedido em cada etapa.
+The optional Drive flow adds `https://www.googleapis.com/auth/drive.file`. It is limited to files created or explicitly authorized for the application; pasting an arbitrary document URL does not grant access. [Google's scope guidance](https://developers.google.com/workspace/drive/api/guides/api-specific-auth) explains the distinction.
 
-## Uso no OpenStudyHub
+In Settings → Integrations, connect, discover Classrooms, review and confirm associations, then synchronize. Announcements, coursework and **materials** are separate content types. Check the last sync if a teacher's material appears missing. Old cached content can remain visible while a connection needs reconnection.
 
-Depois do login local, abra **Configurações → Integrações → Google**. Conecte a conta, descubra os Classrooms, revise sugestões e confirme manualmente a associação com cada turma de disciplina. Não há mapping automático por nome parecido. A sincronização traz os dados para o espaço local do usuário; o Admin pode definir a janela de sync automático. A página Google indica conexão, última verificação, falha temporária ou necessidade de reconexão.
+## Drive storage and repair
 
-No Admin, uma conta conectada pode ser escolhida como owner do armazenamento Drive central. A estrutura acadêmica é criada/sincronizada pela administração. Classroom continua pessoal mesmo quando Drive central está ativo. O diretório raiz usa `Nome da instituição - OSH`; pastas de disciplinas e projetos seguem a organização configurada. Se uma pasta remota for apagada, use a ação administrativa de sincronizar/reparar pastas depois de verificar a referência atual, sem criar uma segunda estrutura arbitrária.
+Admin → Integrations → Storage selects the central owner and prepares the root. Academic paths follow institution/course/cohort/period/subject context. Projects use a descriptive branch such as `Projetos - ADS`; private templates are grouped under `Modelos` and the person's name. These folder labels are currently Portuguese. Rely on stored references rather than guessing folders by name.
 
-Erros de OAuth podem vir de callback diferente, conta fora dos test users, scopes não declarados, consentimento recusado ou sessão local expirada. Confira primeiro as variáveis e o cliente OAuth correspondente. Não copie tokens entre bancos/instalações. Para backup e restauração, siga [o guia operacional](operations/manual-backup-restore.md): a cópia remove tokens e exige reconexão posterior.
+If a root is missing, inspect its status and use the explicit create/recover action. Recovery can preserve an old reference instead of silently duplicating folders. Google can refuse an operation on files created by another OAuth client, even when the account owns them. Inspect permissions or manage those files in Drive directly; do not grant broader scopes just to hide an error.
+
+Normal upgrades do **not** reset the library or recreate all folders. Remote Drive files are not downloaded into local backups. See [backup/update](backup-update.md).
+
+<!-- Compatibility anchors for previously published guide links. -->
+
+<span id="configurar-no-google-cloud"></span>
+<span id="google-na-v2-classroom-drive-e-docs"></span>
+<span id="scopes-usados"></span>
+<span id="uso-no-openstudyhub"></span>
+<span id="variaveis-privadas"></span>

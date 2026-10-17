@@ -1,32 +1,30 @@
-# Backup, atualização e recuperação na V2
+# Update without losing your data
 
-Antes de atualizar, guarde uma cópia que você consiga restaurar. O backup do OpenStudyHub reúne os dados locais da instalação; arquivos que estão somente no Google Drive precisam do plano de proteção do próprio Drive. A restauração exige uma janela com os serviços parados.
+## Before changing versions
 
-## Backup manual
+1. Read the target release notes and confirm its image is actually published.
+2. Create and download a backup in Admin → System → Backup. Keep the recovery key separately, outside the server.
+3. For a critical update, stop all writers and take an external copy of the full data volume and private configuration as well. The image reference and encryption key belong to the recovery plan.
+4. Preserve the Compose project name and volume. Update all application service images together; leave the proxy configuration consistent.
+5. Run migrations, start services and check App health, Admin login, realtime and a representative user workflow.
 
-No Admin local, abra **Sistema → Backup manual → Criar backup** e baixe o ZIP gerado. Ele contém snapshots consistentes dos dois bancos SQLite e assets privados locais. O arquivo contém dados pessoais e hashes de senha: guarde-o em armazenamento protegido, fora do repositório e do volume principal. Preserve também o `.env`/segredos em cofre separado, especialmente `GOOGLE_TOKEN_ENCRYPTION_KEY`.
+The first-install script is **not an updater**. It refuses an existing target. A normal update does not erase projects, document templates, notes or Drive connections. A library reset performed on one test instance is not part of the upgrade procedure.
 
-Os snapshots dos dois bancos são feitos em sequência. Para uma migração crítica, pause escritas numa janela de manutenção. O ZIP não copia conteúdo remoto do Google Drive e remove sessões, OAuth state, inscrições push e refresh tokens das **cópias**; depois de restaurar, usuários fazem login e reconectam Google. Os bancos em uso não têm tokens apagados ao criar o backup. Veja [detalhes operacionais](operations/manual-backup-restore.md).
+## V2 → current version
 
-## Atualização segura com Docker Compose
+The two-database architecture remains. New migrations extend the main and canonical databases; existing migration files must not be edited. Names such as `v2.db`, `v2-migrations` and `OPENSTUDYHUB_V2_*` remain compatible technical identifiers, not a sign of an outdated interface.
 
-1. Leia as notas da nova versão. Crie e **baixe** o backup. Guarde também uma cópia externa do volume atual e do `.env`, além da referência da imagem/código anterior.
-2. Atualize a tag fixa no Compose para a versão desejada e baixe a imagem pública (`docker compose -f docker-compose.example.yml pull`). Não remova o volume `openstudyhub-data`.
-3. Execute `docker compose -f docker-compose.example.yml up -d`. O serviço de migrations aplica V1 e V2 antes dos serviços. Se a migration falhar, pare e investigue; não force App/Admin a iniciar com schema incompleto.
-4. Verifique `/api/health`, login do Admin, login do App e ao menos uma função acadêmica usada pela instância. Confira WebSocket e integrações quando utilizadas.
+Keep local assets, private configuration and `GOOGLE_TOKEN_ENCRYPTION_KEY`. Do not recreate the central Drive merely because the application version changed. Google access can require reconnection after a sanitized restore, but not simply after every update.
 
-Não há updater automático. Se a imagem nova falhar, **não** faça apenas rollback do código sobre schema já migrado. Pare os serviços, restaure o backup feito antes da atualização e a imagem/código correspondente; então confira o health. Nunca edite migrations já aplicadas para simular rollback.
+## Recovery after failure
 
-## Restauração
+Do not start older code against a newer migrated schema. Stop App, Admin, realtime and any backup worker; restore the matching pre-update data copy and matching image/configuration together. Check integrity and health before reopening access. If migration failed, investigate it instead of deleting the database or forcing application startup.
 
-A restauração de banco exige App, Admin e realtime **parados**. Não existe restauração online pelo navegador. No host do Compose:
+[The recovery guide](operations/manual-backup-restore.md) covers encrypted packages, validation-only mode and offline restore. Remote Drive content is not copied into local backups. Never run `docker compose down -v` as an update step.
 
-```sh
-docker compose -f docker-compose.example.yml stop openstudyhub-web openstudyhub-app openstudyhub-admin openstudyhub-realtime
-docker compose -f docker-compose.example.yml run --rm --no-deps openstudyhub-migrate \
-  node scripts/restore-manual-backup.mjs /app/data/backups/ARQUIVO.zip \
-  --confirm-restore --services-stopped
-docker compose -f docker-compose.example.yml up -d
-```
+<!-- Compatibility anchors for previously published guide links. -->
 
-Substitua `ARQUIVO.zip` por um backup validado dentro do volume ou copie o ZIP para lá de modo seguro antes da operação. Faça primeiro uma cópia externa dos dados atuais. A ferramenta valida formato, checksums, caminhos e integridade, e guarda arquivos anteriores com sufixo `pre-restore`. Execute as migrations da versão de código que ficará instalada antes de reabrir a instância. Se falhar, preserve os arquivos anteriores e consulte [o procedimento detalhado](operations/manual-backup-restore.md).
+<span id="atualizacao-segura-com-docker-compose"></span>
+<span id="backup-atualizacao-e-recuperacao-na-v2"></span>
+<span id="backup-manual"></span>
+<span id="restauracao"></span>

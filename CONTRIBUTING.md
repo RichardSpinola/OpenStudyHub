@@ -1,57 +1,32 @@
-# Contribuindo com o OpenStudyHub
+# Contribute
 
-Contribuições são bem-vindas. Antes de mudar um fluxo, confirme se ele pertence ao App, ao Admin ou ao serviço realtime: as três partes compartilham uma instalação, mas têm responsabilidades e permissões diferentes.
+Use Node.js 24 and pnpm 10. Install the locked dependencies with `pnpm install --frozen-lockfile`. Copy `.env.example` to a private `.env`, use separate absolute writable database paths for local Node execution, apply main and canonical migrations, then start development. Do not point development at production data.
 
-## Antes de abrir um PR
-
-1. Não inclua dados reais de faculdade, emails privados, tokens, IDs de Drive/Classroom, bancos SQLite ou arquivos `.env`.
-2. Mantenha Google e outras integrações opcionais.
-3. Não amplie OAuth scopes sem justificar a necessidade e revisar segurança.
-4. Preserve a separação entre Notes privadas, recursos compartilhados e autorização acadêmica.
-5. Evite dependências/abstrações grandes sem necessidade concreta.
-
-## Ambiente
-
-```bash
-cp .env.example .env
-pnpm install
+```sh
 pnpm db:migrate
 node --env-file=.env scripts/migrate-v2-production.mjs
 pnpm dev
 ```
 
-## Checks
+Before a code contribution, run formatting checks, ESLint, TypeScript and tests relevant to the change. The existing CI also runs full tests/build. Never rewrite applied migration SQL. Document behavior changes and preserve third-party notices.
 
-Antes do PR:
+## Documentation development
 
-```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+English is canonical at the public root; Português (Brasil) mirrors the same guides under `/pt-BR/`. Edit both. Use fictional data in screenshots and informative alt text. Keep legacy public page paths working; avoid duplicate contradictory setup instructions.
+
+```sh
+# Creates a temporary Python environment when needed; no production services:
+bash scripts/preview-docs.sh
+# Build and check both languages without serving:
+bash scripts/preview-docs.sh --build-only
+# Installer-focused tests (mocked Docker; no real containers):
+python3 scripts/test-install-server.py
 ```
 
-Se alterar `src/lib/db/schema.ts`, gere e revise uma migration:
+The preview binds only `127.0.0.1:3080`. Stop it when done. Documentation-only edits do not require rebuilding the application image.
 
-```bash
-pnpm db:generate
-```
+## Reports and scope
 
-Se alterar o esquema V2, acrescente e revise uma migration em `v2-migrations/`. Nunca reescreva migrations já publicadas.
+Describe expected/actual behavior and minimal reproduction. Use private reporting for vulnerabilities; do not paste secrets into issues. Project planning records describe development history, not current product guarantees. Publishing a release, image or documentation site is a separate maintainer action.
 
-## Commits e escopo
-
-Prefira mudanças pequenas e focadas. Explique comportamento novo, riscos, migrations e testes relevantes no PR.
-
-## IA
-
-Contribuições podem usar ferramentas de IA. O autor da contribuição continua responsável por revisar, testar e compreender o código enviado.
-
-## Segurança
-
-Não abra uma issue pública contendo segredo, token ou dado pessoal. Consulte `SECURITY.md`.
-
-## Licença
-
-O projeto está sob [AGPL-3.0-only](LICENSE). Preserve os notices e as licenças dos componentes de terceiros.
+[Português (Brasil)](docs/pt-BR/contributing.md) · [Full documentation](docs/contributing.md)

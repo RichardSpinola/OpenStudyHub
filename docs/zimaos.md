@@ -1,14 +1,13 @@
 # ZimaOS
 
-Use o [Compose para importação gráfica](https://github.com/RichardSpinola/OpenStudyHub/blob/main/deploy/zimaos-compose.yml). Ele instala migration, App, Admin, realtime e proxy como **uma instalação**, com o volume Docker persistente `openstudyhub-data:/app/data`. A imagem `2.0.1` é pública: não precisa de terminal, conta GitHub ou PAT.
+Use the complete `deploy/zimaos-compose.yml` custom-app import template in ZimaOS. Import all five services together, with a persistent `openstudyhub-data` volume. This is a manual Compose installation, not an official app-store package.
 
-1. No ZimaOS, abra **App Center → Install a Customized App → Import → Docker Compose**.
-2. Cole o conteúdo completo de `deploy/zimaos-compose.yml` ou importe esse arquivo.
-3. Antes de clicar em **Install**, confira na própria GUI as variáveis `APP_URL` e `REALTIME_PUBLIC_URL` dos serviços App, Admin e realtime. O arquivo traz `localhost` como padrão local; para acesso pela rede, use em todos eles o endereço real que abrirá no navegador, por exemplo `http://IP-DO-ZIMAOS:3000` e `ws://IP-DO-ZIMAOS:3000/realtime`. Se usar HTTPS depois, os valores passam a `https://...` e `wss://...`. Não é necessário corrigir o YAML após a importação.
-4. Clique em **Install**. O card principal **OpenStudyHub** abre `http://IP-DO-ZIMAOS:3000`.
-5. Na GUI do ZimaOS, crie **manualmente um atalho**, chamado **OpenStudyHub Admin**, com URL `http://IP-DO-ZIMAOS:3001` e o [mesmo ícone](https://raw.githubusercontent.com/RichardSpinola/OpenStudyHub/v2.0.0/public/brand/icon-512.png). Esse atalho não instala outra stack nem cria outro card pelo Compose.
-6. Abra o Admin pelo atalho e conclua o primeiro setup. Mantenha a porta `3001` acessível apenas na LAN ou em acesso administrativo privado; só o App na porta `3000` pode ser exposto publicamente.
+The template pins the 3.0.0 image for all Hub services. Use the update guide when preserving an existing installation.
 
-O proxy encaminha `/realtime` e `/whiteboard` ao serviço realtime interno. Não mova `/app/data` para `/tmp`, tmpfs ou uma pasta temporária do instalador. Antes de atualizar ou restaurar, siga [Backup e atualização](backup-update.md).
+1. Inspect the template and image tag before import.
+2. Set the App origin and realtime public URL consistently for App, Admin and realtime.
+3. Keep the Admin port bound to localhost or a protected private LAN address. Publish only App through HTTPS.
+4. Wait for migrations, then check App health and open private Admin setup.
+5. Configure Google later, if required.
 
-Em HTTP LAN, a senha e o cookie do Admin trafegam sem criptografia. Restrinja a porta `3001` a uma rede confiável; para acesso fora dela, use HTTPS privado. Não exponha o Admin publicamente.
+For remote localhost Admin, use the SSH forwarding example in [installation](instalacao-do-zero.md). Preserve the manager's project, mounts and configuration on updates. Do not run the first-install script over the managed installation. See [updates](backup-update.md).

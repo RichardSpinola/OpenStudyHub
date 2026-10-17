@@ -1,64 +1,37 @@
-# Primeiros passos
+# Start with your study space
 
-Uma instalação nova começa no Admin: alguém define a instituição e prepara as primeiras turmas. Depois, cada pessoa entra no App para encontrar suas disciplinas e organizar o trabalho. O Google pode ser conectado mais tarde, por usuário, sem interromper esse começo.
+OpenStudyHub brings your schedule, subjects, notes, files and conversations together. Your school or community runs an instance; use the address and local account supplied by its administrator. A Google account is optional.
 
-## Desenvolvimento local
+## Your first visit
 
-Requisitos:
+1. Sign in with your **OpenStudyHub username and password**, not your Google password.
+2. Open **Today** to see upcoming classes, deadlines and your weekly timetable.
+3. Open **Subjects** and choose an enrolled subject. Notices, coursework and materials are separate views.
+4. Use **Notes** for writing and **Library** for files, documents and projects.
+5. Open **Settings** from your account menu to personalize your space or replay the guided tour.
 
-- Node.js 24.x
-- pnpm 10.x
+If your subject is missing, ask the administrator to check enrollment and the active academic period. Connecting Google does not enroll you automatically.
 
-```bash
-cp .env.example .env
-pnpm install
-pnpm db:migrate
-node --env-file=.env scripts/migrate-v2-production.mjs
-pnpm dev
-```
+## Choose your path
 
-Antes de migrar a V2, altere `OPENSTUDYHUB_V2_DATABASE_PATH` no `.env` para um caminho absoluto gravável, separado de `DATABASE_PATH`. Abra `http://localhost:3000` para o App. Para produção, use o Compose que separa App e Admin; veja [Deploy](deployment.md).
+- Student: [daily workspace](workspace.md), [notes](notas.md), [library](library.md), [chat](chat-e-extras.md).
+- Administrator: [first installation](instalacao-do-zero.md), [administration](deployment/ADMIN_GUIDE.md).
+- Returning user: replay the full tour or choose the feature guides in Settings → Help. Completing or skipping the tour does not change your data.
 
-Em um banco V2 vazio, abra o Admin em `/control/setup`. Escolha primeiro o idioma padrão da instância (English vem selecionado), crie o administrador, informe instituição, curso, período e turma, revise e conclua. Não reutilize senha institucional.
+## Personalize without losing your bearings
 
-## Setup inicial recomendado
+Home has search, shortcuts and an optional Today summary. Drag shortcuts to reorder them; their menu changes the name, URL, icon or visibility. Search stays in the same tab by default. Settings → Home and shortcuts can change that; middle-click opens a separate tab.
 
-1. No setup do Admin, escolha idioma, crie a conta administrativa e defina instituição, curso, período e turma inicial.
-2. Após entrar no Control Plane, cadastre as disciplinas e Offerings necessárias.
-3. Matricule usuários nas Offerings corretas.
-4. Configure Google somente se quiser Classroom/Drive/Docs.
-5. Configure grupos e chats conforme a necessidade.
+![Home with fictional shortcuts](assets/screens/en/home.jpg)
 
-### Como aparecem as etapas iniciais
+Never share your password, OAuth codes or private document links in a public issue. [Troubleshooting](troubleshooting.md) explains common problems.
 
-As imagens abaixo foram capturadas da V2 com uma instituição e conta fictícias. Nenhuma senha ou integração Google aparece nelas.
+<span id="como-aparecem-as-etapas-iniciais"></span>
 
-![Escolha do idioma da instância](assets/setup-language.png)
+<!-- Compatibility anchors for previously published guide links. -->
 
-![Criação da conta Admin](assets/setup-admin.png)
-
-![Nome da instituição](assets/setup-institution.png)
-
-![Revisão e conclusão do setup](assets/setup-review.png)
-
-Uma Subject é a definição da disciplina. Uma Subject Offering representa a ocorrência concreta para programa/período/turma/professor/Classroom. Não junte duas turmas diferentes apenas porque o nome da disciplina coincide.
-
-## Checks de desenvolvimento
-
-```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-```
-
-## Dados locais
-
-Por padrão:
-
-- banco principal: `./data/openstudyhub.db`;
-- banco V2: caminho absoluto definido em `OPENSTUDYHUB_V2_DATABASE_PATH`;
-- assets privados: `./data/private-assets`
-
-`data/`, `.env`, bancos, tokens e uploads não devem ser versionados.
+<span id="checks-de-desenvolvimento"></span>
+<span id="dados-locais"></span>
+<span id="desenvolvimento-local"></span>
+<span id="primeiros-passos"></span>
+<span id="setup-inicial-recomendado"></span>

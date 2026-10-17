@@ -1,30 +1,25 @@
-# Suas configurações
+# Settings and accessibility
 
-Abra **Configurações** no menu da sua conta. Escolha um cartão:
+Open your account menu → **Settings**. Cards lead to Profile, Appearance, Home and shortcuts, Notifications, Integrations, Accessibility and language, Help, and About/Credits.
 
-- **Conta e perfil:** foto, capa, nome e apresentação. Use **Salvar perfil** ao concluir.
-- **Aparência:** tema Material/Legacy, cores, espaçamento, navegação, formato do avatar, som de vitória e wallpaper desfocado.
-- **Home e atalhos:** imagem de fundo e enquadramento, relógio, busca, botão de edição e links pessoais.
-- **Notificações:** tipos de aviso e autorização deste dispositivo.
-- **Integrações:** conexão Google/Classroom. O Drive central é administrado pelo responsável da instância.
-- **Acessibilidade e idioma:** redução de movimento, contraste e idioma da interface.
-- **Ajuda:** guias práticos e **Conheça o Hub**, para iniciar, continuar ou repetir o tour nas páginas reais.
-- **Sobre e Créditos:** versão, licença e componentes usados pelo aplicativo.
+- **Profile:** photo, presentation and privacy. Review the form and explicitly save where requested.
+- **Appearance:** Material/Legacy style, light/dark/system mode, density, color, navigation, wallpaper blur and optional game sound.
+- **Home:** wallpaper framing, clock, Today summary, movable customization control, shortcuts, search engine and whether search uses the same tab.
+- **Notifications:** categories and device/browser permission. Permission on one device does not configure every device.
+- **Integrations:** your Google connection and classroom associations.
+- **Accessibility and language:** reduced motion, contrast and interface language. Languages are **English** and **Português (Brasil)**.
+- **Help:** task-oriented guides and the guided tour.
+- **About and Credits:** running package version, project license and third-party software.
 
-Use **Voltar às configurações** para retornar aos cartões. Preferências simples mostram a confirmação de salvamento automático. Se houver erro, tente salvar novamente; seu perfil usa um botão de salvamento explícito.
+![Settings](assets/screens/en/settings.jpg)
 
-## Desfoque opcional
+Simple preferences show autosave status. If saving fails, retry before leaving. Wallpaper blur is decorative and optional; high contrast or reduced transparency can suppress it. Notes, games, the whiteboard and chat retain their own workspace behavior. Reduced motion applies across user pages without animating every message or timer update.
 
-Em Aparência, escolha **Leve**, **Médio** ou **Forte** para usar sua imagem da Home no fundo das áreas comuns e na navegação. **Desligado** restaura o fundo sólido. Sem uma imagem selecionada, o fundo permanece normal.
+The public documentation's default language does not change the instance's interface language. A login footer is edited only by Admin under System → Appearance and identity; it can contain a plain-text independence notice and project/contact links.
 
-O conteúdo permanece em painéis legíveis. Chat mantém seu próprio wallpaper; editores, jogos e Quadro Branco preservam o espaço de trabalho. Redução de transparência do sistema e alto contraste suspendem a camada decorativa.
+<!-- Compatibility anchors for previously published guide links. -->
 
-## Movimento
-
-Animações curtas acompanham botões, cartões, painéis e troca de páginas. Em **Acessibilidade e idioma → Reduzir movimento**, elas são reduzidas. A preferência do sistema também é respeitada. Atualizações de conversa, cronômetros e edição de notas não ganham animação de entrada a cada atualização.
-
-## Última mensagem do Chat
-
-Ao subir na conversa, uma seta aparece no canto inferior direito, acima da caixa de mensagem. Ela volta ao fim sem apagar texto ou anexo ainda não enviado. Um ponto indica mensagens novas. Se a conexão falhar ao buscar o fim do histórico, a conversa atual permanece disponível e você pode tentar novamente.
-
-Veja também [Agenda, tarefas e tour](agenda-e-tour.md).
+<span id="desfoque-opcional"></span>
+<span id="movimento"></span>
+<span id="suas-configuracoes"></span>
+<span id="ultima-mensagem-do-chat"></span>

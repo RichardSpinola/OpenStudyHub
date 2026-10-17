@@ -1,84 +1,50 @@
-# Guia do administrador
+# Admin guide
 
-## 1. Instalação
+The Admin is a separate, private surface of the same instance. A normal user account is not an Admin account. Open the private Admin address and sign in; complete a required password change before using administrative actions.
 
-Veja `docs/getting-started.md` para Node local e `docs/deployment.md` para Docker/produção.
+## First configuration
 
-## 2. Primeiro ADMIN
+On an empty canonical database, `/control/setup` asks for language, the first administrator, institution, course and initial academic structure. Review the summary before finishing. Keep the institution timezone and academic period dates correct: Today and deadlines depend on them.
 
-Em banco vazio, conclua o setup do primeiro administrador. A superfície Admin roda separada do App e permanece local/LAN por padrão. Não reutilize senha institucional.
+![First-run setup](../assets/screens/en/setup.jpg)
 
-O setup pode criar o primeiro Program/período/Subject e definir a organização inicial do storage.
+## Organize the instance
 
-## 3. Usuários e contexto acadêmico
+- **Institutions:** manage identity, courses, cohorts/terms, subjects and offerings. Choose the intended institution before changing its data.
+- **Subjects and covers:** edit subject details, class times, teachers and cover images in their dedicated area. Restore a default cover when needed.
+- **Users:** accounts, enrollment and lifecycle. An inactive account should not be granted new access.
+- **Managers and permissions:** grant only the responsibility and academic scope needed. Management access is not unrestricted instance administration.
+- **Integrations:** inspect personal connections separately from central Drive storage and synchronization automation.
+- **Extras:** enable the tools available to users.
+- **System:** branding, default links/icons, languages, tour invitation, login footer, autocomplete, backups and diagnostics.
 
-Em Administração → Usuários:
+![Admin overview](../assets/screens/en/admin.jpg)
 
-- crie contas locais;
-- ative/desative usuários;
-- atribua Program/Cohort;
-- gerencie Enrollments;
-- atribua scopes funcionais;
-- crie Visual Tags.
+## Appearance and public login
 
-Desativar é preferível a hard-delete porque usuários podem possuir histórico, mensagens e documentos.
+Keep the application brand separate from the institution name. Configure default shortcut icons without overwriting personal choices. Under **System → Appearance and identity**, the login footer can be enabled/disabled and contain optional text and up to four HTTPS/contact links. Use an accurate affiliation statement; the software does not verify institutional endorsement.
 
-## 4. Acadêmico
+## Operations
 
-Use Subject + Subject Offering.
+Check storage state before generating documents. Use explicit root creation/recovery controls when a Drive folder is missing; read the warning before replacing a reference. Do not reset the library as part of an ordinary update. Read [Google](../google.md) and [backup/recovery](../operations/manual-backup-restore.md).
 
-Crie Offerings separadas quando turma, professor, período ou Classroom diferirem. Cada usuário é matriculado explicitamente nas Offerings que realmente possui.
+Keep Admin on localhost or a protected private network. Publishing the student App does not require publishing Admin.
 
-## 5. Google
+> The current first-run wizard has Portuguese labels, including when English is selected. The choice sets the instance language after setup; the screenshot shows the real interface. This documentation change does not translate application code.
 
-Veja `docs/google.md`.
+<!-- Compatibility anchors for previously published guide links. -->
 
-Cada usuário conecta a própria Conta Google. Classroom usa essa conta pessoal. ADMIN pode designar uma conta conectada como storage owner central do Drive.
-
-## 6. Classroom
-
-Mapping é explícito por Offering.
-
-Quando um Classroom não é visível à conta do administrador, informe Course ID + nome manualmente e deixe o usuário matriculado fazer o sync com a própria conta.
-
-## 7. Drive e Documents
-
-A estrutura central segue Program → Cohort opcional → Período → Disciplina → categoria.
-
-Offerings antigas podem exigir uma ação explícita de recriação/remapeamento da estrutura; o Hub não move arquivos remotos silenciosamente.
-
-Templates podem vir de DOCX importado, Picker ou Google Docs já autorizado.
-
-## 8. Groups e Chat
-
-Group membership controla Group Chat e sharing de Subject Notes/Documents.
-
-Audience Chat usa Program/Cohort. Visual Tags não concedem autorização.
-
-## 9. Projects
-
-Projects são privados do dono e podem ser ocultados pela configuração administrativa sem apagar dados. O usuário cria um projeto vazio ou importa uma pasta/ZIP e pode editar a stack depois.
-
-## 10. Links externos e identidade da instância
-
-Em Configurações → Instância, o ADMIN pode:
-
-- definir o nome da instituição;
-- cadastrar vários links externos compartilhados;
-- usar esses links para documentação, Drive acadêmico, portal institucional ou outros recursos HTTPS.
-
-O cabeçalho mostra `OpenStudyHub / Instituição` quando um nome institucional está configurado. A pasta raiz criada pelo Drive central usa `Instituição - OSH`.
-
-O antigo campo único de documentação é lido como um link legado e pode ser migrado naturalmente ao cadastrar/remover links no novo gerenciador.
-
-## 11. Extras
-
-Em Admin → Extras, ative ou desative a área, o Quadro Branco, Joguinhos e cada jogo. Desligar uma área também bloqueia suas rotas para usuários normais.
-
-## 12. Backup e manutenção
-
-Em Sistema → Backup manual, crie e baixe o arquivo. Preserve os dois bancos, private-assets e segredos fora do Git. A restauração exige App, Admin e realtime parados. Veja `docs/backup-update.md`.
-
-## 13. Auditoria
-
-Antes de publicar ou atualizar, use `docs/release-checklist.md` e mantenha o repositório público livre de dados da instância.
+<span id="1-instalacao"></span>
+<span id="10-links-externos-e-identidade-da-instancia"></span>
+<span id="11-extras"></span>
+<span id="12-backup-e-manutencao"></span>
+<span id="13-auditoria"></span>
+<span id="2-primeiro-admin"></span>
+<span id="3-usuarios-e-contexto-academico"></span>
+<span id="4-academico"></span>
+<span id="5-google"></span>
+<span id="6-classroom"></span>
+<span id="7-drive-e-documents"></span>
+<span id="8-groups-e-chat"></span>
+<span id="9-projects"></span>
+<span id="guia-do-administrador"></span>

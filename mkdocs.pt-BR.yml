@@ -1,0 +1,85 @@
+site_name: OpenStudyHub
+site_description: Seu espaço de estudo na sua instância.
+site_url: https://richardspinola.github.io/OpenStudyHub/pt-BR/
+docs_dir: docs/pt-BR
+site_dir: site/pt-BR
+nav:
+  - Visão geral: index.md
+  - Começar:
+      - Primeiro acesso: getting-started.md
+      - Servidor novo: instalacao-do-zero.md
+  - Usar:
+      - Home, Hoje e disciplinas: workspace.md
+      - Notas: notas.md
+      - Biblioteca e projetos: library.md
+      - Modelos de documentos: modelos-personalizados.md
+      - Chat e ferramentas: chat-e-extras.md
+      - Planejamento e tour: agenda-e-tour.md
+      - Configurações e acessibilidade: configuracoes.md
+      - Extensão Nova Aba: extension.md
+  - Administrar:
+      - Guia do Admin: deployment/ADMIN_GUIDE.md
+      - Google e armazenamento: google.md
+  - Hospedar e manter:
+      - Implantação: deployment.md
+      - ZimaOS: zimaos.md
+      - CasaOS: casaos.md
+      - UmbrelOS: umbrelos.md
+      - Atualizar instância: backup-update.md
+      - Backup e recuperação: operations/manual-backup-restore.md
+      - Solução de problemas: troubleshooting.md
+  - Projeto:
+      - Arquitetura: architecture.md
+      - Contribua: contributing.md
+      - Segurança: security.md
+      - Uso de IA: ai-usage.md
+      - Licença e créditos: LICENSING.md
+      - Histórico de versões: releases.md
+      - Checklist de publicação: release-checklist.md
+      - Referência de importação legada: migrations/V1_IMPORT_MATRIX.md
+theme:
+  name: material
+  language: pt-BR
+  custom_dir: docs/overrides
+  font: false
+  logo: assets/openstudyhub-icon.png
+  favicon: assets/openstudyhub-icon.png
+  palette:
+    scheme: slate
+    primary: custom
+    accent: custom
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+plugins:
+  - search:
+      lang:
+        - pt
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - assets/landing.js
+extra:
+  generator: false
+  osh_language: pt-BR
+markdown_extensions:
+  - tables
+  - fenced_code
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
+validation:
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: warn
+exclude_docs: "pt-BR/
+
+  overrides/
+
+  "
