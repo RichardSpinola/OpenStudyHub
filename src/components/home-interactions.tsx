@@ -16,6 +16,7 @@ import type { WallpaperCatalog } from "@/lib/home-wallpapers";
 import type { Shortcut } from "@/lib/shortcuts";
 
 export function HomeInteractions({
+  searchSameTab = true,
   presentation,
   presentationAvailable,
   autocompleteAvailable,
@@ -30,6 +31,7 @@ export function HomeInteractions({
   clockPosition,
   todayWidgetEnabled,
 }: {
+  searchSameTab?: boolean;
   presentation: HomePresentation;
   presentationAvailable: boolean;
   autocompleteAvailable: boolean;
@@ -143,6 +145,7 @@ export function HomeInteractions({
         />
       ) : null}
       <SearchForm
+        sameTab={searchSameTab}
         engine={engine}
         autocompleteAvailable={autocompleteAvailable}
       />

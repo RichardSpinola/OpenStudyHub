@@ -40,6 +40,8 @@ import { disableTodayWidgetAction } from "@/app/today/actions";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
+import { searchUsesSameTab } from "@/lib/search-preferences";
+
 export const dynamic = "force-dynamic";
 
 type HomeData = {
@@ -201,6 +203,7 @@ export default async function HomePage() {
           responsive
         />
         <HomeInteractions
+          searchSameTab={searchUsesSameTab(user.id)}
           presentation={presentation}
           presentationAvailable={process.env.OPENSTUDYHUB_V2_ENABLED === "1"}
           autocompleteAvailable={autocompleteAvailable}

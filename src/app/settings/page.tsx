@@ -1,3 +1,4 @@
+import { searchUsesSameTab } from "@/lib/search-preferences";
 import { TourLauncher } from "@/components/product-tour";
 import Image from "next/image";
 import { SettingsGroup, SettingsRow } from "@/components/settings-group";
@@ -955,6 +956,24 @@ export default async function SettingsPage({
                       className="stack-form"
                       action={updateHomeSearchAction}
                     >
+                      <input
+                        type="hidden"
+                        name="searchPreferencePresent"
+                        value="1"
+                      />
+                      <SettingsRow
+                        title={tr("Pesquisar nesta aba", "Search in this tab")}
+                        description={tr(
+                          "Desative para abrir as pesquisas em outra aba. O botão do meio sempre abre outra aba.",
+                          "Turn off to open searches in a new tab. Middle-click always opens a new tab.",
+                        )}
+                      >
+                        <CanonicalCheckbox
+                          key={`same-tab-${searchUsesSameTab(user.id)}`}
+                          name="searchSameTab"
+                          checked={searchUsesSameTab(user.id)}
+                        />
+                      </SettingsRow>
                       <label>
                         {tr("Pesquisar com", "Search with")}
                         <CanonicalSelect

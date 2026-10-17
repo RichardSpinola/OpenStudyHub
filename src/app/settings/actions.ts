@@ -1,5 +1,6 @@
 "use server";
 
+import { saveSearchSameTab } from "@/lib/search-preferences";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -262,6 +263,8 @@ export async function updateHomeSearchAction(formData: FormData) {
     .enum(["google", "scholar", "duckduckgo", "startpage", "ecosia"])
     .parse(formData.get("searchEngine"));
   updateAppearance(actor.id, { ...getAppearance(actor.id), searchEngine });
+  if (formData.has("searchPreferencePresent"))
+    saveSearchSameTab(actor.id, formData.get("searchSameTab") === "true");
   revalidatePath("/");
   revalidatePath("/settings");
 }

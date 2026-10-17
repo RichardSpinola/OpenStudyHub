@@ -49,7 +49,7 @@ export async function requestSuggestions(
   );
   endpoint.search = new URLSearchParams({
     q,
-    lang: language === "pt-BR" ? "pt" : "en",
+    lang: language === "pt-BR" ? "pt-br" : "en",
     country: language === "pt-BR" ? "BR" : "US",
     count: "6",
   }).toString();

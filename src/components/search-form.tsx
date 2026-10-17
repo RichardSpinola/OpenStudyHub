@@ -11,13 +11,14 @@ const engineLabels: Record<Appearance["searchEngine"], string> = {
   ecosia: "Ecosia",
 };
 export function SearchForm({
+  sameTab = true,
   engine = "google",
   autocompleteAvailable = false,
 }: {
+  sameTab?: boolean;
   engine?: Appearance["searchEngine"];
   autocompleteAvailable?: boolean;
 }) {
-  const clickedSuggestion = useRef<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [query, setQuery] = useState("");
@@ -134,12 +135,10 @@ export function SearchForm({
       method="get"
       rel="noopener noreferrer"
       role="search"
-      target="_blank"
+      target={sameTab ? "_self" : "_blank"}
       onSubmit={() => {
         const selected =
-          clickedSuggestion.current ??
-          (expanded && active >= 0 ? suggestions[active] : undefined);
-        clickedSuggestion.current = null;
+          expanded && active >= 0 ? suggestions[active] : undefined;
         if (selected && inputRef.current) {
           inputRef.current.value = selected;
           setQuery(selected);
@@ -199,12 +198,24 @@ export function SearchForm({
             );
           }}
         />
-        <button type="submit" aria-label={search.submit}>
+        <a
+          className="search-submit"
+          href={`/search?${new URLSearchParams({ engine, q: query.trim() })}`}
+          target={sameTab ? "_self" : "_blank"}
+          rel="noopener noreferrer"
+          aria-label={search.submit}
+          onClick={(event) => {
+            if (!query.trim()) {
+              event.preventDefault();
+              inputRef.current?.focus();
+            }
+          }}
+        >
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="6.5" />
             <path d="m16 16 5 5" />
           </svg>
-        </button>
+        </a>
         <ul
           id="home-search-suggestions"
           className="home-search-suggestions"
@@ -218,18 +229,14 @@ export function SearchForm({
               id={`home-suggestion-${index}`}
               role="option"
               aria-selected={active === index}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                clickedSuggestion.current = suggestion;
-                if (inputRef.current) inputRef.current.value = suggestion;
-                setQuery(suggestion);
-                setActive(-1);
-                setOpen(false);
-                // Submit the selected suggestion synchronously, through the existing search route.
-                formRef.current?.requestSubmit();
-              }}
             >
-              {suggestion}
+              <a
+                href={`/search?${new URLSearchParams({ engine, q: suggestion })}`}
+                target={sameTab ? "_self" : "_blank"}
+                rel="noopener noreferrer"
+              >
+                {suggestion}
+              </a>
             </li>
           ))}
         </ul>

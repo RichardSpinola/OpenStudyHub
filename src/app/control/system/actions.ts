@@ -31,6 +31,8 @@ import { createManualBackup } from "@/lib/v2/manual-backup";
 import { currentAdminV2, withV2DbAsync } from "@/lib/v2/runtime";
 import { updateUiLanguage } from "@/lib/ui-language";
 
+import { saveLoginFooter } from "@/lib/login-footer";
+
 async function requireControlAdmin() {
   await withV2DbAsync(async (db) => {
     const admin = await currentAdminV2(db);
@@ -240,4 +242,25 @@ export async function saveTourInvitationAction(form: FormData) {
     .run(enabled ? "true" : "false", Date.now());
   revalidatePath("/control/system");
   redirect("/control/system?area=resources&status=tour-saved");
+}
+
+export async function saveLoginFooterAction(form: FormData) {
+  await requireControlAdmin();
+  let status = "footer-saved";
+  try {
+    const links = Array.from({ length: 4 }, (_, index) => ({
+      label: String(form.get(`footerLabel${index}`) ?? "").trim(),
+      url: String(form.get(`footerUrl${index}`) ?? "").trim(),
+    })).filter((link) => link.label || link.url);
+    saveLoginFooter({
+      enabled: form.get("footerEnabled") === "on",
+      text: String(form.get("footerText") ?? ""),
+      links,
+    });
+    revalidatePath("/login");
+    revalidatePath("/control/system");
+  } catch {
+    status = "footer-error";
+  }
+  redirect(`/control/system?status=${status}`);
 }

@@ -1,3 +1,5 @@
+import { getLoginFooter } from "@/lib/login-footer";
+import { saveLoginFooterAction } from "./actions";
 import { tourInvitationEnabled } from "@/lib/product-tour";
 import {
   databaseIntegrity,
@@ -111,6 +113,7 @@ export default async function SystemPage({
     const links = listExternalLinks();
     const defaultShortcuts = listShortcuts();
     const brand = getBrandConfig();
+    const footer = getLoginFooter();
     const starters = listBundledStarterTemplates();
     const backupRoot = backupDirectory();
     const backups = existsSync(backupRoot)
@@ -162,6 +165,73 @@ export default async function SystemPage({
               label: tr("Aparência e identidade", "Appearance and identity"),
               content: (
                 <>
+                  <section className="admin-system-links login-footer-settings">
+                    <h2>{tr("Rodapé da tela de login", "Sign-in footer")}</h2>
+                    <p>
+                      {tr(
+                        "Exibido apenas no login dos usuários. Informe o vínculo da instância e, se quiser, links do projeto ou de contato.",
+                        "Shown only on user sign-in. Describe the instance affiliation and optionally add project or contact links.",
+                      )}
+                    </p>
+                    <form action={saveLoginFooterAction}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="footerEnabled"
+                          defaultChecked={footer.enabled}
+                        />{" "}
+                        {tr("Mostrar rodapé", "Show footer")}
+                      </label>
+                      <label>
+                        {tr("Texto (opcional)", "Text (optional)")}
+                        <textarea
+                          name="footerText"
+                          maxLength={600}
+                          rows={3}
+                          defaultValue={footer.text}
+                        />
+                      </label>
+                      {Array.from({ length: 4 }, (_, index) => (
+                        <fieldset key={index}>
+                          <legend>
+                            {tr(
+                              `Link ${index + 1} (opcional)`,
+                              `Link ${index + 1} (optional)`,
+                            )}
+                          </legend>
+                          <label>
+                            {tr("Nome", "Label")}
+                            <input
+                              name={`footerLabel${index}`}
+                              maxLength={60}
+                              defaultValue={footer.links[index]?.label ?? ""}
+                            />
+                          </label>
+                          <label>
+                            {tr(
+                              "Endereço HTTPS ou mailto:",
+                              "HTTPS or mailto: address",
+                            )}
+                            <input
+                              name={`footerUrl${index}`}
+                              maxLength={2048}
+                              defaultValue={footer.links[index]?.url ?? ""}
+                              placeholder="https://"
+                            />
+                          </label>
+                        </fieldset>
+                      ))}
+                      <p>
+                        {tr(
+                          "Para remover um link, apague seu nome e endereço.",
+                          "To remove a link, clear its label and address.",
+                        )}
+                      </p>
+                      <button type="submit">
+                        {tr("Salvar rodapé", "Save footer")}
+                      </button>
+                    </form>
+                  </section>
                   <section className="admin-system-links">
                     <h2>
                       <UiCopy

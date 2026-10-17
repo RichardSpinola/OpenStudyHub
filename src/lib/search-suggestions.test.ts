@@ -31,6 +31,7 @@ describe("real Home suggestions", () => {
     expect(url.pathname).toBe("/res/v1/suggest/search");
     expect(url.searchParams.get("q")).toBe("cálculo");
     expect(url.searchParams.get("country")).toBe("BR");
+    expect(url.searchParams.get("lang")).toBe("pt-br");
     expect(url.toString()).not.toContain("fake-test-key");
     expect(options.headers).toHaveProperty(
       "X-Subscription-Token",

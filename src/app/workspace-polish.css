@@ -390,15 +390,21 @@ html[data-design] .document-library-grid.is-list .document-card-info {
 /* Permission controls wrap instead of widening the notification panel. */
 html[data-design] .notification-popover {
   overflow-x: hidden;
+  grid-template-columns: minmax(0, 1fr);
   width: min(25rem, calc(100vw - 2rem));
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
 }
+.notification-popover > *,
+.notification-popover ol,
+.notification-popover li,
 .notification-popover .push-controls,
 .notification-popover .compact-actions {
   min-width: 0;
 }
 .notification-popover .compact-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.4rem;
 }
 html[data-design] .notification-popover .compact-actions button {
@@ -408,6 +414,18 @@ html[data-design] .notification-popover .compact-actions button {
   overflow-wrap: anywhere;
   font-size: 0.7rem;
   padding: 0.55rem;
+}
+html[data-design] .notification-header {
+  flex-wrap: wrap;
+}
+html[data-design] .notification-popover li button {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+html[data-design] .notification-popover li button > * {
+  min-width: 0;
 }
 /* Keep direct destinations on desktop, including compact notebook widths. */
 @media (min-width: 761px) {
@@ -1012,4 +1030,114 @@ html[data-design] .project-detail-shell > .project-state-meta {
 html[data-design] .subject-history-section > .section-heading {
   height: 2.75rem;
   box-sizing: border-box;
+}
+
+/* Anchor narrow notification panels to the viewport rather than the bell. */
+@media (max-width: 600px) {
+  html[data-design]
+    :is(.shell-utilities, .classic-footer-utilities, .classic-navigation-bar)
+    .notification-center
+    .notification-popover {
+    position: fixed;
+    inset: 4.5rem 1rem auto;
+    width: auto;
+    max-height: calc(100svh - 9rem);
+  }
+  html[data-design]
+    :is(.classic-footer-utilities, .classic-navigation-bar)
+    .notification-center
+    .notification-popover {
+    top: auto;
+    bottom: 4.5rem;
+  }
+}
+
+/* User sign-in footer: stays in normal flow, including short and narrow screens. */
+html[data-design] .login-screen {
+  grid-template-rows: minmax(min-content, 1fr) auto;
+  align-content: stretch;
+  height: auto;
+  min-height: 100%;
+}
+html[data-design] .login-main {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 1.3rem;
+  width: 100%;
+  padding-block: 1.5rem;
+}
+html[data-design] .login-public-footer {
+  width: min(100%, 56rem);
+  padding: 1rem;
+  text-align: center;
+  color: var(--gray-1);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.login-public-footer p {
+  margin: 0 0 0.5rem;
+}
+.login-public-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.4rem;
+}
+.login-public-footer a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+.login-footer-settings form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.login-footer-settings fieldset {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.75rem;
+}
+.login-footer-settings label {
+  min-width: 0;
+}
+.login-footer-settings textarea,
+.login-footer-settings input:not([type="checkbox"]) {
+  width: 100%;
+  box-sizing: border-box;
+}
+.search-control .search-submit {
+  align-self: stretch;
+  display: grid;
+  min-width: 4.2rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--gray-3);
+  background: var(--white);
+  color: var(--black);
+  text-decoration: none;
+}
+.search-control .search-submit svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: square;
+  stroke-width: 1.8;
+}
+.search-control .search-submit:hover {
+  color: var(--white);
+  background: var(--gray-3);
+}
+html[data-design] .home-search-suggestions [role="option"] {
+  padding: 0;
+}
+.home-search-suggestions [role="option"] > a {
+  display: block;
+  padding: 0.65rem 0.8rem;
+  color: inherit;
+  text-decoration: none;
 }
