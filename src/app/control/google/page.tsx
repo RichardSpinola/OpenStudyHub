@@ -17,6 +17,7 @@ import { ConsoleShell } from "../ui";
 import {
   setStorageOwnerAction,
   repairDriveRootAction,
+  prepareDriveRootAction,
   provisionDriveFoldersAction,
   setGoogleAutomationAction,
 } from "./actions";
@@ -174,14 +175,39 @@ export default async function GoogleOperations({
                   .
                 </p>
                 {status.storage?.connected ? (
-                  <form action={provisionDriveFoldersAction}>
-                    <button type="submit">
-                      <UiCopy
-                        pt="Conferir e sincronizar pastas das disciplinas"
-                        en="Check and sync subject folders"
-                      />
-                    </button>
-                  </form>
+                  <section className="admin-storage-policy">
+                    <h3>Pastas das disciplinas</h3>
+                    <p>
+                      Confere os vínculos, restaura pastas da lixeira e prepara
+                      as pastas que faltam na estrutura central.
+                    </p>
+                    <form
+                      action={provisionDriveFoldersAction}
+                      className="v2-fields"
+                      style={{
+                        gridTemplateColumns: "minmax(0, 1fr)",
+                        alignItems: "start",
+                      }}
+                    >
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="recreateMissing"
+                          value="yes"
+                        />{" "}
+                        Recriar pastas ausentes dentro da pasta central atual.
+                      </label>
+                      <p>
+                        Marque se a estrutura anterior foi apagada. As
+                        referências antigas ficam guardadas; arquivos excluídos
+                        definitivamente não são recuperados. Pastas acessíveis
+                        são reaproveitadas.
+                      </p>
+                      <button type="submit" style={{ justifySelf: "start" }}>
+                        Preparar ou recuperar pastas das disciplinas
+                      </button>
+                    </form>
+                  </section>
                 ) : null}
                 <form action={setStorageOwnerAction} className="v2-fields">
                   <label>
@@ -216,6 +242,43 @@ export default async function GoogleOperations({
                     en="If the current Drive contains objects, changing its owner requires migration before saving."
                   />
                 </p>
+                {status.storage?.connected && (
+                  <section className="admin-storage-policy">
+                    <h3>Pasta central do OpenStudyHub</h3>
+                    <p>
+                      Crie a pasta da instalação ou restaure a pasta original se
+                      ela estiver na lixeira. A conta responsável acima será
+                      utilizada.
+                    </p>
+                    <form
+                      action={prepareDriveRootAction}
+                      className="v2-fields"
+                      style={{
+                        gridTemplateColumns: "minmax(0, 1fr)",
+                        alignItems: "start",
+                      }}
+                    >
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="replaceMissing"
+                          value="yes"
+                        />
+                        Se a pasta anterior não for encontrada, criar uma nova
+                        pasta vazia.
+                      </label>
+                      <p>
+                        Marque somente após conferir a conta e a lixeira do
+                        Drive. Uma pasta nova não recupera arquivos apagados;
+                        documentos, projetos e pastas de disciplinas mantêm os
+                        vínculos anteriores.
+                      </p>
+                      <button type="submit" style={{ justifySelf: "start" }}>
+                        Criar ou recuperar pasta central
+                      </button>
+                    </form>
+                  </section>
+                )}
                 {status.storage?.connected && (
                   <form action={repairDriveRootAction}>
                     <button type="submit">

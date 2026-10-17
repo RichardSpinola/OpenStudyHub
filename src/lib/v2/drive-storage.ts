@@ -326,6 +326,136 @@ export class GoogleDriveStorageProvider implements StorageProvider {
   health(): "ready" | "degraded" {
     return storageOwnerStatus(this.db)?.connected ? "ready" : "degraded";
   }
+  async prepareRoot(
+    actor: Actor,
+    desiredName: string,
+    replaceMissing = false,
+  ): Promise<{
+    id: string;
+    outcome: "created" | "restored" | "ready" | "recreated";
+  }> {
+    if (!isAdmin(this.db, actor))
+      throw new Error("Somente Admin pode preparar a pasta central do Drive.");
+    const name = desiredName.trim();
+    if (!name) throw new Error("Nome da instituição não configurado.");
+    const context = await this.context();
+    const old = context.rootRef;
+    if (!old) {
+      const id = await this.root(context.access, null, name);
+      recordAdminAction(
+        this.db,
+        actor,
+        "storage.root_create",
+        "storage_backend",
+        this.backendId,
+      );
+      return { id, outcome: "created" };
+    }
+    const response = await this.request(
+      context.access,
+      `${API}/${encodeURIComponent(old)}?fields=id,mimeType,trashed`,
+    );
+    if (response.status === 403)
+      throw new Error(
+        "Permissão negada à pasta atual. Reconecte a conta responsável; nenhuma pasta foi substituída.",
+      );
+    if (response.status === 404) {
+      if (!replaceMissing)
+        throw new Error(
+          "Pasta não encontrada ou sem acesso. Confira a conta e a lixeira. Para começar com uma pasta vazia, marque a opção de criar uma nova pasta.",
+        );
+      const created = await this.request(context.access, API + "?fields=id", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name,
+          mimeType: "application/vnd.google-apps.folder",
+          appProperties: { openStudyHub: "central-v2" },
+        }),
+      });
+      if (!created.ok)
+        throw new Error("Não foi possível criar a pasta central.");
+      const folder = (await created.json()) as { id?: string };
+      if (!folder.id)
+        throw new Error("Drive não retornou a referência da pasta.");
+      try {
+        this.db.transaction(() => {
+          const changed = this.db
+            .prepare(
+              "UPDATE storage_backends SET root_ref=? WHERE id=? AND root_ref=? AND owner_user_id=?",
+            )
+            .run(folder.id!, this.backendId, old, context.ownerId);
+          if (changed.changes !== 1)
+            throw new Error(
+              "A configuração mudou. Atualize a página antes de tentar novamente.",
+            );
+          // Keep the previous root reference for recovery; existing object and offering references stay intact.
+          this.db
+            .prepare(
+              "INSERT INTO storage_backends(kind,name,owner_user_id,root_ref,state) VALUES(?,?,?,?,?)",
+            )
+            .run(
+              "google-drive",
+              `Previous Drive root ${randomUUID()}`,
+              context.ownerId,
+              old,
+              "disabled",
+            );
+          recordAdminAction(
+            this.db,
+            actor,
+            "storage.root_recreate",
+            "storage_backend",
+            this.backendId,
+          );
+        })();
+      } catch (error) {
+        await this.request(
+          context.access,
+          `${API}/${encodeURIComponent(folder.id)}`,
+          {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ trashed: true }),
+          },
+        ).catch(() => undefined);
+        throw error;
+      }
+      return { id: folder.id, outcome: "recreated" };
+    }
+    if (!response.ok)
+      throw new Error("Drive temporariamente indisponível. Tente novamente.");
+    const meta = (await response.json()) as {
+      mimeType?: string;
+      trashed?: boolean;
+    };
+    if (meta.mimeType !== "application/vnd.google-apps.folder")
+      throw new Error(
+        "A referência atual não é uma pasta. Nenhuma alteração foi feita.",
+      );
+    if (meta.trashed) {
+      const restored = await this.request(
+        context.access,
+        `${API}/${encodeURIComponent(old)}?fields=id`,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ trashed: false }),
+        },
+      );
+      if (!restored.ok)
+        throw new Error("Não foi possível restaurar a pasta da lixeira.");
+    }
+    await this.root(context.access, old, name);
+    recordAdminAction(
+      this.db,
+      actor,
+      meta.trashed ? "storage.root_restore" : "storage.root_check",
+      "storage_backend",
+      this.backendId,
+    );
+    return { id: old, outcome: meta.trashed ? "restored" : "ready" };
+  }
   // A 404 can mean permission loss as well as deletion. Replacing a referenced
   // root would strand existing offering folders and stored objects.
   async repairRoot(actor: Actor, desiredName: string): Promise<string> {

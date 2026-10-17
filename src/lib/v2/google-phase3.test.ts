@@ -407,7 +407,7 @@ describe("Google V2 isolated boundaries", () => {
             courses: [{ id: "personal-3", name: "Fundamentos Fictícios" }],
           });
         if (String(input).includes("/courseWorkMaterials"))
-          return json({ courseWorkMaterials: [] });
+          return json({ courseWorkMaterial: [] });
         if (String(input).includes("/courseWork"))
           return json({ courseWork: [{ id: "w1", title: "Only mine" }] });
         return json({ announcements: [] });
@@ -426,6 +426,111 @@ describe("Google V2 isolated boundaries", () => {
           url.startsWith("https://classroom.googleapis.com/"),
         ),
       ).toBe(true);
+    } finally {
+      db.close();
+    }
+  });
+  it("explicitly creates or restores the central folder without silently replacing lost access", async () => {
+    const db = fixture();
+    try {
+      connected(db, 3, true);
+      setStorageOwner(db, adminActor(1), 3);
+      const backend = storageOwnerStatus(db)!.backendId;
+      let state: "ready" | "trashed" | "missing" | "denied" | "unavailable" =
+        "ready";
+      let creates = 0;
+      let restores = 0;
+      let current = "root-1";
+      const fakeFetch = async (
+        input: string | URL | Request,
+        init?: RequestInit,
+      ) => {
+        const url = String(input);
+        if (init?.method === "POST") {
+          creates++;
+          current = `root-${creates}`;
+          state = "ready";
+          return json({ id: current });
+        }
+        if (init?.method === "PATCH") {
+          if (JSON.parse(String(init.body)).trashed === false) {
+            restores++;
+            state = "ready";
+          }
+          return json({ id: current });
+        }
+        if (state === "missing") return json({}, 404);
+        if (state === "denied") return json({}, 403);
+        if (state === "unavailable") return json({}, 503);
+        expect(url).toContain(current);
+        return json({
+          id: current,
+          name: "Test - OSH",
+          mimeType: "application/vnd.google-apps.folder",
+          trashed: state === "trashed",
+        });
+      };
+      const provider = new GoogleDriveStorageProvider(
+        db,
+        backend,
+        fakeFetch as typeof fetch,
+        async () => "fake-access",
+      );
+      await expect(
+        provider.prepareRoot(userActor(3), "Test - OSH", true),
+      ).rejects.toThrow("Admin");
+      expect(
+        (await provider.prepareRoot(adminActor(1), "Test - OSH")).outcome,
+      ).toBe("created");
+      expect(
+        (await provider.prepareRoot(adminActor(1), "Test - OSH")).outcome,
+      ).toBe("ready");
+      expect(creates).toBe(1);
+      state = "trashed";
+      expect(
+        (await provider.prepareRoot(adminActor(1), "Test - OSH")).outcome,
+      ).toBe("restored");
+      expect(restores).toBe(1);
+      expect(creates).toBe(1);
+      state = "missing";
+      await expect(
+        provider.prepareRoot(adminActor(1), "Test - OSH"),
+      ).rejects.toThrow("marque a opção");
+      expect(creates).toBe(1);
+      expect(
+        db
+          .prepare("SELECT root_ref ref FROM storage_backends WHERE id=?")
+          .get(backend),
+      ).toEqual({ ref: "root-1" });
+      expect(
+        (await provider.prepareRoot(adminActor(1), "Test - OSH", true)).outcome,
+      ).toBe("recreated");
+      expect(creates).toBe(2);
+      expect(
+        db
+          .prepare("SELECT root_ref ref FROM storage_backends WHERE id=?")
+          .get(backend),
+      ).toEqual({ ref: "root-2" });
+      expect(
+        db
+          .prepare(
+            "SELECT root_ref ref FROM storage_backends WHERE state='disabled'",
+          )
+          .get(),
+      ).toEqual({ ref: "root-1" });
+      expect(
+        (await provider.prepareRoot(adminActor(1), "Test - OSH", true)).outcome,
+      ).toBe("ready");
+      expect(creates).toBe(2);
+      state = "denied";
+      await expect(
+        provider.prepareRoot(adminActor(1), "Test - OSH", true),
+      ).rejects.toThrow("Permissão negada");
+      state = "unavailable";
+      await expect(
+        provider.prepareRoot(adminActor(1), "Test - OSH", true),
+      ).rejects.toThrow("temporariamente");
+      expect(creates).toBe(2);
     } finally {
       db.close();
     }

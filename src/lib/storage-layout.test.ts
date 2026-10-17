@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildOfferingStoragePath,
+  buildProjectStoragePath,
   buildStoragePath,
   defaultStorageLayout,
   storageLayoutSchema,
@@ -15,6 +16,14 @@ const context = {
 };
 
 describe("storage layout", () => {
+  it("separates projects from the academic tree with a descriptive course root", () => {
+    expect(buildProjectStoragePath(context)).toEqual([
+      "Projetos - CC",
+      "Turma 2026",
+      "2026.2",
+      "Sistemas Distribuídos",
+    ]);
+  });
   it("monta o caminho com cohort quando disponível", () => {
     expect(buildStoragePath(defaultStorageLayout, context, "projects")).toEqual(
       ["CC", "Turma 2026", "2026.2", "Sistemas Distribuídos", "Projetos"],

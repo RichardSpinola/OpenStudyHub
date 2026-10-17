@@ -5,6 +5,7 @@ import { createMigratedTestDatabase } from "@/lib/test-database";
 
 import {
   copyDriveFile,
+  permanentlyDeleteDriveFile,
   createOfferingDriveFolder,
   downloadDriveFile,
   driveFolderExistsForUser,
@@ -105,6 +106,25 @@ describe("Drive folder foundation", () => {
 
   afterEach(() => connection.close());
 
+  it("explains the real child-authorization restriction without pretending the folder was deleted", async () => {
+    const { adminId } = seed(connection);
+    await expect(
+      permanentlyDeleteDriveFile(adminId, "project-folder", {
+        connection,
+        fetchImpl: async () =>
+          Response.json(
+            { error: { errors: [{ reason: "appNotAuthorizedToChild" }] } },
+            { status: 403 },
+          ),
+      }),
+    ).rejects.toThrow("itens não autorizados");
+    await expect(
+      permanentlyDeleteDriveFile(adminId, "project-folder", {
+        connection,
+        fetchImpl: async () => new Response(null, { status: 404 }),
+      }),
+    ).resolves.toBeUndefined();
+  });
   it("distingue pasta presente, excluída e acesso negado", async () => {
     const { adminId } = seed(connection);
     const check = (status: number, body: unknown) =>

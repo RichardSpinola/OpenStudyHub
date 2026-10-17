@@ -44,7 +44,7 @@ async function classroomPage<T>(
     const body = (await response.json()) as {
       courses?: T[];
       courseWork?: T[];
-      courseWorkMaterials?: T[];
+      courseWorkMaterial?: T[];
       announcements?: T[];
       studentSubmissions?: T[];
       nextPageToken?: string;
@@ -52,7 +52,7 @@ async function classroomPage<T>(
     results.push(
       ...(body.courses ??
         body.courseWork ??
-        body.courseWorkMaterials ??
+        body.courseWorkMaterial ??
         body.announcements ??
         body.studentSubmissions ??
         []),

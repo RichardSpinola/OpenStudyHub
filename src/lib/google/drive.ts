@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { createHash, randomUUID } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 
 import { assertCanManageOffering } from "@/lib/academic-authority";
 import { recordAuditEvent } from "@/lib/audit";
@@ -211,7 +213,7 @@ export async function uploadDriveFile(
   input: {
     name: string;
     parentFolderId: string;
-    data: Buffer;
+    data: Buffer | string;
     mimeType?: string | null;
     appProperties?: Record<string, string>;
     targetMimeType?: string;
@@ -226,7 +228,7 @@ export async function uploadDriveFile(
     .object({
       name: z.string().trim().min(1).max(255),
       parentFolderId: z.string().trim().min(1).max(255),
-      data: z.instanceof(Buffer),
+      data: z.union([z.instanceof(Buffer), z.string().min(1)]),
       mimeType: z.string().trim().min(1).max(255).optional().nullable(),
       appProperties: z.record(z.string(), z.string().max(124)).optional(),
       targetMimeType: z.string().trim().min(1).max(255).optional(),
@@ -238,13 +240,57 @@ export async function uploadDriveFile(
     connection,
     fetchImpl,
   });
+  const metadata = {
+    name: value.name,
+    parents: [value.parentFolderId],
+    ...(value.appProperties ? { appProperties: value.appProperties } : {}),
+    ...(value.targetMimeType ? { mimeType: value.targetMimeType } : {}),
+  };
+  if (typeof value.data === "string") {
+    const size = (await stat(value.data)).size;
+    const start = await driveRequest(
+      accessToken,
+      `${DRIVE_UPLOAD_ENDPOINT}?uploadType=resumable&fields=id,name,mimeType,webViewLink,modifiedTime`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-upload-content-type": value.mimeType ?? "application/octet-stream",
+          "x-upload-content-length": String(size),
+        },
+        body: JSON.stringify(metadata),
+      },
+      fetchImpl,
+    );
+    const location = start.headers.get("location");
+    if (
+      !start.ok ||
+      !location ||
+      new URL(location).origin !== "https://www.googleapis.com" ||
+      !new URL(location).pathname.startsWith("/upload/drive/")
+    )
+      throw new Error("Drive file upload failed.");
+    const body = createReadStream(value.data);
+    try {
+      const result = await fetchImpl(location, {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          "content-type": value.mimeType ?? "application/octet-stream",
+          "content-length": String(size),
+        },
+        body: body as unknown as BodyInit,
+        duplex: "half",
+        signal: AbortSignal.timeout(300_000),
+      } as RequestInit);
+      if (!result.ok) throw new Error("Drive file upload failed.");
+      return driveFileSchema.parse(await result.json());
+    } finally {
+      body.destroy();
+    }
+  }
   const upload = multipartUploadBody(
-    {
-      name: value.name,
-      parents: [value.parentFolderId],
-      ...(value.appProperties ? { appProperties: value.appProperties } : {}),
-      ...(value.targetMimeType ? { mimeType: value.targetMimeType } : {}),
-    },
+    metadata,
     value.data,
     value.mimeType ?? "application/octet-stream",
   );
@@ -651,6 +697,66 @@ export async function driveFolderExistsForUser(
   );
 }
 
+/** Restore the linked folder when possible; a 404 remains ambiguous to the caller. */
+export async function restoreDriveFolderForUser(
+  userId: number,
+  fileId: string,
+  options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
+): Promise<{ exists: boolean; restored: boolean }> {
+  const ownerId = idSchema.parse(userId);
+  const safeFileId = z.string().trim().min(1).max(255).parse(fileId);
+  const connection = options.connection ?? getDatabase();
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const access = await getGoogleAccessToken(ownerId, { connection, fetchImpl });
+  const url = `${DRIVE_FILES_ENDPOINT}/${encodeURIComponent(safeFileId)}?fields=id,name,mimeType,trashed`;
+  const response = await driveRequest(
+    access,
+    url,
+    { method: "GET" },
+    fetchImpl,
+  );
+  if (response.status === 404) return { exists: false, restored: false };
+  if (response.status === 403)
+    throw new Error(
+      "Sem permissão para verificar uma pasta no Drive. Nenhum vínculo foi substituído.",
+    );
+  if (!response.ok)
+    throw new Error(
+      "Não foi possível verificar uma pasta no Drive. Tente novamente.",
+    );
+  const folder = driveFileSchema.parse(await response.json());
+  if (folder.mimeType !== "application/vnd.google-apps.folder")
+    throw new Error(
+      "O vínculo da disciplina não aponta para uma pasta. Nenhuma referência foi substituída.",
+    );
+  if (!folder.trashed) return { exists: true, restored: false };
+  const restored = await driveRequest(
+    access,
+    url,
+    {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ trashed: false }),
+    },
+    fetchImpl,
+  );
+  if (!restored.ok)
+    throw new Error(
+      "Não foi possível restaurar a pasta da disciplina da lixeira.",
+    );
+  const verified = await driveRequest(
+    access,
+    url,
+    { method: "GET" },
+    fetchImpl,
+  );
+  if (!verified.ok || driveFileSchema.parse(await verified.json()).trashed)
+    throw new Error(
+      "A pasta continua indisponível. Confira também a pasta superior na lixeira do Drive.",
+    );
+  return { exists: true, restored: true };
+}
+
 export async function moveDriveFolderForUser(
   userId: number,
   folderId: string,
@@ -873,6 +979,22 @@ export async function permanentlyDeleteDriveFile(
     { method: "DELETE" },
     options.fetchImpl ?? fetch,
   );
+  if (response.status === 403) {
+    const problem = (await response.json().catch(() => ({}))) as {
+      error?: { errors?: Array<{ reason?: string }> };
+    };
+    if (
+      problem.error?.errors?.some(
+        (item) => item.reason === "appNotAuthorizedToChild",
+      )
+    )
+      throw new Error(
+        "O Google Drive bloqueou a exclusão porque a pasta contém itens não autorizados para o aplicativo. Exclua essa pasta pelo Google Drive. Nenhum registro local foi apagado.",
+      );
+    throw new Error(
+      "O Google Drive recusou a exclusão: a conta vinculada não tem permissão para apagar esta pasta. Nenhum registro local foi apagado.",
+    );
+  }
   if (!response.ok && response.status !== 404)
     throw new Error(
       "Não foi possível excluir os arquivos no Drive. Nenhum registro local foi apagado; tente novamente.",

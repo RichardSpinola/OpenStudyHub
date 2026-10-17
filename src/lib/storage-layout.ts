@@ -184,7 +184,9 @@ export function buildProjectStoragePath(
   context: StorageLayoutContext,
   layout: StorageLayout = defaultStorageLayout,
 ): string[] {
-  return buildStoragePath(layout, context, "projects");
+  const path = buildStoragePath(layout, context, "projects");
+  const category = path.at(-1)!;
+  return [`${category} - ${path[0]}`, ...path.slice(1, -1)];
 }
 
 export function getOfferingStorageContext(
@@ -257,4 +259,17 @@ export function getOfferingStorageContextById(
     period: { label: row.periodLabel },
     subject: { name: row.subjectName, shortName: row.subjectShortName },
   };
+}
+
+/** Names remain readable; identity keys keep different accounts separate. */
+export function drivePersonFolderName(
+  userId: number,
+  connection: DatabaseConnection = getDatabase(),
+): string {
+  const user = connection.sqlite
+    .prepare("SELECT display_name name,login FROM users WHERE id=?")
+    .get(z.number().int().positive().parse(userId)) as
+    { name: string; login: string } | undefined;
+  if (!user) throw new Error("Usuário da pasta não encontrado.");
+  return cleanSegment(user.name?.trim() || user.login);
 }

@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import type { DatabaseConnection } from "@/lib/db/client";
 import { getDatabase } from "@/lib/db/client";
 import {
-  driveFolderExistsForUser,
+  restoreDriveFolderForUser,
   ensureDriveFolderForUser,
   ensureDriveRootFolder,
 } from "@/lib/google/drive";
@@ -41,6 +41,7 @@ export async function provisionPendingDriveFolders(
   options: {
     connection?: DatabaseConnection;
     fetchImpl?: GoogleFetch;
+    recreateMissing?: boolean;
   } = {},
 ) {
   if (!isAdmin(db, actor))
@@ -65,7 +66,8 @@ export async function provisionPendingDriveFolders(
       )
       .all() as Array<{ id: number }>
   ).map(({ id }) => id);
-  if (!offerings.length) return { checked: 0, created: 0, remaining: 0 };
+  if (!offerings.length)
+    return { checked: 0, created: 0, restored: 0, recreated: 0, remaining: 0 };
 
   const root = await ensureDriveRootFolder(ownerLink.id, {
     connection,
@@ -73,22 +75,33 @@ export async function provisionPendingDriveFolders(
   });
   const layout = getStorageLayout(connection);
   let created = 0;
+  let restored = 0;
+  let recreated = 0;
   for (const offeringId of offerings) {
-    const existingId = getOfferingGoogleIntegration(
-      offeringId,
-      connection,
-    )?.driveFolderId;
+    const previous = getOfferingGoogleIntegration(offeringId, connection);
+    const existingId = previous?.driveFolderId;
     if (existingId) {
-      if (
-        await driveFolderExistsForUser(ownerLink.id, existingId, {
-          connection,
-          fetchImpl,
-        })
-      )
+      const status = await restoreDriveFolderForUser(ownerLink.id, existingId, {
+        connection,
+        fetchImpl,
+      });
+      if (status.exists) {
+        if (status.restored) {
+          restored++;
+          recordAdminAction(
+            db,
+            actor,
+            "storage.offering_folder_restore",
+            "offering",
+            offeringId,
+          );
+        }
         continue;
-      throw new Error(
-        "Uma pasta vinculada está ausente ou foi excluída. Restaure a pasta original antes de continuar. Sua referência foi preservada e nenhuma duplicata foi criada.",
-      );
+      }
+      if (!options.recreateMissing)
+        throw new Error(
+          "Uma pasta de disciplina não foi encontrada. Confira a conta e a lixeira; para criar pastas vazias na estrutura atual, marque Recriar pastas ausentes. Os vínculos anteriores serão guardados.",
+        );
     }
     let parentId = root.id;
     let folder = root;
@@ -111,9 +124,26 @@ export async function provisionPendingDriveFolders(
       );
       parentId = folder.id;
     }
-    connection.sqlite
-      .prepare(
-        `INSERT INTO offering_google_integrations
+    connection.sqlite.transaction(() => {
+      const current = getOfferingGoogleIntegration(
+        offeringId,
+        connection,
+      )?.driveFolderId;
+      if ((current ?? null) !== (existingId ?? null))
+        throw new Error(
+          "O vínculo da pasta mudou durante a operação. Atualize a página e tente novamente.",
+        );
+      if (existingId) {
+        const key = `storage.drive_folder_previous.${offeringId}.${createHash("sha256").update(existingId).digest("hex").slice(0, 24)}`;
+        connection.sqlite
+          .prepare(
+            "INSERT INTO app_settings(key,value,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO NOTHING",
+          )
+          .run(key, JSON.stringify(previous), Date.now());
+      }
+      connection.sqlite
+        .prepare(
+          `INSERT INTO offering_google_integrations
          (offering_id,drive_folder_id,drive_folder_name,drive_storage_user_id,updated_at)
          VALUES(?,?,?,?,?)
          ON CONFLICT(offering_id) DO UPDATE SET
@@ -122,12 +152,16 @@ export async function provisionPendingDriveFolders(
            drive_storage_user_id=excluded.drive_storage_user_id,
            updated_by_user_id=NULL,
            updated_at=excluded.updated_at`,
-      )
-      .run(offeringId, folder.id, folder.name, ownerLink.id, Date.now());
+        )
+        .run(offeringId, folder.id, folder.name, ownerLink.id, Date.now());
+    })();
+    if (existingId) recreated++;
     recordAdminAction(
       db,
       actor,
-      "storage.offering_folder_create",
+      existingId
+        ? "storage.offering_folder_recreate"
+        : "storage.offering_folder_create",
       "offering",
       offeringId,
     );
@@ -140,6 +174,8 @@ export async function provisionPendingDriveFolders(
   return {
     checked: offerings.length,
     created,
+    restored,
+    recreated,
     remaining: coverage.total - coverage.configured,
   };
 }

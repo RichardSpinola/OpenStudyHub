@@ -1,9 +1,8 @@
+import { ensureTemplateStorageFolder } from "./template-storage";
 import { getDatabase, type DatabaseConnection } from "./db/client";
 import { resolveDriveStorageUser } from "./google/storage-owner";
 import {
   copyDriveFile,
-  ensureDriveFolderForUser,
-  ensureDriveRootFolder,
   exportGoogleDocumentAsDocx,
   getDriveFileMetadata,
   trashDriveFile,
@@ -17,25 +16,7 @@ export async function templateDestination(
   storageUserId: number,
   options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
 ) {
-  const root = await ensureDriveRootFolder(storageUserId, options),
-    person = await ensureDriveFolderForUser(
-      storageUserId,
-      {
-        name: `Pessoa-${ownerId}`,
-        parentId: root.id,
-        identityKey: `private-templates-owner:${ownerId}`,
-      },
-      options,
-    );
-  return ensureDriveFolderForUser(
-    storageUserId,
-    {
-      name: "Modelos",
-      parentId: person.id,
-      identityKey: `private-templates:${ownerId}`,
-    },
-    options,
-  );
+  return ensureTemplateStorageFolder(ownerId, storageUserId, options);
 }
 export async function copyGoogleTemplateSource(
   ownerId: number,

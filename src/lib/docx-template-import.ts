@@ -1,3 +1,4 @@
+import { ensureTemplateStorageFolder } from "./template-storage";
 import yauzl from "yauzl";
 import { z } from "zod";
 
@@ -8,8 +9,6 @@ import {
   type DocumentTemplateRecord,
 } from "@/lib/document-templates";
 import {
-  ensureDriveFolderForUser,
-  ensureDriveRootFolder,
   getDriveFileMetadata,
   trashDriveFile,
   uploadDriveFile,
@@ -104,26 +103,9 @@ export async function importDocxTemplate(
   const storageUserId = resolveDriveStorageUser(ownerUserId, null, {
     connection,
   });
-  const root = await ensureDriveRootFolder(storageUserId, {
-    connection,
-    fetchImpl,
-  });
-  const personFolder = await ensureDriveFolderForUser(
+  const templatesFolder = await ensureTemplateStorageFolder(
+    ownerUserId,
     storageUserId,
-    {
-      name: `Pessoa-${ownerUserId}`,
-      parentId: root.id,
-      identityKey: `private-templates-owner:${ownerUserId}`,
-    },
-    { connection, fetchImpl },
-  );
-  const templatesFolder = await ensureDriveFolderForUser(
-    storageUserId,
-    {
-      name: "Modelos",
-      parentId: personFolder.id,
-      identityKey: `private-templates:${ownerUserId}`,
-    },
     { connection, fetchImpl },
   );
   const remote = await uploadDriveFile(

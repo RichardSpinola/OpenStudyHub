@@ -38,6 +38,52 @@ export async function setStorageOwnerAction(form: FormData): Promise<void> {
   }
   redirect("/control/google?area=storage&ok=" + encodeURIComponent(result));
 }
+export async function prepareDriveRootAction(form: FormData): Promise<void> {
+  let message = "Pasta central pronta para uso.";
+  try {
+    const result = await withV2DbAsync(async (db) => {
+      const admin = await currentAdminV2(db);
+      if (!admin || admin.mustChangePassword)
+        throw new Error(
+          "Entre com sua conta Admin e conclua a troca da senha temporária antes de continuar.",
+        );
+      const owner = storageOwnerStatus(db);
+      if (!owner?.connected)
+        throw new Error("Conecte a conta responsável pelo Drive primeiro.");
+      const result = await new GoogleDriveStorageProvider(
+        db,
+        owner.backendId,
+      ).prepareRoot(
+        admin,
+        desiredRootFolderName(getDatabase()),
+        form.get("replaceMissing") === "yes",
+      );
+      db.prepare(
+        "UPDATE google_automation_v2 SET drive_status='pending',last_drive_check_at=NULL WHERE id=1",
+      ).run();
+      return result;
+    });
+    message =
+      result.outcome === "recreated"
+        ? "Nova pasta central criada. Os vínculos antigos foram preservados; arquivos excluídos não são recuperados por esta ação."
+        : result.outcome === "restored"
+          ? "Pasta central restaurada da lixeira."
+          : result.outcome === "created"
+            ? "Pasta central criada no Drive."
+            : message;
+  } catch (error) {
+    redirect(
+      "/control/google?area=storage&error=" +
+        encodeURIComponent(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível preparar a pasta.",
+        ),
+    );
+  }
+  redirect("/control/google?area=storage&ok=" + encodeURIComponent(message));
+}
+
 export async function repairDriveRootAction(): Promise<void> {
   let message = "Diretório Drive reparado.";
   try {
@@ -66,7 +112,9 @@ export async function repairDriveRootAction(): Promise<void> {
   redirect("/control/google?area=storage&ok=" + encodeURIComponent(message));
 }
 
-export async function provisionDriveFoldersAction(): Promise<void> {
+export async function provisionDriveFoldersAction(
+  form: FormData,
+): Promise<void> {
   try {
     const created = await withV2DbAsync(async (db) => {
       const admin = await currentAdminV2(db);
@@ -74,12 +122,14 @@ export async function provisionDriveFoldersAction(): Promise<void> {
         throw new Error(
           "Entre com sua conta Admin e conclua a troca da senha temporária antes de continuar.",
         );
-      return provisionPendingDriveFolders(db, admin);
+      return provisionPendingDriveFolders(db, admin, {
+        recreateMissing: form.get("recreateMissing") === "yes",
+      });
     });
     redirect(
       "/control/google?area=storage&ok=" +
         encodeURIComponent(
-          `${created.checked} disciplina(s) conferida(s); ${created.created} pasta(s) preparada(s).`,
+          `${created.checked} disciplina(s) conferida(s); ${created.created} pasta(s) preparada(s), ${created.recreated} recriada(s) e ${created.restored} restaurada(s) da lixeira.`,
         ),
     );
   } catch (error) {

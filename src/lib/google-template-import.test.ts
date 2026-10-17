@@ -33,6 +33,9 @@ vi.mock("./google/drive", () => ({
 describe("Google Docs template import identities", () => {
   it("reads the personal source with its owner and imports a new document into central storage without mutating the original", async () => {
     const connection = createMigratedTestDatabase();
+    connection.sqlite.exec(
+      "INSERT INTO users(id,display_name,login,password_hash,role) VALUES(3,'Pessoa Teste','pessoa-teste','fake','member')",
+    );
     try {
       const data = await createProjectZip([
         { path: "[Content_Types].xml", data: Buffer.from("<Types/>") },
@@ -77,6 +80,9 @@ describe("Google Docs template import identities", () => {
   });
   it("copies within one identity and only cleans up a failed new copy", async () => {
     const connection = createMigratedTestDatabase();
+    connection.sqlite.exec(
+      "INSERT INTO users(id,display_name,login,password_hash,role) VALUES(3,'Pessoa Teste','pessoa-teste','fake','member')",
+    );
     try {
       vi.mocked(getDriveFileMetadata).mockResolvedValueOnce({
         id: "same-account-copy",
