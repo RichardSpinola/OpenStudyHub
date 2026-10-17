@@ -57,3 +57,14 @@ temp/
 credentials*.json
 token*.json
 dev-environment.txt
+
+# Local runtime snapshots and recovery copies
+runtime/
+backups/
+
+# Generated bilingual documentation
+site/
+
+# New local review reports/screenshots are not release inputs.
+# Existing tracked planning history is preserved.
+/planning/v3/

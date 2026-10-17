@@ -5,7 +5,7 @@ name: openstudyhub
 
 services:
   openstudyhub-migrate:
-    image: ghcr.io/richardspinola/openstudyhub:2.0.1
+    image: ghcr.io/richardspinola/openstudyhub:3.0.0
     environment:
       NODE_ENV: production
       OPENSTUDYHUB_V2_ENABLED: "1"
@@ -21,13 +21,14 @@ services:
       - node scripts/migrate-production.mjs && node scripts/migrate-v2-production.mjs
 
   openstudyhub-app:
-    image: ghcr.io/richardspinola/openstudyhub:2.0.1
+    image: ghcr.io/richardspinola/openstudyhub:3.0.0
     environment:
       NODE_ENV: production
       OPENSTUDYHUB_V2_ENABLED: "1"
       OPENSTUDYHUB_SURFACE: app
       APP_URL: http://localhost:3000
       REALTIME_PUBLIC_URL: ws://localhost:3000/realtime
+      REALTIME_HEALTH_URL: http://openstudyhub-realtime:3045/health
       DATABASE_PATH: /app/data/openstudyhub.db
       OPENSTUDYHUB_V2_DATABASE_PATH: /app/data/v2.db
       PRIVATE_ASSET_PATH: /app/data/private-assets
@@ -39,13 +40,14 @@ services:
         condition: service_completed_successfully
 
   openstudyhub-admin:
-    image: ghcr.io/richardspinola/openstudyhub:2.0.1
+    image: ghcr.io/richardspinola/openstudyhub:3.0.0
     environment:
       NODE_ENV: production
       OPENSTUDYHUB_V2_ENABLED: "1"
       OPENSTUDYHUB_SURFACE: admin
       APP_URL: http://localhost:3000
       REALTIME_PUBLIC_URL: ws://localhost:3000/realtime
+      REALTIME_HEALTH_URL: http://openstudyhub-realtime:3045/health
       DATABASE_PATH: /app/data/openstudyhub.db
       OPENSTUDYHUB_V2_DATABASE_PATH: /app/data/v2.db
       PRIVATE_ASSET_PATH: /app/data/private-assets
@@ -59,7 +61,7 @@ services:
         condition: service_completed_successfully
 
   openstudyhub-realtime:
-    image: ghcr.io/richardspinola/openstudyhub:2.0.1
+    image: ghcr.io/richardspinola/openstudyhub:3.0.0
     environment:
       NODE_ENV: production
       OPENSTUDYHUB_V2_ENABLED: "1"
@@ -121,10 +123,10 @@ x-casaos:
   index: /
   port_map: "3000"
   scheme: http
-  icon: https://raw.githubusercontent.com/RichardSpinola/OpenStudyHub/v2.0.0/public/brand/icon-512.png
+  icon: https://raw.githubusercontent.com/RichardSpinola/OpenStudyHub/v3.0.0/public/brand/icon-512.png
   title:
     en_US: OpenStudyHub
     pt_BR: OpenStudyHub
   category: Productivity
-  version: "2.0.1"
+  version: "3.0.0"
   website: https://richardspinola.github.io/OpenStudyHub/

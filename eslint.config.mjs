@@ -7,6 +7,10 @@ export default defineConfig([
   ...nextTypeScript,
   globalIgnores([
     ".next/**",
+    ".next-*/**",
+    "site/**",
+    "runtime/**",
+    "backups/**",
     ".next-app/**",
     ".next-admin/**",
     "coverage/**",

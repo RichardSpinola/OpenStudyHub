@@ -16,7 +16,7 @@ FROM base AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm build
+RUN OPENSTUDYHUB_QA_BUILD=1 NODE_OPTIONS=--max-old-space-size=1024 pnpm build --webpack
 RUN pnpm exec esbuild scripts/realtime-server.ts scripts/backup-worker.ts scripts/restore-encrypted-backup.ts --bundle --platform=node --format=esm --packages=external --tsconfig=tsconfig.json --outdir=dist --out-extension:.js=.mjs
 
 FROM base AS prod-deps
@@ -41,6 +41,7 @@ COPY --from=builder --chown=openstudyhub:openstudyhub /app/public ./public
 COPY --from=builder --chown=openstudyhub:openstudyhub /app/package.json ./package.json
 COPY --from=builder --chown=openstudyhub:openstudyhub /app/drizzle ./drizzle
 COPY --from=builder --chown=openstudyhub:openstudyhub /app/v2-migrations ./v2-migrations
+COPY --from=builder --chown=openstudyhub:openstudyhub /app/docs/migrations/V1_IMPORT_MATRIX.md ./docs/migrations/V1_IMPORT_MATRIX.md
 COPY --from=builder --chown=openstudyhub:openstudyhub /app/assets ./assets
 COPY --from=builder --chown=openstudyhub:openstudyhub /app/dist ./dist
 COPY --from=builder --chown=openstudyhub:openstudyhub /app/scripts/migrate-production.mjs ./scripts/migrate-production.mjs

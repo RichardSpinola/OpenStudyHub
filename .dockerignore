@@ -19,3 +19,16 @@ data
 *.log
 Dockerfile*
 docker-compose*.yml
+
+# Local builds, review evidence and recovery files are not image inputs
+.next-*/
+runtime/
+backups/
+planning/
+*.pem
+*.key
+*.crt
+credentials*.json
+token*.json
+
+site/
