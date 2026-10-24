@@ -13,12 +13,15 @@ export async function extractIsolated(
   bytes: Buffer;
 }> {
   const built = resolve(process.cwd(), "dist/ai-extract.mjs");
+  const bundled = existsSync(built);
   return new Promise((accept, reject) => {
     const child = spawn(
       process.execPath,
       [
-        "--max-old-space-size=192",
-        ...(existsSync(built)
+        // Source checkouts transpile PDF.js with tsx at startup, which needs more heap
+        // than the bundled parser used by the production image.
+        `--max-old-space-size=${bundled ? 192 : 768}`,
+        ...(bundled
           ? [built]
           : [
               "--import",
