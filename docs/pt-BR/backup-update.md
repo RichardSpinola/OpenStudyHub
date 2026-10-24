@@ -22,6 +22,10 @@ Não execute código antigo sobre schema migrado mais novo. Pare App, Admin, rea
 
 [O guia de recuperação](operations/manual-backup-restore.md) explica pacotes criptografados, validação sem alteração e restore offline. Conteúdo remoto do Drive não entra no backup local. Nunca use `docker compose down -v` como atualização.
 
+## Atualizar para a 3.2.0
+
+A 3.2.0 adiciona `drizzle/0024_ai_conversation_model.sql`, duas colunas opcionais que registram o modelo de cada conversa e resposta da IA. Linhas existentes não são reescritas. Uma configuração de IA da 3.1.0 com um modelo continua funcionando e aparece como lista de um modelo; abra **Admin → Assistente de IA** para liberar outros. Nenhuma variável de ambiente nova é obrigatória. Para reverter, restaure a cópia de dados anterior à atualização junto com a imagem 3.1.0.
+
 ## Atualizar para a 3.1.0
 
 A 3.1.0 adiciona uma migration no banco principal (`drizzle/0023_local_ai.sql`, tabelas da IA local) e uma no banco canônico (`v2-migrations/0032_admin_mfa.sql`, verificação em duas etapas do administrador). Elas apenas criam tabelas novas; linhas existentes não são reescritas. O serviço de migração as aplica em ordem.

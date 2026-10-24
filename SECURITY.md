@@ -9,3 +9,7 @@ A previous pattern-based history scan found no matching high-confidence token/pr
 Backups remain sensitive even when sanitized; password hashes and private content are still data. Encryption of exported packages does not protect a compromised server. See [backup/recovery](docs/operations/manual-backup-restore.md).
 
 [Português (Brasil)](docs/pt-BR/security.md) · [Full documentation](docs/security.md)
+
+## AI-assisted code
+
+Parts of OpenStudyHub were written with AI assistance ([AI usage](AI_USAGE.md)). That code receives the same review and testing as any other change, and no private data, credentials or user content is shared with AI tools during development. Report vulnerabilities the same way regardless of how the code was produced.

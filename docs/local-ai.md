@@ -17,13 +17,19 @@ In **Admin → AI assistant**:
 
 1. Choose the provider and its base address, for example `http://192.168.1.20:11434` for Ollama. For a compatible server you may include `/v1`; the Hub adds the fixed API paths.
 2. Enter a credential only if the provider requires one. It is encrypted with the instance key and never sent to the browser. Leaving the field blank keeps a saved credential; the removal control deletes it.
-3. Select **Test connection and list models**, choose a model and test again. This explicit administrator action contacts the provider even while the assistant is disabled. **A test saves the provider settings and leaves the assistant disabled**, so enable and save again afterwards.
+3. Select **Test connection and list models**. The models installed on the provider appear under **Models**: tick up to eight that people may use, choose the default model and the models used by @IA in the global chat and in study groups, then test again (every ticked model is checked). This explicit administrator action contacts the provider even while the assistant is disabled. **A test saves the provider settings and leaves the assistant disabled**, so enable and save again afterwards.
 4. Enable image input only if the model supports it. For Ollama the Hub checks the model's reported capabilities; compatible servers have no standard capability field, so confirm support in the model documentation.
 5. Set instructions, limits and permissions, enable and save. Changing provider settings or disabling the assistant interrupts running replies and keeps existing history.
 
 For Ollama, the Hub requests answers with the model's separate "thinking" mode turned off. Reasoning models otherwise spend the output budget and timeout on hidden reasoning before any visible text. Compatible servers receive a standard request; reasoning output that such a server sends separately is not shown.
 
 The browser only talks to the Hub. For each provider request the server pins the resolved address, refuses redirects and blocks link-local/cloud metadata addresses. Private and loopback addresses are allowed, because local AI usually lives there. Do not expose an inference server to the internet without its own authentication and network controls.
+
+### Models and server memory
+
+People pick one of the allowed models in the conversation header; the choice is kept per conversation, and replies show which model wrote them. A model that the administrator did not allow is refused by the server. Image attachments are accepted only when the chosen model reports image support.
+
+For Ollama, **AI server memory** shows which allowed models are loaded and how much memory they use, with **Load now** and **Unload** buttons. **Unload after** sets how long a model stays in memory after its last use (default 10 minutes, `-1` keeps it loaded, `0` unloads right after each reply). Loading takes a few seconds on a CPU server; keeping a model loaded speeds up the first reply at the cost of RAM.
 
 ## Limits and permissions
 
@@ -63,7 +69,7 @@ Members of the group can read the copy, download its attachments and continue it
 
 Two switches are needed: the administrator allows group AI (and, separately, @IA in the global room), and the owner of each study group enables **Allow @IA in this group**. Other members cannot change it.
 
-The assistant answers only when a person writes `@IA` as a word. Ordinary messages, addresses such as `ia@example.com`, words such as `@IAgo` and the assistant's own replies never start a generation, so replies cannot trigger each other. Only the current room's recent messages are read; direct conversations and other rooms are never searched. Replies have their own visible authorship and are stored separately from human messages. If @IA is not allowed in a room, a mention is sent as an ordinary message and no reply is generated.
+The assistant answers only when a person writes `@IA` as a word. Ordinary messages, addresses such as `ia@example.com`, words such as `@IAgo` and the assistant's own replies never start a generation, so replies cannot trigger each other. The assistant answers only the message that mentions it, briefly; the previous few room messages are used only as background, and it is instructed not to comment on other people's messages. Direct conversations and other rooms are never read. Type `@` to see **@IA** in the mention suggestions; the hint about @IA under the room header appears once per browser and then hides. Replies are formatted (lists, bold, code), and output that starts repeating itself is stopped and kept as an interrupted reply. Replies have their own visible authorship and are stored separately from human messages. If @IA is not allowed in a room, a mention is sent as an ordinary message and no reply is generated.
 
 ## Backups and storage
 

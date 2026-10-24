@@ -44,7 +44,7 @@ App, Admin privado, realtime, migrations e proxy local usam dados persistentes: 
 - **Vai hospedar uma nova?** Siga [instalação](docs/pt-BR/instalacao-do-zero.md). O assistente Bash usa Docker/Compose existente e recusa sobrescrever outra instalação.
 - **Vai atualizar?** Leia [backup e atualização](docs/pt-BR/backup-update.md). Não refaça a primeira instalação nem remova volumes.
 
-> **Versão 3.1.0:** use a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.1.0`. Veja a [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.1.0) e siga o [guia de atualização](docs/pt-BR/backup-update.md) para uma instância existente. O instalador guiado é apenas para instâncias novas.
+> **Versão 3.2.0:** use a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.2.0`. Veja a [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) e siga o [guia de atualização](docs/pt-BR/backup-update.md) para uma instância existente. O instalador guiado é apenas para instâncias novas.
 
 ```sh
 # Na cópia completa e confiável, depois de a imagem pública estar disponível:
@@ -86,6 +86,10 @@ bash scripts/preview-docs.sh --build-only
 
 ## Licença, créditos e versões
 
-OpenStudyHub usa **AGPL-3.0-only**. Os componentes preservam seus avisos e licenças originais, incluindo Excalidraw, BlockNote e Yjs. Leia [LICENSE](LICENSE), [avisos de terceiros](THIRD_PARTY_NOTICES.md) e [licenças](docs/pt-BR/LICENSING.md). O desenvolvimento usa assistência de IA sob direção do mantenedor; veja [uso de IA](docs/pt-BR/ai-usage.md).
+OpenStudyHub usa **AGPL-3.0-only**. Os componentes preservam seus avisos e licenças originais, incluindo Excalidraw, BlockNote e Yjs. Leia [LICENSE](LICENSE), [avisos de terceiros](THIRD_PARTY_NOTICES.md) e [licenças](docs/pt-BR/LICENSING.md).
+
+### Uso de IA no desenvolvimento
+
+O OpenStudyHub é desenvolvido com assistência de IA (GPT 5.6 Sol, GPT 6.0/6.1 Sol e Claude Opus 5.5), sob direção e revisão do mantenedor, que responde pelo produto publicado. Os commits são do mantenedor. Detalhes em [uso de IA](docs/pt-BR/ai-usage.md); contribuições assistidas por IA seguem [CONTRIBUTING](CONTRIBUTING.md) e [SECURITY](SECURITY.md).
 
 A apresentação descreve o espaço atual. Mudanças de cada versão ficam no [CHANGELOG](CHANGELOG.md) e nas [notas de versão](RELEASE_NOTES.md). As instâncias são operadas independentemente; informe corretamente o vínculo com a instituição.

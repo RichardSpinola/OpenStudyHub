@@ -16,6 +16,10 @@ See [THIRD_PARTY_NOTICES.md](https://github.com/RichardSpinola/OpenStudyHub/blob
 
 Original license and copyright notices are not replaced by translations. The Credits area in Settings exposes the relevant product attributions. The extension keeps the project's license and its own browser manifest metadata.
 
+## AI-assisted development
+
+AI assistance in development ([AI usage](ai-usage.md)) does not change the project's AGPL-3.0-only license or any third-party license and notice.
+
 <!-- Compatibility anchors for previously published guide links. -->
 
 <span id="componentes-de-terceiros"></span>

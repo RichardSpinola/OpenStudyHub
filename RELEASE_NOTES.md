@@ -1,31 +1,28 @@
-# OpenStudyHub 3.1.0
+# OpenStudyHub 3.2.0
 
-A security and administration update to the self-hosted study workspace. It adds optional two-step verification for Admin accounts and an optional assistant that uses a local AI server you already run. Use the pinned `ghcr.io/richardspinola/openstudyhub:3.1.0` image and follow the update guide for an existing instance.
+A usability update focused on phones and the local AI assistant. Use the pinned `ghcr.io/richardspinola/openstudyhub:3.2.0` image and follow the update guide for an existing instance.
 
-## Administrator two-step verification
+## Phones
 
-Each Admin account can enable a TOTP authenticator from **Admin → My account · Security**, with ten single-use recovery codes. It is off by default. When enabled, the password only opens a five-minute challenge; the full Admin session is created after the code. Codes cannot be replayed, attempts are limited per challenge and per account, and disabling or regenerating codes requires the password and a valid code. A server operator can reset a lost factor from the terminal (`node dist/admin-mfa-recover.mjs` in the Admin container). [Guide](docs/admin-mfa.md).
+- A bottom tab bar with Home, Today, Subjects, Notes and Chat, plus Library and Extras under **More**, replaces the "Areas" dropdown on screens up to 780px.
+- A compact one-row header with larger touch targets, consistent dynamic viewport height and a single phone breakpoint shared with Chat.
+- Page fixes for the Today day picker, single-column Subjects and Library, wide note databases and settings rows with selects.
+- Both the Material and Legacy (terminal) themes are covered.
 
 ## Local AI assistant
 
-Disabled by default. Administrators connect an existing **Ollama** server or an **OpenAI-compatible Chat Completions** server, test a model and choose limits and permissions. OpenStudyHub does not install servers or download models.
+- **Several models.** After **Test connection**, administrators tick up to eight installed models, choose the default and the models used by @IA in the global chat and in study groups. People choose a model per conversation; replies show which model answered.
+- **Server memory (Ollama).** See which models are loaded and their memory use, load or unload them, and set how long an idle model stays in memory (default 10 minutes, or keep loaded).
+- **Better answers.** @IA now answers only the message that mentions it, with earlier room messages as background only. Hidden reasoning is disabled, repetition is penalised and runaway output is stopped. Replies render lists, bold text and code.
+- **@IA in mentions.** Typing `@` suggests **@IA** with a robot icon; the @IA hint appears once per browser.
+- **New look.** A preview on the Extras card; a full-screen workspace with suggested prompts, a model selector, source pills, assistant identity and a conversation drawer on phones. Untitled conversations are named after their first question. With a wallpaper behind the App, the assistant panels and the phone tab bar use the same frosted glass as the header.
 
-- Private conversations with history, streaming replies, stop, and source labels for selected notes, documents, project text files and cached materials.
-- Attachments: up to four files of 10 MB (PDF up to 50 pages, DOCX, TXT, Markdown; images for vision models), parsed in an isolated process.
-- Share a confirmed copy with a study group; sources must already be shared with that group. Access is re-checked on every request, so removed members lose access immediately.
-- `@IA` replies in group chats that the group owner allows, without reply loops.
-- Queue, concurrency, timeout and optional daily quota. The assistant has no tools that act on the Hub.
+## Project
 
-Validated with Ollama 0.24 on a CPU-only server (1B–2B models, ~10–15 tokens/s), including its OpenAI-compatible endpoint. Other compatible servers were not tested. Small models make mistakes; long answers can hit the timeout. [Guide](docs/local-ai.md).
-
-## Security and maintenance
-
-- Next.js 16.4.3, React 19.3.1, Node.js 24.22.1 image, Caddy 2.11.7 in Compose examples and updated transitive dependencies. `pnpm audit` reported no known vulnerabilities at release time.
-- Admin requests made through a published port mapping (for example a LAN address such as `192.168.x.x:3001`) are correctly recognized as same-origin for the new JSON endpoints.
-- The legacy import matrix classifies the new AI tables.
+- AI-assisted development is now documented in the README, CONTRIBUTING, SECURITY and licensing guide, naming the tools used: GPT 5.6 Sol, GPT 6.0 Sol, GPT 6.1 Sol and Claude Opus 5.5.
 
 ## Updating
 
-Two new migrations only create tables (`drizzle/0023_local_ai.sql`, `v2-migrations/0032_admin_mfa.sql`). Keep both databases, private assets, environment and `GOOGLE_TOKEN_ENCRYPTION_KEY`, which now also encrypts authenticator secrets and the AI credential. Back up first; a rollback to 3.0.0 requires restoring the matching pre-update data with the 3.0.0 image. AI history, uploads and two-step settings are included in managed backups. [Update guide](docs/backup-update.md).
+One new main-database migration (`drizzle/0024_ai_conversation_model.sql`) adds two nullable columns; existing rows are not rewritten. A 3.1.0 single-model AI configuration is read as a one-model list and stays enabled. Keep both databases, private assets, environment and `GOOGLE_TOKEN_ENCRYPTION_KEY`. A rollback to 3.1.0 requires restoring the matching pre-update data with the 3.1.0 image. [Update guide](docs/backup-update.md).
 
-Previous notes: [3.0.0](RELEASE_NOTES_3_0_0.md), [2.0.1](RELEASE_NOTES_2_0_1.md), [2.0.0](RELEASE_NOTES_2_0_0.md).
+Previous notes: [3.1.0](RELEASE_NOTES_3_1_0.md), [3.0.0](RELEASE_NOTES_3_0_0.md), [2.0.1](RELEASE_NOTES_2_0_1.md), [2.0.0](RELEASE_NOTES_2_0_0.md).

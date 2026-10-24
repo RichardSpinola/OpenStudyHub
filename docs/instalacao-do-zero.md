@@ -4,7 +4,7 @@
 
 Use a Linux host with Docker Engine and Docker Compose v2 already working, Bash, GNU coreutils (including `realpath -m`), `awk` and at least 2 GiB free for initial data. Uploads, images and backups require additional space. The installer does not install Docker, configure DNS/TLS/firewalls or update existing instances. It uses prebuilt images, not an on-server source build.
 
-The installer uses the pinned `ghcr.io/richardspinola/openstudyhub:3.1.0` image. Check the [release notes](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.1.0) before installing. Use `--image` only to select another trusted, explicitly versioned image.
+The installer uses the pinned `ghcr.io/richardspinola/openstudyhub:3.2.0` image. Check the [release notes](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) before installing. Use `--image` only to select another trusted, explicitly versioned image.
 
 ## 1. Obtain and inspect the project
 
@@ -66,7 +66,7 @@ It validates Compose, lists service state and checks App/Admin, proxy and realti
 | `--app-bind IPv4`                       | Default `127.0.0.1`. Choose a private interface or `0.0.0.0` deliberately.               |
 | `--app-port PORT` / `--admin-port PORT` | Two different ports from 1024 to 65535. Admin remains on localhost.                      |
 | `--app-url URL`                         | Exact HTTP(S) origin, without a path, query or credentials.                              |
-| `--image IMAGE:VERSION`                 | Explicit, trusted version. No `latest`; defaults to the public 3.1.0 image.              |
+| `--image IMAGE:VERSION`                 | Explicit, trusted version. No `latest`; defaults to the public 3.2.0 image.              |
 | `--yes`                                 | Accept the displayed configuration without an interactive prompt.                        |
 | `--diagnose`                            | Check an installer-managed instance without starting services or changing configuration. |
 | `--help`                                | Display command usage.                                                                   |

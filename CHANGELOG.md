@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.0
+
+Phone bottom tab bar and compact header across the App; local AI with several models, per-conversation model choice, chat/group @IA models, Ollama memory controls, better @IA answers, markdown replies and @IA mention suggestions; full-screen AI workspace and Extras card; AI-assisted development disclosure. See [release notes](RELEASE_NOTES_3_2_0.md).
+
 ## 3.1.0
 
 Optional administrator two-step verification (TOTP and single-use recovery codes, terminal recovery) and an optional local AI assistant for Ollama/OpenAI-compatible servers with private and group conversations, selected sources, attachments and `@IA` chat replies. Security dependency updates and Node.js 24.22.1. See [release notes](RELEASE_NOTES_3_1_0.md).

@@ -44,7 +44,7 @@ The App, private Admin, realtime service, migrations and local proxy share persi
 - **Hosting a new instance?** Follow [installation](docs/instalacao-do-zero.md). The guided Bash installer uses existing Docker/Compose and refuses to overwrite an existing installation.
 - **Updating?** Read [backup and update](docs/backup-update.md). Do not rerun the first-install wizard or remove volumes.
 
-> **Version 3.1.0:** use the pinned `ghcr.io/richardspinola/openstudyhub:3.1.0` image. See the [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.1.0) and follow the [update guide](docs/backup-update.md) for an existing instance. The guided installer is for new instances only.
+> **Version 3.2.0:** use the pinned `ghcr.io/richardspinola/openstudyhub:3.2.0` image. See the [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) and follow the [update guide](docs/backup-update.md) for an existing instance. The guided installer is for new instances only.
 
 ```sh
 # From a complete trusted checkout, after the public image is available:
@@ -86,6 +86,10 @@ bash scripts/preview-docs.sh --build-only
 
 ## License, credits and versions
 
-OpenStudyHub is **AGPL-3.0-only**. Third-party components keep their original licenses and notices, including Excalidraw, BlockNote and Yjs. Read [LICENSE](LICENSE), [third-party notices](THIRD_PARTY_NOTICES.md) and [licensing guide](docs/LICENSING.md). Development uses AI assistance under the maintainer's direction; see [AI usage](AI_USAGE.md).
+OpenStudyHub is **AGPL-3.0-only**. Third-party components keep their original licenses and notices, including Excalidraw, BlockNote and Yjs. Read [LICENSE](LICENSE), [third-party notices](THIRD_PARTY_NOTICES.md) and [licensing guide](docs/LICENSING.md).
+
+### AI-assisted development
+
+OpenStudyHub is developed with AI assistance (GPT 5.6 Sol, GPT 6.0/6.1 Sol and Claude Opus 5.5) under the maintainer's direction and review; the maintainer is responsible for the released product and authors the commits. See [AI usage](AI_USAGE.md); AI-assisted contributions follow [CONTRIBUTING](CONTRIBUTING.md) and [SECURITY](SECURITY.md).
 
 The product description covers the current workspace. Version-specific history belongs in [CHANGELOG](CHANGELOG.md) and [release notes](RELEASE_NOTES.md). Community instances are independently operated; use an accurate affiliation statement for your institution.

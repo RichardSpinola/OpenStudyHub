@@ -24,6 +24,6 @@ O Classroom aparece depois de associar e sincronizar sua própria conexão Googl
 
 ## No celular
 
-A navegação e as disciplinas se adaptam à largura disponível. Tarefas com muitos arquivos podem ser mais confortáveis em uma tela maior.
+No celular, as áreas principais ficam em uma barra na parte de baixo da tela: Home, Hoje, Disciplinas, Notas e Chat, com Biblioteca e Extras em **Mais**. O cabeçalho mantém foco, notificações e sua conta; as páginas passam para uma coluna. Tarefas com muitos arquivos podem ser mais confortáveis em uma tela maior.
 
 <img src="../assets/screens/pt-BR/mobile.jpg" alt="Hoje no celular" width="390" loading="lazy">

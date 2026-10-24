@@ -30,3 +30,7 @@ The preview binds only `127.0.0.1:3080`. Stop it when done. Documentation-only e
 Describe expected/actual behavior and minimal reproduction. Use private reporting for vulnerabilities; do not paste secrets into issues. Project planning records describe development history, not current product guarantees. Publishing a release, image or documentation site is a separate maintainer action.
 
 [Português (Brasil)](docs/pt-BR/contributing.md) · [Full documentation](docs/contributing.md)
+
+## AI-assisted contributions
+
+You may use AI tools, but you are responsible for every line you submit: review it, test it and say in the pull request which parts were AI-assisted. Never paste secrets, real user data, databases or backups into an AI tool. See [AI usage](AI_USAGE.md).

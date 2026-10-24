@@ -1,5 +1,9 @@
 # Versões e estado da publicação
 
+## 3.2.0
+
+Imagem versionada: `ghcr.io/richardspinola/openstudyhub:3.2.0`. Adiciona barra de navegação inferior e cabeçalho compacto no celular, vários modelos de IA local com escolha por conversa e controle de memória do Ollama, respostas melhores do @IA e um espaço de IA renovado. Uma migration nova adiciona colunas opcionais. Leia as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) e o [guia de atualização](backup-update.md).
+
 ## 3.1.0
 
 Imagem versionada: `ghcr.io/richardspinola/openstudyhub:3.1.0`. Adiciona [verificação em duas etapas do administrador](admin-mfa.md) opcional e um [assistente de IA local](local-ai.md) opcional para um servidor Ollama ou compatível com OpenAI já existente, além de atualizações de segurança das dependências. Duas migrations novas apenas criam tabelas; preserve a chave de criptografia da instância. Leia as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.1.0) e o [guia de atualização](backup-update.md).

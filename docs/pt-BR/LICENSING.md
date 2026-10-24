@@ -16,6 +16,10 @@ Veja [THIRD_PARTY_NOTICES.md](https://github.com/RichardSpinola/OpenStudyHub/blo
 
 Licenças e copyrights originais não são substituídos por traduções. A área Créditos nas configurações apresenta as atribuições. A extensão mantém a licença do projeto e metadados próprios no manifesto.
 
+## Desenvolvimento com assistência de IA
+
+A assistência de IA no desenvolvimento ([uso de IA](ai-usage.md)) não altera a licença AGPL-3.0-only do projeto nem as licenças e avisos de terceiros.
+
 <!-- Compatibility anchors for previously published guide links. -->
 
 <span id="componentes-de-terceiros"></span>

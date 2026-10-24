@@ -17,13 +17,19 @@ Em **Admin → Assistente de IA**:
 
 1. Escolha o provedor e seu endereço base, por exemplo `http://192.168.1.20:11434` para Ollama. Em servidores compatíveis, você pode incluir `/v1`; o Hub acrescenta os caminhos fixos da API.
 2. Informe uma credencial apenas se o provedor exigir. Ela é criptografada com a chave da instância e nunca vai para o navegador. Campo vazio mantém a credencial salva; a opção de remoção a apaga.
-3. Clique em **Testar conexão e listar modelos**, escolha um modelo e teste novamente. Essa ação explícita do administrador contata o provedor mesmo com o assistente desativado. **O teste salva as configurações do provedor e deixa o assistente desativado**; depois, ative e salve novamente.
+3. Clique em **Testar conexão e listar modelos**. Os modelos instalados no provedor aparecem em **Modelos**: marque até oito que as pessoas podem usar, escolha o modelo padrão e os modelos usados pelo @IA no chat global e nos grupos de estudo, e teste novamente (cada modelo marcado é conferido). Essa ação explícita do administrador contata o provedor mesmo com o assistente desativado. **O teste salva as configurações do provedor e deixa o assistente desativado**; depois, ative e salve novamente.
 4. Ative imagens apenas se o modelo aceitar. No Ollama, o Hub confere as capacidades informadas pelo modelo; servidores compatíveis não têm um campo padrão para isso, então confirme na documentação do modelo.
 5. Defina instruções, limites e permissões, ative e salve. Alterar o provedor ou desativar o assistente interrompe respostas em andamento e preserva o histórico.
 
 No Ollama, o Hub pede respostas com o modo separado de "raciocínio" (thinking) desligado. Sem isso, modelos de raciocínio gastam o limite de saída e o tempo limite em texto oculto antes de mostrar qualquer resposta. Servidores compatíveis recebem uma requisição padrão; o raciocínio que esses servidores enviarem separadamente não é exibido.
 
 O navegador fala apenas com o Hub. Em cada requisição ao provedor, o servidor fixa o endereço resolvido, recusa redirecionamentos e bloqueia endereços link-local e de metadados de nuvem. Endereços privados e de loopback são permitidos, porque a IA local normalmente está neles. Não exponha um servidor de inferência na internet sem autenticação e controles de rede próprios.
+
+### Modelos e memória do servidor
+
+As pessoas escolhem um dos modelos liberados no cabeçalho da conversa; a escolha fica salva por conversa, e as respostas mostram qual modelo as escreveu. Um modelo que o administrador não liberou é recusado pelo servidor. Imagens só são aceitas quando o modelo escolhido informa suporte a imagens.
+
+No Ollama, **Memória do servidor de IA** mostra quais modelos liberados estão carregados e quanta memória usam, com os botões **Carregar agora** e **Descarregar**. **Descarregar após** define quanto tempo o modelo fica na memória depois do último uso (padrão 10 minutos, `-1` mantém carregado, `0` descarrega logo após cada resposta). Carregar leva alguns segundos em servidor só com CPU; manter o modelo carregado acelera a primeira resposta, ao custo de RAM.
 
 ## Limites e permissões
 
@@ -63,7 +69,7 @@ Membros do grupo podem ler a cópia, baixar seus anexos e continuá-la. O acesso
 
 São necessárias duas autorizações: o administrador permite IA em grupos (e, à parte, @IA na sala global), e o responsável por cada grupo de estudo ativa **Permitir @IA neste grupo**. Os outros membros não podem alterar isso.
 
-O assistente responde apenas quando alguém escreve `@IA` como palavra. Mensagens comuns, endereços como `ia@exemplo.com`, palavras como `@IAgo` e as próprias respostas do assistente nunca iniciam uma geração, então respostas não disparam outras respostas. Apenas as mensagens recentes da sala atual são lidas; conversas diretas e outras salas nunca são consultadas. As respostas têm autoria própria visível e ficam armazenadas separadamente das mensagens humanas. Se @IA não estiver permitido na sala, a menção é enviada como mensagem comum e nenhuma resposta é gerada.
+O assistente responde apenas quando alguém escreve `@IA` como palavra. Mensagens comuns, endereços como `ia@exemplo.com`, palavras como `@IAgo` e as próprias respostas do assistente nunca iniciam uma geração, então respostas não disparam outras respostas. O assistente responde apenas à mensagem que o mencionou, de forma breve; as poucas mensagens anteriores da sala servem só como contexto, e ele é orientado a não comentar mensagens de outras pessoas. Conversas diretas e outras salas nunca são lidas. Digite `@` para ver **@IA** nas sugestões de menção; o aviso sobre o @IA abaixo do cabeçalho da sala aparece uma vez por navegador e depois some. As respostas são formatadas (listas, negrito, código), e uma saída que começa a se repetir é interrompida e guardada como resposta interrompida. As respostas têm autoria própria visível e ficam armazenadas separadamente das mensagens humanas. Se @IA não estiver permitido na sala, a menção é enviada como mensagem comum e nenhuma resposta é gerada.
 
 ## Backup e armazenamento
 

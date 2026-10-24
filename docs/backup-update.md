@@ -22,6 +22,10 @@ Do not start older code against a newer migrated schema. Stop App, Admin, realti
 
 [The recovery guide](operations/manual-backup-restore.md) covers encrypted packages, validation-only mode and offline restore. Remote Drive content is not copied into local backups. Never run `docker compose down -v` as an update step.
 
+## Updating to 3.2.0
+
+3.2.0 adds `drizzle/0024_ai_conversation_model.sql`, two nullable columns that record the model of each AI conversation and reply. Existing rows are not rewritten. A 3.1.0 AI configuration with one model keeps working and appears as a one-model list; open **Admin → AI assistant** to allow more models. No new environment variable is required. To roll back, restore the pre-update data copy together with the 3.1.0 image.
+
 ## Updating to 3.1.0
 
 3.1.0 adds one main-database migration (`drizzle/0023_local_ai.sql`, local AI tables) and one canonical migration (`v2-migrations/0032_admin_mfa.sql`, administrator two-step verification). They only create new tables; existing rows are not rewritten. The migration service applies them in order.

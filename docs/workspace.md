@@ -24,6 +24,6 @@ Classroom content appears only after your own Google connection is associated an
 
 ## On a phone
 
-The navigation and subject layout adapt to the available width. Larger tasks, such as organizing many files, can be more comfortable on a larger screen.
+On a phone the main areas sit in a bar at the bottom of the screen: Home, Today, Subjects, Notes and Chat, with Library and Extras under **More**. The header keeps focus, notifications and your account; pages switch to a single column. Larger tasks, such as organizing many files, can be more comfortable on a larger screen.
 
 <img src="../assets/screens/en/mobile.jpg" alt="Today on a phone" width="390" loading="lazy">
