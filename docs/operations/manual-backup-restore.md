@@ -37,6 +37,12 @@ Stop **App, Admin, realtime and any separate backup worker**. Make an additional
 
 The older sanitized unencrypted ZIP export remains available as a legacy option. It contains private data and password hashes in readable form and uses `scripts/restore-manual-backup.mjs`; it is not interchangeable with `.oshbackup`. Prefer the encrypted flow for new backups.
 
+## Local AI and two-step verification data
+
+Since 3.1.0, packages also include local AI conversations, their sources and uploaded files (`ai/` in private assets), the AI settings with the encrypted provider credential, and administrator two-step verification (encrypted authenticator secret and hashed recovery codes). Sign-in challenges, pending enrollments and running AI requests are not carried over: requests are marked as interrupted.
+
+Encrypted values only work with the same `GOOGLE_TOKEN_ENCRYPTION_KEY`. If you restore with a different key, enter the AI credential again, and reset two-step verification for affected administrators with the [terminal recovery command](../admin-mfa.md#lost-authenticator-and-recovery-codes).
+
 <!-- Compatibility anchors for previously published guide links. -->
 
 <span id="agendamento"></span>

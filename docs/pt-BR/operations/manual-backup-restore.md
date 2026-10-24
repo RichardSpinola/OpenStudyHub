@@ -37,6 +37,12 @@ Pare **App, Admin, realtime e qualquer worker separado**. Faça outra cópia ext
 
 A exportação antiga de ZIP sanitizado sem criptografia continua como opção legada. Ela contém dados privados e hashes de senha legíveis e usa `scripts/restore-manual-backup.mjs`; não é intercambiável com `.oshbackup`. Prefira o fluxo criptografado para novas cópias.
 
+## Dados da IA local e da verificação em duas etapas
+
+Desde a 3.1.0, os pacotes também incluem as conversas da IA local, suas fontes e arquivos enviados (`ai/` nos arquivos privados), as configurações da IA com a credencial criptografada do provedor e a verificação em duas etapas dos administradores (segredo do autenticador criptografado e códigos de recuperação em hash). Desafios de login, cadastros pendentes e pedidos de IA em andamento não são levados: os pedidos ficam marcados como interrompidos.
+
+Os valores criptografados só funcionam com a mesma `GOOGLE_TOKEN_ENCRYPTION_KEY`. Se restaurar com outra chave, informe novamente a credencial da IA e redefina a verificação em duas etapas dos administradores afetados com o [comando de recuperação pelo terminal](../admin-mfa.md#perdi-o-autenticador-e-os-codigos).
+
 <!-- Compatibility anchors for previously published guide links. -->
 
 <span id="agendamento"></span>

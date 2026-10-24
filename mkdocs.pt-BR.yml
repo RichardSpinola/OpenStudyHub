@@ -20,6 +20,8 @@ nav:
   - Administrar:
       - Guia do Admin: deployment/ADMIN_GUIDE.md
       - Google e armazenamento: google.md
+      - Duas etapas do administrador: admin-mfa.md
+      - Assistente de IA local: local-ai.md
   - Hospedar e manter:
       - Implantação: deployment.md
       - ZimaOS: zimaos.md

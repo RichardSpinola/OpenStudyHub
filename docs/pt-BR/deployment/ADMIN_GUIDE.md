@@ -16,6 +16,8 @@ Com o banco canônico vazio, `/control/setup` solicita idioma, primeiro administ
 - **Gestores e permissões:** conceda apenas a responsabilidade e o escopo necessários. Gestão não equivale a administração irrestrita da instância.
 - **Integrações:** confira conexões pessoais separadamente do armazenamento Drive central e da automação.
 - **Extras:** habilite as ferramentas disponíveis aos usuários.
+- **Assistente de IA:** conecte um servidor Ollama ou compatível com OpenAI já existente, teste um modelo, defina limites e permissões. Desativado por padrão. [Guia da IA local](../local-ai.md).
+- **Minha conta · Segurança:** verificação em duas etapas opcional para a sua conta do Admin, códigos de recuperação e encerramento das outras sessões. [Verificação em duas etapas](../admin-mfa.md).
 - **Sistema:** marca, links/ícones padrão, idiomas, convite do tour, rodapé, autocomplete, backups e diagnóstico.
 
 ![Visão geral do Admin](../assets/screens/pt-BR/admin.jpg)

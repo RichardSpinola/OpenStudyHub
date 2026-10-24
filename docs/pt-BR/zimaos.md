@@ -2,7 +2,7 @@
 
 Use o modelo completo `deploy/zimaos-compose.yml` na importação de aplicativo personalizado do ZimaOS. Importe os cinco serviços juntos, com volume persistente `openstudyhub-data`. É uma instalação Compose manual, não um pacote oficial de loja.
 
-O modelo fixa a imagem 3.0.0 para todos os serviços do Hub. Use o guia de atualização para preservar uma instalação existente.
+O modelo fixa a imagem 3.1.0 para todos os serviços do Hub. Use o guia de atualização para preservar uma instalação existente.
 
 1. Confira o modelo e a tag antes de importar.
 2. Defina origem do App e URL pública realtime de modo consistente em App, Admin e realtime.

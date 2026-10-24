@@ -14,21 +14,25 @@ OpenStudyHub brings classes, materials, notes, files and conversations together.
 
 ## What you can do
 
-| Area           | Capabilities                                                                                                                               |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Your day       | Customizable Home, search and shortcuts; weekly schedule, upcoming classes, academic events, deadlines, personal tasks and calendar export |
-| Subjects       | Enrolled subject workspaces with notices, coursework, materials and associated notes/documents/projects                                    |
-| Notes          | Private pages and subpages, rich blocks, simple table/board databases, images, sharing, recovery drafts and exports                        |
-| Library        | Local files, template-based documents, personal or subject-associated projects, versions, sharing, archive and deletion                    |
-| Community      | Global chat, groups and direct conversations; inline message editing, attachments and drag-and-drop uploads                                |
-| Study tools    | Collaborative whiteboard, nine games, Pomodoro focus timer and flashcards, enabled by the administrator                                    |
-| Your space     | Profile, themes, wallpaper framing/blur, motion and contrast settings, notifications and a replayable guided tour                          |
-| Administration | First-run setup, institutions, courses, cohorts/periods, subjects/covers, enrollments, accounts and scoped responsibilities                |
-| Operations     | Optional Google integration, central Drive controls, backup/recovery, diagnostics and a configurable user-login footer                     |
+| Area           | Capabilities                                                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Your day       | Customizable Home, search and shortcuts; weekly schedule, upcoming classes, academic events, deadlines, personal tasks and calendar export  |
+| Subjects       | Enrolled subject workspaces with notices, coursework, materials and associated notes/documents/projects                                     |
+| Notes          | Private pages and subpages, rich blocks, simple table/board databases, images, sharing, recovery drafts and exports                         |
+| Library        | Local files, template-based documents, personal or subject-associated projects, versions, sharing, archive and deletion                     |
+| Community      | Global chat, groups and direct conversations; inline message editing, attachments and drag-and-drop uploads                                 |
+| Study tools    | Collaborative whiteboard, nine games, Pomodoro focus timer, flashcards and an optional local AI assistant, enabled by the administrator     |
+| Your space     | Profile, themes, wallpaper framing/blur, motion and contrast settings, notifications and a replayable guided tour                           |
+| Administration | First-run setup, institutions, courses, cohorts/periods, subjects/covers, enrollments, accounts, scoped roles and optional two-step sign-in |
+| Operations     | Optional Google integration, central Drive controls, backup/recovery, diagnostics and a configurable user-login footer                      |
 
 ### Google is optional
 
 Notes, local files and local projects work without Google. Each user connects their own **read-only Classroom** and confirms the subject mapping. The administrator separately designates an authorized account for **central Drive**. Google-backed document generation requires that storage; a local project is not automatically mirrored to Drive. [Integration guide](docs/google.md).
+
+### Local AI is optional
+
+The assistant is disabled until an administrator connects an Ollama or OpenAI-compatible server that the instance already has access to. OpenStudyHub does not install models or send data to a cloud AI service by itself. Conversations are private, sources are picked explicitly and access is re-checked on every request. [Local AI guide](docs/local-ai.md).
 
 ### Your instance, your data
 
@@ -40,7 +44,7 @@ The App, private Admin, realtime service, migrations and local proxy share persi
 - **Hosting a new instance?** Follow [installation](docs/instalacao-do-zero.md). The guided Bash installer uses existing Docker/Compose and refuses to overwrite an existing installation.
 - **Updating?** Read [backup and update](docs/backup-update.md). Do not rerun the first-install wizard or remove volumes.
 
-> **Version 3.0.0:** use the pinned `ghcr.io/richardspinola/openstudyhub:3.0.0` image. See the [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.0.0) and follow the [update guide](docs/backup-update.md) for an existing instance. The guided installer is for new instances only.
+> **Version 3.1.0:** use the pinned `ghcr.io/richardspinola/openstudyhub:3.1.0` image. See the [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.1.0) and follow the [update guide](docs/backup-update.md) for an existing instance. The guided installer is for new instances only.
 
 ```sh
 # From a complete trusted checkout, after the public image is available:
@@ -60,6 +64,7 @@ Default addresses are App `127.0.0.1:3000` and Admin `127.0.0.1:3001`. The insta
 - [Library, documents and projects](docs/library.md) · [Custom templates](docs/modelos-personalizados.md)
 - [Chat, whiteboard, games, focus and flashcards](docs/chat-e-extras.md)
 - [Personal planning and guided tour](docs/agenda-e-tour.md) · [Settings](docs/configuracoes.md)
+- [Local AI assistant](docs/local-ai.md) · [Administrator two-step verification](docs/admin-mfa.md)
 - [Admin guide](docs/deployment/ADMIN_GUIDE.md) · [Deployment](docs/deployment.md)
 - [ZimaOS](docs/zimaos.md), [CasaOS](docs/casaos.md), [UmbrelOS](docs/umbrelos.md)
 - [Recovery](docs/operations/manual-backup-restore.md) · [Troubleshooting](docs/troubleshooting.md)

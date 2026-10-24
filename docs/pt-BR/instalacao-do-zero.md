@@ -4,7 +4,7 @@
 
 Use um servidor Linux com Docker Engine e Docker Compose v2 funcionando, Bash, GNU coreutils (incluindo `realpath -m`), `awk` e ao menos 2 GiB livres para os dados iniciais. Uploads, imagens e backups exigem mais espaço. O instalador não instala Docker, configura DNS/TLS/firewall nem atualiza instâncias existentes. Ele usa imagens prontas, sem compilar o projeto no servidor.
 
-O instalador usa a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.0.0`. Confira as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.0.0) antes de instalar. Use `--image` apenas para escolher outra imagem confiável com versão explícita.
+O instalador usa a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.1.0`. Confira as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.1.0) antes de instalar. Use `--image` apenas para escolher outra imagem confiável com versão explícita.
 
 ## 1. Obtenha e confira o projeto
 
@@ -64,7 +64,7 @@ Valida o Compose, lista estados dos serviços e confere App/Admin, proxy, realti
 | `--app-bind IPv4`                         | Padrão `127.0.0.1`. Escolha uma interface privada ou `0.0.0.0` explicitamente.          |
 | `--app-port PORTA` / `--admin-port PORTA` | Duas portas diferentes de 1024 a 65535. Admin permanece em localhost.                   |
 | `--app-url URL`                           | Origem HTTP(S) exata, sem caminho, parâmetros ou credenciais.                           |
-| `--image IMAGEM:VERSÃO`                   | Versão explícita e confiável, sem `latest`. Padrão: imagem pública 3.0.0.               |
+| `--image IMAGEM:VERSÃO`                   | Versão explícita e confiável, sem `latest`. Padrão: imagem pública 3.1.0.               |
 | `--yes`                                   | Aceita a configuração exibida sem confirmação interativa.                               |
 | `--diagnose`                              | Confere instância criada pelo instalador sem iniciar serviços nem alterar configuração. |
 | `--help`                                  | Mostra a forma de uso.                                                                  |

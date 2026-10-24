@@ -1,8 +1,12 @@
 # Changelog
 
-## 3.0.0 — preparation, publication pending
+## 3.1.0
 
-Reorganized Home, timetable, subjects, Library/projects, Admin and settings; collaborative note pages/databases/images; chat files and inline editing; games, focus, flashcards, personal planning and guided tour. Added recoverable Drive controls and configurable login footer/search behavior. Bilingual documentation and first-install/diagnostic tooling are prepared separately from publication. See [current release notes](RELEASE_NOTES.md).
+Optional administrator two-step verification (TOTP and single-use recovery codes, terminal recovery) and an optional local AI assistant for Ollama/OpenAI-compatible servers with private and group conversations, selected sources, attachments and `@IA` chat replies. Security dependency updates and Node.js 24.22.1. See [release notes](RELEASE_NOTES_3_1_0.md).
+
+## 3.0.0
+
+Reorganized Home, timetable, subjects, Library/projects, Admin and settings; collaborative note pages/databases/images; chat files and inline editing; games, focus, flashcards, personal planning and guided tour. Added recoverable Drive controls and configurable login footer/search behavior. Bilingual documentation and first-install/diagnostic tooling are prepared separately from publication. See [3.0.0 release notes](RELEASE_NOTES_3_0_0.md).
 
 ## 2.0.1
 

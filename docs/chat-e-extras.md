@@ -18,6 +18,7 @@ The administrator chooses which Extras are available. If an entry is missing, as
 - **Games:** the catalog includes Snake, 2048, Minesweeper, Solitaire, Dominoes and additional enabled games. The interface adapts to the available area.
 - **Focus:** a Pomodoro timer for focus/break cycles; its navigation control uses the shared application style.
 - **Flashcards:** create and review study cards in your own space.
+- **AI assistant:** appears only when the administrator has connected and enabled a local model. Ask study questions, attach files or pick notes and documents as sources, and share a copy with a study group. In group chats whose owner allows it, write `@IA` to get a reply in the room. See the [local AI guide](local-ai.md).
 
 ![Study tools](assets/screens/en/extras.jpg)
 

@@ -6,7 +6,7 @@ Checklist do mantenedor para cada release. Marque a conclusão somente depois de
 - [ ] Compilar os dois idiomas em modo estrito; conferir links, equivalência e responsividade.
 - [ ] Validar testes do instalador e uma instalação limpa descartável; preservar produção.
 - [ ] Conferir versão, notas, licenças e limites conhecidos.
-- [ ] Confirmar imagem pública 3.0.0 antes de alterar exemplos Compose e afirmar disponibilidade.
+- [ ] Confirmar a imagem pública da nova versão antes de alterar exemplos Compose e afirmar disponibilidade.
 - [ ] Conferir gate existente de qualidade/build/testes e reutilizar validações funcionais registradas quando adequado.
 - [ ] Agrupar mudanças em commits revisáveis, preservando histórico.
 - [ ] Após aprovação: enviar branch candidata e tag, aguardar o workflow da imagem, conferir download anônimo e então publicar `main`, GitHub Release e documentação; conferir links públicos.

@@ -6,7 +6,7 @@ Maintainer checklist for each release. Mark completion only after checking the e
 - [ ] Build both documentation languages in strict mode; check links, language counterparts and responsive pages.
 - [ ] Validate installer tests and one disposable clean installation; preserve production installations.
 - [ ] Review version, release notes, licenses and known limitations.
-- [ ] Confirm public image 3.0.0 is available before switching public Compose examples and installation claims.
+- [ ] Confirm the new version's public image is available before switching public Compose examples and installation claims.
 - [ ] Review the existing code quality/build/test gate and reuse recorded functional validation where appropriate.
 - [ ] Group pending changes into reviewable commits, preserving previous history.
 - [ ] After publication approval: publish the candidate branch and tag, wait for the image workflow, verify the anonymous pull, then publish `main`, GitHub Release and documentation and verify public links.

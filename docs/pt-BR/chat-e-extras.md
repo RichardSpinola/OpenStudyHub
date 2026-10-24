@@ -18,6 +18,7 @@ A administração escolhe quais Extras ficam disponíveis. Se algo não aparecer
 - **Jogos:** o catálogo inclui Snake, 2048, Campo Minado, Paciência, Dominó e outros jogos habilitados. A interface se adapta à área disponível.
 - **Foco:** Pomodoro com ciclos de concentração e pausa; o controle na navegação segue o estilo do aplicativo.
 - **Flashcards:** crie e revise cartões de estudo no seu espaço.
+- **Assistente de IA:** aparece somente quando o administrador conecta e ativa um modelo local. Tire dúvidas de estudo, anexe arquivos ou escolha notas e documentos como fontes e compartilhe uma cópia com um grupo de estudo. Em chats de grupo cujo responsável permitir, escreva `@IA` para receber uma resposta na sala. Veja o [guia da IA local](local-ai.md).
 
 ![Ferramentas de estudo](assets/screens/pt-BR/extras.jpg)
 

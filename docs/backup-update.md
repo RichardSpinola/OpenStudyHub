@@ -22,6 +22,15 @@ Do not start older code against a newer migrated schema. Stop App, Admin, realti
 
 [The recovery guide](operations/manual-backup-restore.md) covers encrypted packages, validation-only mode and offline restore. Remote Drive content is not copied into local backups. Never run `docker compose down -v` as an update step.
 
+## Updating to 3.1.0
+
+3.1.0 adds one main-database migration (`drizzle/0023_local_ai.sql`, local AI tables) and one canonical migration (`v2-migrations/0032_admin_mfa.sql`, administrator two-step verification). They only create new tables; existing rows are not rewritten. The migration service applies them in order.
+
+- Keep `GOOGLE_TOKEN_ENCRYPTION_KEY` unchanged. In addition to Google tokens it now encrypts administrator authenticator secrets and the optional AI provider credential.
+- The image runs Node.js 24.22.1. No new environment variable is required.
+- The AI assistant stays disabled after the update; two-step verification is off for every account until an administrator enables it.
+- Rolling back to 3.0.0 after these migrations means restoring the matching pre-update data copy together with the 3.0.0 image. Do not run 3.0.0 against the migrated databases.
+
 <!-- Compatibility anchors for previously published guide links. -->
 
 <span id="atualizacao-segura-com-docker-compose"></span>

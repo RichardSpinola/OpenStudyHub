@@ -1,0 +1,31 @@
+# OpenStudyHub 3.1.0
+
+A security and administration update to the self-hosted study workspace. It adds optional two-step verification for Admin accounts and an optional assistant that uses a local AI server you already run. Use the pinned `ghcr.io/richardspinola/openstudyhub:3.1.0` image and follow the update guide for an existing instance.
+
+## Administrator two-step verification
+
+Each Admin account can enable a TOTP authenticator from **Admin → My account · Security**, with ten single-use recovery codes. It is off by default. When enabled, the password only opens a five-minute challenge; the full Admin session is created after the code. Codes cannot be replayed, attempts are limited per challenge and per account, and disabling or regenerating codes requires the password and a valid code. A server operator can reset a lost factor from the terminal (`node dist/admin-mfa-recover.mjs` in the Admin container). [Guide](docs/admin-mfa.md).
+
+## Local AI assistant
+
+Disabled by default. Administrators connect an existing **Ollama** server or an **OpenAI-compatible Chat Completions** server, test a model and choose limits and permissions. OpenStudyHub does not install servers or download models.
+
+- Private conversations with history, streaming replies, stop, and source labels for selected notes, documents, project text files and cached materials.
+- Attachments: up to four files of 10 MB (PDF up to 50 pages, DOCX, TXT, Markdown; images for vision models), parsed in an isolated process.
+- Share a confirmed copy with a study group; sources must already be shared with that group. Access is re-checked on every request, so removed members lose access immediately.
+- `@IA` replies in group chats that the group owner allows, without reply loops.
+- Queue, concurrency, timeout and optional daily quota. The assistant has no tools that act on the Hub.
+
+Validated with Ollama 0.24 on a CPU-only server (1B–2B models, ~10–15 tokens/s), including its OpenAI-compatible endpoint. Other compatible servers were not tested. Small models make mistakes; long answers can hit the timeout. [Guide](docs/local-ai.md).
+
+## Security and maintenance
+
+- Next.js 16.4.3, React 19.3.1, Node.js 24.22.1 image, Caddy 2.11.7 in Compose examples and updated transitive dependencies. `pnpm audit` reported no known vulnerabilities at release time.
+- Admin requests made through a published port mapping (for example a LAN address such as `192.168.x.x:3001`) are correctly recognized as same-origin for the new JSON endpoints.
+- The legacy import matrix classifies the new AI tables.
+
+## Updating
+
+Two new migrations only create tables (`drizzle/0023_local_ai.sql`, `v2-migrations/0032_admin_mfa.sql`). Keep both databases, private assets, environment and `GOOGLE_TOKEN_ENCRYPTION_KEY`, which now also encrypts authenticator secrets and the AI credential. Back up first; a rollback to 3.0.0 requires restoring the matching pre-update data with the 3.0.0 image. AI history, uploads and two-step settings are included in managed backups. [Update guide](docs/backup-update.md).
+
+Previous notes: [3.0.0](RELEASE_NOTES_3_0_0.md), [2.0.1](RELEASE_NOTES_2_0_1.md), [2.0.0](RELEASE_NOTES_2_0_0.md).

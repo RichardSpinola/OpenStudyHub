@@ -20,7 +20,7 @@ Uma instância reúne **migration, App, Admin, realtime e proxy Caddy local**, c
 
 Copie `.env.example` para `.env` privado; defina `NODE_ENV=production`, `APP_URL`, URL pública de realtime e uma `GOOGLE_TOKEN_ENCRYPTION_KEY` estável de 32 bytes em Base64. O modelo Compose define os bancos em `/app/data`. Não use o mesmo caminho para os dois bancos.
 
-`docker-compose.example.yml`, o modelo gráfico e o instalador guiado fixam `ghcr.io/richardspinola/openstudyhub:3.0.0`. Mantenha App, Admin, migrations e realtime na mesma versão de imagem. Siga o guia de atualização para uma instância existente; o instalador é para uma nova.
+`docker-compose.example.yml`, o modelo gráfico e o instalador guiado fixam `ghcr.io/richardspinola/openstudyhub:3.1.0`. Mantenha App, Admin, migrations e realtime na mesma versão de imagem. Siga o guia de atualização para uma instância existente; o instalador é para uma nova.
 
 ```sh
 # Use somente depois de conferir a versão da imagem no modelo:

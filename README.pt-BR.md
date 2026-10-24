@@ -21,14 +21,18 @@ O OpenStudyHub reúne aulas, materiais, notas, arquivos e conversas. Estudantes 
 | Notas         | Páginas e subpáginas privadas, blocos ricos, bases em tabela/quadro, imagens, compartilhamento, rascunhos de recuperação e exportação |
 | Biblioteca    | Arquivos locais, documentos com modelos, projetos pessoais ou associados, versões, compartilhamento, arquivamento e exclusão          |
 | Comunidade    | Chat global, grupos e conversas diretas; edição na conversa, anexos e envio por arrastar e soltar                                     |
-| Ferramentas   | Quadro colaborativo, nove jogos, Pomodoro e flashcards, habilitados pela administração                                                |
+| Ferramentas   | Quadro colaborativo, nove jogos, Pomodoro, flashcards e assistente de IA local opcional, habilitados pela administração               |
 | Seu espaço    | Perfil, temas, enquadramento/desfoque do wallpaper, movimento/contraste, notificações e tour que pode ser repetido                    |
-| Administração | Setup, instituições, cursos, turmas/períodos, disciplinas/capas, matrículas, contas e responsabilidades com escopo                    |
+| Administração | Setup, instituições, cursos, turmas/períodos, disciplinas/capas, matrículas, contas, papéis com escopo e duas etapas opcionais        |
 | Operação      | Google opcional, controles do Drive central, backup/recuperação, diagnóstico e rodapé configurável do login                           |
 
 ### Google é opcional
 
 Notas, arquivos e projetos locais funcionam sem Google. Cada pessoa conecta seu **Classroom somente de leitura** e confirma as associações. O Admin escolhe separadamente uma conta autorizada para o **Drive central**. A geração de documentos Google exige esse armazenamento; um projeto local não é espelhado automaticamente no Drive. Veja [integrações](docs/pt-BR/google.md).
+
+### IA local é opcional
+
+O assistente fica desativado até que um administrador conecte um servidor Ollama ou compatível com OpenAI ao qual a instância já tenha acesso. O OpenStudyHub não instala modelos nem envia dados por conta própria a serviços de IA na nuvem. As conversas são privadas, as fontes são escolhidas explicitamente e o acesso é conferido em cada pedido. [Guia da IA local](docs/pt-BR/local-ai.md).
 
 ### Sua instância, seus dados
 
@@ -40,7 +44,7 @@ App, Admin privado, realtime, migrations e proxy local usam dados persistentes: 
 - **Vai hospedar uma nova?** Siga [instalação](docs/pt-BR/instalacao-do-zero.md). O assistente Bash usa Docker/Compose existente e recusa sobrescrever outra instalação.
 - **Vai atualizar?** Leia [backup e atualização](docs/pt-BR/backup-update.md). Não refaça a primeira instalação nem remova volumes.
 
-> **Versão 3.0.0:** use a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.0.0`. Veja a [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.0.0) e siga o [guia de atualização](docs/pt-BR/backup-update.md) para uma instância existente. O instalador guiado é apenas para instâncias novas.
+> **Versão 3.1.0:** use a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.1.0`. Veja a [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.1.0) e siga o [guia de atualização](docs/pt-BR/backup-update.md) para uma instância existente. O instalador guiado é apenas para instâncias novas.
 
 ```sh
 # Na cópia completa e confiável, depois de a imagem pública estar disponível:
@@ -60,6 +64,7 @@ Os padrões são App `127.0.0.1:3000` e Admin `127.0.0.1:3001`. O assistente nã
 - [Biblioteca, documentos e projetos](docs/pt-BR/library.md) · [Modelos personalizados](docs/pt-BR/modelos-personalizados.md)
 - [Chat, quadro, jogos, foco e flashcards](docs/pt-BR/chat-e-extras.md)
 - [Planejamento e tour](docs/pt-BR/agenda-e-tour.md) · [Configurações](docs/pt-BR/configuracoes.md)
+- [Assistente de IA local](docs/pt-BR/local-ai.md) · [Duas etapas do administrador](docs/pt-BR/admin-mfa.md)
 - [Guia do Admin](docs/pt-BR/deployment/ADMIN_GUIDE.md) · [Implantação](docs/pt-BR/deployment.md)
 - [ZimaOS](docs/pt-BR/zimaos.md), [CasaOS](docs/pt-BR/casaos.md), [UmbrelOS](docs/pt-BR/umbrelos.md)
 - [Recuperação](docs/pt-BR/operations/manual-backup-restore.md) · [Solução de problemas](docs/pt-BR/troubleshooting.md)

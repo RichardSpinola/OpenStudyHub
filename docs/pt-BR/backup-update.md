@@ -22,6 +22,15 @@ Não execute código antigo sobre schema migrado mais novo. Pare App, Admin, rea
 
 [O guia de recuperação](operations/manual-backup-restore.md) explica pacotes criptografados, validação sem alteração e restore offline. Conteúdo remoto do Drive não entra no backup local. Nunca use `docker compose down -v` como atualização.
 
+## Atualizar para a 3.1.0
+
+A 3.1.0 adiciona uma migration no banco principal (`drizzle/0023_local_ai.sql`, tabelas da IA local) e uma no banco canônico (`v2-migrations/0032_admin_mfa.sql`, verificação em duas etapas do administrador). Elas apenas criam tabelas novas; linhas existentes não são reescritas. O serviço de migração as aplica em ordem.
+
+- Mantenha `GOOGLE_TOKEN_ENCRYPTION_KEY` inalterada. Além dos tokens do Google, ela agora protege os segredos dos autenticadores dos administradores e a credencial opcional do provedor de IA.
+- A imagem usa Node.js 24.22.1. Nenhuma variável de ambiente nova é obrigatória.
+- O assistente de IA continua desativado após a atualização; a verificação em duas etapas fica desligada em todas as contas até que cada administrador a ative.
+- Voltar para a 3.0.0 depois dessas migrations exige restaurar a cópia de dados anterior à atualização junto com a imagem 3.0.0. Não execute a 3.0.0 sobre os bancos já migrados.
+
 <!-- Compatibility anchors for previously published guide links. -->
 
 <span id="atualizacao-segura-com-docker-compose"></span>

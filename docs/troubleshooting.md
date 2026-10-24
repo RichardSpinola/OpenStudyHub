@@ -1,19 +1,21 @@
 # Troubleshooting
 
-| Symptom                          | Check first                                                             | Next step                                                            |
-| -------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Installer cannot find Docker     | Docker installed/running and account access                             | Follow the host's Docker guide; the script does not install it       |
-| Public 3.0.0 image unavailable   | Release publication status and exact tag                                | Wait for publication or use an explicitly trusted local image        |
-| Directory/project already exists | Correct installation target                                             | Use the update guide; do not erase the volume                        |
-| Port occupied                    | Another process or instance                                             | Choose a different port and rerun before installation                |
-| App health 503                   | Migration success, writable distinct database paths, volume permissions | Inspect private service logs; never delete the database to repair it |
-| Health 200 but realtime degraded | Internal realtime health and proxy routes                               | Check `/realtime` and `/whiteboard` WebSocket forwarding             |
-| Google not configured            | Client ID/secret, callback and encryption key                           | Configure privately and restart App/Admin                            |
-| `redirect_uri_mismatch`          | Exact public origin, port and callback path                             | Correct the registered `/api/v2/google/callback` URI                 |
-| Classroom materials missing      | User association, material tab and last sync                            | Reconnect/sync; announcements and coursework are not materials       |
-| Drive file refused               | `drive.file` authorization and owning OAuth client                      | Import/authorize correctly or manage the file in Drive               |
-| Backup routine not running       | Enabled schedule and worker heartbeat                                   | Keep realtime or one alternative worker active                       |
-| Note not saved                   | Server acknowledgement and browser draft warning                        | Download the recovery draft; do not clear browser storage            |
+| Symptom                          | Check first                                                             | Next step                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Installer cannot find Docker     | Docker installed/running and account access                             | Follow the host's Docker guide; the script does not install it                |
+| Public image tag unavailable     | Release publication status and exact tag                                | Wait for publication or use an explicitly trusted local image                 |
+| Directory/project already exists | Correct installation target                                             | Use the update guide; do not erase the volume                                 |
+| Port occupied                    | Another process or instance                                             | Choose a different port and rerun before installation                         |
+| App health 503                   | Migration success, writable distinct database paths, volume permissions | Inspect private service logs; never delete the database to repair it          |
+| Health 200 but realtime degraded | Internal realtime health and proxy routes                               | Check `/realtime` and `/whiteboard` WebSocket forwarding                      |
+| Google not configured            | Client ID/secret, callback and encryption key                           | Configure privately and restart App/Admin                                     |
+| `redirect_uri_mismatch`          | Exact public origin, port and callback path                             | Correct the registered `/api/v2/google/callback` URI                          |
+| Classroom materials missing      | User association, material tab and last sync                            | Reconnect/sync; announcements and coursework are not materials                |
+| Drive file refused               | `drive.file` authorization and owning OAuth client                      | Import/authorize correctly or manage the file in Drive                        |
+| Backup routine not running       | Enabled schedule and worker heartbeat                                   | Keep realtime or one alternative worker active                                |
+| Note not saved                   | Server acknowledgement and browser draft warning                        | Download the recovery draft; do not clear browser storage                     |
+| Two-step code always refused     | Server and phone clocks, unused code, 15-minute failure limit           | Wait for a new code; use a recovery code or [terminal recovery](admin-mfa.md) |
+| AI assistant does not answer     | Enabled after test, provider reachable from the container, queue/quota  | See [local AI troubleshooting](local-ai.md#troubleshooting)                   |
 
 ## Share a useful report
 

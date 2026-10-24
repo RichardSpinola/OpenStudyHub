@@ -2,7 +2,7 @@
 
 Use the complete `deploy/zimaos-compose.yml` custom-app import template in ZimaOS. Import all five services together, with a persistent `openstudyhub-data` volume. This is a manual Compose installation, not an official app-store package.
 
-The template pins the 3.0.0 image for all Hub services. Use the update guide when preserving an existing installation.
+The template pins the 3.1.0 image for all Hub services. Use the update guide when preserving an existing installation.
 
 1. Inspect the template and image tag before import.
 2. Set the App origin and realtime public URL consistently for App, Admin and realtime.

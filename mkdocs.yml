@@ -20,6 +20,8 @@ nav:
   - Administer:
       - Admin guide: deployment/ADMIN_GUIDE.md
       - Google and storage: google.md
+      - Administrator two-step verification: admin-mfa.md
+      - Local AI assistant: local-ai.md
   - Host and maintain:
       - Deployment: deployment.md
       - ZimaOS: zimaos.md

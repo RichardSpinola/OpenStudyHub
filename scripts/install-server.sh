@@ -10,7 +10,7 @@ app_bind=127.0.0.1
 app_port=3000
 admin_port=3001
 app_url=
-image=ghcr.io/richardspinola/openstudyhub:3.0.0
+image=ghcr.io/richardspinola/openstudyhub:3.1.0
 accepted=false
 diagnose=false
 created=false
@@ -25,7 +25,7 @@ bash scripts/install-server.sh --language pt-BR [--directory CAMINHO]
   [--admin-port PORTA] [--image IMAGEM:VERSÃO] [--yes] [--diagnose]
 Padrões: ./openstudyhub, projeto openstudyhub, 127.0.0.1:3000 / 127.0.0.1:3001.
 Requer Linux, Bash, GNU coreutils (realpath -m), awk, Docker e Compose v2.
-Não instala Docker nem atualiza instâncias. Usa a imagem versionada 3.0.0.
+Não instala Docker nem atualiza instâncias. Usa a imagem versionada 3.1.0.
 --image permite escolher explicitamente uma imagem local confiável.
 PTHELP
     return
@@ -37,7 +37,7 @@ bash scripts/install-server.sh [--language en|pt-BR] [--directory PATH]
   [--admin-port PORT] [--image PINNED_IMAGE] [--yes] [--diagnose]
 Defaults: ./openstudyhub, project openstudyhub, 127.0.0.1:3000 / 127.0.0.1:3001.
 Requires Linux, Bash, GNU coreutils (realpath -m), awk, Docker with Compose v2. Does not install Docker or update instances.
-Uses the pinned 3.0.0 image. --image may select another trusted version or local image.
+Uses the pinned 3.1.0 image. --image may select another trusted version or local image.
 HELP
 }
 while (($#)); do

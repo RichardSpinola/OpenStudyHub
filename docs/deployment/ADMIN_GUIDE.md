@@ -16,6 +16,8 @@ On an empty canonical database, `/control/setup` asks for language, the first ad
 - **Managers and permissions:** grant only the responsibility and academic scope needed. Management access is not unrestricted instance administration.
 - **Integrations:** inspect personal connections separately from central Drive storage and synchronization automation.
 - **Extras:** enable the tools available to users.
+- **AI assistant:** connect an existing Ollama or OpenAI-compatible server, test a model, set limits and permissions. Disabled by default. [Local AI guide](../local-ai.md).
+- **My account · Security:** optional two-step verification for your own Admin account, recovery codes and sign-out of other sessions. [Two-step verification](../admin-mfa.md).
 - **System:** branding, default links/icons, languages, tour invitation, login footer, autocomplete, backups and diagnostics.
 
 ![Admin overview](../assets/screens/en/admin.jpg)
