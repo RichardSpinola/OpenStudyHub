@@ -4,7 +4,7 @@
 
 Use um servidor Linux com Docker Engine e Docker Compose v2 funcionando, Bash, GNU coreutils (incluindo `realpath -m`), `awk` e ao menos 2 GiB livres para os dados iniciais. Uploads, imagens e backups exigem mais espaço. O instalador não instala Docker, configura DNS/TLS/firewall nem atualiza instâncias existentes. Ele usa imagens prontas, sem compilar o projeto no servidor.
 
-O instalador usa a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.2.0`. Confira as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) antes de instalar. Use `--image` apenas para escolher outra imagem confiável com versão explícita.
+O instalador usa a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.2.1`. Confira as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) antes de instalar. Use `--image` apenas para escolher outra imagem confiável com versão explícita.
 
 ## 1. Obtenha e confira o projeto
 

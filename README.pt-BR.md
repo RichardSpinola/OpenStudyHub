@@ -44,7 +44,7 @@ App, Admin privado, realtime, migrations e proxy local usam dados persistentes: 
 - **Vai hospedar uma nova?** Siga [instalação](docs/pt-BR/instalacao-do-zero.md). O assistente Bash usa Docker/Compose existente e recusa sobrescrever outra instalação.
 - **Vai atualizar?** Leia [backup e atualização](docs/pt-BR/backup-update.md). Não refaça a primeira instalação nem remova volumes.
 
-> **Versão 3.2.0:** use a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.2.0`. Veja a [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) e siga o [guia de atualização](docs/pt-BR/backup-update.md) para uma instância existente. O instalador guiado é apenas para instâncias novas.
+> **Versão 3.2.0:** use a imagem fixa `ghcr.io/richardspinola/openstudyhub:3.2.1`. Veja a [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) e siga o [guia de atualização](docs/pt-BR/backup-update.md) para uma instância existente. O instalador guiado é apenas para instâncias novas.
 
 ```sh
 # Na cópia completa e confiável, depois de a imagem pública estar disponível:

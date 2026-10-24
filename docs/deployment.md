@@ -20,7 +20,7 @@ An instance consists of **migration, App, Admin, realtime and a local Caddy prox
 
 Copy `.env.example` to a private `.env`; set `NODE_ENV=production`, `APP_URL`, realtime public URL and a stable 32-byte Base64 `GOOGLE_TOKEN_ENCRYPTION_KEY`. The Compose template defines the database paths inside `/app/data`. Do not use the same path for both databases.
 
-`docker-compose.example.yml`, the graphical template and the guided installer pin `ghcr.io/richardspinola/openstudyhub:3.2.0`. Keep App, Admin, migrations and realtime on the same image version. Follow the update guide for an existing instance; the installer is for a new one.
+`docker-compose.example.yml`, the graphical template and the guided installer pin `ghcr.io/richardspinola/openstudyhub:3.2.1`. Keep App, Admin, migrations and realtime on the same image version. Follow the update guide for an existing instance; the installer is for a new one.
 
 ```sh
 # Use only after checking the image version in the template:

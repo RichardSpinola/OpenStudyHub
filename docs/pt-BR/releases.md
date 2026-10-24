@@ -1,5 +1,9 @@
 # Versões e estado da publicação
 
+## 3.2.1
+
+Imagem versionada: `ghcr.io/richardspinola/openstudyhub:3.2.1`. O espaço de IA usa a largura inteira da tela e mostra o papel de parede desfocado atrás de painéis com vidro fosco. Sem mudanças no banco. Leia as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.1).
+
 ## 3.2.0
 
 Imagem versionada: `ghcr.io/richardspinola/openstudyhub:3.2.0`. Adiciona barra de navegação inferior e cabeçalho compacto no celular, vários modelos de IA local com escolha por conversa e controle de memória do Ollama, respostas melhores do @IA e um espaço de IA renovado. Uma migration nova adiciona colunas opcionais. Leia as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) e o [guia de atualização](backup-update.md).

@@ -4,7 +4,7 @@
 
 Use a Linux host with Docker Engine and Docker Compose v2 already working, Bash, GNU coreutils (including `realpath -m`), `awk` and at least 2 GiB free for initial data. Uploads, images and backups require additional space. The installer does not install Docker, configure DNS/TLS/firewalls or update existing instances. It uses prebuilt images, not an on-server source build.
 
-The installer uses the pinned `ghcr.io/richardspinola/openstudyhub:3.2.0` image. Check the [release notes](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) before installing. Use `--image` only to select another trusted, explicitly versioned image.
+The installer uses the pinned `ghcr.io/richardspinola/openstudyhub:3.2.1` image. Check the [release notes](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) before installing. Use `--image` only to select another trusted, explicitly versioned image.
 
 ## 1. Obtain and inspect the project
 

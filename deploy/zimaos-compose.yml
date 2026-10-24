@@ -5,7 +5,7 @@ name: openstudyhub
 
 services:
   openstudyhub-migrate:
-    image: ghcr.io/richardspinola/openstudyhub:3.2.0
+    image: ghcr.io/richardspinola/openstudyhub:3.2.1
     environment:
       NODE_ENV: production
       OPENSTUDYHUB_V2_ENABLED: "1"
@@ -21,7 +21,7 @@ services:
       - node scripts/migrate-production.mjs && node scripts/migrate-v2-production.mjs
 
   openstudyhub-app:
-    image: ghcr.io/richardspinola/openstudyhub:3.2.0
+    image: ghcr.io/richardspinola/openstudyhub:3.2.1
     environment:
       NODE_ENV: production
       OPENSTUDYHUB_V2_ENABLED: "1"
@@ -40,7 +40,7 @@ services:
         condition: service_completed_successfully
 
   openstudyhub-admin:
-    image: ghcr.io/richardspinola/openstudyhub:3.2.0
+    image: ghcr.io/richardspinola/openstudyhub:3.2.1
     environment:
       NODE_ENV: production
       OPENSTUDYHUB_V2_ENABLED: "1"
@@ -61,7 +61,7 @@ services:
         condition: service_completed_successfully
 
   openstudyhub-realtime:
-    image: ghcr.io/richardspinola/openstudyhub:3.2.0
+    image: ghcr.io/richardspinola/openstudyhub:3.2.1
     environment:
       NODE_ENV: production
       OPENSTUDYHUB_V2_ENABLED: "1"

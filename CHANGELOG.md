@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.1
+
+Full-width AI workspace and the blurred wallpaper behind it. No database changes. See [release notes](release-notes/v3.2.1.md).
+
 ## 3.2.0
 
 Phone bottom tab bar and compact header across the App; local AI with several models, per-conversation model choice, chat/group @IA models, Ollama memory controls, better @IA answers, markdown replies and @IA mention suggestions; full-screen AI workspace and Extras card; AI-assisted development disclosure. See [release notes](release-notes/v3.2.0.md).

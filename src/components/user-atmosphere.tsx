@@ -11,7 +11,8 @@ export function UserAtmosphere({ image }: { image: string | null }) {
   const lastPath = useRef(route);
   const compatible =
     /^\/(settings|today|subjects|library|extras)(?:\/|$)/.test(path) &&
-    !/^\/extras\/.+/.test(path);
+    // Extras tools stay plain, except the AI assistant, whose panels are frosted over the wallpaper.
+    !/^\/extras\/(?!ai(?:\/|$)).+/.test(path);
   useEffect(() => {
     document.documentElement.dataset.wallpaperArea =
       compatible && image ? "true" : "false";

@@ -44,7 +44,7 @@ The App, private Admin, realtime service, migrations and local proxy share persi
 - **Hosting a new instance?** Follow [installation](docs/instalacao-do-zero.md). The guided Bash installer uses existing Docker/Compose and refuses to overwrite an existing installation.
 - **Updating?** Read [backup and update](docs/backup-update.md). Do not rerun the first-install wizard or remove volumes.
 
-> **Version 3.2.0:** use the pinned `ghcr.io/richardspinola/openstudyhub:3.2.0` image. See the [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) and follow the [update guide](docs/backup-update.md) for an existing instance. The guided installer is for new instances only.
+> **Version 3.2.0:** use the pinned `ghcr.io/richardspinola/openstudyhub:3.2.1` image. See the [release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.0) and follow the [update guide](docs/backup-update.md) for an existing instance. The guided installer is for new instances only.
 
 ```sh
 # From a complete trusted checkout, after the public image is available:
