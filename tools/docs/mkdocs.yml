@@ -1,8 +1,8 @@
 site_name: OpenStudyHub
 site_description: Your self-hosted study space.
 site_url: https://richardspinola.github.io/OpenStudyHub/
-docs_dir: docs
-site_dir: site
+docs_dir: ../../docs
+site_dir: ../../site
 nav:
   - Overview: index.md
   - Start:
@@ -42,7 +42,7 @@ nav:
 theme:
   name: material
   language: en
-  custom_dir: docs/overrides
+  custom_dir: ../../docs/overrides
   font: false
   logo: assets/openstudyhub-icon.png
   favicon: assets/openstudyhub-icon.png

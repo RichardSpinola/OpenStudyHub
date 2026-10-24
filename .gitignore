@@ -66,5 +66,5 @@ backups/
 site/
 
 # New local review reports/screenshots are not release inputs.
-# Existing tracked planning history is preserved.
-/planning/v3/
+# Internal planning notes stay local.
+/planning/

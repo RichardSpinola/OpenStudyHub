@@ -13,7 +13,7 @@ def main():
   raise SystemExit('Refusing to overwrite an unmarked output directory')
  with tempfile.TemporaryDirectory(prefix='osh-docs-build-') as temp:
   temp=pathlib.Path(temp)
-  for lang,config_name,dest in [('en','mkdocs.yml',target),('pt-BR','mkdocs.pt-BR.yml',target/'pt-BR')]:
+  for lang,config_name,dest in [('en','tools/docs/mkdocs.yml',target),('pt-BR','tools/docs/mkdocs.pt-BR.yml',target/'pt-BR')]:
    source=temp/lang;source.mkdir()
    if lang=='en':
     shutil.copytree(ROOT/'docs',source,dirs_exist_ok=True,ignore=shutil.ignore_patterns('pt-BR','overrides'))

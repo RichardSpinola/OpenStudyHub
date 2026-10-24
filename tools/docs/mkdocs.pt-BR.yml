@@ -1,8 +1,8 @@
 site_name: OpenStudyHub
 site_description: Seu espaço de estudo na sua instância.
 site_url: https://richardspinola.github.io/OpenStudyHub/pt-BR/
-docs_dir: docs/pt-BR
-site_dir: site/pt-BR
+docs_dir: ../../docs/pt-BR
+site_dir: ../../site/pt-BR
 nav:
   - Visão geral: index.md
   - Começar:
@@ -42,7 +42,7 @@ nav:
 theme:
   name: material
   language: pt-BR
-  custom_dir: docs/overrides
+  custom_dir: ../../docs/overrides
   font: false
   logo: assets/openstudyhub-icon.png
   favicon: assets/openstudyhub-icon.png
