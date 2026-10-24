@@ -1,3 +1,4 @@
+import { beginMfaChallenge, mfaState } from "../security/admin-mfa";
 import { createHash, randomBytes } from "node:crypto";
 import {
   hashPassword,
@@ -210,7 +211,7 @@ async function authenticateRealm(
   realm: Realm,
   login: string,
   password: string,
-): Promise<{ token: string; id: number } | null> {
+): Promise<{ token: string; id: number; secondFactor?: true } | null> {
   const normalized = login.trim().toLowerCase();
   const loginHash = digest(normalized);
   const cutoff = Date.now() - 15 * 60_000;
@@ -239,17 +240,33 @@ async function authenticateRealm(
   if (!row || !row.active || !valid) {
     return null;
   }
-  db.prepare("DELETE FROM v2_auth_attempts WHERE realm=? AND login_hash=?").run(
-    realm,
-    loginHash,
-  );
-  const token = randomBytes(32).toString("base64url");
-  const sessionTable = realm === "admin" ? "admin_sessions" : "user_sessions";
-  const idColumn = realm === "admin" ? "admin_id" : "user_id";
-  db.prepare(
-    `INSERT INTO ${sessionTable}(${idColumn},token_hash,created_at,expires_at) VALUES(?,?,?,?)`,
-  ).run(row.id, digest(token), Date.now(), Date.now() + SESSION_LIFETIME);
-  return { token, id: row.id };
+  // Lock the factor decision and session insert together, including across processes.
+  return db
+    .transaction(() => {
+      // A password reset/deactivation during Argon2 verification must not issue a session.
+      if (
+        !db
+          .prepare(
+            `SELECT 1 FROM ${table} WHERE id=? AND active=1 AND password_hash=?`,
+          )
+          .get(row.id, row.password_hash)
+      )
+        return null;
+      db.prepare(
+        "DELETE FROM v2_auth_attempts WHERE realm=? AND login_hash=?",
+      ).run(realm, loginHash);
+      if (realm === "admin" && mfaState(db, row.id)?.enabled_at)
+        return beginMfaChallenge(db, row.id, row.password_hash);
+      const token = randomBytes(32).toString("base64url");
+      const sessionTable =
+        realm === "admin" ? "admin_sessions" : "user_sessions";
+      const idColumn = realm === "admin" ? "admin_id" : "user_id";
+      db.prepare(
+        `INSERT INTO ${sessionTable}(${idColumn},token_hash,created_at,expires_at) VALUES(?,?,?,?)`,
+      ).run(row.id, digest(token), Date.now(), Date.now() + SESSION_LIFETIME);
+      return { token, id: row.id };
+    })
+    .immediate();
 }
 
 export const authenticateAdminV2 = (

@@ -2006,3 +2006,131 @@ export const userProductTours = sqliteTable(
     check("user_product_tours_mode", sql`${table.mode} IN ('full','news')`),
   ],
 );
+
+// Local AI state is separate from human chat records and canonical Admin accounts.
+export const aiConfig = sqliteTable(
+  "ai_config",
+  {
+    id: integer("id").primaryKey(),
+    valueJson: text("value_json").notNull(),
+    credentialEncrypted: text("credential_encrypted"),
+    testedHash: text("tested_hash"),
+    revision: integer("revision").notNull().default(0),
+  },
+  (table) => [check("ai_config_singleton", sql`${table.id}=1`)],
+);
+export const aiConversations = sqliteTable("ai_conversations", {
+  id: text("id").primaryKey(),
+  ownerUserId: integer("owner_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  groupId: integer("group_id").references(() => studyGroups.id, {
+    onDelete: "cascade",
+  }),
+  roomId: integer("room_id")
+    .unique()
+    .references(() => chatRooms.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+export const aiParticipants = sqliteTable(
+  "ai_participants",
+  {
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => aiConversations.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    joinedAt: integer("joined_at").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.conversationId, table.userId] })],
+);
+export const aiMessages = sqliteTable(
+  "ai_messages",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => aiConversations.id, { onDelete: "cascade" }),
+    authorUserId: integer("author_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    role: text("role").notNull(),
+    content: text("content").notNull(),
+    status: text("status").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (table) => [
+    check("ai_message_role", sql`${table.role} IN ('user','assistant')`),
+    check(
+      "ai_message_status",
+      sql`${table.status} IN ('complete','pending','interrupted','error')`,
+    ),
+    index("ai_message_history").on(table.conversationId, table.createdAt),
+  ],
+);
+export const aiSources = sqliteTable("ai_sources", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id")
+    .notNull()
+    .references(() => aiConversations.id, { onDelete: "cascade" }),
+  messageId: text("message_id")
+    .notNull()
+    .references(() => aiMessages.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull(),
+  reference: text("reference"),
+  title: text("title").notNull(),
+  textContent: text("text_content").notNull(),
+  assetKey: text("asset_key"),
+  mime: text("mime"),
+  createdAt: integer("created_at").notNull(),
+});
+export const aiRequests = sqliteTable(
+  "ai_requests",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => aiConversations.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    humanMessageId: integer("human_message_id")
+      .unique()
+      .references(() => chatMessages.id, { onDelete: "set null" }),
+    assistantMessageId: text("assistant_message_id")
+      .notNull()
+      .references(() => aiMessages.id, { onDelete: "cascade" }),
+    status: text("status").notNull(),
+    cancelRequested: integer("cancel_requested").notNull().default(0),
+    createdAt: integer("created_at").notNull(),
+    leaseUntil: integer("lease_until"),
+    configRevision: integer("config_revision").notNull(),
+  },
+  (table) => [
+    check(
+      "ai_request_status",
+      sql`${table.status} IN ('queued','running','complete','interrupted','error')`,
+    ),
+    index("ai_request_queue").on(table.status, table.createdAt),
+  ],
+);
+export const aiRoomPermissions = sqliteTable(
+  "ai_room_permissions",
+  {
+    roomId: integer("room_id")
+      .primaryKey()
+      .references(() => chatRooms.id, { onDelete: "cascade" }),
+    enabled: integer("enabled").notNull().default(0),
+  },
+  (table) => [check("ai_room_enabled", sql`${table.enabled} IN (0,1)`)],
+);
+export const aiUploadLeases = sqliteTable("ai_upload_leases", {
+  userId: integer("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: integer("expires_at").notNull(),
+});

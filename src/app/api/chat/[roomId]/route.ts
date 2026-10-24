@@ -1,3 +1,6 @@
+import { after } from "next/server";
+import { enqueueRoomMention } from "@/lib/ai/chat";
+import { runAiRequest } from "@/lib/ai/generation";
 import { assertToolAvailable } from "@/lib/v2/exam-access";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -236,8 +239,20 @@ export async function POST(
             ).find((item) => item.id === outcome.messageId)!;
           })()
         : sendChatMessage(session.user.id, roomId, input);
+    let aiWarning: string | undefined;
+    try {
+      const ai = enqueueRoomMention(session.user.id, roomId, message.id);
+      if (ai)
+        after(async () => {
+          await runAiRequest(ai.requestId);
+        });
+    } catch {
+      aiWarning =
+        "Mensagem enviada; a IA não pôde responder agora. Confira a fila, cota ou permissão do grupo. / Message sent; AI cannot reply now. Check the queue, quota or group permission.";
+    }
     return NextResponse.json({
       message: { ...message, bodyHtml: renderChatMarkdown(message.bodySource) },
+      ...(aiWarning ? { aiWarning } : {}),
     });
   } catch {
     return NextResponse.json({ error: "invalid-message" }, { status: 400 });

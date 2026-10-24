@@ -69,6 +69,33 @@ export default function CreditsPage() {
           </a>
         </p>
       </section>
+      <section className="panel">
+        <h2>
+          <UiCopy
+            pt="Segurança e assistente de IA"
+            en="Security and AI assistant"
+          />
+        </h2>
+        <ul>
+          <li>
+            node-qrcode · <a href="/licenses/qrcode-MIT.txt">MIT</a>
+          </li>
+          <li>
+            PDF.js · Mozilla Foundation ·{" "}
+            <a href="/licenses/pdfjs-Apache-2.0.txt">Apache-2.0</a>
+          </li>
+          <li>
+            Mammoth · Michael Williamson ·{" "}
+            <a href="/licenses/mammoth-BSD-2-Clause.txt">BSD-2-Clause</a>
+          </li>
+        </ul>
+        <p>
+          <UiCopy
+            pt="Nenhum modelo de IA é distribuído com o Hub."
+            en="No AI model is distributed with the Hub."
+          />
+        </p>
+      </section>
     </main>
   );
 }

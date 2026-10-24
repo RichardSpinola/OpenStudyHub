@@ -1,6 +1,6 @@
 # Referência de classificação da importação legada
 
-Base: schema V1 atual em `src/lib/db/schema.ts`, com 68 tabelas (52 da V1 e 16 da V3). `MIGRATE` preserva registros com remapeamento de IDs; `TRANSFORM` exige conversão de modelo/colunas; `SKIP/RUNTIME` recria estado efêmero; `REVIEW` depende de política ou validação humana. Esta matriz orienta o importador V2 e não autoriza importar banco real.
+Base: schema V1 atual em `src/lib/db/schema.ts`, com 76 tabelas (52 da V1, 16 da V3.0 e 8 da IA local da V3.1). `MIGRATE` preserva registros com remapeamento de IDs; `TRANSFORM` exige conversão de modelo/colunas; `SKIP/RUNTIME` recria estado efêmero; `REVIEW` depende de política ou validação humana. Esta matriz orienta o importador V2 e não autoriza importar banco real.
 
 |   # | Tabela V1                      | Ação         | Destino/critério V2                                                                                                                                                                         |
 | --: | ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -81,6 +81,14 @@ Ordem do importador: backup consistente + verificação de restore V1; esquema V
 | 66 | `chat_reports` | REVIEW | Denúncias voluntárias, remapear autor/mensagem/sala; preservar somente o conteúdo denunciado. |
 | 67 | `personal_tasks` | TRANSFORM | Preservar tarefas privadas e conclusão, remapear proprietário e vínculo acadêmico; nunca conceder acesso por papel administrativo. |
 | 68 | `user_product_tours` | TRANSFORM | Remapear proprietário e preservar progresso por edição; validar passo e edição disponíveis no destino. |
+| 69 | `ai_config` | SKIP/RUNTIME | Configuração do provedor de IA e credencial criptografada; reconfigurar no destino. |
+| 70 | `ai_conversations` | SKIP/RUNTIME | Histórico da IA local permanece no banco principal; não é projetado nem importado. |
+| 71 | `ai_messages` | SKIP/RUNTIME | Mensagens da IA local permanecem com sua conversa; não são importadas. |
+| 72 | `ai_participants` | SKIP/RUNTIME | Registros de acesso às conversas da IA local; não são importados. |
+| 73 | `ai_requests` | SKIP/RUNTIME | Fila e reservas transitórias de geração; nunca transferir pedido ativo. |
+| 74 | `ai_room_permissions` | SKIP/RUNTIME | Autorização de @IA por sala; responsáveis pelos grupos autorizam novamente no destino. |
+| 75 | `ai_sources` | SKIP/RUNTIME | Cópias de fontes e referências de anexos da IA local; não são importadas. |
+| 76 | `ai_upload_leases` | SKIP/RUNTIME | Reservas transitórias de envio do processo em execução. |
 
 <!-- Compatibility anchors for previously published guide links. -->
 

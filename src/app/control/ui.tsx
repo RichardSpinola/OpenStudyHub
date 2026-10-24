@@ -105,9 +105,21 @@ export function ConsoleShell({
       key: "integrations",
     },
     { href: "/control/extras", label: tr("Extras", "Extras"), key: "extras" },
+    {
+      href: "/control/account/security",
+      label: tr("Minha conta · Segurança", "My account · Security"),
+      key: "security",
+    },
+    {
+      href: "/control/ai",
+      label: tr("Assistente de IA", "AI assistant"),
+      key: "ai",
+    },
     { href: "/control/system", label: tr("Sistema", "System"), key: "system" },
   ];
   const navIcons: Record<string, typeof IconDashboard> = {
+    security: IconShield,
+    ai: IconApps,
     overview: IconDashboard,
     institutions: IconBuilding,
     users: IconUsers,

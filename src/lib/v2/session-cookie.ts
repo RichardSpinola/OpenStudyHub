@@ -79,10 +79,11 @@ async function cookieOptions() {
 export async function writeV2SessionCookie(
   name: string,
   token: string,
+  maxAge = SESSION_MAX_AGE_SECONDS,
 ): Promise<void> {
   (await cookies()).set(name, token, {
     ...(await cookieOptions()),
-    maxAge: SESSION_MAX_AGE_SECONDS,
+    maxAge,
   });
 }
 

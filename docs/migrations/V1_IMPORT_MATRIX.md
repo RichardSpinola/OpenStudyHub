@@ -1,6 +1,6 @@
 # Legacy import classification reference
 
-This compatibility reference classifies all 68 main-database tables: 52 legacy tables and 16 workspace additions. It guides the canonical importer; it does not authorize importing real data.
+This compatibility reference classifies all 76 main-database tables: 52 legacy tables, 16 workspace additions and 8 local AI tables from 3.1. It guides the canonical importer; it does not authorize importing real data.
 
 `MIGRATE` retains records with ID remapping. `TRANSFORM` requires model/column conversion. `SKIP/RUNTIME` recreates temporary state. `REVIEW` requires an explicit policy or human decision. Table identifiers, category values and their order are parsed by the runtime and must remain stable.
 
@@ -74,6 +74,14 @@ This compatibility reference classifies all 68 main-database tables: 52 legacy t
 |  66 | `chat_reports`                 | REVIEW       | Voluntary reports: remap author/message/room and preserve only reported content.                                                                                                                    |
 |  67 | `personal_tasks`               | TRANSFORM    | Preserve private tasks/completion and remap owner/academic association; never grant access through an Admin role.                                                                                   |
 |  68 | `user_product_tours`           | TRANSFORM    | Remap owner and preserve tour progress by edition; validate target step/edition.                                                                                                                    |
+|  69 | `ai_config`                    | SKIP/RUNTIME | Instance AI provider settings and encrypted credential; reconfigure on the target.                                                                                                                  |
+|  70 | `ai_conversations`             | SKIP/RUNTIME | Local AI conversation history stays in the main database; it is not projected or imported.                                                                                                          |
+|  71 | `ai_messages`                  | SKIP/RUNTIME | Local AI messages stay with their conversation; not imported.                                                                                                                                       |
+|  72 | `ai_participants`              | SKIP/RUNTIME | Local AI conversation access records; not imported.                                                                                                                                                 |
+|  73 | `ai_requests`                  | SKIP/RUNTIME | Transient generation queue and leases; never transfer an active request.                                                                                                                            |
+|  74 | `ai_room_permissions`          | SKIP/RUNTIME | Per-room @IA authorization; group owners authorize again on the target.                                                                                                                             |
+|  75 | `ai_sources`                   | SKIP/RUNTIME | Local AI source snapshots and upload references; not imported.                                                                                                                                      |
+|  76 | `ai_upload_leases`             | SKIP/RUNTIME | Transient upload reservations owned by the executing process.                                                                                                                                       |
 
 ## Import order and safety
 

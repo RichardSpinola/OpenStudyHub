@@ -34,6 +34,7 @@ import {
 import { closeRuntimeV2Database } from "./runtime-database";
 import { encryptSecret } from "../google/crypto";
 import { DRIVE_SCOPE } from "./google-config";
+import { seal, unseal } from "../security/secrets";
 import { createManualBackup } from "./manual-backup";
 const root = mkdtempSync(join(tmpdir(), "osh-backup-test-")),
   key = recoveryKey();
@@ -78,6 +79,14 @@ beforeAll(async () => {
       "INSERT INTO user_product_tours(user_id,status,mode,step_id,revision,updated_at) VALUES(1,'paused','full','home',3,1)",
     )
     .run();
+  legacy.sqlite.exec(
+    "INSERT INTO ai_conversations(id,owner_user_id,title,created_at,updated_at) VALUES('ai-backup',1,'Private AI',1,1); INSERT INTO ai_messages(id,conversation_id,role,content,status,created_at) VALUES('ai-message','ai-backup','assistant','Partial AI response','pending',1); INSERT INTO ai_sources(id,conversation_id,message_id,kind,title,text_content,asset_key,created_at) VALUES('ai-source','ai-backup','ai-message','upload','study.txt','Private AI text','cccccccc-cccc-4ccc-8ccc-cccccccccccc.bin',1); INSERT INTO ai_requests(id,conversation_id,user_id,assistant_message_id,status,created_at,config_revision) VALUES('ai-request','ai-backup',1,'ai-message','running',1,0);",
+  );
+  legacy.sqlite
+    .prepare(
+      "INSERT INTO ai_config(id,value_json,credential_encrypted) VALUES(1,'{}',?)",
+    )
+    .run(seal("fake-ai-credential", "local-ai"));
   await legacy.sqlite.backup(v1);
   legacy.close();
   const canonical = openV2Database(v2);
@@ -97,7 +106,30 @@ beforeAll(async () => {
       "INSERT INTO storage_backends(kind,name,owner_user_id,state,root_ref) VALUES('google-drive','Central Drive',1,'ready','fake-root')",
     )
     .run();
+  canonical
+    .prepare(
+      "INSERT INTO admin_accounts(id,login,display_name,password_hash) VALUES(1,'admin.fake','Admin fake','hash')",
+    )
+    .run();
+  canonical
+    .prepare(
+      "INSERT INTO admin_mfa(admin_id,secret_encrypted,pending_encrypted,pending_expires_at,enabled_at) VALUES(1,?,?,9999999999999,1)",
+    )
+    .run(
+      seal("ABCDEFGHIJKLMNOP", "admin-mfa"),
+      seal("PENDINGSECRET", "admin-mfa"),
+    );
+  canonical
+    .prepare(
+      "INSERT INTO admin_mfa_challenges(token_hash,admin_id,password_hash,expires_at) VALUES('challenge',1,'hash',9999999999999)",
+    )
+    .run();
   canonical.close();
+  mkdirSync(join(assets, "ai"), { recursive: true });
+  writeFileSync(
+    join(assets, "ai", "cccccccc-cccc-4ccc-8ccc-cccccccccccc.bin"),
+    "Private AI attachment",
+  );
   mkdirSync(join(assets, "chat"), { recursive: true });
   writeFileSync(join(assets, "chat", name), "binary attachment");
   mkdirSync(join(root, "local-assets"));
@@ -247,7 +279,44 @@ it("exports both DBs, note image blobs and binary chat assets; validates and res
         .get() as { data: Buffer }
     ).data.toString(),
   ).toContain("note image");
+  expect(
+    restored
+      .prepare("SELECT content,status FROM ai_messages WHERE id='ai-message'")
+      .get(),
+  ).toEqual({ content: "Partial AI response", status: "interrupted" });
+  const ai = restored
+    .prepare("SELECT credential_encrypted FROM ai_config")
+    .get() as { credential_encrypted: string };
+  expect(unseal(ai.credential_encrypted, "local-ai")).toBe(
+    "fake-ai-credential",
+  );
+  expect(
+    readFileSync(
+      join(
+        env.PRIVATE_ASSET_PATH,
+        "ai",
+        "cccccccc-cccc-4ccc-8ccc-cccccccccccc.bin",
+      ),
+      "utf8",
+    ),
+  ).toBe("Private AI attachment");
   restored.close();
+  const recoveredCanonical = new Database(env.OPENSTUDYHUB_V2_DATABASE_PATH, {
+    readonly: true,
+  });
+  const mfa = recoveredCanonical
+    .prepare(
+      "SELECT secret_encrypted,pending_encrypted FROM admin_mfa WHERE admin_id=1",
+    )
+    .get() as { secret_encrypted: string; pending_encrypted: string | null };
+  expect(unseal(mfa.secret_encrypted, "admin-mfa")).toBe("ABCDEFGHIJKLMNOP");
+  expect(mfa.pending_encrypted).toBeNull();
+  expect(
+    recoveredCanonical
+      .prepare("SELECT count(*) n FROM admin_mfa_challenges")
+      .get(),
+  ).toEqual({ n: 0 });
+  recoveredCanonical.close();
 }, 20000);
 it("retains manual backups and only sweeps successful automatic copies; duplicate scheduled runs do not create copies", async () => {
   const manual = backupRuns().find((r) => r.kind === "manual")!;

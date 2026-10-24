@@ -58,7 +58,7 @@ function safeFiles(
             ? /^(?:(?:chat|profiles|shortcut-icons|offering-covers)\/)?[0-9a-f-]{36}\.(?:png|jpg|webp)$/.test(
                 name,
               ) ||
-              /^chat\/[0-9a-f-]{36}\.bin$/.test(name) ||
+              /^(?:chat|ai)\/[0-9a-f-]{36}\.bin$/.test(name) ||
               /^projects\/(versions|staging)\/[0-9a-f-]{36}\.zip$/.test(name)
             : /^[0-9a-f-]{36}$/.test(name);
         if (!accepted)
@@ -107,6 +107,8 @@ function assertManagedInventory(
   ])
     for (const row of rows(legacy, table, column))
       requireFile(`assets/private/${prefix}${row.ref}`);
+  for (const row of rows(legacy, "ai_sources", "asset_key"))
+    requireFile(`assets/private/ai/${row.ref}`);
   for (const table of ["user_home_wallpapers", "offering_covers"])
     for (const row of rows(canonical, table, "storage_name"))
       requireFile(`assets/private/${row.ref}`);
@@ -139,7 +141,26 @@ function removeCredentials(path: string, kind: "v1" | "v2"): void {
         db.prepare(
           "DELETE FROM app_settings WHERE lower(key) LIKE '%token%' OR lower(key) LIKE '%secret%' OR lower(key) LIKE '%password%'",
         ).run();
+        if (
+          db
+            .prepare("SELECT 1 FROM sqlite_master WHERE name='ai_requests'")
+            .get()
+        ) {
+          db.exec(
+            "UPDATE ai_messages SET status='interrupted' WHERE status='pending'; UPDATE ai_requests SET status='interrupted',cancel_requested=1,lease_until=NULL WHERE status IN ('queued','running'); DELETE FROM ai_upload_leases;",
+          );
+        }
       } else {
+        if (
+          db
+            .prepare(
+              "SELECT 1 FROM sqlite_master WHERE name='admin_mfa_challenges'",
+            )
+            .get()
+        )
+          db.exec(
+            "DELETE FROM admin_mfa_challenges; UPDATE admin_mfa SET pending_encrypted=NULL,pending_expires_at=NULL;",
+          );
         db.exec(
           "DELETE FROM admin_sessions; DELETE FROM user_sessions; DELETE FROM google_oauth_states_v2; DELETE FROM push_subscriptions; UPDATE google_connections_v2 SET encrypted_refresh_token=NULL, status='needs_reconnect';",
         );
@@ -290,7 +311,7 @@ export async function createManualBackup(
         externalFilesCopied: false,
       },
       notice:
-        "Bancos e arquivos locais geridos, incluindo imagens de notas no banco. Referências externas e arquivos do Drive NÃO são copiados. Dados privados e hashes de senha presentes. Sessões e tokens OAuth removidos; reconecte Google e push após restaurar. Ambiente e secrets devem ser configurados separadamente.",
+        "Bancos e arquivos locais geridos, incluindo imagens de notas no banco. Referências externas e arquivos do Drive NÃO são copiados. Dados privados e hashes de senha presentes. Sessões e tokens OAuth removidos; reconecte Google e push após restaurar. Histórico e anexos de IA incluídos. MFA e credenciais de IA permanecem criptografados; preserve a mesma chave da instância. Ambiente e secrets devem ser configurados separadamente.",
     };
     const zip = new yazl.ZipFile();
     for (const file of files) {

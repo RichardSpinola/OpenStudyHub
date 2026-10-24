@@ -162,6 +162,13 @@
       "when": 1792153000000,
       "tag": "0022_personal_planning_tour",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1792800000000,
+      "tag": "0023_local_ai",
+      "breakpoints": true
     }
   ]
 }

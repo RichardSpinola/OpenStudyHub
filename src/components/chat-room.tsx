@@ -1,4 +1,5 @@
 "use client";
+import { ChatAiControl, type ChatAiReply } from "@/components/chat-ai-control";
 import { DismissibleDetails } from "@/components/dismissible-details";
 import {
   chatFileLimitBytes,
@@ -9,6 +10,8 @@ import {
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
 import {
+  Fragment,
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -84,6 +87,42 @@ export function ChatRoom({
 }) {
   const tr = useUiText();
   const [messages, setMessages] = useState(initialMessages);
+  const [aiReplies, setAiReplies] = useState<ChatAiReply[]>([]);
+  const [aiState, setAiState] = useState<{
+    enabled: boolean;
+    groupEnabled: boolean;
+    permission: boolean;
+    canConfigure: boolean;
+  } | null>(null);
+  const refreshAi = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/ai/room?room=${roomId}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        setAiReplies([]);
+        setAiState(null);
+        return;
+      }
+      const data = await response.json();
+      setAiReplies(data.messages);
+      setAiState(data);
+    } catch {
+      /* Reconnect on the next visible poll. */
+    }
+  }, [roomId]);
+  useEffect(() => {
+    const initial = setTimeout(() => {
+      void refreshAi();
+    }, 0);
+    const timer = setInterval(() => {
+      if (!document.hidden) void refreshAi();
+    }, 2000);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(timer);
+    };
+  }, [refreshAi]);
   const [body, setBody] = useState("");
   const [editing, setEditing] = useState<{ id: number; body: string } | null>(
     null,
@@ -527,7 +566,9 @@ export function ChatRoom({
       const payload = (await response.json()) as {
         message: Message;
         attachmentWarning?: boolean;
+        aiWarning?: string;
       };
+      if (payload.aiWarning) setError(payload.aiWarning);
       if (payload.attachmentWarning) {
         setError(
           tr(
@@ -656,6 +697,13 @@ export function ChatRoom({
         </p>
       ) : null}
       {reportStatus ? <p role="status">{reportStatus}</p> : null}
+      <ChatAiControl
+        roomId={roomId}
+        state={aiState}
+        onChange={() => {
+          void refreshAi();
+        }}
+      />
       <div className="chat-history-tools">
         {hasOlder ? (
           <button
@@ -768,364 +816,330 @@ export function ChatRoom({
           }}
         >
           {messages.map((message) => (
-            <li
-              key={message.id}
-              data-own={message.authorUserId === currentUserId}
-            >
-              <header>
-                <DismissibleDetails className="chat-mini-profile">
-                  <summary>
-                    {roomUsers.find(({ id }) => id === message.authorUserId)
-                      ?.hasAvatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={`/api/profile-media/${message.authorUserId}/avatar`}
-                        alt=""
-                      />
-                    ) : (
-                      <span className="chat-avatar-fallback" aria-hidden="true">
-                        {message.authorName.slice(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                    {message.authorName}
-                  </summary>
-                  {(() => {
-                    const profile = roomUsers.find(
-                      ({ id }) => id === message.authorUserId,
-                    );
-                    if (!profile) return null;
-                    return (
-                      <div>
-                        {profile.programName ? (
-                          <span>
-                            {profile.programName}
-                            {profile.cohortName
-                              ? ` · ${profile.cohortName}`
-                              : ""}
-                          </span>
-                        ) : null}
-                        {profile.bio ? <p>{profile.bio}</p> : null}
-                        {profile.tags.length ? (
-                          <span>{profile.tags.join(" · ")}</span>
-                        ) : null}
-                        <a href={`/profile/${profile.id}`}>
-                          <UiCopy pt="Ver perfil" en="View profile" />
-                        </a>
-                        {profile.id !== currentUserId ? (
-                          <form action={createDirectChatAction}>
-                            <input
-                              type="hidden"
-                              name="targetUserId"
-                              value={profile.id}
-                            />
-                            <button type="submit">
-                              <UiCopy pt="Enviar mensagem" en="Send message" />
-                            </button>
-                          </form>
-                        ) : null}
-                      </div>
-                    );
-                  })()}
-                </DismissibleDetails>
-                <time
-                  dateTime={new Date(message.createdAt).toISOString()}
-                  title={new Date(message.createdAt).toLocaleString("pt-BR")}
-                >
-                  {new Date(message.createdAt).toLocaleTimeString("pt-BR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </time>
-                {message.editedAt ? (
-                  <small>
-                    <UiCopy pt="editada" en="edited" />
-                  </small>
+            <Fragment key={message.id}>
+              <li
+                key={message.id}
+                data-own={message.authorUserId === currentUserId}
+              >
+                <header>
+                  <DismissibleDetails className="chat-mini-profile">
+                    <summary>
+                      {roomUsers.find(({ id }) => id === message.authorUserId)
+                        ?.hasAvatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`/api/profile-media/${message.authorUserId}/avatar`}
+                          alt=""
+                        />
+                      ) : (
+                        <span
+                          className="chat-avatar-fallback"
+                          aria-hidden="true"
+                        >
+                          {message.authorName.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                      {message.authorName}
+                    </summary>
+                    {(() => {
+                      const profile = roomUsers.find(
+                        ({ id }) => id === message.authorUserId,
+                      );
+                      if (!profile) return null;
+                      return (
+                        <div>
+                          {profile.programName ? (
+                            <span>
+                              {profile.programName}
+                              {profile.cohortName
+                                ? ` · ${profile.cohortName}`
+                                : ""}
+                            </span>
+                          ) : null}
+                          {profile.bio ? <p>{profile.bio}</p> : null}
+                          {profile.tags.length ? (
+                            <span>{profile.tags.join(" · ")}</span>
+                          ) : null}
+                          <a href={`/profile/${profile.id}`}>
+                            <UiCopy pt="Ver perfil" en="View profile" />
+                          </a>
+                          {profile.id !== currentUserId ? (
+                            <form action={createDirectChatAction}>
+                              <input
+                                type="hidden"
+                                name="targetUserId"
+                                value={profile.id}
+                              />
+                              <button type="submit">
+                                <UiCopy
+                                  pt="Enviar mensagem"
+                                  en="Send message"
+                                />
+                              </button>
+                            </form>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
+                  </DismissibleDetails>
+                  <time
+                    dateTime={new Date(message.createdAt).toISOString()}
+                    title={new Date(message.createdAt).toLocaleString("pt-BR")}
+                  >
+                    {new Date(message.createdAt).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </time>
+                  {message.editedAt ? (
+                    <small>
+                      <UiCopy pt="editada" en="edited" />
+                    </small>
+                  ) : null}
+                </header>
+                {message.replyBody ? (
+                  <blockquote className="chat-message-quote">
+                    {message.replyAuthorUserId ? (
+                      roomUsers.find(
+                        ({ id }) => id === message.replyAuthorUserId,
+                      )?.hasAvatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`/api/profile-media/${message.replyAuthorUserId}/avatar`}
+                          alt=""
+                        />
+                      ) : (
+                        <span
+                          className="chat-avatar-fallback"
+                          aria-hidden="true"
+                        >
+                          {message.replyAuthorName?.slice(0, 1).toUpperCase() ??
+                            "?"}
+                        </span>
+                      )
+                    ) : null}
+                    {message.replyAuthorName ? (
+                      <strong>{message.replyAuthorName}</strong>
+                    ) : null}
+                    <span>{message.replyBody.slice(0, 180)}</span>
+                  </blockquote>
                 ) : null}
-              </header>
-              {message.replyBody ? (
-                <blockquote className="chat-message-quote">
-                  {message.replyAuthorUserId ? (
-                    roomUsers.find(({ id }) => id === message.replyAuthorUserId)
-                      ?.hasAvatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={`/api/profile-media/${message.replyAuthorUserId}/avatar`}
-                        alt=""
-                      />
-                    ) : (
-                      <span className="chat-avatar-fallback" aria-hidden="true">
-                        {message.replyAuthorName?.slice(0, 1).toUpperCase() ??
-                          "?"}
-                      </span>
-                    )
-                  ) : null}
-                  {message.replyAuthorName ? (
-                    <strong>{message.replyAuthorName}</strong>
-                  ) : null}
-                  <span>{message.replyBody.slice(0, 180)}</span>
-                </blockquote>
-              ) : null}
-              {message.bodyHtml ? (
-                <div
-                  className="chat-message-body"
-                  dangerouslySetInnerHTML={{ __html: message.bodyHtml }}
-                />
-              ) : null}
-              {message.attachmentIds.map((attachmentId) => {
-                const attachment = message.attachments?.find(
-                  (a) => a.id === attachmentId,
-                );
-                const isImage =
-                  !attachment ||
-                  ["image/png", "image/jpeg", "image/webp"].includes(
-                    attachment.mimeType,
+                {message.bodyHtml ? (
+                  <div
+                    className="chat-message-body"
+                    dangerouslySetInnerHTML={{ __html: message.bodyHtml }}
+                  />
+                ) : null}
+                {message.attachmentIds.map((attachmentId) => {
+                  const attachment = message.attachments?.find(
+                    (a) => a.id === attachmentId,
                   );
-                return isImage ? (
-                  <a
-                    key={attachmentId}
-                    className="chat-attachment-link"
-                    href={`/api/chat-attachment/${attachmentId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      className="chat-attachment"
-                      src={`/api/chat-attachment/${attachmentId}`}
-                      alt={
-                        attachment?.name || tr("Imagem enviada", "Sent image")
-                      }
-                      loading="lazy"
-                      onLoad={() => {
-                        if (stickToBottom.current && messageListRef.current)
-                          messageListRef.current.scrollTop =
-                            messageListRef.current.scrollHeight;
-                      }}
-                    />
-                  </a>
-                ) : (
-                  <a
-                    key={attachmentId}
-                    className="chat-file-link"
-                    href={`/api/chat-attachment/${attachmentId}`}
-                    download={attachment.name}
-                  >
-                    <IconPaperclip size={24} aria-hidden="true" />
-                    <span>
-                      <strong>{attachment.name}</strong>
-                      <small>
-                        {(attachment.sizeBytes / 1024).toFixed(1)} KB ·{" "}
-                        {tr("Baixar arquivo", "Download file")}
-                      </small>
-                    </span>
-                  </a>
-                );
-              })}
-              {editing?.id === message.id ? (
-                <form
-                  className="chat-inline-edit"
-                  onSubmit={async (event) => {
-                    event.preventDefault();
-                    if (!editing.body.trim() || editPending) return;
-                    setEditPending(true);
-                    setEditError("");
-                    try {
-                      const response = await fetch(`/api/chat/${roomId}`, {
-                        method: "PATCH",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify({
-                          messageId: editing.id,
-                          body: editing.body,
-                        }),
-                      });
-                      if (!response.ok) throw new Error();
-                      const payload = (await response.json()) as {
-                        message: Message;
-                      };
-                      setMessages((current) =>
-                        current.map((item) =>
-                          item.id === payload.message.id
-                            ? payload.message
-                            : item,
-                        ),
-                      );
-                      setEditing(null);
-                    } catch {
-                      setEditError(
-                        tr(
-                          "Não foi possível salvar. Seu texto foi mantido.",
-                          "Could not save. Your text was kept.",
-                        ),
-                      );
-                    } finally {
-                      setEditPending(false);
-                    }
-                  }}
-                >
-                  <label>
-                    {tr("Editar mensagem", "Edit message")}
-                    <textarea
-                      autoFocus
-                      value={editing.body}
-                      onChange={(event) =>
-                        setEditing({ ...editing, body: event.target.value })
-                      }
-                      maxLength={10000}
-                      required
-                    />
-                  </label>
-                  {editError ? <p role="alert">{editError}</p> : null}
-                  <button
-                    type="button"
-                    disabled={editPending}
-                    onClick={() => setEditing(null)}
-                  >
-                    {tr("Cancelar", "Cancel")}
-                  </button>
-                  <button disabled={editPending || !editing.body.trim()}>
-                    {editPending
-                      ? tr("Salvando…", "Saving…")
-                      : tr("Salvar alteração", "Save edit")}
-                  </button>
-                </form>
-              ) : null}
-              {reporting === message.id ? (
-                <form
-                  className="chat-inline-edit"
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const reason = new FormData(e.currentTarget).get("reason");
-                    try {
-                      const response = await fetch(
-                        `/api/chat/${roomId}/report`,
-                        {
-                          method: "POST",
+                  const isImage =
+                    !attachment ||
+                    ["image/png", "image/jpeg", "image/webp"].includes(
+                      attachment.mimeType,
+                    );
+                  return isImage ? (
+                    <a
+                      key={attachmentId}
+                      className="chat-attachment-link"
+                      href={`/api/chat-attachment/${attachmentId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        className="chat-attachment"
+                        src={`/api/chat-attachment/${attachmentId}`}
+                        alt={
+                          attachment?.name || tr("Imagem enviada", "Sent image")
+                        }
+                        loading="lazy"
+                        onLoad={() => {
+                          if (stickToBottom.current && messageListRef.current)
+                            messageListRef.current.scrollTop =
+                              messageListRef.current.scrollHeight;
+                        }}
+                      />
+                    </a>
+                  ) : (
+                    <a
+                      key={attachmentId}
+                      className="chat-file-link"
+                      href={`/api/chat-attachment/${attachmentId}`}
+                      download={attachment.name}
+                    >
+                      <IconPaperclip size={24} aria-hidden="true" />
+                      <span>
+                        <strong>{attachment.name}</strong>
+                        <small>
+                          {(attachment.sizeBytes / 1024).toFixed(1)} KB ·{" "}
+                          {tr("Baixar arquivo", "Download file")}
+                        </small>
+                      </span>
+                    </a>
+                  );
+                })}
+                {editing?.id === message.id ? (
+                  <form
+                    className="chat-inline-edit"
+                    onSubmit={async (event) => {
+                      event.preventDefault();
+                      if (!editing.body.trim() || editPending) return;
+                      setEditPending(true);
+                      setEditError("");
+                      try {
+                        const response = await fetch(`/api/chat/${roomId}`, {
+                          method: "PATCH",
                           headers: { "content-type": "application/json" },
                           body: JSON.stringify({
-                            messageId: message.id,
-                            reason,
+                            messageId: editing.id,
+                            body: editing.body,
                           }),
-                        },
-                      );
-                      if (!response.ok) throw new Error();
-                      setReportStatus(tr("Denúncia enviada.", "Report sent."));
-                      setReporting(null);
-                    } catch {
-                      setError(
-                        tr(
-                          "Não foi possível denunciar. Tente novamente.",
-                          "Could not report. Try again.",
-                        ),
-                      );
-                    }
-                  }}
-                >
-                  <p>
-                    {tr(
-                      "O Admin receberá o texto desta mensagem e seu motivo. As demais mensagens privadas não serão enviadas.",
-                      "The Admin receives this message text and your reason. Other private messages are not sent.",
-                    )}
-                  </p>
-                  <label>
-                    {tr("Motivo da denúncia", "Report reason")}
-                    <textarea
-                      name="reason"
-                      minLength={3}
-                      maxLength={1000}
-                      required
-                    />
-                  </label>
-                  <button>{tr("Enviar denúncia", "Send report")}</button>
-                  <button type="button" onClick={() => setReporting(null)}>
-                    {tr("Cancelar", "Cancel")}
-                  </button>
-                </form>
-              ) : null}
-              <DismissibleDetails className="chat-actions-disclosure">
-                <summary
-                  aria-label={tr("Ações da mensagem", "Message actions")}
-                >
-                  ···
-                </summary>
-                <div className="chat-message-actions">
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.currentTarget
-                        .closest("details")
-                        ?.removeAttribute("open");
-                      setReplyTo((current) =>
-                        current.some(({ id }) => id === message.id)
-                          ? current
-                          : [...current, message].slice(0, 5),
-                      );
-                      textareaRef.current?.focus();
+                        });
+                        if (!response.ok) throw new Error();
+                        const payload = (await response.json()) as {
+                          message: Message;
+                        };
+                        setMessages((current) =>
+                          current.map((item) =>
+                            item.id === payload.message.id
+                              ? payload.message
+                              : item,
+                          ),
+                        );
+                        setEditing(null);
+                      } catch {
+                        setEditError(
+                          tr(
+                            "Não foi possível salvar. Seu texto foi mantido.",
+                            "Could not save. Your text was kept.",
+                          ),
+                        );
+                      } finally {
+                        setEditPending(false);
+                      }
                     }}
                   >
-                    <UiCopy pt="Responder" en="Reply" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.currentTarget
-                        .closest("details")
-                        ?.removeAttribute("open");
-                      setReporting(message.id);
-                      setReportStatus("");
-                    }}
-                  >
-                    {tr("Denunciar mensagem", "Report message")}
-                  </button>
-                  {canModerate && message.authorUserId !== currentUserId ? (
+                    <label>
+                      {tr("Editar mensagem", "Edit message")}
+                      <textarea
+                        autoFocus
+                        value={editing.body}
+                        onChange={(event) =>
+                          setEditing({ ...editing, body: event.target.value })
+                        }
+                        maxLength={10000}
+                        required
+                      />
+                    </label>
+                    {editError ? <p role="alert">{editError}</p> : null}
                     <button
                       type="button"
-                      onClick={async () => {
-                        if (deleteConfirm !== message.id) {
-                          setDeleteConfirm(message.id);
-                          return;
-                        }
-                        try {
-                          const response = await fetch(`/api/chat/${roomId}`, {
-                            method: "DELETE",
+                      disabled={editPending}
+                      onClick={() => setEditing(null)}
+                    >
+                      {tr("Cancelar", "Cancel")}
+                    </button>
+                    <button disabled={editPending || !editing.body.trim()}>
+                      {editPending
+                        ? tr("Salvando…", "Saving…")
+                        : tr("Salvar alteração", "Save edit")}
+                    </button>
+                  </form>
+                ) : null}
+                {reporting === message.id ? (
+                  <form
+                    className="chat-inline-edit"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const reason = new FormData(e.currentTarget).get(
+                        "reason",
+                      );
+                      try {
+                        const response = await fetch(
+                          `/api/chat/${roomId}/report`,
+                          {
+                            method: "POST",
                             headers: { "content-type": "application/json" },
-                            body: JSON.stringify({ messageId: message.id }),
-                          });
-                          if (!response.ok) throw new Error();
-                          setMessages((m) =>
-                            m.filter((v) => v.id !== message.id),
-                          );
-                        } catch {
-                          setError(
-                            tr(
-                              "Não foi possível moderar.",
-                              "Could not moderate.",
-                            ),
-                          );
-                        }
+                            body: JSON.stringify({
+                              messageId: message.id,
+                              reason,
+                            }),
+                          },
+                        );
+                        if (!response.ok) throw new Error();
+                        setReportStatus(
+                          tr("Denúncia enviada.", "Report sent."),
+                        );
+                        setReporting(null);
+                      } catch {
+                        setError(
+                          tr(
+                            "Não foi possível denunciar. Tente novamente.",
+                            "Could not report. Try again.",
+                          ),
+                        );
+                      }
+                    }}
+                  >
+                    <p>
+                      {tr(
+                        "O Admin receberá o texto desta mensagem e seu motivo. As demais mensagens privadas não serão enviadas.",
+                        "The Admin receives this message text and your reason. Other private messages are not sent.",
+                      )}
+                    </p>
+                    <label>
+                      {tr("Motivo da denúncia", "Report reason")}
+                      <textarea
+                        name="reason"
+                        minLength={3}
+                        maxLength={1000}
+                        required
+                      />
+                    </label>
+                    <button>{tr("Enviar denúncia", "Send report")}</button>
+                    <button type="button" onClick={() => setReporting(null)}>
+                      {tr("Cancelar", "Cancel")}
+                    </button>
+                  </form>
+                ) : null}
+                <DismissibleDetails className="chat-actions-disclosure">
+                  <summary
+                    aria-label={tr("Ações da mensagem", "Message actions")}
+                  >
+                    ···
+                  </summary>
+                  <div className="chat-message-actions">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.currentTarget
+                          .closest("details")
+                          ?.removeAttribute("open");
+                        setReplyTo((current) =>
+                          current.some(({ id }) => id === message.id)
+                            ? current
+                            : [...current, message].slice(0, 5),
+                        );
+                        textareaRef.current?.focus();
                       }}
                     >
-                      {deleteConfirm === message.id
-                        ? tr("Confirmar remoção", "Confirm removal")
-                        : tr("Moderar: remover", "Moderate: remove")}
+                      <UiCopy pt="Responder" en="Reply" />
                     </button>
-                  ) : null}
-                  {message.authorUserId === currentUserId ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.currentTarget
-                            .closest("details")
-                            ?.removeAttribute("open");
-                          setEditing({
-                            id: message.id,
-                            body: message.bodySource,
-                          });
-                          setEditError("");
-                        }}
-                      >
-                        <UiCopy pt="Editar" en="Edit" />
-                      </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.currentTarget
+                          .closest("details")
+                          ?.removeAttribute("open");
+                        setReporting(message.id);
+                        setReportStatus("");
+                      }}
+                    >
+                      {tr("Denunciar mensagem", "Report message")}
+                    </button>
+                    {canModerate && message.authorUserId !== currentUserId ? (
                       <button
                         type="button"
                         onClick={async () => {
@@ -1133,44 +1147,121 @@ export function ChatRoom({
                             setDeleteConfirm(message.id);
                             return;
                           }
-                          const response = await fetch(`/api/chat/${roomId}`, {
-                            method: "DELETE",
-                            headers: { "content-type": "application/json" },
-                            body: JSON.stringify({ messageId: message.id }),
-                          });
-                          if (response.ok) {
-                            setMessages((current) =>
-                              current.filter(({ id }) => id !== message.id),
+                          try {
+                            const response = await fetch(
+                              `/api/chat/${roomId}`,
+                              {
+                                method: "DELETE",
+                                headers: { "content-type": "application/json" },
+                                body: JSON.stringify({ messageId: message.id }),
+                              },
                             );
-                          } else
+                            if (!response.ok) throw new Error();
+                            setMessages((m) =>
+                              m.filter((v) => v.id !== message.id),
+                            );
+                          } catch {
                             setError(
                               tr(
-                                "Não foi possível excluir a mensagem.",
-                                "Could not delete message.",
+                                "Não foi possível moderar.",
+                                "Could not moderate.",
                               ),
                             );
+                          }
                         }}
                       >
                         {deleteConfirm === message.id
-                          ? tr(
-                              "Confirmar exclusão para todos",
-                              "Confirm deletion for everyone",
-                            )
-                          : tr("Excluir para todos", "Delete for everyone")}
+                          ? tr("Confirmar remoção", "Confirm removal")
+                          : tr("Moderar: remover", "Moderate: remove")}
                       </button>
-                    </>
-                  ) : null}
-                  {deleteConfirm === message.id ? (
-                    <button
-                      type="button"
-                      onClick={() => setDeleteConfirm(null)}
-                    >
-                      {tr("Cancelar exclusão", "Cancel deletion")}
-                    </button>
-                  ) : null}
-                </div>
-              </DismissibleDetails>
-            </li>
+                    ) : null}
+                    {message.authorUserId === currentUserId ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.currentTarget
+                              .closest("details")
+                              ?.removeAttribute("open");
+                            setEditing({
+                              id: message.id,
+                              body: message.bodySource,
+                            });
+                            setEditError("");
+                          }}
+                        >
+                          <UiCopy pt="Editar" en="Edit" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (deleteConfirm !== message.id) {
+                              setDeleteConfirm(message.id);
+                              return;
+                            }
+                            const response = await fetch(
+                              `/api/chat/${roomId}`,
+                              {
+                                method: "DELETE",
+                                headers: { "content-type": "application/json" },
+                                body: JSON.stringify({ messageId: message.id }),
+                              },
+                            );
+                            if (response.ok) {
+                              setMessages((current) =>
+                                current.filter(({ id }) => id !== message.id),
+                              );
+                            } else
+                              setError(
+                                tr(
+                                  "Não foi possível excluir a mensagem.",
+                                  "Could not delete message.",
+                                ),
+                              );
+                          }}
+                        >
+                          {deleteConfirm === message.id
+                            ? tr(
+                                "Confirmar exclusão para todos",
+                                "Confirm deletion for everyone",
+                              )
+                            : tr("Excluir para todos", "Delete for everyone")}
+                        </button>
+                      </>
+                    ) : null}
+                    {deleteConfirm === message.id ? (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirm(null)}
+                      >
+                        {tr("Cancelar exclusão", "Cancel deletion")}
+                      </button>
+                    ) : null}
+                  </div>
+                </DismissibleDetails>
+              </li>
+              {aiReplies
+                .filter((reply) => reply.human_message_id === message.id)
+                .map((reply) => (
+                  <li key={reply.id} className="chat-ai-message">
+                    <strong>✦ {tr("Assistente de IA", "AI assistant")}</strong>
+                    <div>
+                      {reply.content ||
+                        tr("Preparando resposta…", "Preparing a reply…")}
+                    </div>
+                    {reply.status !== "complete" && (
+                      <small>
+                        {reply.status === "pending"
+                          ? tr("Gerando…", "Generating…")
+                          : tr(
+                              "Resposta interrompida ou indisponível",
+                              "Reply interrupted or unavailable",
+                            )}
+                      </small>
+                    )}
+                  </li>
+                ))}
+            </Fragment>
           ))}
         </ol>
         {awayFromBottom || newMessages ? (

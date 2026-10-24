@@ -1,3 +1,4 @@
+import { readAiConfig } from "@/lib/ai/config";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
 import { getExtrasFlags, extraAccessible } from "@/lib/v2/extras";
@@ -21,6 +22,24 @@ export default function ExtrasPage() {
         </p>
       </header>
       <div className="extras-cards extras-feature-grid" data-tour="extras">
+        {readAiConfig().config.enabled && (
+          <Link href="/extras/ai" className="extras-feature-card">
+            <span className="extras-card-copy">
+              <strong>
+                <UiCopy pt="Assistente de IA" en="AI assistant" />
+              </strong>
+              <span>
+                <UiCopy
+                  pt="Converse, consulte suas fontes e estude com seu grupo."
+                  en="Chat, consult your sources and study with your group."
+                />
+              </span>
+              <em>
+                <UiCopy pt="Abrir assistente →" en="Open assistant →" />
+              </em>
+            </span>
+          </Link>
+        )}
         {extraAccessible(flags, "whiteboard") ? (
           <Link
             href="/extras/whiteboard"

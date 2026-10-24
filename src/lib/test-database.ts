@@ -27,6 +27,7 @@ export const migrationFiles = [
   "0020_chat_study_tools.sql",
   "0021_chat_files.sql",
   "0022_personal_planning_tour.sql",
+  "0023_local_ai.sql",
 ] as const;
 
 export function applyMigration(

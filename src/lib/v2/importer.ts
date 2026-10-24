@@ -27,6 +27,14 @@ const optionalV3Tables = new Set([
   "project_upload_receipts",
   "personal_tasks",
   "user_product_tours",
+  "ai_config",
+  "ai_conversations",
+  "ai_messages",
+  "ai_participants",
+  "ai_requests",
+  "ai_room_permissions",
+  "ai_sources",
+  "ai_upload_leases",
 ]);
 const valid = new Set<ImportCategory>([
   "MIGRATE",
@@ -50,8 +58,8 @@ export function loadV1ImportMatrix(
       throw new Error("Invalid import matrix");
     map.set(match[1], category);
   }
-  if (map.size !== 68)
-    throw new Error("Import matrix must classify all 68 app tables");
+  if (map.size !== 76)
+    throw new Error("Import matrix must classify all 76 app tables");
   return map;
 }
 

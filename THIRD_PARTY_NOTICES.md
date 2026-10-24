@@ -15,3 +15,11 @@ The manifests and lockfile identify the remaining dependencies, including transi
 **Excalidraw 0.18.1**, MIT: [source, license and credits](https://github.com/excalidraw/excalidraw/tree/v0.18.1). Original notices for bundled fonts remain in [the font reference](docs/licenses/EXCALIDRAW-FONTS.md).
 
 [Português (Brasil): licença e créditos](docs/pt-BR/LICENSING.md).
+
+## Administrator security and optional local AI
+
+- **node-qrcode 1.5.4**, soldair and contributors, MIT: [source](https://github.com/soldair/node-qrcode), [license](public/licenses/qrcode-MIT.txt). Generates authenticator QR codes on the server.
+- **PDF.js 5.4.296**, Mozilla Foundation and contributors, Apache-2.0: [source](https://github.com/mozilla/pdf.js), [license](public/licenses/pdfjs-Apache-2.0.txt). Extracts selected PDF text in an isolated, resource-limited parser process.
+- **Mammoth 1.11.0**, Michael Williamson and contributors, BSD-2-Clause: [source](https://github.com/mwilliamson/mammoth.js), [license](public/licenses/mammoth-BSD-2-Clause.txt). Extracts DOCX text without rendering HTML.
+
+These dependencies are used without modification. AI server software and model weights are not distributed with the Hub. Instance administrators are responsible for selecting a provider/model and observing its license.

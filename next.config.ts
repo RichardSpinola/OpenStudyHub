@@ -8,13 +8,15 @@ const nextConfig: NextConfig = {
     "@blocknote/react",
     "@blocknote/server-util",
     "yjs",
+    "pdfjs-dist",
+    "mammoth",
   ],
   experimental: {
     ...(process.env.OPENSTUDYHUB_QA_BUILD === "1"
       ? { cpus: 1, webpackMemoryOptimizations: true }
       : {}),
     serverActions: { bodySizeLimit: "12mb" },
-    proxyClientMaxBodySize: "21mb",
+    proxyClientMaxBodySize: "41mb",
   },
   distDir:
     process.env.NODE_ENV === "production"

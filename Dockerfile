@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:24-bookworm-slim AS base
+FROM node:24.22.1-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable
@@ -17,7 +17,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN OPENSTUDYHUB_QA_BUILD=1 NODE_OPTIONS=--max-old-space-size=1024 pnpm build --webpack
-RUN pnpm exec esbuild scripts/realtime-server.ts scripts/backup-worker.ts scripts/restore-encrypted-backup.ts --bundle --platform=node --format=esm --packages=external --tsconfig=tsconfig.json --outdir=dist --out-extension:.js=.mjs
+RUN pnpm exec esbuild scripts/realtime-server.ts scripts/backup-worker.ts scripts/restore-encrypted-backup.ts scripts/admin-mfa-recover.ts scripts/ai-extract.ts --bundle --platform=node --format=esm --packages=external --tsconfig=tsconfig.json --outdir=dist --out-extension:.js=.mjs
 
 FROM base AS prod-deps
 RUN apt-get update \

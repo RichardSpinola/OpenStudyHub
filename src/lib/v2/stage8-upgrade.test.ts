@@ -74,10 +74,10 @@ it("upgrades synthetic populated databases from the server's 0015/0021 versions 
     ).toBe("privado");
     expect(
       app.sqlite.prepare("SELECT count(*) n FROM __drizzle_migrations").get(),
-    ).toEqual({ n: 23 });
+    ).toEqual({ n: 24 });
     expect(
       canonical.prepare("SELECT count(*) n FROM v2_migration_log").get(),
-    ).toEqual({ n: 32 });
+    ).toEqual({ n: 33 });
     for (const db of [app.sqlite, canonical]) {
       expect(db.pragma("foreign_key_check")).toEqual([]);
       expect(db.pragma("integrity_check", { simple: true })).toBe("ok");

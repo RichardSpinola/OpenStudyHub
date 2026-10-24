@@ -59,7 +59,7 @@ describe("V2 structural foundation", () => {
           n: number;
         }
       ).n,
-    ).toBe(32);
+    ).toBe(33);
     expect(db.pragma("foreign_key_check")).toEqual([]);
     expect(db.pragma("integrity_check")).toEqual([{ integrity_check: "ok" }]);
     expect(
@@ -298,7 +298,7 @@ describe("V2 structural foundation", () => {
   });
   it("classifies all V1 tables, blocks ambiguous curriculum and global Classroom mapping", () => {
     const matrix = loadV1ImportMatrix();
-    expect(matrix.size).toBe(68);
+    expect(matrix.size).toBe(76);
     expect(matrix.get("instructors")).toBe("MIGRATE");
     expect(matrix.get("subject_offerings")).toBe("TRANSFORM");
     expect(matrix.get("google_connections")).toBe("REVIEW");
@@ -333,7 +333,7 @@ describe("V2 structural foundation", () => {
         .run();
       const target = fixture();
       const preview = previewV1Import(v1.sqlite, target, matrix);
-      expect(preview.rows).toHaveLength(68);
+      expect(preview.rows).toHaveLength(76);
       const reasons = (
         target
           .prepare("SELECT reason_code FROM import_review_items WHERE run_id=?")
@@ -388,7 +388,7 @@ it("accepts the reviewed older app schema without optional V3 tables", () => {
   try {
     migrateV2(target);
     source.sqlite.exec(
-      "DROP TABLE personal_tasks;DROP TABLE user_product_tours;DROP TABLE chat_reports;DROP TABLE chat_message_changes;DROP TABLE flashcard_progress;DROP TABLE flashcard_group_shares;DROP TABLE flashcard_person_shares;DROP TABLE flashcards;DROP TABLE flashcard_decks;DROP TABLE note_image_refs;DROP TABLE note_images;DROP TABLE note_workspace_versions;DROP TABLE note_workspaces;DROP TABLE project_group_shares;DROP TABLE project_upload_claims;DROP TABLE project_upload_receipts",
+      "DROP TABLE ai_sources;DROP TABLE ai_requests;DROP TABLE ai_messages;DROP TABLE ai_participants;DROP TABLE ai_upload_leases;DROP TABLE ai_room_permissions;DROP TABLE ai_conversations;DROP TABLE ai_config;DROP TABLE personal_tasks;DROP TABLE user_product_tours;DROP TABLE chat_reports;DROP TABLE chat_message_changes;DROP TABLE flashcard_progress;DROP TABLE flashcard_group_shares;DROP TABLE flashcard_person_shares;DROP TABLE flashcards;DROP TABLE flashcard_decks;DROP TABLE note_image_refs;DROP TABLE note_images;DROP TABLE note_workspace_versions;DROP TABLE note_workspaces;DROP TABLE project_group_shares;DROP TABLE project_upload_claims;DROP TABLE project_upload_receipts",
     );
     expect(previewV1Import(source.sqlite, target).rows).toHaveLength(52);
   } finally {

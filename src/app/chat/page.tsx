@@ -1,3 +1,6 @@
+import { readAiConfig } from "@/lib/ai/config";
+import { AiWorkspace } from "@/components/ai-workspace";
+import "@/app/ai.css";
 import { canModerateRoom } from "@/lib/chat-moderation";
 import { CroppedImageInput } from "@/components/cropped-image-input";
 import { UiCopy } from "@/components/ui-language-provider";
@@ -41,6 +44,7 @@ export default async function ChatPage({
   searchParams,
 }: {
   searchParams: Promise<{
+    assistant?: string;
     room?: string;
     group?: string;
     archived?: string;
@@ -53,6 +57,7 @@ export default async function ChatPage({
   const language = getUserProfile(user.id).locale;
   const tr = (pt: string, en: string) => uiText(language, pt, en);
   const params = await searchParams;
+  if (params.assistant === "1") return <AiWorkspace />;
   const rooms = listChatRoomSummaries(user.id);
   const archivedView = params.archived === "1";
   const query = (params.q || "").trim().toLocaleLowerCase("pt-BR").slice(0, 80);
@@ -167,6 +172,11 @@ export default async function ChatPage({
     >
       <ChatContextLayout key={selected?.id ?? "empty"}>
         <aside className="chat-sidebar">
+          {readAiConfig().config.enabled && (
+            <Link className="chat-room-link" href="/chat?assistant=1">
+              ✦ {tr("Assistente de IA", "AI assistant")}
+            </Link>
+          )}
           <div className="chat-sidebar-heading">
             <h1>
               <UiCopy pt="Mensagens" en="Messages" />

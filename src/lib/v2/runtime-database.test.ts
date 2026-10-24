@@ -19,7 +19,7 @@ it("reuses a migrated canonical connection and reconnects after an offline repla
     expect(await withV2DbAsync(async (db) => db)).toBe(first);
     expect(
       first.prepare("SELECT count(*) n FROM v2_migration_log").get(),
-    ).toEqual({ n: 32 });
+    ).toEqual({ n: 33 });
     closeRuntimeV2Database();
     unlinkSync(path);
     const next = withV2Db((db) => db);

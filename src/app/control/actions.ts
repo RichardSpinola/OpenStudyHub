@@ -157,18 +157,26 @@ export async function setupAction(f: FormData): Promise<void> {
 }
 export async function loginAction(f: FormData): Promise<void> {
   let ok = false;
+  let secondFactor = false;
   try {
     const result = await withV2DbAsync((db) =>
       authenticateAdminV2(db, str(f, "login"), str(f, "password")),
     );
     if (result) {
-      await writeV2SessionCookie(ADMIN_COOKIE, result.token);
+      await writeV2SessionCookie(
+        result.secondFactor ? "osh_admin_mfa_challenge" : ADMIN_COOKIE,
+        result.token,
+        result.secondFactor ? 300 : undefined,
+      );
+      secondFactor = !!result.secondFactor;
       ok = true;
     }
   } catch {}
   redirect(
     ok
-      ? "/control"
+      ? secondFactor
+        ? "/control/login/verify"
+        : "/control"
       : messagePath(
           "/control/login",
           "error",
