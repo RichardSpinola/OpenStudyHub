@@ -1,0 +1,226 @@
+/* 3.2 phone shell. Loaded last; one threshold (780px, the chat's mobile switch)
+   for the header, bottom tab bar and page fixes in both Material and Legacy. */
+.mobile-tabbar {
+  display: none;
+}
+
+@media (max-width: 780px) {
+  /* Grid rows: header, optional Google notice, content, tab bar. */
+  html[data-design][data-nav-layout="top"] .app-frame:has(> .mobile-tabbar),
+  html[data-design][data-nav-layout="top"]
+    .app-frame:has(> .mobile-tabbar):has(.chat-page) {
+    height: 100dvh;
+    min-height: 0;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+  html[data-design][data-nav-layout="top"] .app-frame > .app-header {
+    grid-row: 1;
+  }
+  html[data-design][data-nav-layout="top"]
+    .app-frame
+    > .google-connection-notice {
+    grid-row: 2;
+  }
+  html[data-design][data-nav-layout="top"] .app-frame > .app-content {
+    grid-row: 3;
+  }
+  html[data-design][data-nav-layout="top"] .app-frame > .mobile-tabbar {
+    grid-row: 4;
+  }
+
+  /* Compact one-row header: brand left, utilities right; areas move to the tab bar. */
+  html[data-design][data-nav-layout="top"] .app-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 3.5rem;
+    padding: 0.35rem 0.75rem;
+  }
+  html[data-design][data-nav-layout="top"] .app-header .primary-nav {
+    display: none;
+  }
+  html[data-design][data-nav-layout="top"] .app-header .brand {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  html[data-design][data-nav-layout="top"] .brand-institution {
+    display: none;
+  }
+  html[data-design][data-nav-layout="top"] .app-header .shell-utilities {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: auto;
+  }
+  html[data-design][data-nav-layout="top"]
+    .app-header
+    .shell-utilities
+    :is(button, summary, a) {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  /* Bottom tab bar. */
+  html[data-design] .mobile-tabbar {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    position: relative;
+    z-index: var(--ds-layer-nav, 20);
+    padding: 0.25rem 0.25rem calc(0.25rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--gray-4, var(--gray-3));
+    background: var(--panel);
+  }
+  html[data-design] .mobile-tabbar > a,
+  html[data-design] .mobile-tabbar-more > summary {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.15rem;
+    min-height: 3.25rem;
+    padding: 0.2rem 0.1rem;
+    border-radius: var(--ds-radius, 0.55rem);
+    color: var(--gray-1);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-decoration: none;
+    text-transform: none;
+    letter-spacing: normal;
+    list-style: none;
+    cursor: pointer;
+  }
+  html[data-design] .mobile-tabbar-more > summary::-webkit-details-marker {
+    display: none;
+  }
+  html[data-design] .mobile-tabbar span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  html[data-design] .mobile-tabbar > a[aria-current="page"],
+  html[data-design] .mobile-tabbar-more > summary[data-active] {
+    color: var(--white);
+    background: color-mix(in srgb, var(--accent), transparent 80%);
+  }
+  html[data-design] .mobile-tabbar > a[aria-current="page"] svg,
+  html[data-design] .mobile-tabbar-more > summary[data-active] svg {
+    color: var(--accent);
+  }
+  html[data-design] .mobile-tabbar-more {
+    position: relative;
+  }
+  html[data-design] .mobile-tabbar-more > div {
+    position: absolute;
+    right: 0.25rem;
+    bottom: calc(100% + 0.6rem);
+    display: grid;
+    gap: 0.2rem;
+    min-width: 12rem;
+    padding: 0.4rem;
+    border: 1px solid var(--gray-3);
+    border-radius: var(--ds-radius, 0.55rem);
+    background: var(--panel);
+    box-shadow: var(--ds-elevation, 0 0.6rem 1.4rem #0006);
+  }
+  html[data-design] .mobile-tabbar-more > div a {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.9rem;
+    padding: 0 0.8rem;
+    border-radius: var(--ds-radius, 0.55rem);
+    color: var(--white);
+    text-decoration: none;
+  }
+  html[data-design] .mobile-tabbar-more > div a[aria-current="page"] {
+    background: color-mix(in srgb, var(--accent), transparent 80%);
+  }
+
+  /* Legacy (terminal) theme keeps square, monospace chrome. */
+  html[data-design="legacy"] .mobile-tabbar {
+    border-top: 1px dashed var(--gray-2);
+  }
+  html[data-design="legacy"] .mobile-tabbar > a,
+  html[data-design="legacy"] .mobile-tabbar-more > summary,
+  html[data-design="legacy"] .mobile-tabbar-more > div,
+  html[data-design="legacy"] .mobile-tabbar-more > div a {
+    border-radius: 0;
+    font-family: var(--font-mono, monospace);
+    box-shadow: none;
+  }
+  html[data-design="legacy"] .mobile-tabbar > a[aria-current="page"],
+  html[data-design="legacy"] .mobile-tabbar-more > summary[data-active] {
+    background: var(--white);
+    color: var(--black);
+  }
+  html[data-design="legacy"] .mobile-tabbar > a[aria-current="page"] svg,
+  html[data-design="legacy"] .mobile-tabbar-more > summary[data-active] svg {
+    color: var(--black);
+  }
+
+  /* Page fixes. */
+  .weekly-day-picker {
+    flex-wrap: wrap;
+  }
+  .weekly-day-picker button {
+    min-height: 2.75rem;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+  }
+  html[data-design]
+    :is(
+      .subject-detail-grid,
+      .subject-content-layout,
+      .library-workspace-layout
+    ) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html[data-design] .subject-tabs {
+    mask-image: linear-gradient(90deg, #000 85%, transparent);
+  }
+  html[data-design] .note-database {
+    overflow-x: auto;
+  }
+  html[data-design] .home-customize-trigger {
+    bottom: 1rem;
+  }
+}
+
+/* Narrow phones: six tabs at 360px need slightly smaller labels to stay whole. */
+@media (max-width: 380px) {
+  html[data-design] .mobile-tabbar > a,
+  html[data-design] .mobile-tabbar-more > summary {
+    font-size: 0.66rem;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Settings rows with a select stack the control under its label on phones. */
+@media (max-width: 580px) {
+  .settings-preference-row:has(.settings-row-control select) {
+    flex-wrap: wrap;
+  }
+  .settings-preference-row:has(.settings-row-control select)
+    .settings-row-control {
+    max-width: 100%;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .settings-preference-row:has(.settings-row-control select)
+    .settings-row-control
+    select {
+    max-width: none;
+    min-height: 2.75rem;
+  }
+}
+
+/* Same frosted glass as the header when a wallpaper is visible. */
+html:not([data-wallpaper-blur="off"])[data-wallpaper-area="true"]
+  .mobile-tabbar {
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  backdrop-filter: blur(8px);
+}

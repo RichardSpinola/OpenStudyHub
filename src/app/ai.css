@@ -294,57 +294,275 @@ html[data-design] .chat-room:has(> .chat-ai-control) {
 html[data-design] .chat-room:has(> .chat-presence):has(> .chat-ai-control) {
   grid-template-rows: auto auto auto minmax(0, 1fr) auto;
 }
+.chat-ai-message header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+.chat-ai-reply-to {
+  margin-bottom: 0.4rem;
+}
+.chat-ai-message[data-status="pending"] > div {
+  color: var(--gray-1);
+}
+.chat-ai-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .chat-ai-message {
+  list-style: none;
+  max-width: min(42rem, 92%);
+  margin: 0.2rem 0 0.6rem;
+  border: 1px solid var(--gray-3);
   border-left: 3px solid var(--accent, #bca7e9);
+  border-radius: 0.9rem;
+  border-top-left-radius: 0.25rem;
+  background: color-mix(in srgb, var(--panel), var(--accent) 6%);
   padding: 0.7rem 1rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.chat-ai-message strong {
-  display: block;
+html[data-design="legacy"] .chat-ai-message,
+html[data-design="legacy"] .chat-ai-message .ai-avatar,
+html[data-design="legacy"] .chat-ai-message .ai-model-chip {
+  border-radius: 0;
+  background: transparent;
 }
 .chat-ai-message small {
   display: block;
   color: var(--gray-1);
 }
-@media (max-width: 700px) {
+/* 3.2 refresh: calmer buttons, clearer identity for replies, sources and models. */
+.ai-workspace button,
+.ai-workspace summary,
+.ai-workspace select {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--ds-radius, 0.5rem);
+}
+.ai-workspace button:not(:disabled):hover {
+  background: color-mix(in srgb, var(--accent), var(--panel) 85%);
+  color: var(--white);
+  border-color: var(--accent);
+}
+.ai-sidebar > button {
+  min-height: 2.75rem;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent), var(--panel) 82%);
+  color: var(--white);
+}
+.ai-sidebar nav button {
+  gap: 0.25rem;
+  min-height: 3.2rem;
+  font-weight: 500;
+}
+.ai-sidebar nav button strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ai-sidebar nav button small {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+.ai-sidebar nav button.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent), var(--panel) 88%);
+}
+.ai-tag {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.68rem;
+}
+.ai-conversation-header {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ai-conversation-title {
+  flex: 1;
+  min-width: 10rem;
+}
+.ai-workspace .ai-list-toggle {
+  display: none;
+}
+.ai-model-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--gray-3);
+  border-radius: 2rem;
+  color: var(--accent);
+  max-width: 100%;
+}
+.ai-model-select select {
+  border: 0;
+  background: transparent;
+  color: var(--white);
+  min-height: 2.4rem;
+  max-width: 14rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+}
+.ai-menu summary {
+  display: grid;
+  place-items: center;
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  list-style: none;
+}
+.ai-menu summary::-webkit-details-marker {
+  display: none;
+}
+.ai-menu > div {
+  border-radius: var(--ds-radius, 0.5rem);
+  box-shadow: var(--ds-elevation, 0 0.6rem 1.4rem #0006);
+}
+.ai-message {
+  border-radius: 0.9rem;
+}
+.ai-message-user {
+  border-bottom-right-radius: 0.25rem;
+}
+.ai-message-assistant {
+  background: color-mix(in srgb, var(--panel), var(--accent) 5%);
+  border-left: 3px solid var(--accent);
+  border-bottom-left-radius: 0.25rem;
+}
+.ai-message header {
+  gap: 0.5rem;
+}
+.ai-message header time {
+  margin-left: auto;
+}
+.ai-avatar {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink, #111);
+}
+.ai-model-chip {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--gray-3);
+  border-radius: 1rem;
+}
+.ai-message .ai-source-pill {
+  display: inline-block;
+  margin: 0.6rem 0.4rem 0 0;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  font-size: 0.78rem;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 50%);
+  color: var(--accent);
+  text-decoration: none;
+}
+.ai-suggestions {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.ai-suggestions button {
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--gray-3);
+  background: var(--panel-raised);
+  color: var(--white);
+  font-weight: 500;
+}
+.ai-composer-actions button {
+  min-height: 2.6rem;
+}
+html[data-design="legacy"] .ai-workspace,
+html[data-design="legacy"] .ai-workspace button,
+html[data-design="legacy"] .ai-workspace select,
+html[data-design="legacy"] .ai-message,
+html[data-design="legacy"] .ai-model-select,
+html[data-design="legacy"] .ai-model-chip,
+html[data-design="legacy"] .ai-message .ai-source-pill,
+html[data-design="legacy"] .ai-avatar,
+html[data-design="legacy"] .ai-menu > div {
+  border-radius: 0;
+  box-shadow: none;
+}
+html[data-design="legacy"] .ai-workspace :is(button, select, .ai-model-chip) {
+  font-family: var(--font-mono, monospace);
+}
+html[data-design="legacy"] .ai-message-assistant {
+  background: transparent;
+}
+@media (max-width: 760px) {
   .ai-workspace {
+    position: relative;
     grid-template-columns: 1fr;
-    height: auto;
-    min-height: calc(100dvh - 8rem);
+    height: calc(100dvh - 9.5rem);
+    min-height: 26rem;
+    border-radius: 0;
+    border-inline: 0;
   }
   .ai-sidebar {
-    border-right: 0;
-    border-bottom: 1px solid var(--gray-3);
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.6rem;
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: min(20rem, 88%);
+    z-index: 8;
+    background: var(--panel);
+    border-right: 1px solid var(--gray-3);
+    box-shadow: 0.6rem 0 1.6rem #0007;
+    transform: translateX(-105%);
+    visibility: hidden;
+    transition:
+      transform 0.18s ease,
+      visibility 0.18s;
   }
-  .ai-sidebar nav {
-    grid-column: 1/-1;
-    flex-direction: row;
-    max-height: 6rem;
+  .ai-list-open .ai-sidebar {
+    transform: none;
+    visibility: visible;
   }
-  .ai-sidebar nav button {
-    min-width: 9rem;
-    max-width: 14rem;
-    flex-shrink: 0;
+  .ai-workspace .ai-list-toggle {
+    display: inline-flex;
+    min-height: 2.6rem;
   }
-  .ai-sidebar .ai-search {
-    grid-column: 1/-1;
+  .ai-conversation-header {
+    padding: 0.6rem 0.75rem;
+    gap: 0.5rem;
   }
-  .ai-sidebar p {
-    display: none;
+  .ai-conversation-title {
+    order: 3;
+    flex-basis: 100%;
   }
-  .ai-sidebar > a {
-    font-size: 0.8rem;
+  .ai-conversation-header h2 {
+    font-size: 1rem;
+    margin: 0;
+  }
+  .ai-model-select select {
+    max-width: 9rem;
   }
   .ai-main {
-    min-height: 32rem;
-    height: calc(100dvh - 8rem);
+    height: 100%;
+    min-height: 0;
   }
   .ai-message {
     max-width: 100%;
+  }
+  .ai-composer {
+    position: sticky;
+    bottom: 0;
   }
   .ai-action-panel {
     inset: 4rem 0.5rem auto;
@@ -364,4 +582,109 @@ html[data-design] .chat-room:has(> .chat-presence):has(> .chat-ai-control) {
       transform: none;
     }
   }
+}
+
+.ai-markdown {
+  white-space: normal;
+}
+.ai-markdown > :first-child {
+  margin-top: 0;
+}
+.ai-markdown > :last-child {
+  margin-bottom: 0;
+}
+.ai-markdown p,
+.ai-markdown ul,
+.ai-markdown ol {
+  margin: 0 0 0.6rem;
+}
+.ai-markdown :is(ul, ol) {
+  padding-left: 1.3rem;
+}
+/* List items inside a message body are text, not message bubbles. */
+html[data-design] .chat-message-list :is(.chat-message-body, .ai-markdown) li {
+  display: list-item;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  margin: 0.15rem 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.ai-markdown pre {
+  overflow-x: auto;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.4rem;
+  background: var(--black);
+}
+
+.chat-ai-control small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.chat-ai-hint-close {
+  display: inline-grid;
+  place-items: center;
+  min-height: 0;
+  padding: 0.15rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.chat-mention-ai {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent);
+}
+.chat-mention-ai small {
+  color: var(--gray-1);
+  font-size: 0.75em;
+}
+
+/* The assistant fills the whole content area, like Chat; long replies stay in a readable column. */
+html[data-design] .app-content:has(> .extras-shell > .ai-workspace) {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+html[data-design] .extras-shell:has(> .ai-workspace) {
+  height: 100%;
+  padding: 0;
+}
+html[data-design] .ai-workspace {
+  grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
+html[data-design] :is(.ai-messages, .ai-composer) {
+  padding-inline: max(1rem, calc((100% - 54rem) / 2));
+}
+@media (max-width: 760px) {
+  html[data-design] .ai-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* With a wallpaper behind the App, the assistant's panels use the same frosted glass as the header. */
+html:not([data-wallpaper-blur="off"])[data-wallpaper-area="true"]
+  .ai-workspace {
+  background: transparent;
+}
+html:not([data-wallpaper-blur="off"])[data-wallpaper-area="true"]
+  :is(
+    .ai-sidebar,
+    .ai-conversation-header,
+    .ai-composer,
+    .ai-message-assistant,
+    .chat-ai-message
+  ) {
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  backdrop-filter: blur(8px);
 }

@@ -25,4 +25,13 @@ describe("chat markdown", () => {
       "<blockquote><p>primeira</p><p>segunda</p></blockquote><p>resposta</p>",
     );
   });
+
+  it("mantém a numeração de listas separadas por linhas em branco", () => {
+    expect(renderChatMarkdown("1. um\n\n2. dois\n\nfim")).toBe(
+      "<ol><li>um</li><li>dois</li></ol><p>fim</p>",
+    );
+    expect(renderChatMarkdown("3. três")).toBe(
+      '<ol start="3"><li>três</li></ol>',
+    );
+  });
 });

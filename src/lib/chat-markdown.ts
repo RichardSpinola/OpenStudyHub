@@ -34,8 +34,8 @@ function inline(source: string): string {
     );
 }
 
-export function renderChatMarkdown(source: string): string {
-  const value = source.trim().slice(0, 10_000);
+export function renderChatMarkdown(source: string, limit = 10_000): string {
+  const value = source.trim().slice(0, limit);
   const blocks: string[] = [];
   const withoutCodeBlocks = value.replaceAll(
     /```(?:[^\n]*)\n([\s\S]*?)```/gu,
@@ -58,6 +58,8 @@ export function renderChatMarkdown(source: string): string {
     listKind = null;
   };
   for (const line of lines) {
+    // Blank lines between items ("1. a\n\n2. b") keep the list open.
+    if (!line.trim() && listKind) continue;
     if (line.startsWith("> ")) {
       closeList();
       if (!quoting) rendered.push("<blockquote>");
@@ -66,16 +68,28 @@ export function renderChatMarkdown(source: string): string {
       continue;
     }
     closeQuote();
-    const unordered = /^[-*] (.+)$/u.exec(line);
-    const ordered = /^\d+[.] (.+)$/u.exec(line);
+    // Models often emit "*   item" and "### Heading"; accept the common spacing.
+    const unordered = /^[-*]\s+(.+)$/u.exec(line);
+    const ordered = /^(\d+)[.]\s+(.+)$/u.exec(line);
+    const heading = /^#{1,4}\s+(.+)$/u.exec(line);
+    if (heading) {
+      closeList();
+      rendered.push(`<p><strong>${inline(heading[1])}</strong></p>`);
+      continue;
+    }
     if (unordered || ordered) {
       const kind = unordered ? "ul" : "ol";
       if (listKind !== kind) {
         closeList();
         listKind = kind;
-        rendered.push(`<${kind}>`);
+        const start = ordered ? Number(ordered[1]) : 1;
+        rendered.push(
+          start > 1 && start < 10000 ? `<ol start="${start}">` : `<${kind}>`,
+        );
       }
-      rendered.push(`<li>${inline((unordered ?? ordered)![1])}</li>`);
+      rendered.push(
+        `<li>${inline(unordered ? unordered[1] : ordered![2])}</li>`,
+      );
       continue;
     }
     closeList();

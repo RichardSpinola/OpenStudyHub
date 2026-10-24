@@ -14,6 +14,7 @@ import {
   IconMessages,
   IconMenu2,
   IconApps,
+  IconDots,
 } from "@tabler/icons-react";
 
 const navigationItems = [
@@ -25,22 +26,10 @@ const navigationItems = [
   { href: "/chat", labelKey: "chat", icon: IconMessages },
 ] as const;
 
-export function PrimaryNavigation({
-  authenticated,
-  extrasEnabled,
-  examMode = false,
-}: {
-  authenticated: boolean;
-  projectsEnabled: boolean;
-  extrasEnabled: boolean;
-  examMode?: boolean;
-}) {
+function useNavigationLinks(extrasEnabled: boolean, examMode: boolean) {
   const pathname = usePathname();
   const tr = useUiText();
   const { navigation } = useUiTranslations();
-
-  if (!authenticated) return null;
-
   const links = [
     ...navigationItems
       .filter(
@@ -58,16 +47,35 @@ export function PrimaryNavigation({
       ? [{ href: "/extras", label: "Extras", icon: IconApps }]
       : []),
   ];
+  const isActive = (href: string) =>
+    href === "/"
+      ? pathname === "/"
+      : href === "/library"
+        ? ["/library", "/documents", "/projects"].some((prefix) =>
+            pathname.startsWith(prefix),
+          )
+        : pathname.startsWith(href);
+  return { links, isActive, label: navigation.label, tr };
+}
+
+export function PrimaryNavigation({
+  authenticated,
+  extrasEnabled,
+  examMode = false,
+}: {
+  authenticated: boolean;
+  projectsEnabled: boolean;
+  extrasEnabled: boolean;
+  examMode?: boolean;
+}) {
+  const { links, isActive, label } = useNavigationLinks(
+    extrasEnabled,
+    examMode,
+  );
+  if (!authenticated) return null;
   const renderLinks = () =>
     links.map((item) => {
-      const active =
-        item.href === "/"
-          ? pathname === "/"
-          : item.href === "/library"
-            ? ["/library", "/documents", "/projects"].some((prefix) =>
-                pathname.startsWith(prefix),
-              )
-            : pathname.startsWith(item.href);
+      const active = isActive(item.href);
       return (
         <li key={item.href}>
           <Link
@@ -84,7 +92,7 @@ export function PrimaryNavigation({
     });
 
   return (
-    <nav className="primary-nav" aria-label={navigation.label}>
+    <nav className="primary-nav" aria-label={label}>
       <ul className="desktop-nav-links">{renderLinks()}</ul>
       <DismissibleDetails className="mobile-nav">
         <summary>
@@ -95,6 +103,60 @@ export function PrimaryNavigation({
         </summary>
         <ul>{renderLinks()}</ul>
       </DismissibleDetails>
+    </nav>
+  );
+}
+
+/** Phone navigation: the main areas stay one tap away at the bottom of the screen. */
+export function MobileTabBar({
+  extrasEnabled,
+  examMode = false,
+}: {
+  extrasEnabled: boolean;
+  examMode?: boolean;
+}) {
+  const { links, isActive, label, tr } = useNavigationLinks(
+    extrasEnabled,
+    examMode,
+  );
+  const primary = links.filter((item) =>
+    ["/", "/today", "/subjects", "/notes", "/chat"].includes(item.href),
+  );
+  const more = links.filter((item) => !primary.includes(item));
+  return (
+    <nav className="mobile-tabbar" aria-label={label}>
+      {primary.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          aria-current={isActive(item.href) ? "page" : undefined}
+        >
+          <item.icon size={22} stroke={1.8} aria-hidden="true" />
+          <span>{item.label}</span>
+        </Link>
+      ))}
+      {more.length > 0 && (
+        <DismissibleDetails className="mobile-tabbar-more">
+          <summary
+            data-active={more.some((item) => isActive(item.href)) || undefined}
+          >
+            <IconDots size={22} stroke={1.8} aria-hidden="true" />
+            <span>{tr("Mais", "More")}</span>
+          </summary>
+          <div>
+            {more.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive(item.href) ? "page" : undefined}
+              >
+                <item.icon size={20} stroke={1.8} aria-hidden="true" />
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </DismissibleDetails>
+      )}
     </nav>
   );
 }

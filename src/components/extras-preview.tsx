@@ -1,5 +1,6 @@
 import { UiCopy } from "@/components/ui-language-provider";
 type Preview =
+  | "ai"
   | "memory"
   | "sudoku"
   | "connect4"
@@ -32,6 +33,18 @@ export function ExtrasPreview({ kind }: { kind: Preview }) {
           ).map((value, index) => (
             <i key={index}>{value}</i>
           ))}
+        </span>
+      ) : kind === "ai" ? (
+        <span className="preview-ai">
+          <i className="preview-ai-question">
+            <UiCopy pt="O que é mitose?" en="What is mitosis?" />
+          </i>
+          <i className="preview-ai-answer">
+            <b />
+            <b />
+            <b />
+            <small>[S1]</small>
+          </i>
         </span>
       ) : kind === "focus" ? (
         <span className="preview-focus">25:00</span>

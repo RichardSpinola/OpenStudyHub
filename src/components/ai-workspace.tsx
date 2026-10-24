@@ -11,8 +11,12 @@ import {
   IconFileText,
   IconRobot,
   IconX,
+  IconDots,
+  IconLayoutSidebarLeftExpand,
+  IconSparkles,
 } from "@tabler/icons-react";
 import { useUiText } from "@/components/ui-language-provider";
+import { renderChatMarkdown } from "@/lib/chat-markdown";
 import type { AiConversation, AiMessage } from "@/lib/ai/conversations";
 import type { SourceChoice } from "@/lib/ai/sources";
 type Source = {
@@ -31,11 +35,17 @@ export function AiWorkspace() {
     [sources, setSources] = useState<Source[]>([]),
     [groups, setGroups] = useState<{ id: number; name: string }[]>([]),
     [group, setGroup] = useState(""),
-    [enabled, setEnabled] = useState(false),
+    // null until the first load, so the disabled notice does not flash.
+    [enabled, setEnabled] = useState<boolean | null>(null),
     [allowGroups, setAllowGroups] = useState(false),
     [allowFiles, setAllowFiles] = useState(false),
     [allowSources, setAllowSources] = useState(false),
     [vision, setVision] = useState(false),
+    [models, setModels] = useState<string[]>([]),
+    [defaultModel, setDefaultModel] = useState(""),
+    [visionModels, setVisionModels] = useState<string[]>([]),
+    [nextModel, setNextModel] = useState(""),
+    [listOpen, setListOpen] = useState(false),
     [query, setQuery] = useState(""),
     [draft, setDraft] = useState(""),
     [files, setFiles] = useState<File[]>([]),
@@ -55,6 +65,7 @@ export function AiWorkspace() {
     stick = useRef(true);
   function openConversation(next: string | null) {
     selectedId.current = next;
+    setListOpen(false);
     setPanel(null);
     setConfirmed(false);
     setError("");
@@ -93,6 +104,9 @@ export function AiWorkspace() {
       setAllowFiles(data.attachments);
       setAllowSources(data.sources);
       setVision(data.vision);
+      setModels(data.models ?? []);
+      setDefaultModel(data.defaultModel ?? "");
+      setVisionModels(data.visionModels ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     }
@@ -164,6 +178,13 @@ export function AiWorkspace() {
     if (stick.current && listRef.current)
       listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages]);
+  const currentModel =
+    conversation?.model && models.includes(conversation.model)
+      ? conversation.model
+      : id
+        ? defaultModel
+        : nextModel || defaultModel;
+  const imagesAllowed = vision && visionModels.includes(currentModel);
   async function create() {
     setBusy(true);
     try {
@@ -174,6 +195,18 @@ export function AiWorkspace() {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
       setBusy(false);
+    }
+  }
+  async function chooseModel(model: string) {
+    if (!id) {
+      setNextModel(model);
+      return;
+    }
+    try {
+      const data = await api("conversations", { action: "model", id, model });
+      setConversation(data.conversation);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
     }
   }
   function addFiles(next: File[]) {
@@ -189,11 +222,14 @@ export function AiWorkspace() {
       );
       return;
     }
-    if (!vision && next.some((f) => /\.(png|jpe?g|webp)$/i.test(f.name))) {
+    if (
+      !imagesAllowed &&
+      next.some((f) => /\.(png|jpe?g|webp)$/i.test(f.name))
+    ) {
       setError(
         t(
-          "O modelo configurado não aceita imagens.",
-          "The configured model does not support images.",
+          "O modelo escolhido não aceita imagens.",
+          "The selected model does not support images.",
         ),
       );
       return;
@@ -201,13 +237,26 @@ export function AiWorkspace() {
     setFiles((current) => [...current, ...next]);
   }
   async function send() {
-    if (!id || !draft.trim() || busy || active) return;
+    if (!draft.trim() || busy || active) return;
     setBusy(true);
     setError("");
     setNotice("");
     try {
+      // The first question creates the conversation, with the model picked beforehand.
+      let current = id;
+      if (!current) {
+        const created = await api("conversations", { action: "create" });
+        current = created.conversation.id as string;
+        if (nextModel && nextModel !== defaultModel)
+          await api("conversations", {
+            action: "model",
+            id: current,
+            model: nextModel,
+          });
+        openConversation(current);
+      }
       const form = new FormData();
-      form.set("conversation", id);
+      form.set("conversation", current);
       form.set("content", draft);
       form.set(
         "sources",
@@ -230,8 +279,9 @@ export function AiWorkspace() {
       setSelected([]);
       setSourcePicker(false);
       stick.current = true;
-      await load(id);
+      await load(current);
       setActive(result.requestId);
+      void refresh();
       if (result.truncated)
         setNotice(
           t(
@@ -274,7 +324,7 @@ export function AiWorkspace() {
   }
   return (
     <section
-      className="ai-workspace"
+      className={`ai-workspace${listOpen ? " ai-list-open" : ""}`}
       aria-label={t("Assistente de IA", "AI assistant")}
     >
       <aside className="ai-sidebar">
@@ -305,7 +355,15 @@ export function AiWorkspace() {
             >
               <strong>{c.title}</strong>
               <small>
-                {c.group_id ? t("Grupo", "Group") : t("Privada", "Private")}
+                <span className="ai-tag">
+                  {c.group_id ? t("Grupo", "Group") : t("Privada", "Private")}
+                </span>
+                <time dateTime={new Date(c.updated_at).toISOString()}>
+                  {new Date(c.updated_at).toLocaleDateString(undefined, {
+                    day: "2-digit",
+                    month: "short",
+                  })}
+                </time>
               </small>
             </button>
           ))}
@@ -320,7 +378,16 @@ export function AiWorkspace() {
       </aside>
       <div className="ai-main">
         <header className="ai-conversation-header">
-          <div>
+          <button
+            type="button"
+            className="ai-list-toggle"
+            aria-expanded={listOpen}
+            onClick={() => setListOpen(!listOpen)}
+          >
+            <IconLayoutSidebarLeftExpand size={18} />
+            <span>{t("Conversas", "Conversations")}</span>
+          </button>
+          <div className="ai-conversation-title">
             <h2>
               {conversation?.title ??
                 t("Seu espaço de estudo com IA", "Your AI study space")}
@@ -331,12 +398,29 @@ export function AiWorkspace() {
                 : t("Conversa privada", "Private conversation")}
             </small>
           </div>
+          {models.length > 0 && (
+            <label className="ai-model-select">
+              <span className="sr-only">{t("Modelo", "Model")}</span>
+              <IconSparkles size={16} aria-hidden="true" />
+              <select
+                value={currentModel}
+                disabled={!enabled || !!active || models.length < 2}
+                onChange={(e) => void chooseModel(e.target.value)}
+              >
+                {models.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {id && (
             <DismissibleDetails className="ai-menu">
               <summary
                 aria-label={t("Opções da conversa", "Conversation options")}
               >
-                •••
+                <IconDots size={18} />
               </summary>
               <div>
                 <button onClick={() => setPanel("rename")}>
@@ -354,7 +438,7 @@ export function AiWorkspace() {
             </DismissibleDetails>
           )}
         </header>
-        {!enabled && (
+        {enabled === false && (
           <p className="ai-notice" role="status">
             {t(
               "O assistente está desativado. O administrador pode conectar um servidor de IA; seu histórico permanece salvo.",
@@ -486,20 +570,54 @@ export function AiWorkspace() {
               </h3>
               <p>
                 {t(
-                  "Crie uma conversa e selecione apenas as fontes que deseja usar. O assistente não altera seus conteúdos.",
-                  "Create a conversation and select only the sources you want to use. The assistant cannot change your content.",
+                  "Escreva abaixo ou comece por uma sugestão. Selecione apenas as fontes que deseja usar; o assistente não altera seus conteúdos.",
+                  "Type below or start from a suggestion. Select only the sources you want to use; the assistant cannot change your content.",
                 )}
               </p>
+              {enabled && (
+                <div className="ai-suggestions">
+                  {[
+                    t(
+                      "Explique este conteúdo como se fosse a primeira vez",
+                      "Explain this topic as if it were the first time",
+                    ),
+                    t(
+                      "Crie 5 perguntas de revisão sobre o tema",
+                      "Write 5 review questions about the topic",
+                    ),
+                    t(
+                      "Monte um plano de estudo para esta semana",
+                      "Build a study plan for this week",
+                    ),
+                  ].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => setDraft(suggestion)}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {messages.map((m) => (
             <article key={m.id} className={`ai-message ai-message-${m.role}`}>
               <header>
+                {m.role === "assistant" && (
+                  <span className="ai-avatar" aria-hidden="true">
+                    <IconRobot size={16} />
+                  </span>
+                )}
                 <strong>
                   {m.role === "assistant"
                     ? t("Assistente de IA", "AI assistant")
                     : (m.author_name ?? t("Pessoa removida", "Removed person"))}
                 </strong>
+                {m.role === "assistant" && m.model && (
+                  <span className="ai-model-chip">{m.model}</span>
+                )}
                 <time dateTime={new Date(m.created_at).toISOString()}>
                   {new Date(m.created_at).toLocaleTimeString(undefined, {
                     hour: "2-digit",
@@ -507,15 +625,24 @@ export function AiWorkspace() {
                   })}
                 </time>
               </header>
-              <div className="ai-message-text">
-                {m.content ||
-                  (m.status === "pending"
-                    ? t(
-                        "Na fila ou preparando resposta…",
-                        "Queued or preparing a reply…",
-                      )
-                    : t("Sem resposta.", "No response."))}
-              </div>
+              {m.role === "assistant" && m.content ? (
+                <div
+                  className="ai-message-text ai-markdown"
+                  dangerouslySetInnerHTML={{
+                    __html: renderChatMarkdown(m.content, 100_000),
+                  }}
+                />
+              ) : (
+                <div className="ai-message-text">
+                  {m.content ||
+                    (m.status === "pending"
+                      ? t(
+                          "Na fila ou preparando resposta…",
+                          "Queued or preparing a reply…",
+                        )
+                      : t("Sem resposta.", "No response."))}
+                </div>
+              )}
               {["interrupted", "error"].includes(m.status) && (
                 <p className="ai-response-status">
                   {m.status === "interrupted"
@@ -533,12 +660,16 @@ export function AiWorkspace() {
                 .filter((s) => s.messageId === m.id)
                 .map((s) =>
                   s.attachment ? (
-                    <a key={s.id} href={`/api/ai/attachment?id=${s.id}`}>
-                      {s.title} ↓
+                    <a
+                      key={s.id}
+                      className="ai-source-pill"
+                      href={`/api/ai/attachment?id=${s.id}`}
+                    >
+                      [{s.label}] {s.title} ↓
                     </a>
                   ) : (
-                    <small key={s.id}>
-                      [{s.label}] {t("Fonte:", "Source:")} {s.title}
+                    <small key={s.id} className="ai-source-pill">
+                      [{s.label}] {s.title}
                     </small>
                   ),
                 )}
@@ -555,7 +686,7 @@ export function AiWorkspace() {
             {notice}
           </p>
         )}
-        {id && (
+        {
           <form
             className="ai-composer"
             onSubmit={(e) => {
@@ -656,7 +787,7 @@ export function AiWorkspace() {
                       ref={fileRef}
                       type="file"
                       multiple
-                      accept={`.pdf,.docx,.txt,.md,.markdown${vision ? ",.png,.jpg,.jpeg,.webp" : ""}`}
+                      accept={`.pdf,.docx,.txt,.md,.markdown${imagesAllowed ? ",.png,.jpg,.jpeg,.webp" : ""}`}
                       onChange={(e) => {
                         addFiles(Array.from(e.target.files ?? []));
                         e.target.value = "";
@@ -723,7 +854,7 @@ export function AiWorkspace() {
               )}
             </small>
           </form>
-        )}
+        }
       </div>
     </section>
   );

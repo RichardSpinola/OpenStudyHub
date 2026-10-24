@@ -9,6 +9,7 @@ import {
   renameConversation,
   deleteConversation,
   shareConversation,
+  setConversationModel,
 } from "@/lib/ai/conversations";
 import { repairExpired } from "@/lib/ai/generation";
 import { readAiConfig } from "@/lib/ai/config";
@@ -61,6 +62,9 @@ export async function GET(request: Request) {
         attachments: config.attachments,
         sources: config.sources,
         vision: config.vision,
+        models: config.models,
+        defaultModel: config.defaultModel,
+        visionModels: config.vision ? config.visionModels : [],
       },
       { headers: aiHeaders },
     );
@@ -85,6 +89,17 @@ export async function POST(request: Request) {
       throw new Error();
     if (input.action === "rename" && typeof input.title === "string")
       renameConversation(user.id, input.id, input.title);
+    else if (input.action === "model" && typeof input.model === "string")
+      return Response.json(
+        {
+          conversation: setConversationModel(
+            user.id,
+            input.id,
+            input.model.slice(0, 200),
+          ),
+        },
+        { headers: aiHeaders },
+      );
     else if (input.action === "delete")
       await deleteConversation(user.id, input.id);
     else if (input.action === "share" && Number.isSafeInteger(input.groupId))

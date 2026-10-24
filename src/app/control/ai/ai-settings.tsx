@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { AiConfig } from "@/lib/ai/config";
+import type { LoadedModel } from "@/lib/ai/provider";
 export function AiSettings({
   initial,
   english,
@@ -20,10 +21,12 @@ export function AiSettings({
     [tested, setTested] = useState(initialTested),
     [models, setModels] = useState<string[]>([]),
     [busy, setBusy] = useState(false),
+    [loaded, setLoaded] = useState<LoadedModel[] | null>(null),
+    [memoryBusy, setMemoryBusy] = useState(""),
     [feedback, setFeedback] = useState("");
   function update<K extends keyof AiConfig>(key: K, value: AiConfig[K]) {
     setConfig((c) => ({ ...c, [key]: value }));
-    if (["provider", "endpoint", "model", "vision"].includes(key))
+    if (["provider", "endpoint", "models", "vision"].includes(key))
       setTested(false);
   }
   async function save(action: string) {
@@ -50,8 +53,8 @@ export function AiSettings({
       setFeedback(
         action === "test"
           ? t(
-              "Conexão confirmada. Escolha um modelo e teste novamente se necessário; depois ative e salve. Durante o teste, a IA fica desativada.",
-              "Connection confirmed. Choose a model and test again if needed, then enable and save. AI stays disabled during testing.",
+              "Conexão confirmada. Marque os modelos liberados e teste novamente se necessário; depois ative e salve. Durante o teste, a IA fica desativada.",
+              "Connection confirmed. Tick the allowed models and test again if needed, then enable and save. AI stays disabled during testing.",
             )
           : t("Configuração salva.", "Settings saved."),
       );
@@ -65,6 +68,64 @@ export function AiSettings({
       setBusy(false);
     }
   }
+  const memory = useCallback(
+    async (action: "loaded" | "load" | "unload", model?: string) => {
+      setMemoryBusy(model ?? action);
+      try {
+        const response = await fetch("/control/ai/manage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, model, config: initial }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        setLoaded(data.loaded);
+      } catch (error) {
+        setLoaded(null);
+        if (action !== "loaded")
+          setFeedback(
+            error instanceof Error ? error.message : "Unable to connect.",
+          );
+      } finally {
+        setMemoryBusy("");
+      }
+    },
+    [initial],
+  );
+  useEffect(() => {
+    if (initial.provider !== "ollama" || !initial.models.length) return;
+    const timer = setTimeout(() => void memory("loaded"), 0);
+    return () => clearTimeout(timer);
+  }, [initial, memory]);
+  // Detected models plus the ones already allowed, so a saved choice stays visible.
+  const detected = [...new Set([...models, ...config.models])];
+  const toggleModel = (model: string, on: boolean) =>
+    update(
+      "models",
+      on
+        ? [...config.models, model].slice(0, 8)
+        : config.models.filter((m) => m !== model),
+    );
+  const modelSelect = (
+    key: "defaultModel" | "chatGlobalModel" | "chatGroupModel",
+    pt: string,
+    en: string,
+  ) => (
+    <label>
+      {t(pt, en)}
+      <select
+        value={config[key]}
+        disabled={!config.models.length}
+        onChange={(e) => update(key, e.target.value)}
+      >
+        {config.models.map((model) => (
+          <option key={model} value={model}>
+            {model}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
   const toggle = (
     key: "enabled" | "groups" | "global" | "sources" | "attachments" | "vision",
     pt: string,
@@ -129,7 +190,10 @@ export function AiSettings({
         </p>
         <p role="status">
           {tested
-            ? t("Conexão e modelo verificados", "Connection and model verified")
+            ? t(
+                "Conexão e modelos verificados",
+                "Connection and models verified",
+              )
             : t(
                 "Teste a conexão e o modelo antes de ativar",
                 "Test the connection and model before enabling",
@@ -196,27 +260,10 @@ export function AiSettings({
               {t("Remover credencial salva", "Remove saved credential")}
             </label>
           )}
-          <label>
-            {t(
-              "Modelo (nenhum selecionado automaticamente)",
-              "Model (never selected automatically)",
-            )}
-            <input
-              list="ai-models"
-              value={config.model}
-              maxLength={200}
-              onChange={(e) => update("model", e.target.value)}
-            />
-            <datalist id="ai-models">
-              {models.map((model) => (
-                <option key={model} value={model} />
-              ))}
-            </datalist>
-          </label>
           {toggle(
             "vision",
-            "O modelo aceita imagens (confirme na documentação do provedor)",
-            "The model accepts images (confirm in the provider documentation)",
+            "Permitir imagens nos modelos que aceitam (confirme na documentação do provedor)",
+            "Allow images on models that accept them (confirm in the provider documentation)",
           )}
         </div>
         <p>
@@ -232,6 +279,125 @@ export function AiSettings({
           )}
         </button>
       </section>
+      <section>
+        <h2>{t("Modelos", "Models")}</h2>
+        <p>
+          {t(
+            "Os modelos aparecem depois do teste de conexão. Marque até oito que as pessoas podem escolher e teste novamente; nada é baixado ou instalado.",
+            "Models appear after the connection test. Tick up to eight that people may choose, then test again; nothing is downloaded or installed.",
+          )}
+        </p>
+        {detected.length ? (
+          <fieldset className="ai-model-list">
+            <legend>{t("Modelos liberados", "Allowed models")}</legend>
+            {detected.map((model) => (
+              <label key={model} className="ai-setting-toggle">
+                <input
+                  type="checkbox"
+                  checked={config.models.includes(model)}
+                  onChange={(e) => toggleModel(model, e.target.checked)}
+                />
+                <span>{model}</span>
+                {config.visionModels.includes(model) && (
+                  <small>{t("aceita imagens", "accepts images")}</small>
+                )}
+              </label>
+            ))}
+          </fieldset>
+        ) : (
+          <p role="status">
+            {t("Nenhum modelo detectado ainda.", "No models detected yet.")}
+          </p>
+        )}
+        <div className="v2-fields">
+          {modelSelect(
+            "defaultModel",
+            "Modelo padrão do assistente",
+            "Default assistant model",
+          )}
+          {modelSelect(
+            "chatGlobalModel",
+            "Modelo do @IA no chat global",
+            "Model for @IA in global chat",
+          )}
+          {modelSelect(
+            "chatGroupModel",
+            "Modelo do @IA nos grupos",
+            "Model for @IA in groups",
+          )}
+        </div>
+      </section>
+      {initial.provider === "ollama" && initial.models.length > 0 && (
+        <section>
+          <h2>{t("Memória do servidor de IA", "AI server memory")}</h2>
+          <p>
+            {t(
+              "Um modelo carregado responde mais rápido, mas ocupa memória RAM do servidor. Depois do tempo sem uso abaixo, o Ollama o descarrega sozinho.",
+              "A loaded model answers faster but uses the server's RAM. After the idle time below, Ollama unloads it automatically.",
+            )}
+          </p>
+          <div className="v2-fields">
+            <label>
+              {t(
+                "Descarregar após (minutos sem uso; -1 = nunca, 0 = logo após responder)",
+                "Unload after (idle minutes; -1 = never, 0 = right after replying)",
+              )}
+              <input
+                type="number"
+                min={-1}
+                max={1440}
+                required
+                value={config.keepAlive}
+                onChange={(e) => update("keepAlive", Number(e.target.value))}
+              />
+            </label>
+          </div>
+          <ul className="ai-memory-list">
+            {initial.models.map((model) => {
+              const state = loaded?.find((item) => item.name === model);
+              return (
+                <li key={model}>
+                  <span>
+                    <strong>{model}</strong>
+                    <small>
+                      {loaded === null
+                        ? t("Estado indisponível", "Status unavailable")
+                        : state
+                          ? `${t("Carregado", "Loaded")} · ${state.sizeMb} MB${
+                              state.until &&
+                              new Date(state.until).getFullYear() < 2200
+                                ? ` · ${t("até", "until")} ${new Date(state.until).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`
+                                : ""
+                            }`
+                          : t("Fora da memória", "Not in memory")}
+                    </small>
+                  </span>
+                  <button
+                    type="button"
+                    disabled={!!memoryBusy}
+                    onClick={() =>
+                      void memory(state ? "unload" : "load", model)
+                    }
+                  >
+                    {memoryBusy === model
+                      ? t("Aguarde…", "Please wait…")
+                      : state
+                        ? t("Descarregar", "Unload")
+                        : t("Carregar agora", "Load now")}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <button
+            type="button"
+            disabled={!!memoryBusy}
+            onClick={() => void memory("loaded")}
+          >
+            {t("Atualizar estado", "Refresh status")}
+          </button>
+        </section>
+      )}
       <section>
         <h2>{t("Respostas e limites", "Responses and limits")}</h2>
         <div className="v2-fields">

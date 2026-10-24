@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       getConversation(user.id, conversation.id);
       messages = db.sqlite
         .prepare(
-          "SELECT m.id,m.content,m.status,m.created_at,r.human_message_id FROM ai_messages m JOIN ai_requests r ON r.assistant_message_id=m.id WHERE m.conversation_id=? ORDER BY m.created_at DESC LIMIT 100",
+          "SELECT m.id,m.content,m.status,m.created_at,r.human_message_id,r.model FROM ai_messages m JOIN ai_requests r ON r.assistant_message_id=m.id WHERE m.conversation_id=? ORDER BY m.created_at DESC LIMIT 100",
         )
         .all(conversation.id);
     }

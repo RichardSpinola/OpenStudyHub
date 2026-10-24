@@ -74,7 +74,7 @@ it("upgrades synthetic populated databases from the server's 0015/0021 versions 
     ).toBe("privado");
     expect(
       app.sqlite.prepare("SELECT count(*) n FROM __drizzle_migrations").get(),
-    ).toEqual({ n: 24 });
+    ).toEqual({ n: 25 });
     expect(
       canonical.prepare("SELECT count(*) n FROM v2_migration_log").get(),
     ).toEqual({ n: 33 });

@@ -2031,6 +2031,7 @@ export const aiConversations = sqliteTable("ai_conversations", {
     .unique()
     .references(() => chatRooms.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
+  model: text("model"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
@@ -2103,6 +2104,7 @@ export const aiRequests = sqliteTable(
     assistantMessageId: text("assistant_message_id")
       .notNull()
       .references(() => aiMessages.id, { onDelete: "cascade" }),
+    model: text("model"),
     status: text("status").notNull(),
     cancelRequested: integer("cancel_requested").notNull().default(0),
     createdAt: integer("created_at").notNull(),

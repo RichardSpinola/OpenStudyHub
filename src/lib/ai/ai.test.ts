@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { once } from "node:events";
 import { createMigratedTestDatabase } from "@/lib/test-database";
@@ -14,6 +14,7 @@ import {
 import {
   createConversation,
   getConversation,
+  setConversationModel,
   messagesForConversation,
   shareConversation,
   renameConversation,
@@ -25,6 +26,7 @@ import {
   cancelAiRequest,
   requireAi,
   repairExpired,
+  repetitionStart,
 } from "./generation";
 import {
   allowedAddress,
@@ -319,7 +321,7 @@ it("blocks metadata/unsafe endpoints and redirects and lists models on a simulat
   ).toEqual(["mock"]);
   await expect(async () => {
     for await (const part of streamProvider(
-      config,
+      { ...config, model: "mock" },
       undefined,
       [{ role: "user", content: "x" }],
       new AbortController().signal,
@@ -404,4 +406,84 @@ it("names an untitled conversation after its first question only", () => {
   const named = createConversation(1, "Biologia", db);
   enqueueRequest(1, named, "Outra pergunta", [], db);
   expect(getConversation(1, named.id, db).title).toBe("Biologia");
+});
+
+it("reads a 3.1.0 single-model config as a model list with the same tested key", () => {
+  const legacy = aiConfigSchema.parse({ model: "qwen", vision: true });
+  expect(legacy).toMatchObject({
+    models: ["qwen"],
+    defaultModel: "qwen",
+    chatGlobalModel: "qwen",
+    chatGroupModel: "qwen",
+    visionModels: ["qwen"],
+  });
+  const old = createHash("sha256")
+    .update(JSON.stringify(["ollama", legacy.endpoint, "qwen", true, null]))
+    .digest("hex");
+  expect(providerKey(legacy, null)).toBe(old);
+  const many = aiConfigSchema.parse({
+    models: ["a", "b"],
+    defaultModel: "missing",
+    chatGroupModel: "b",
+  });
+  expect(many.defaultModel).toBe("a");
+  expect(many.chatGlobalModel).toBe("a");
+  expect(many.chatGroupModel).toBe("b");
+});
+it("only allows administrator-approved models and records the model used", async () => {
+  configure({
+    models: ["fast", "daily"],
+    defaultModel: "daily",
+    model: undefined,
+  });
+  const c = createConversation(1, "Modelos", db);
+  expect(() => setConversationModel(1, c.id, "unknown", db)).toThrow();
+  expect(() => setConversationModel(2, c.id, "fast", db)).toThrow();
+  expect(setConversationModel(1, c.id, "fast", db).model).toBe("fast");
+  const r = enqueueRequest(1, getConversation(1, c.id, db), "Oi", [], db)!;
+  let used = "";
+  await runAiRequest(r.requestId, db, async function* (config) {
+    used = config.model;
+    yield "ok";
+  });
+  expect(used).toBe("fast");
+  expect(messagesForConversation(1, c.id, db).at(-1)).toMatchObject({
+    model: "fast",
+  });
+});
+it("answers only the chat mention with the group chat model and room messages as background", async () => {
+  configure({
+    models: ["fast", "daily"],
+    defaultModel: "daily",
+    chatGroupModel: "fast",
+    model: undefined,
+  });
+  db.sqlite.exec(
+    "INSERT INTO chat_rooms(id,kind,name,group_id,created_by_user_id) VALUES(1,'group','A',1,1); INSERT INTO chat_messages(id,room_id,author_user_id,body_source,created_at) VALUES(1,1,1,'meu código é 1234',1),(2,1,1,'@IA olá',2);",
+  );
+  setRoomAiPermission(1, 1, true, db);
+  const r = enqueueRoomMention(1, 1, 2, db)!;
+  let seen: ProviderMessage[] = [];
+  let used = "";
+  await runAiRequest(r.requestId, db, async function* (config, _c, messages) {
+    seen = messages;
+    used = config.model;
+    yield "Olá!";
+  });
+  expect(used).toBe("fast");
+  expect(seen[0].content).toContain("Answer only the latest message");
+  expect(seen[1].content).toContain("<background_room_messages>");
+  expect(seen[1].content).toContain("meu código é 1234");
+  expect(seen.at(-1)).toMatchObject({ role: "user" });
+  expect(seen.at(-1)!.content).toContain("@IA olá");
+  expect(seen.at(-1)!.content).not.toContain("1234");
+});
+
+it("detects runaway repetition from small models", () => {
+  expect(repetitionStart("Resposta normal sem repetição.")).toBeNull();
+  const text = "Os dados (como o " + "6".repeat(120);
+  expect(text.slice(0, repetitionStart(text)!)).toBe("Os dados (como o ");
+  const phrase = "Não compartilhe senhas. ";
+  const looped = "Início. " + phrase.repeat(6);
+  expect(repetitionStart(looped)).not.toBeNull();
 });

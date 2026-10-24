@@ -1694,3 +1694,55 @@ body.admin-body {
 .ai-setting-toggle input {
   width: auto;
 }
+.ai-model-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 0 1rem;
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+.ai-model-list legend {
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+.ai-model-list .ai-setting-toggle {
+  margin-block: 0.4rem;
+}
+.ai-model-list .ai-setting-toggle span {
+  font-family: var(--font-mono, monospace);
+  overflow-wrap: anywhere;
+}
+.ai-model-list small {
+  color: var(--gray-2);
+  font-size: 0.75rem;
+}
+.ai-memory-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.ai-memory-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--gray-3);
+  border-radius: 0.4rem;
+}
+.ai-memory-list span {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.ai-memory-list strong {
+  font-family: var(--font-mono, monospace);
+  overflow-wrap: anywhere;
+}
+.ai-memory-list small {
+  color: var(--gray-2);
+}

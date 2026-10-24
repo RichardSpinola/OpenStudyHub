@@ -169,6 +169,13 @@
       "when": 1792800000000,
       "tag": "0023_local_ai",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1792880378147,
+      "tag": "0024_ai_conversation_model",
+      "breakpoints": true
     }
   ]
 }

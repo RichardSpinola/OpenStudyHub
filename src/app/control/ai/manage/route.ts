@@ -8,7 +8,12 @@ import {
   saveAiConfig,
   aiCredential,
 } from "@/lib/ai/config";
-import { probeProvider, providerUrl } from "@/lib/ai/provider";
+import {
+  probeProvider,
+  providerUrl,
+  loadedModels,
+  setModelLoaded,
+} from "@/lib/ai/provider";
 const headers = { "Cache-Control": "no-store" };
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return new Response(null, { status: 403 });
@@ -20,6 +25,31 @@ export async function POST(request: Request) {
       if (Number(request.headers.get("content-length")) > 20000)
         throw new Error();
       const input = await request.json();
+      if (["loaded", "load", "unload"].includes(input.action)) {
+        // Memory controls act on the saved configuration, never on unsaved form values.
+        const state = readAiConfig();
+        const credential = aiCredential(state.credentialEncrypted);
+        if (input.action !== "loaded") {
+          if (typeof input.model !== "string") throw new Error();
+          await setModelLoaded(
+            state.config,
+            credential,
+            input.model,
+            input.action === "load",
+          );
+          recordAdminAction(
+            db,
+            actor,
+            `ai.model_${input.action}`,
+            "instance",
+            1,
+          );
+        }
+        return Response.json(
+          { loaded: await loadedModels(state.config, credential) },
+          { headers },
+        );
+      }
       const candidate = aiConfigSchema.parse(input.config);
       providerUrl(candidate.endpoint, "/api/tags");
       if (
@@ -38,17 +68,22 @@ export async function POST(request: Request) {
           saved.config,
           aiCredential(saved.encrypted),
         );
-        if (saved.config.model)
+        // Record which allowed models accept images; this does not change the provider key.
+        const probed = saveAiConfig(
+          { ...saved.config, visionModels: result.visionModels },
+          undefined,
+        );
+        if (probed.config.models.length)
           getDatabase()
             .sqlite.prepare("UPDATE ai_config SET tested_hash=? WHERE id=1")
-            .run(saved.key);
+            .run(probed.key);
         recordAdminAction(db, actor, "ai.connection_test", "instance", 1);
         return Response.json(
           {
-            ...result,
-            config: saved.config,
-            hasCredential: !!saved.encrypted,
-            tested: !!saved.config.model,
+            models: result.models,
+            config: probed.config,
+            hasCredential: !!probed.encrypted,
+            tested: !!probed.config.models.length,
           },
           { headers },
         );
@@ -65,11 +100,15 @@ export async function POST(request: Request) {
         },
         { headers },
       );
-    } catch {
+    } catch (error) {
       return Response.json(
         {
           error:
-            "Não foi possível salvar ou conectar. Confira endereço, modelo, credencial e teste a conexão antes de ativar. / Unable to save or connect. Check endpoint, model and credentials, and test before enabling.",
+            error instanceof Error &&
+            error.name !== "ZodError" &&
+            error.message.includes(" / ")
+              ? error.message
+              : "Não foi possível salvar ou conectar. Confira endereço, modelo, credencial e teste a conexão antes de ativar. / Unable to save or connect. Check endpoint, model and credentials, and test before enabling.",
         },
         { status: 400, headers },
       );

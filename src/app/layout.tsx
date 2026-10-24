@@ -10,7 +10,10 @@ import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { headers } from "next/headers";
 
-import { PrimaryNavigation } from "@/components/primary-navigation";
+import {
+  MobileTabBar,
+  PrimaryNavigation,
+} from "@/components/primary-navigation";
 import { NotificationCenter } from "@/components/notification-center";
 import { GoogleConnectionNotice } from "@/components/google-connection-notice";
 import { V2ManagementLink } from "@/components/v2-management-link";
@@ -45,6 +48,7 @@ import "./study-tools.css";
 import "./settings-experience.css";
 import "./personal-planning.css";
 import "./product-tour.css";
+import "./mobile-shell.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getServerEnvironment().APP_URL),
@@ -262,6 +266,12 @@ export default async function RootLayout({
                 ) : null}
                 {children}
               </main>
+              {session && !classicNavigation ? (
+                <MobileTabBar
+                  extrasEnabled={extrasEnabled && !exam}
+                  examMode={!!exam}
+                />
+              ) : null}
               {classicNavigation ? (
                 <footer className="app-footer classic-navigation-bar">
                   <PrimaryNavigation

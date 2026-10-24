@@ -5,7 +5,7 @@ import { canModerateRoom } from "@/lib/chat-moderation";
 import { CroppedImageInput } from "@/components/cropped-image-input";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
-import { IconMessages } from "@tabler/icons-react";
+import { IconMessages, IconRobot } from "@tabler/icons-react";
 
 import {
   addGroupMemberAction,
@@ -173,8 +173,12 @@ export default async function ChatPage({
       <ChatContextLayout key={selected?.id ?? "empty"}>
         <aside className="chat-sidebar">
           {readAiConfig().config.enabled && (
-            <Link className="chat-room-link" href="/chat?assistant=1">
-              ✦ {tr("Assistente de IA", "AI assistant")}
+            <Link
+              className="chat-room-link chat-ai-entry"
+              href="/chat?assistant=1"
+            >
+              <IconRobot size={18} aria-hidden="true" />
+              {tr("Assistente de IA", "AI assistant")}
             </Link>
           )}
           <div className="chat-sidebar-heading">

@@ -1,6 +1,8 @@
 "use client";
 import { ChatAiControl, type ChatAiReply } from "@/components/chat-ai-control";
 import { DismissibleDetails } from "@/components/dismissible-details";
+import { IconRobot } from "@tabler/icons-react";
+import { renderChatMarkdown } from "@/lib/chat-markdown";
 import {
   chatFileLimitBytes,
   chatImageLimitBytes,
@@ -56,6 +58,14 @@ type Message = {
   }[];
 };
 
+const AI_MENTION = {
+  id: -1,
+  displayName: "IA",
+  bio: "",
+  hasAvatar: false,
+  programName: null,
+  cohortName: null,
+} as RoomUser;
 type RoomUser = {
   id: number;
   displayName: string;
@@ -228,15 +238,26 @@ export function ChatRoom({
 
   const mentionMatch = /(?:^|\s)@([^\s@]*)$/u.exec(body);
   const mentionQuery = mentionMatch?.[1]?.toLocaleLowerCase("pt-BR") ?? null;
+  const aiAvailable = !!aiState?.enabled && !!aiState.permission;
   const mentionCandidates = useMemo(() => {
     if (mentionQuery === null) return [];
-    return roomUsers
-      .filter(({ id }) => id !== currentUserId)
-      .filter(({ displayName }) =>
-        displayName.toLocaleLowerCase("pt-BR").includes(mentionQuery),
+    // The assistant is offered first when @IA is allowed in this room.
+    const assistant =
+      aiAvailable &&
+      ["ia", "assistente", "assistant", "ai"].some((name) =>
+        name.startsWith(mentionQuery),
       )
-      .slice(0, 6);
-  }, [currentUserId, mentionQuery, roomUsers]);
+        ? [AI_MENTION]
+        : [];
+    return [
+      ...assistant,
+      ...roomUsers
+        .filter(({ id }) => id !== currentUserId)
+        .filter(({ displayName }) =>
+          displayName.toLocaleLowerCase("pt-BR").includes(mentionQuery),
+        ),
+    ].slice(0, 6);
+  }, [aiAvailable, currentUserId, mentionQuery, roomUsers]);
   const selectedMentionIndex = mentionCandidates.length
     ? mentionIndex % mentionCandidates.length
     : 0;
@@ -490,10 +511,12 @@ export function ChatRoom({
     const replacement = `@${candidate.displayName} `;
     const next = `${body.slice(0, tokenStart)}${replacement}`;
     setBody(next);
-    setMentionBindings((current) => [
-      ...current.filter(({ id }) => id !== candidate.id),
-      { id: candidate.id, label: candidate.displayName },
-    ]);
+    // "@IA" stays plain text: the server detects it, it is not a user mention.
+    if (candidate.id !== AI_MENTION.id)
+      setMentionBindings((current) => [
+        ...current.filter(({ id }) => id !== candidate.id),
+        { id: candidate.id, label: candidate.displayName },
+      ]);
     setMentionIndex(0);
     requestAnimationFrame(() => {
       const textarea = textareaRef.current;
@@ -1243,12 +1266,35 @@ export function ChatRoom({
               {aiReplies
                 .filter((reply) => reply.human_message_id === message.id)
                 .map((reply) => (
-                  <li key={reply.id} className="chat-ai-message">
-                    <strong>✦ {tr("Assistente de IA", "AI assistant")}</strong>
-                    <div>
-                      {reply.content ||
-                        tr("Preparando resposta…", "Preparing a reply…")}
-                    </div>
+                  <li
+                    key={reply.id}
+                    className="chat-ai-message"
+                    data-status={reply.status}
+                  >
+                    <header>
+                      <span className="ai-avatar" aria-hidden="true">
+                        <IconRobot size={15} />
+                      </span>
+                      <strong>{tr("Assistente de IA", "AI assistant")}</strong>
+                      {reply.model && (
+                        <span className="ai-model-chip">{reply.model}</span>
+                      )}
+                    </header>
+                    <small className="chat-ai-reply-to">
+                      {tr("Em resposta a", "Replying to")} {message.authorName}
+                    </small>
+                    {reply.content ? (
+                      <div
+                        className="ai-markdown"
+                        dangerouslySetInnerHTML={{
+                          __html: renderChatMarkdown(reply.content, 100_000),
+                        }}
+                      />
+                    ) : (
+                      <div>
+                        {tr("Preparando resposta…", "Preparing a reply…")}
+                      </div>
+                    )}
                     {reply.status !== "complete" && (
                       <small>
                         {reply.status === "pending"
@@ -1534,8 +1580,21 @@ export function ChatRoom({
                   aria-selected={index === selectedMentionIndex}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => insertMention(candidate)}
+                  className={
+                    candidate.id === AI_MENTION.id
+                      ? "chat-mention-ai"
+                      : undefined
+                  }
                 >
-                  @{candidate.displayName}
+                  {candidate.id === AI_MENTION.id ? (
+                    <>
+                      <IconRobot size={16} aria-hidden="true" />
+                      @IA
+                      <small>{tr("Assistente de IA", "AI assistant")}</small>
+                    </>
+                  ) : (
+                    <>@{candidate.displayName}</>
+                  )}
                 </button>
               ))}
             </div>

@@ -11,11 +11,13 @@ export type AiConversation = {
   group_id: number | null;
   room_id: number | null;
   title: string;
+  model: string | null;
   created_at: number;
   updated_at: number;
 };
 export type AiMessage = {
   author_name?: string | null;
+  model?: string | null;
   id: string;
   role: "user" | "assistant";
   content: string;
@@ -193,7 +195,7 @@ export function messagesForConversation(
   getConversation(userId, id, connection);
   return connection.sqlite
     .prepare(
-      "SELECT m.id,m.role,m.content,m.status,m.author_user_id,m.created_at,u.display_name author_name FROM (SELECT *,rowid sequence FROM ai_messages WHERE conversation_id=? ORDER BY created_at DESC,rowid DESC LIMIT 200) m LEFT JOIN users u ON u.id=m.author_user_id ORDER BY m.created_at,m.sequence",
+      "SELECT m.id,m.role,m.content,m.status,m.author_user_id,m.created_at,u.display_name author_name,r.model FROM (SELECT *,rowid sequence FROM ai_messages WHERE conversation_id=? ORDER BY created_at DESC,rowid DESC LIMIT 200) m LEFT JOIN users u ON u.id=m.author_user_id LEFT JOIN ai_requests r ON r.assistant_message_id=m.id ORDER BY m.created_at,m.sequence",
     )
     .all(id) as AiMessage[];
 }
@@ -293,6 +295,9 @@ export function shareConversation(
         connection,
         groupId,
       );
+      connection.sqlite
+        .prepare("UPDATE ai_conversations SET model=? WHERE id=?")
+        .run(original.model, copy.id);
       const mapping = new Map<string, string>();
       const messages = connection.sqlite
         .prepare(
@@ -336,6 +341,23 @@ export function shareConversation(
       return copy;
     })
     .immediate();
+}
+export function setConversationModel(
+  userId: number,
+  id: string,
+  model: string,
+  connection: DatabaseConnection = getDatabase(),
+) {
+  const conversation = getConversation(userId, id, connection);
+  if (
+    conversation.room_id ||
+    !readAiConfig(connection).config.models.includes(model)
+  )
+    throw new Error("Modelo indisponível / Model unavailable");
+  connection.sqlite
+    .prepare("UPDATE ai_conversations SET model=? WHERE id=?")
+    .run(model, id);
+  return getConversation(userId, id, connection);
 }
 export function roomConversation(
   userId: number,

@@ -102,8 +102,9 @@ async function json(
   path: string,
   credential?: string,
   body?: unknown,
+  timeout = 15000,
 ): Promise<Record<string, unknown>> {
-  const signal = AbortSignal.timeout(15000);
+  const signal = AbortSignal.timeout(timeout);
   const response = await call(config, path, credential, signal, body);
   let text = "";
   for await (const chunk of response) {
@@ -131,27 +132,28 @@ export async function probeProvider(config: AiConfig, credential?: string) {
     .slice(0, 500)
     .map((m) => (config.provider === "ollama" ? m.name : m.id))
     .filter((id): id is string => typeof id === "string");
-  let vision = false;
-  if (config.model) {
-    if (!models.includes(config.model))
-      throw new Error("Modelo não encontrado / Model not found");
+  // Every allowed model must exist; image support is recorded per model.
+  const visionModels: string[] = [];
+  for (const model of config.models) {
+    if (!models.includes(model))
+      throw new Error(`Modelo não encontrado / Model not found: ${model}`);
     if (config.provider === "ollama") {
-      const show = await json(config, "/api/show", credential, {
-        model: config.model,
-      });
-      vision =
+      const show = await json(config, "/api/show", credential, { model });
+      if (
         Array.isArray(show.capabilities) &&
-        show.capabilities.includes("vision");
-    } else vision = config.vision; // OpenAI-compatible model lists have no standard capability field; Admin confirms this explicitly.
-    if (config.vision && !vision)
-      throw new Error(
-        "Modelo sem suporte a imagens / Model does not support images",
-      );
+        show.capabilities.includes("vision")
+      )
+        visionModels.push(model);
+    } else if (config.vision) visionModels.push(model); // OpenAI-compatible model lists have no standard capability field; Admin confirms this explicitly.
   }
-  return { models, vision };
+  if (config.vision && config.models.length && !visionModels.length)
+    throw new Error(
+      "Nenhum modelo aceita imagens / No selected model supports images",
+    );
+  return { models, visionModels };
 }
 export async function* streamProvider(
-  config: AiConfig,
+  config: AiConfig & { model: string },
   credential: string | undefined,
   messages: ProviderMessage[],
   signal: AbortSignal,
@@ -163,6 +165,7 @@ export async function* streamProvider(
         stream: true,
         // Hidden reasoning would consume the output budget and timeout before any visible reply.
         think: false,
+        keep_alive: config.keepAlive < 0 ? -1 : `${config.keepAlive}m`,
         messages: messages.map((m) => ({
           role: m.role,
           content: m.content,
@@ -172,6 +175,8 @@ export async function* streamProvider(
           temperature: config.temperature,
           num_ctx: config.context,
           num_predict: config.maxOutput,
+          // Small local models otherwise fall into repeated characters or phrases.
+          repeat_penalty: 1.15,
         },
       }
     : {
@@ -179,6 +184,7 @@ export async function* streamProvider(
         stream: true,
         temperature: config.temperature,
         max_tokens: config.maxOutput,
+        frequency_penalty: 0.3,
         messages: messages.map((m) => ({
           role: m.role,
           content: m.images?.length
@@ -236,4 +242,59 @@ export async function* streamProvider(
   } finally {
     response.destroy();
   }
+}
+
+export type LoadedModel = {
+  name: string;
+  sizeMb: number;
+  until: string | null;
+};
+/** Ollama only: models currently held in memory. */
+export async function loadedModels(
+  config: AiConfig,
+  credential?: string,
+): Promise<LoadedModel[]> {
+  if (config.provider !== "ollama") return [];
+  const result = await json(config, "/api/ps", credential);
+  const list = Array.isArray(result.models) ? result.models : [];
+  return list.slice(0, 50).flatMap((item) => {
+    const m = item as { name?: unknown; size?: unknown; expires_at?: unknown };
+    // Right after an unload Ollama still lists the model with an expiry of "now".
+    const leaving =
+      typeof m.expires_at === "string" &&
+      Date.parse(m.expires_at) <= Date.now() + 2000;
+    return typeof m.name === "string" && !leaving
+      ? [
+          {
+            name: m.name,
+            sizeMb: Math.round(Number(m.size) / 1048576) || 0,
+            until: typeof m.expires_at === "string" ? m.expires_at : null,
+          },
+        ]
+      : [];
+  });
+}
+/** Ollama only: load an allowed model now, or release its memory. */
+export async function setModelLoaded(
+  config: AiConfig,
+  credential: string | undefined,
+  model: string,
+  load: boolean,
+) {
+  if (config.provider !== "ollama" || !config.models.includes(model))
+    throw new Error("Modelo indisponível / Model unavailable");
+  await json(
+    config,
+    "/api/generate",
+    credential,
+    {
+      model,
+      keep_alive: load
+        ? config.keepAlive < 0
+          ? -1
+          : `${config.keepAlive}m`
+        : 0,
+    },
+    180000,
+  );
 }
