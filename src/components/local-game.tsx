@@ -2,7 +2,7 @@
 import { useGameWin } from "@/components/game-experience";
 import { UiCopy, useUiText } from "@/components/ui-language-provider";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   mineChordTargets,
   mineNeighbors,
@@ -651,13 +651,14 @@ function Minesweeper() {
             </option>
           </select>
         </label>
-        <label>
+        <label className="mines-flag-toggle">
           <input
             type="checkbox"
             checked={flagMode}
             onChange={(event) => setFlagMode(event.target.checked)}
           />{" "}
-          <UiCopy pt="Modo bandeira (toque)" en="Flag mode (touch)" />
+          <span aria-hidden="true">⚑</span>{" "}
+          <UiCopy pt="Modo bandeira" en="Flag mode" />
         </label>
       </div>
       <p className="game-hint">
@@ -676,9 +677,12 @@ function Minesweeper() {
           className="mines-grid"
           role="grid"
           aria-label={tr("Campo Minado", "Minesweeper")}
-          style={{
-            gridTemplateColumns: `repeat(${width}, 1fr)`,
-          }}
+          style={
+            {
+              gridTemplateColumns: `repeat(${width}, 1fr)`,
+              "--mines-cols": width,
+            } as CSSProperties
+          }
         >
           {Array.from({ length: width * width }, (_, index) => {
             const visible =

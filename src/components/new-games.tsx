@@ -161,6 +161,9 @@ function Memory({ userId }: { userId: number }) {
                 : `${tr("Abrir carta", "Turn card")} ${i + 1}`
             }
             data-open={open.includes(i) || matched.includes(v)}
+            data-pair={
+              open.includes(i) || matched.includes(v) ? v % 6 : undefined
+            }
             onClick={() => {
               setOpen((a) => [...a, i]);
               if (open.length === 1) setAttempts((n) => n + 1);

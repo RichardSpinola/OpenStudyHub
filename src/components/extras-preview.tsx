@@ -21,17 +21,33 @@ export function ExtrasPreview({ kind }: { kind: Preview }) {
       className={`extras-preview extras-preview--${kind}`}
       aria-hidden="true"
     >
-      {["memory", "sudoku", "connect4", "tictactoe"].includes(kind) ? (
-        <span className={`preview-puzzle preview-puzzle--${kind}`}>
-          {(kind === "memory"
-            ? ["★", "?", "?", "★"]
-            : kind === "sudoku"
-              ? ["1", "·", "3", "·", "5", "·", "7", "·", "9"]
-              : kind === "connect4"
-                ? ["●", "○", "●", "○", "●", "○", "●", "○", "●"]
-                : ["X", "O", "·", "·", "X", "·", "O", "·", "X"]
-          ).map((value, index) => (
-            <i key={index}>{value}</i>
+      {kind === "memory" ? (
+        <span className="preview-memory">
+          <i data-face="up">★</i>
+          <i />
+          <i />
+          <i data-face="up">★</i>
+        </span>
+      ) : kind === "sudoku" ? (
+        <span className="preview-sudoku">
+          {["5", "", "3", "", "7", "", "9", "", "1"].map((value, index) => (
+            <i key={index} data-ink={index === 4 ? "pencil" : undefined}>
+              {value}
+            </i>
+          ))}
+        </span>
+      ) : kind === "connect4" ? (
+        <span className="preview-connect4">
+          {[..."-----y---ry-yrrr"].map((disc, index) => (
+            <i key={index} data-disc={disc === "-" ? undefined : disc} />
+          ))}
+        </span>
+      ) : kind === "tictactoe" ? (
+        <span className="preview-tictactoe">
+          {["X", "O", "", "", "X", "", "O", "", "X"].map((mark, index) => (
+            <i key={index} data-mark={mark || undefined}>
+              {mark}
+            </i>
           ))}
         </span>
       ) : kind === "ai" ? (
