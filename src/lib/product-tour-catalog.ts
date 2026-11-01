@@ -11,7 +11,13 @@ export type TourStep = {
   bodyEn: string;
   news?: boolean;
   feature?:
-    "projects" | "extras" | "whiteboard" | "games" | "focus" | "flashcards";
+    | "projects"
+    | "extras"
+    | "whiteboard"
+    | "games"
+    | "focus"
+    | "flashcards"
+    | "ai";
 };
 export const tourSteps: TourStep[] = [
   {
@@ -152,6 +158,18 @@ export const tourSteps: TourStep[] = [
     bodyEn:
       "Extras brings together tools enabled by your administrator. Each card opens its workspace. Unavailable features do not appear in this tour.",
     feature: "extras",
+  },
+  {
+    id: "ai",
+    path: "/extras",
+    target: "extra-ai",
+    title: "Pergunte ao assistente",
+    titleEn: "Ask the assistant",
+    body: "O Assistente de IA responde dúvidas e usa suas notas e arquivos como fonte quando você escolher. Ele roda no servidor da instituição; confira sempre as respostas.",
+    bodyEn:
+      "The AI assistant answers questions and can use your notes and files as sources when you choose. It runs on your institution's server; always check its answers.",
+    news: true,
+    feature: "ai",
   },
   {
     id: "whiteboard",

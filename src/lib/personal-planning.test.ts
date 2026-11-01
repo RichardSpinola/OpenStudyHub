@@ -234,5 +234,6 @@ describe("Personal planning and tour safety", () => {
     expect(ctx.invitationEnabled).toBe(false);
     expect(ctx.steps.length).toBeGreaterThan(0);
     expect(ctx.steps.some((s) => s.feature === "extras")).toBe(false);
+    expect(ctx.steps.some((s) => s.feature === "ai")).toBe(false);
   });
 });

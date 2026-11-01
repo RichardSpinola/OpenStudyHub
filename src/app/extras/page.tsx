@@ -23,7 +23,11 @@ export default function ExtrasPage() {
       </header>
       <div className="extras-cards extras-feature-grid" data-tour="extras">
         {readAiConfig().config.enabled && (
-          <Link href="/extras/ai" className="extras-feature-card">
+          <Link
+            href="/extras/ai"
+            className="extras-feature-card"
+            data-tour="extra-ai"
+          >
             <ExtrasPreview kind="ai" />
             <span className="extras-card-copy">
               <strong>

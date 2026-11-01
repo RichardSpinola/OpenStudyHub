@@ -10,6 +10,7 @@ import {
 import { getUserProfile } from "./profile";
 import { personalPlanningContext } from "./personal-planning-context";
 import { isProjectsFeatureEnabled } from "./feature-flags";
+import { readAiConfig } from "./ai/config";
 import { withV2Db } from "./v2/runtime-database";
 import { getExtrasFlags } from "./v2/extras";
 import { examForLegacyUser } from "./v2/exam-access";
@@ -92,6 +93,7 @@ export function productTourContext(
     .filter((s) => {
       if (s.id === "subject" && !subject) return false;
       if (s.feature === "projects") return isProjectsFeatureEnabled(connection);
+      if (s.feature === "ai") return readAiConfig(connection).config.enabled;
       return !s.feature || !!(flags?.extras && flags[s.feature]);
     })
     .map((s) =>
