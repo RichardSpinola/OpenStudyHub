@@ -224,3 +224,14 @@ html:not([data-wallpaper-blur="off"])[data-wallpaper-area="true"]
   background: color-mix(in srgb, var(--panel) 88%, transparent);
   backdrop-filter: blur(8px);
 }
+
+/* Mid widths: the labelled links overflow under the utilities, so show icons only
+   (each link keeps its aria-label and title). */
+@media (min-width: 780.01px) and (max-width: 90rem) {
+  html[data-design][data-nav-layout="top"] .app-header .primary-nav a > span {
+    display: none;
+  }
+  html[data-design][data-nav-layout="top"] .app-header .shell-utilities {
+    flex: 0 0 auto;
+  }
+}
