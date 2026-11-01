@@ -2,6 +2,7 @@ import { DocumentOptionsDialog } from "./document-options-dialog";
 import { UiCopy } from "@/components/ui-language-provider";
 import {
   deleteGeneratedDocumentAction,
+  renameGeneratedDocumentAction,
   setDocumentGroupShareAction,
   setDocumentPersonShareAction,
 } from "@/app/documents/actions";
@@ -89,6 +90,32 @@ export function DocumentLibraryCard({
           <dt>{tr("Disciplina", "Subject")}</dt>
           <dd>{document.subjectName}</dd>
         </dl>
+        {!shared ? (
+          <form
+            className="document-rename-form"
+            action={renameGeneratedDocumentAction}
+          >
+            <input type="hidden" name="documentId" value={document.id} />
+            <label>
+              <UiCopy pt="Nome do arquivo" en="File name" />
+              <input
+                name="name"
+                defaultValue={document.name}
+                maxLength={180}
+                required
+              />
+            </label>
+            <button type="submit">
+              <UiCopy pt="Renomear" en="Rename" />
+            </button>
+            <p>
+              <UiCopy
+                pt="Troca o nome no OpenStudyHub e no Google Drive."
+                en="Changes the name in OpenStudyHub and Google Drive."
+              />
+            </p>
+          </form>
+        ) : null}
         {!shared ? (
           <section className="document-share-panel">
             <h3>

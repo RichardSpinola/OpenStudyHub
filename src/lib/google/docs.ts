@@ -182,3 +182,126 @@ export async function mergeGoogleDocument(
   );
   if (!appendResponse.ok) throw new Error("Google Docs section append failed.");
 }
+
+function headingKey(text: string): string {
+  return text
+    .normalize("NFC")
+    .trim()
+    .replace(/:$/u, "")
+    .trim()
+    .toLocaleUpperCase("pt-BR");
+}
+
+function looksLikeHeading(text: string): boolean {
+  const trimmed = text.trim();
+  return (
+    trimmed.endsWith(":") &&
+    trimmed.length <= 80 &&
+    trimmed === trimmed.toLocaleUpperCase("pt-BR") &&
+    /\p{L}/u.test(trimmed)
+  );
+}
+
+/**
+ * Deletes sections written directly in the source document (a heading
+ * paragraph such as "RESUMO:" plus its body) when the person unchecked them.
+ * A section ends at the next known or all-caps heading, or at the end.
+ */
+export async function removeGoogleDocumentSections(
+  userId: number,
+  documentId: string,
+  removedTitles: string[],
+  allTitles: string[],
+  options: {
+    connection?: DatabaseConnection;
+    fetchImpl?: GoogleFetch;
+  } = {},
+): Promise<number> {
+  const removed = new Set(removedTitles.map(headingKey).filter(Boolean));
+  if (!removed.size) return 0;
+  const known = new Set(allTitles.map(headingKey).filter(Boolean));
+  const ownerId = idSchema.parse(userId);
+  const safeDocumentId = documentIdSchema.parse(documentId);
+  const connection = options.connection ?? getDatabase();
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const accessToken = await getGoogleAccessToken(ownerId, {
+    connection,
+    fetchImpl,
+  });
+  const readResponse = await docsRequest(
+    accessToken,
+    `${DOCS_ENDPOINT}/${encodeURIComponent(safeDocumentId)}`,
+    { method: "GET" },
+    fetchImpl,
+  );
+  if (!readResponse.ok) throw new Error("Google Docs structure lookup failed.");
+  const document = z
+    .object({
+      body: z.object({
+        content: z.array(
+          z.object({
+            startIndex: z.number().optional(),
+            endIndex: z.number().optional(),
+            paragraph: z
+              .object({
+                elements: z
+                  .array(
+                    z.object({
+                      textRun: z
+                        .object({ content: z.string().optional() })
+                        .optional(),
+                    }),
+                  )
+                  .optional(),
+              })
+              .optional(),
+          }),
+        ),
+      }),
+    })
+    .parse(await readResponse.json());
+  const blocks = document.body.content.map((block) => ({
+    start: block.startIndex ?? 0,
+    end: block.endIndex ?? 0,
+    text: block.paragraph
+      ? (block.paragraph.elements ?? [])
+          .map(({ textRun }) => textRun?.content ?? "")
+          .join("")
+      : null,
+  }));
+  const documentEnd = Math.max(1, ...blocks.map(({ end }) => end));
+  const ranges: Array<{ startIndex: number; endIndex: number }> = [];
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index]!;
+    if (block.text === null || !removed.has(headingKey(block.text))) continue;
+    let stop = documentEnd - 1;
+    for (let next = index + 1; next < blocks.length; next += 1) {
+      const text = blocks[next]!.text;
+      if (
+        text !== null &&
+        (known.has(headingKey(text)) || looksLikeHeading(text))
+      ) {
+        stop = blocks[next]!.start;
+        break;
+      }
+    }
+    if (stop > block.start)
+      ranges.push({ startIndex: block.start, endIndex: stop });
+  }
+  if (!ranges.length) return 0;
+  const response = await docsRequest(
+    accessToken,
+    `${DOCS_ENDPOINT}/${encodeURIComponent(safeDocumentId)}:batchUpdate`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        requests: ranges
+          .sort((a, b) => b.startIndex - a.startIndex)
+          .map((range) => ({ deleteContentRange: { range } })),
+      }),
+    },
+    fetchImpl,
+  );
+  if (!response.ok) throw new Error("Google Docs section removal failed.");
+  return ranges.length;
+}

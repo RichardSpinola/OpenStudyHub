@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DatabaseConnection } from "@/lib/db/client";
 import { createMigratedTestDatabase } from "@/lib/test-database";
 
-import { createGoogleTemplateDocument, mergeGoogleDocument } from "./docs";
+import {
+  createGoogleTemplateDocument,
+  mergeGoogleDocument,
+  removeGoogleDocumentSections,
+} from "./docs";
 import { getGoogleAccessToken } from "./oauth";
 
 vi.mock("./oauth", () => ({
@@ -104,5 +108,59 @@ describe("Google Docs adapter", () => {
       location: { index: 19 },
       text: "\nCódigo\n```\n```",
     });
+  });
+
+  it("apaga título e corpo das seções desmarcadas até o próximo título", async () => {
+    const paragraph = (start: number, text: string) => ({
+      startIndex: start,
+      endIndex: start + text.length,
+      paragraph: { elements: [{ textRun: { content: text } }] },
+    });
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          body: {
+            content: [
+              { endIndex: 1, sectionBreak: {} },
+              paragraph(1, "ANOTAÇÕES:\n"),
+              paragraph(12, "texto\n"),
+              paragraph(18, "RESUMO:\n"),
+              paragraph(26, "[resuma]\n"),
+              paragraph(35, "\n"),
+              paragraph(36, "DÚVIDAS:\n"),
+              paragraph(45, "[anote]\n"),
+            ],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(Response.json({ replies: [{}, {}] }));
+
+    await expect(
+      removeGoogleDocumentSections(
+        9,
+        "document-id",
+        ["Resumo", "Dúvidas"],
+        ["Anotações", "Resumo", "Dúvidas"],
+        { connection, fetchImpl },
+      ),
+    ).resolves.toBe(2);
+
+    const body = JSON.parse(String(fetchImpl.mock.calls[1]?.[1]?.body));
+    expect(body.requests).toEqual([
+      { deleteContentRange: { range: { startIndex: 36, endIndex: 52 } } },
+      { deleteContentRange: { range: { startIndex: 18, endIndex: 36 } } },
+    ]);
+  });
+
+  it("não chama o Google quando nenhuma seção foi desmarcada", async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    await expect(
+      removeGoogleDocumentSections(9, "document-id", [], ["Resumo"], {
+        connection,
+        fetchImpl,
+      }),
+    ).resolves.toBe(0);
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

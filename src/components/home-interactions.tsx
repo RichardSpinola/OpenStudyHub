@@ -1,7 +1,7 @@
 "use client";
 import { UiCopy } from "@/components/ui-language-provider";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 
 import {
   reorderShortcutsAction,
@@ -47,6 +47,7 @@ export function HomeInteractions({
   todayWidgetEnabled: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const shortcutSection = useRef<HTMLDivElement | null>(null);
   const shortcutKey = shortcuts
     .filter((item) => item.enabled)
     .map((item) => item.id)
@@ -137,7 +138,21 @@ export function HomeInteractions({
           searchPending={searchPending}
           searchError={searchError}
           onSearchEngineChange={(next) => void changeEngine(next)}
-          onEditShortcuts={() => setEditing(true)}
+          onEditShortcuts={() => {
+            setEditing(true);
+            // Bring the grid into view: below the fold the edit mode was invisible.
+            requestAnimationFrame(() => {
+              shortcutSection.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+              shortcutSection.current
+                ?.querySelector<HTMLButtonElement>(
+                  ".home-shortcut-edit-header button",
+                )
+                ?.focus({ preventScroll: true });
+            });
+          }}
           theme={theme}
           clockEnabled={clockEnabled}
           clockPosition={clockPosition}
@@ -150,6 +165,7 @@ export function HomeInteractions({
         autocompleteAvailable={autocompleteAvailable}
       />
       <div
+        ref={shortcutSection}
         className="shortcut-section"
         data-editing={editing}
         data-tour="home-shortcuts"

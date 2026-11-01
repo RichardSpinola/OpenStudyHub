@@ -893,6 +893,27 @@ export async function grantDriveFileWriter(
   if (!response.ok) throw new Error("Drive file sharing failed.");
 }
 
+export async function renameDriveFileForUser(
+  userId: number,
+  fileId: string,
+  name: string,
+  options: {
+    connection?: DatabaseConnection;
+    fetchImpl?: GoogleFetch;
+  } = {},
+) {
+  const ownerId = idSchema.parse(userId);
+  const safeFileId = z.string().trim().min(1).max(255).parse(fileId);
+  const safeName = z.string().trim().min(1).max(255).parse(name);
+  const connection = options.connection ?? getDatabase();
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const accessToken = await getGoogleAccessToken(ownerId, {
+    connection,
+    fetchImpl,
+  });
+  return renameDriveFile(accessToken, safeFileId, safeName, fetchImpl);
+}
+
 export async function trashDriveFile(
   userId: number,
   fileId: string,

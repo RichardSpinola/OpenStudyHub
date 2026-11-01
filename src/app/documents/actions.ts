@@ -25,6 +25,7 @@ import {
   DocumentGenerationError,
   deleteGeneratedDocument,
   generateDocument,
+  renameGeneratedDocument,
   validateDocumentTemplateSource,
 } from "@/lib/document-workflows";
 import { createGoogleTemplateDocument } from "@/lib/google/docs";
@@ -395,6 +396,9 @@ export async function useBundledStarterAction(formData: FormData) {
       key: starterKey,
       title: text(formData, "title"),
       offeringId: offeringId.data,
+      optionalSectionKeys: formData
+        .getAll("optionalSectionKeys")
+        .filter((value): value is string => typeof value === "string"),
     });
     refresh();
   } catch (error) {
@@ -502,6 +506,18 @@ export async function deleteGeneratedDocumentAction(formData: FormData) {
   redirect(
     `/documents?view=library&status=${mode === "drive" ? "document-deleted-drive" : "document-removed-hub"}`,
   );
+}
+
+export async function renameGeneratedDocumentAction(formData: FormData) {
+  const user = await requireToolUser();
+  const documentId = idSchema.parse(formData.get("documentId"));
+  try {
+    await renameGeneratedDocument(user.id, documentId, text(formData, "name"));
+    revalidatePath("/documents");
+  } catch {
+    redirect("/documents?view=library&status=document-rename-error");
+  }
+  redirect("/documents?view=library&status=document-renamed");
 }
 
 export async function openTemplateSourceAction(form: FormData) {

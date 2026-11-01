@@ -8,6 +8,7 @@ import { parseServerEnvironment } from "@/lib/env";
 import {
   importStarterDocumentTemplate,
   listBundledStarterTemplates,
+  listImportedStarterTemplateIds,
   readBundledStarter,
   setBundledStarterEnabled,
   starterDocumentTemplates,
@@ -146,5 +147,30 @@ describe("starter document templates", () => {
       expect.objectContaining({ connection }),
     );
     expect(trashDriveFile).not.toHaveBeenCalled();
+  });
+
+  it("reaproveita a cópia importada e usa o título digitado no nome", async () => {
+    const userId = createUser(connection);
+    const first = await importStarterDocumentTemplate(userId, "class_notes", {
+      connection,
+      environment,
+    });
+    connection.sqlite
+      .prepare("UPDATE document_templates SET naming_pattern = ? WHERE id = ?")
+      .run("{{subject.name}} - Anotações - {{document.date}}", first);
+
+    const second = await importStarterDocumentTemplate(userId, "class_notes", {
+      connection,
+      environment,
+    });
+
+    expect(second).toBe(first);
+    expect(copyDriveFile).toHaveBeenCalledTimes(1);
+    expect(
+      getUserDocumentTemplate(userId, first, connection).namingPattern,
+    ).toBe("{{subject.name}} - {{document.title}} - {{document.date}}");
+    expect(listImportedStarterTemplateIds(userId, connection)).toEqual(
+      new Map([["class_notes", first]]),
+    );
   });
 });

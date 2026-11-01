@@ -13,22 +13,31 @@ import {
   generateDocument,
   listOfferingParticipants,
   listUserGeneratedDocuments,
+  renameGeneratedDocument,
 } from "./document-workflows";
 import {
   copyDriveFile,
   ensureDriveFolderForUser,
   getDriveFileMetadata,
+  renameDriveFileForUser,
   trashDriveFile,
 } from "./google/drive";
-import { mergeGoogleDocument } from "./google/docs";
+import {
+  mergeGoogleDocument,
+  removeGoogleDocumentSections,
+} from "./google/docs";
 
 vi.mock("./google/drive", () => ({
   getDriveFileMetadata: vi.fn(),
   copyDriveFile: vi.fn(),
   ensureDriveFolderForUser: vi.fn(),
   trashDriveFile: vi.fn(),
+  renameDriveFileForUser: vi.fn(),
 }));
-vi.mock("./google/docs", () => ({ mergeGoogleDocument: vi.fn() }));
+vi.mock("./google/docs", () => ({
+  mergeGoogleDocument: vi.fn(),
+  removeGoogleDocumentSections: vi.fn(),
+}));
 
 function seed(connection: DatabaseConnection) {
   const now = Date.now();
@@ -251,6 +260,53 @@ describe("document workflow", () => {
     );
   });
 
+  it("apaga do documento as seções opcionais desmarcadas", async () => {
+    const { ownerId, offeringId, template } = seed(connection);
+    const summary = addDocumentTemplateSection(
+      ownerId,
+      template.id,
+      {
+        internalKey: "summary",
+        displayTitle: "Resumo",
+        type: "text",
+        optional: true,
+      },
+      connection,
+    );
+    addDocumentTemplateSection(
+      ownerId,
+      template.id,
+      {
+        internalKey: "questions",
+        displayTitle: "Dúvidas",
+        type: "text",
+        optional: true,
+      },
+      connection,
+    );
+
+    await generateDocument(
+      ownerId,
+      {
+        templateId: template.id,
+        offeringId,
+        enabledOptionalSectionIds: [summary.id],
+        studentUserIds: [],
+        title: "Aula",
+        date: "2030-02-01",
+      },
+      { connection, fetchImpl: vi.fn<typeof fetch>() },
+    );
+
+    expect(removeGoogleDocumentSections).toHaveBeenCalledWith(
+      ownerId,
+      "generated-file",
+      ["Dúvidas"],
+      expect.arrayContaining(["Resumo", "Dúvidas"]),
+      expect.objectContaining({ connection }),
+    );
+  });
+
   it("separa proprietário Hub da credencial do Drive central", async () => {
     const { ownerId, offeringId, template } = seed(connection);
     const now = Date.now();
@@ -441,6 +497,43 @@ describe("document workflow", () => {
 
     expect(listUserGeneratedDocuments(ownerId, connection)).toEqual([]);
     expect(trashDriveFile).not.toHaveBeenCalled();
+  });
+
+  it("renomeia no Drive com a conta dona do arquivo e no Hub", async () => {
+    const { ownerId, offeringId, template } = seed(connection);
+    const generated = await generateDocument(
+      ownerId,
+      {
+        templateId: template.id,
+        offeringId,
+        studentUserIds: [],
+        enabledOptionalSectionIds: [],
+        title: "Antigo",
+        date: "2030-02-01",
+      },
+      { connection, fetchImpl: vi.fn<typeof fetch>() },
+    );
+
+    await expect(
+      renameGeneratedDocument(ownerId, generated.id, "  Novo / nome  ", {
+        connection,
+      }),
+    ).resolves.toBe("Novo nome");
+
+    expect(renameDriveFileForUser).toHaveBeenCalledWith(
+      ownerId,
+      "generated-file",
+      "Novo nome",
+      expect.objectContaining({ connection }),
+    );
+    expect(listUserGeneratedDocuments(ownerId, connection)[0]?.name).toBe(
+      "Novo nome",
+    );
+    await expect(
+      renameGeneratedDocument(ownerId + 99, generated.id, "Outro", {
+        connection,
+      }),
+    ).rejects.toThrow();
   });
 
   it("move o arquivo para a lixeira ao excluir também do Drive", async () => {

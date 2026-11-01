@@ -11,6 +11,7 @@ import {
   addDocumentTemplateSection,
   createDocumentTemplate,
   deleteDocumentTemplate,
+  getUserDocumentTemplate,
   type DocumentTemplateSectionInput,
 } from "@/lib/document-templates";
 import {
@@ -110,7 +111,7 @@ export const starterDocumentTemplates: StarterDefinition[] = [
     name: "Anotações de aula",
     description: "Exemplo genérico de registro de aula.",
     categoryKind: "notes",
-    namingPattern: "{{subject.name}} - Anotações - {{document.date}}",
+    namingPattern: "{{subject.name}} - {{document.title}} - {{document.date}}",
     requiredPlaceholders: ["subject.name", "document.date"],
     sections: [
       {
@@ -141,6 +142,30 @@ function getStarter(keyInput: string): StarterDefinition {
 }
 
 const bundledSettingPrefix = "starter_template.enabled.";
+const legacyClassNotesPattern =
+  "{{subject.name}} - Anotações - {{document.date}}";
+
+/** Maps each starter key to the template this person already imported from it. */
+export function listImportedStarterTemplateIds(
+  ownerUserId: number,
+  connection: DatabaseConnection = getDatabase(),
+): Map<string, number> {
+  const ownerId = z.number().int().positive().parse(ownerUserId);
+  const prefix = `starter_template.imported.${ownerId}.`;
+  const rows = connection.sqlite
+    .prepare(
+      `SELECT s.key, dt.id FROM app_settings s JOIN document_templates dt
+       ON dt.id = CAST(s.value AS INTEGER) AND dt.owner_user_id = ?
+       WHERE s.key LIKE ?`,
+    )
+    .all(ownerId, `${prefix}%`) as Array<{ key: string; id: number }>;
+  const imported = new Map<string, number>();
+  for (const { key, id } of rows) {
+    const parsed = starterKeySchema.safeParse(key.slice(prefix.length));
+    if (parsed.success) imported.set(parsed.data, id);
+  }
+  return imported;
+}
 
 export function listBundledStarterTemplates(
   connection: DatabaseConnection = getDatabase(),
@@ -193,7 +218,12 @@ export function readBundledStarter(
 
 export async function createGoogleDocumentFromStarter(
   ownerUserId: number,
-  input: { key: string; title: string; offeringId: number },
+  input: {
+    key: string;
+    title: string;
+    offeringId: number;
+    optionalSectionKeys?: string[];
+  },
   options: { connection?: DatabaseConnection; fetchImpl?: GoogleFetch } = {},
 ): Promise<number> {
   const ownerId = z.number().int().positive().parse(ownerUserId);
@@ -207,12 +237,23 @@ export async function createGoogleDocumentFromStarter(
     input.key,
     options,
   );
+  const chosen = new Set(input.optionalSectionKeys ?? []);
+  const enabledOptionalSectionIds = getUserDocumentTemplate(
+    ownerId,
+    templateId,
+    connection,
+  )
+    .sections.filter(
+      ({ optional, internalKey }) => optional && chosen.has(internalKey),
+    )
+    .map(({ id }) => id);
   const generated = await generateDocument(
     ownerId,
     {
       templateId,
       offeringId,
       title,
+      enabledOptionalSectionIds,
       date: new Date().toISOString().slice(0, 10),
     },
     options,
@@ -261,7 +302,15 @@ export async function importStarterDocumentTemplate(
      WHERE s.key = ?`,
     )
     .get(ownerId, settingKey) as { id: number } | undefined;
-  if (existing) return existing.id;
+  if (existing) {
+    // Earlier copies of the class-notes starter ignored the typed title.
+    connection.sqlite
+      .prepare(
+        "UPDATE document_templates SET naming_pattern = ? WHERE id = ? AND naming_pattern = ?",
+      )
+      .run(starter.namingPattern, existing.id, legacyClassNotesPattern);
+    return existing.id;
+  }
   const sourceFileId = starterSourceIds(
     options.environment ?? getServerEnvironment(),
   )[starter.key];

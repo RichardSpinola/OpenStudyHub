@@ -17,7 +17,7 @@ export default async function AdminPage() {
   ];
   const globalModules = [
     { href: "/settings", label: admin.institution, code: "CFG" },
-    { href: "/settings#shortcuts", label: admin.shortcuts, code: "LNK" },
+    { href: "/settings?section=home", label: admin.shortcuts, code: "LNK" },
     { href: "/admin/audit", label: admin.audit, code: "LOG" },
     { href: "/api/health", label: admin.systemStatus, code: "SYS" },
   ];

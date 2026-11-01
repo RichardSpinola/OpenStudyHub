@@ -30,7 +30,10 @@ import {
   listLocalDocuments,
   listSharedLocalDocuments,
 } from "@/lib/v2/local-documents";
-import { listBundledStarterTemplates } from "@/lib/starter-document-templates";
+import {
+  listBundledStarterTemplates,
+  listImportedStarterTemplateIds,
+} from "@/lib/starter-document-templates";
 import { isDriveStorageAvailableForUser } from "@/lib/google/storage-owner";
 import { listOfferingGoogleIntegrations } from "@/lib/google/offering-integrations";
 import { getUserProfile } from "@/lib/profile";
@@ -107,6 +110,8 @@ const generationErrors: Record<string, string> = {
     "Sua Conta Google não concedeu acesso a esse documento-base para o OpenStudyHub.",
   "template-error": "Não foi possível salvar o modelo informado.",
   "document-delete-error": "Não foi possível excluir este documento.",
+  "document-rename-error":
+    "Não foi possível renomear este documento no Google Drive.",
 };
 const generationErrorsEn: Record<string, string> = {
   "generation-google-not-connected":
@@ -135,15 +140,19 @@ const generationErrorsEn: Record<string, string> = {
     "Your Google Account did not grant OpenStudyHub access to this source document.",
   "template-error": "The template could not be saved.",
   "document-delete-error": "This document could not be deleted.",
+  "document-rename-error":
+    "This document could not be renamed in Google Drive.",
 };
 
 const documentStatusMessages: Record<string, string> = {
+  "document-renamed": "Documento renomeado no OpenStudyHub e no Google Drive.",
   "document-removed-hub":
     "Documento removido do OpenStudyHub. O arquivo continua no Google Drive.",
   "document-deleted-drive":
     "Documento removido do OpenStudyHub e enviado para a lixeira do Google Drive.",
 };
 const documentStatusMessagesEn: Record<string, string> = {
+  "document-renamed": "Document renamed in OpenStudyHub and Google Drive.",
   "document-removed-hub":
     "Document removed from OpenStudyHub. The file remains in Google Drive.",
   "document-deleted-drive":
@@ -173,10 +182,18 @@ export default async function DocumentsWorkspace({
   const activities = listUserActivities(user.id);
   const templates = listUserDocumentTemplates(user.id);
   const activeTemplates = templates.filter(({ active }) => active);
+  // A starter already imported is offered once, as the person's own template.
+  const importedStarters = listImportedStarterTemplateIds(user.id);
+  const activeTemplateIds = new Set(activeTemplates.map(({ id }) => id));
+  const pendingStarters = bundledStarters.filter(
+    ({ key }) => !activeTemplateIds.has(importedStarters.get(key) ?? 0),
+  );
   const selectedStarter =
-    bundledStarters.find(({ key }) => key === parameters.starterKey) ??
-    (!parameters.templateId && activeTemplates.length === 0
-      ? bundledStarters[0]
+    pendingStarters.find(({ key }) => key === parameters.starterKey) ??
+    (!parameters.templateId &&
+    !parameters.starterKey &&
+    activeTemplates.length === 0
+      ? pendingStarters[0]
       : undefined);
   const documents = listUserGeneratedDocuments(user.id);
   const localDocuments =
@@ -199,7 +216,10 @@ export default async function DocumentsWorkspace({
   const pickerConfigured = getGooglePickerConfig() !== null;
   const offeringId = queryId(parameters.offeringId);
   const activityId = queryId(parameters.activityId);
-  const requestedTemplateId = queryId(parameters.templateId);
+  const requestedTemplateId =
+    queryId(parameters.templateId) ??
+    importedStarters.get(parameters.starterKey ?? "") ??
+    null;
   const generatedDocumentId = queryId(parameters.documentId);
   const generatedDocument =
     documents.find(({ id }) => id === generatedDocumentId) ?? null;
@@ -379,7 +399,7 @@ export default async function DocumentsWorkspace({
               name: `${o.subjectName} · ${o.periodLabel}`,
             }))}
             sources={[
-              ...bundledStarters.map((s) => ({
+              ...pendingStarters.map((s) => ({
                 value: `starter:${s.key}`,
                 name: s.name,
               })),
@@ -428,6 +448,26 @@ export default async function DocumentsWorkspace({
                     <li key={section.internalKey}>{section.displayTitle}</li>
                   ))}
                 </ul>
+                {selectedStarter.sections.some(({ optional }) => optional) ? (
+                  <fieldset className="option-grid">
+                    <legend>
+                      <UiCopy pt="Seções opcionais" en="Optional sections" />
+                    </legend>
+                    {selectedStarter.sections
+                      .filter(({ optional }) => optional)
+                      .map((section) => (
+                        <label key={section.internalKey}>
+                          <input
+                            type="checkbox"
+                            name="optionalSectionKeys"
+                            value={section.internalKey}
+                            defaultChecked
+                          />
+                          {section.displayTitle}
+                        </label>
+                      ))}
+                  </fieldset>
+                ) : null}
                 <p>
                   <UiCopy
                     pt="O modelo será importado para seus templates no Drive configurado pela instância. Ao criar, os campos da disciplina e do aluno serão preenchidos."

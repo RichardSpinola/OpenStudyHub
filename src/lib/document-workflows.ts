@@ -16,9 +16,13 @@ import {
   ensureDriveFolderForUser,
   getDriveFileMetadata,
   grantDriveFileWriter,
+  renameDriveFileForUser,
   trashDriveFile,
 } from "@/lib/google/drive";
-import { mergeGoogleDocument } from "@/lib/google/docs";
+import {
+  mergeGoogleDocument,
+  removeGoogleDocumentSections,
+} from "@/lib/google/docs";
 import type { GoogleFetch } from "@/lib/google/oauth";
 import { getOfferingGoogleIntegration } from "@/lib/google/offering-integrations";
 import { resolveDriveStorageUser } from "@/lib/google/storage-owner";
@@ -334,6 +338,65 @@ export async function deleteGeneratedDocument(
   );
 }
 
+export async function renameGeneratedDocument(
+  ownerUserId: number,
+  documentId: number,
+  nameInput: string,
+  options: {
+    connection?: DatabaseConnection;
+    fetchImpl?: GoogleFetch;
+  } = {},
+): Promise<string> {
+  const ownerId = idSchema.parse(ownerUserId);
+  const targetId = idSchema.parse(documentId);
+  const name = z
+    .string()
+    .transform((value) =>
+      value
+        .replaceAll(/[\u0000-\u001f/\\]+/gu, " ")
+        .replaceAll(/\s+/gu, " ")
+        .trim(),
+    )
+    .pipe(z.string().min(1).max(180))
+    .parse(nameInput);
+  const connection = options.connection ?? getDatabase();
+  const row = connection.sqlite
+    .prepare(
+      `select storage_user_id as storageUserId, drive_file_id as driveFileId
+       from generated_documents where id = ? and owner_user_id = ?`,
+    )
+    .get(targetId, ownerId) as
+    { storageUserId: number | null; driveFileId: string } | undefined;
+  if (!row) throw new Error("Generated document not found.");
+  // The storage account owns the file, so it renames it even when the
+  // student only has access through sharing.
+  await renameDriveFileForUser(
+    row.storageUserId ?? ownerId,
+    row.driveFileId,
+    name,
+    {
+      connection,
+      fetchImpl: options.fetchImpl,
+    },
+  );
+  connection.sqlite
+    .prepare(
+      "update generated_documents set name = ?, updated_at = ? where id = ? and owner_user_id = ?",
+    )
+    .run(name, Date.now(), targetId, ownerId);
+  recordAuditEvent(
+    {
+      actorUserId: ownerId,
+      action: "document.rename",
+      targetType: "generated_document",
+      targetId: String(targetId),
+      summary: "generated document renamed in Hub and Drive",
+    },
+    connection,
+  );
+  return name;
+}
+
 export function listSharedGeneratedDocuments(
   userId: number,
   connection: DatabaseConnection = getDatabase(),
@@ -581,6 +644,23 @@ export async function generateDocument(
         throw new DocumentGenerationError("docs-unavailable");
       }
       throw new DocumentGenerationError("merge-failed");
+    }
+    const enabledOptional = new Set(value.enabledOptionalSectionIds);
+    const removedTitles = template.sections
+      .filter((section) => section.optional && !enabledOptional.has(section.id))
+      .map(({ displayTitle }) => displayTitle);
+    if (removedTitles.length) {
+      try {
+        await removeGoogleDocumentSections(
+          storageUserId,
+          copied.id,
+          removedTitles,
+          template.sections.map(({ displayTitle }) => displayTitle),
+          { connection, fetchImpl },
+        );
+      } catch {
+        throw new DocumentGenerationError("merge-failed");
+      }
     }
     if (ownerGoogleEmail) {
       try {
