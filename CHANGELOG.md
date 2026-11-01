@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.2
+
+Generated document rename and section fixes, a four-step welcome wizard, top navigation and chat menu fixes, table-game covers and boards in the Extras and an easier Minesweeper on phones. No database changes. See [release notes](release-notes/v3.2.2.md).
+
 ## 3.2.1
 
 Full-width AI workspace and the blurred wallpaper behind it. No database changes. See [release notes](release-notes/v3.2.1.md).

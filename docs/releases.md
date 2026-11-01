@@ -1,5 +1,9 @@
 # Versions and publication status
 
+## 3.2.2
+
+Versioned image: `ghcr.io/richardspinola/openstudyhub:3.2.2`. Fixes renaming and optional sections of generated documents, shortens the welcome wizard, fixes the top navigation and chat menus, and redraws the puzzle games as table games. No database changes. Read the [release notes](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.2).
+
 ## 3.2.1
 
 Versioned image: `ghcr.io/richardspinola/openstudyhub:3.2.1`. The AI workspace uses the full screen width and shows the blurred wallpaper behind frosted panels. No database changes. Read the [release notes](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.1).

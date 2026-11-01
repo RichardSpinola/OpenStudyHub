@@ -1,5 +1,9 @@
 # Versões e estado da publicação
 
+## 3.2.2
+
+Imagem versionada: `ghcr.io/richardspinola/openstudyhub:3.2.2`. Corrige a renomeação e as seções opcionais dos documentos gerados, encurta o assistente de boas-vindas, corrige a navegação superior e os menus do chat e redesenha os jogos de raciocínio como jogos de mesa. Sem mudanças no banco. Leia as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.2).
+
 ## 3.2.1
 
 Imagem versionada: `ghcr.io/richardspinola/openstudyhub:3.2.1`. O espaço de IA usa a largura inteira da tela e mostra o papel de parede desfocado atrás de painéis com vidro fosco. Sem mudanças no banco. Leia as [notas da release](https://github.com/RichardSpinola/OpenStudyHub/releases/tag/v3.2.1).

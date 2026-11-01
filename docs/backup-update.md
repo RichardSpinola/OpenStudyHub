@@ -22,6 +22,10 @@ Do not start older code against a newer migrated schema. Stop App, Admin, realti
 
 [The recovery guide](operations/manual-backup-restore.md) covers encrypted packages, validation-only mode and offline restore. Remote Drive content is not copied into local backups. Never run `docker compose down -v` as an update step.
 
+## Updating to 3.2.2
+
+3.2.2 has no migration. From 3.2.0 or 3.2.1, switch the image and restart. From older versions, the 3.2.0 notes below also apply.
+
 ## Updating to 3.2.1
 
 3.2.1 only changes the AI workspace layout; it has no migration. From 3.2.0, switch the image and restart. From older versions, the 3.2.0 notes below also apply.

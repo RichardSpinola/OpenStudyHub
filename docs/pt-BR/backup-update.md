@@ -22,6 +22,10 @@ Não execute código antigo sobre schema migrado mais novo. Pare App, Admin, rea
 
 [O guia de recuperação](operations/manual-backup-restore.md) explica pacotes criptografados, validação sem alteração e restore offline. Conteúdo remoto do Drive não entra no backup local. Nunca use `docker compose down -v` como atualização.
 
+## Atualizar para a 3.2.2
+
+A 3.2.2 não tem migration. A partir da 3.2.0 ou 3.2.1, troque a imagem e reinicie. Vindo de versões anteriores, as notas da 3.2.0 abaixo também valem.
+
 ## Atualizar para a 3.2.1
 
 A 3.2.1 só muda o layout do espaço de IA e não tem migration. A partir da 3.2.0, troque a imagem e reinicie. Vindo de versões anteriores, as notas da 3.2.0 abaixo também valem.
