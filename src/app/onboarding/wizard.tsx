@@ -10,37 +10,19 @@ import { ProfileMediaSettings } from "@/components/profile-media-settings";
 import type { Appearance } from "@/lib/appearance";
 import { uiText } from "@/lib/translations";
 
-const steps = [
-  "Perfil",
-  "Contexto acadêmico",
-  "Google",
-  "Notificações",
-  "Aparência",
-  "Pronto",
-] as const;
-const stepsEn = [
-  "Profile",
-  "Academic context",
-  "Google",
-  "Notifications",
-  "Appearance",
-  "Ready",
-] as const;
+const steps = ["Perfil", "Contexto acadêmico", "Google", "Pronto"] as const;
+const stepsEn = ["Profile", "Academic context", "Google", "Ready"] as const;
 
 const stepDescriptions = [
   "Mostre seu nome e sua imagem do jeito que prefere.",
   "Veja onde suas disciplinas vão aparecer.",
   "Entenda o que a conexão Google pode trazer para seus estudos.",
-  "Escolha se quer receber avisos no navegador.",
-  "Conheça os visuais e ajuste depois em Configurações.",
   "Tudo pronto para começar.",
 ] as const;
 const stepDescriptionsEn = [
   "Show your name and picture as you prefer.",
   "See where your subjects will appear.",
   "Learn what connecting Google can bring to your studies.",
-  "Choose whether to receive browser alerts.",
-  "Explore the themes and adjust them later in Settings.",
   "You're ready to get started.",
 ] as const;
 
@@ -79,7 +61,9 @@ export function OnboardingWizard({
     customAccent: string;
   };
 }) {
-  const [step, setStep] = useState(Math.min(Math.max(initialStep, 0), 5));
+  const [step, setStep] = useState(
+    Math.min(Math.max(initialStep, 0), steps.length - 1),
+  );
   const [name, setName] = useState(profile.displayName);
   const [bio, setBio] = useState(profile.bio);
   const [locale, setLocale] = useState(profile.locale);
@@ -303,67 +287,11 @@ export function OnboardingWizard({
             </section>
           ) : null}
           {step === 3 ? (
-            <section className="onboarding-notification-choice">
-              <h2>
-                <UiCopy
-                  pt="Avisos que ajudam a acompanhar o dia"
-                  en="Updates that help you follow your day"
-                />
-              </h2>
-              <p>
-                <UiCopy
-                  pt="Mensagens, menções e atividades aparecem no sino do aplicativo. Você decide depois, em Configurações → Notificações, se também quer avisos neste navegador."
-                  en="Messages, mentions and activities appear in the app bell. You can decide later in Settings → Notifications whether to receive browser alerts too."
-                />
-              </p>
-              <p>
-                <UiCopy
-                  pt="A etapa não pede permissão ao navegador. Continue quando estiver pronto."
-                  en="This step does not ask the browser for permission. Continue when ready."
-                />
-              </p>
-            </section>
-          ) : null}
-          {step === 4 ? (
             <section>
               <p>
                 <UiCopy
-                  pt="Em Configurações → Aparência e Home, você pode escolher entre Material e Legacy / TUI, além do modo claro ou escuro e da cor de destaque. Faça essa escolha quando quiser."
-                  en="In Settings → Appearance and Home, you can choose Material or Legacy / TUI, light or dark mode, and an accent color. Change these whenever you like."
-                />
-              </p>
-              <div className="onboarding-theme-examples">
-                <figure>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/help/material-home.png"
-                    alt={tr(
-                      "Prévia da Home no visual Material",
-                      "Home preview in Material theme",
-                    )}
-                  />
-                  <figcaption>Material</figcaption>
-                </figure>
-                <figure>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/help/legacy-home.png"
-                    alt={tr(
-                      "Prévia da Home no visual Legacy / TUI",
-                      "Home preview in Legacy / TUI theme",
-                    )}
-                  />
-                  <figcaption>Legacy / TUI</figcaption>
-                </figure>
-              </div>
-            </section>
-          ) : null}
-          {step === 5 ? (
-            <section>
-              <p>
-                <UiCopy
-                  pt="Seu perfil está pronto. Google e notificações podem ser configurados a qualquer momento."
-                  en="Your profile is ready. Google and notifications can be configured at any time."
+                  pt="Seu perfil está pronto. Google, notificações e aparência (Material ou Legacy, claro ou escuro) podem ser ajustados quando quiser em Configurações."
+                  en="Your profile is ready. Google, notifications and appearance (Material or Legacy, light or dark) can be adjusted any time in Settings."
                 />
               </p>
               <dl className="onboarding-academic-summary">
@@ -440,7 +368,7 @@ export function OnboardingWizard({
               {tr("Voltar", "Back")}
             </button>
           ) : null}
-          {step < 5 ? (
+          {step < steps.length - 1 ? (
             <button
               type="button"
               disabled={busy}

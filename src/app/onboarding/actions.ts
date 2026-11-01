@@ -88,7 +88,7 @@ export async function saveOnboardingProgressAction(formData: FormData) {
   const session = await getCurrentSession();
   if (!session) redirect("/login");
   const step = Number(formData.get("step"));
-  if (!Number.isInteger(step) || step < 0 || step > 5)
+  if (!Number.isInteger(step) || step < 0 || step > 3)
     throw new Error("Etapa inválida.");
   if (step >= 1 && formData.has("displayName"))
     updateOwnProfile(session.user.id, {
@@ -96,7 +96,7 @@ export async function saveOnboardingProgressAction(formData: FormData) {
       locale: text(formData, "locale") as "pt-BR" | "en",
       bio: text(formData, "bio"),
     });
-  if (step >= 5 && formData.has("designTheme")) {
+  if (step >= 3 && formData.has("designTheme")) {
     const current = getAppearance(session.user.id);
     updateAppearance(
       session.user.id,

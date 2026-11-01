@@ -1401,26 +1401,6 @@ html[data-design] .chat-more-wallpaper .chat-wallpaper-controls {
   padding: 0.5rem;
   border: 1px solid var(--gray-4);
 }
-.onboarding-theme-examples {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  gap: 0.8rem;
-}
-.onboarding-theme-examples figure {
-  min-width: 0;
-  margin: 0;
-  border: 1px solid var(--gray-3);
-}
-.onboarding-theme-examples img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  object-position: top;
-}
-.onboarding-theme-examples figcaption {
-  padding: 0.55rem;
-}
 html[data-design] .chat-room-more form {
   display: grid;
 }
