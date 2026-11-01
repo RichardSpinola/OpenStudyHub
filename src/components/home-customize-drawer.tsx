@@ -337,7 +337,7 @@ export function HomeCustomizeDrawer({
                 ))}
               </div>
               <Link
-                href="/settings?section=personalization"
+                href="/settings?section=home"
                 onClick={() => dialog.current?.close()}
               >
                 <UiCopy
@@ -454,7 +454,7 @@ export function HomeCustomizeDrawer({
             ) : null}
             <Link
               className="home-customize-more"
-              href="/settings?section=personalization"
+              href="/settings?section=home"
               onClick={() => dialog.current?.close()}
             >
               <UiCopy
