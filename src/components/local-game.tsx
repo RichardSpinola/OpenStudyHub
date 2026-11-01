@@ -679,7 +679,8 @@ function Minesweeper() {
           aria-label={tr("Campo Minado", "Minesweeper")}
           style={
             {
-              gridTemplateColumns: `repeat(${width}, 1fr)`,
+              gridTemplateColumns: `repeat(${width}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${width}, minmax(0, 1fr))`,
               "--mines-cols": width,
             } as CSSProperties
           }
