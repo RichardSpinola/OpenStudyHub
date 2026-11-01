@@ -1832,11 +1832,30 @@ html[data-design] .extra-workspace .game-hint {
 .extras-preview--sudoku,
 .extras-preview--connect4,
 .extras-preview--tictactoe {
+  --preview-tint: var(--accent);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--accent), var(--panel) 88%),
+    color-mix(in srgb, var(--preview-tint), var(--panel) 80%),
     var(--panel-raised)
   );
+}
+.extras-preview--focus {
+  --preview-tint: #d0806a;
+}
+.extras-preview--flashcards {
+  --preview-tint: #5fa6a6;
+}
+.extras-preview--memory {
+  --preview-tint: #a58bd0;
+}
+.extras-preview--sudoku {
+  --preview-tint: #6f8fc9;
+}
+.extras-preview--connect4 {
+  --preview-tint: #c9a24a;
+}
+.extras-preview--tictactoe {
+  --preview-tint: #7fae6a;
 }
 .preview-puzzle {
   display: grid;
