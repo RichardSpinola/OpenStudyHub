@@ -50,10 +50,23 @@ export function DismissibleDetails({
       ref={ref}
       className={className}
       onToggle={(event) => {
-        if (event.currentTarget.open)
-          window.dispatchEvent(
-            new CustomEvent("osh:popover-open", { detail: id }),
-          );
+        const details = event.currentTarget;
+        delete details.dataset.placement;
+        if (!details.open) return;
+        window.dispatchEvent(
+          new CustomEvent("osh:popover-open", { detail: id }),
+        );
+        // Menus that open upwards flip below when the scroll area would clip them.
+        const menu = details.lastElementChild;
+        let clip = details.parentElement;
+        while (clip && getComputedStyle(clip).overflowY === "visible")
+          clip = clip.parentElement;
+        if (
+          menu &&
+          clip &&
+          menu.getBoundingClientRect().top < clip.getBoundingClientRect().top
+        )
+          details.dataset.placement = "below";
       }}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest("a") && ref.current)

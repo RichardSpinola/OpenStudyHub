@@ -312,6 +312,12 @@ html[data-design] .chat-actions-disclosure[open] .chat-message-actions {
   max-height: 14rem;
   overflow: auto;
 }
+html[data-design]
+  .chat-actions-disclosure[open][data-placement="below"]
+  .chat-message-actions {
+  top: 100%;
+  bottom: auto;
+}
 html[data-design] .chat-inline-edit textarea {
   max-width: 100%;
   width: 100%;
