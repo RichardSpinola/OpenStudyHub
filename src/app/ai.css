@@ -306,11 +306,6 @@ html[data-design] .chat-room:has(> .chat-presence):has(> .chat-ai-control) {
 .chat-ai-message[data-status="pending"] > div {
   color: var(--gray-1);
 }
-.chat-ai-entry {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
 .chat-ai-message {
   list-style: none;
   max-width: min(42rem, 92%);

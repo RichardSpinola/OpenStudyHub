@@ -1,11 +1,10 @@
-import { readAiConfig } from "@/lib/ai/config";
-import { AiWorkspace } from "@/components/ai-workspace";
 import "@/app/ai.css";
 import { canModerateRoom } from "@/lib/chat-moderation";
 import { CroppedImageInput } from "@/components/cropped-image-input";
 import { UiCopy } from "@/components/ui-language-provider";
 import Link from "next/link";
-import { IconMessages, IconRobot } from "@tabler/icons-react";
+import { IconMessages } from "@tabler/icons-react";
+import { redirect } from "next/navigation";
 
 import {
   addGroupMemberAction,
@@ -57,7 +56,8 @@ export default async function ChatPage({
   const language = getUserProfile(user.id).locale;
   const tr = (pt: string, en: string) => uiText(language, pt, en);
   const params = await searchParams;
-  if (params.assistant === "1") return <AiWorkspace />;
+  // The assistant lives in Extras; keep old links working.
+  if (params.assistant === "1") redirect("/extras/ai");
   const rooms = listChatRoomSummaries(user.id);
   const archivedView = params.archived === "1";
   const query = (params.q || "").trim().toLocaleLowerCase("pt-BR").slice(0, 80);
@@ -172,15 +172,6 @@ export default async function ChatPage({
     >
       <ChatContextLayout key={selected?.id ?? "empty"}>
         <aside className="chat-sidebar">
-          {readAiConfig().config.enabled && (
-            <Link
-              className="chat-room-link chat-ai-entry"
-              href="/chat?assistant=1"
-            >
-              <IconRobot size={18} aria-hidden="true" />
-              {tr("Assistente de IA", "AI assistant")}
-            </Link>
-          )}
           <div className="chat-sidebar-heading">
             <h1>
               <UiCopy pt="Mensagens" en="Messages" />

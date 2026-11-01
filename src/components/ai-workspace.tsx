@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
 import { DismissibleDetails } from "@/components/dismissible-details";
 import {
   IconMessagePlus,
@@ -374,7 +373,6 @@ export function AiWorkspace() {
             "AI can make mistakes. Check sources and answers.",
           )}
         </p>
-        <Link href="/chat">{t("Conversas do Hub", "Hub conversations")} →</Link>
       </aside>
       <div className="ai-main">
         <header className="ai-conversation-header">
